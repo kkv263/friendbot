@@ -37,12 +37,11 @@ def calculateTreasure(seconds, role):
     return [cp, tp, gp]
 
 # use creds to create a client to interact with the Google Drive API
-pkey = os.environ['PKEY']
 gSecret = {
   "type": "service_account",
   "project_id": "magic-item-table",
   "private_key_id": os.environ['PKEY_ID'],
-  "private_key": pkey,
+  "private_key": os.environ['PKEY'],
   "client_email": os.environ['CEMAIL'],
   "client_id": os.environ['C_ID'],
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -50,8 +49,6 @@ gSecret = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": os.environ['C_CERT']
 }
-
-print(gSecret)
 
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
