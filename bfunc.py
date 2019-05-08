@@ -50,6 +50,8 @@ gSecret = {
   "client_x509_cert_url": os.environ['C_CERT']
 }
 
+print(os.environ['PKEY_ID'])
+
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
 
