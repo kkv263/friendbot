@@ -41,7 +41,7 @@ def calculateTreasure(seconds, role):
 
     return [cp, tp, gp, dcp, dtp, dgp]
 
-#use creds to create a client to interact with the Google Drive API
+# use creds to create a client to interact with the Google Drive API
 gSecret = {
   "type": "service_account",
   "project_id": "magic-item-table",
@@ -55,8 +55,6 @@ gSecret = {
   "client_x509_cert_url": os.environ['C_CERT']
 }
 
-
-
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
 
@@ -64,7 +62,8 @@ client = gspread.authorize(creds)
 
 # Find a workbook by name and open the first sheet
 # Make sure you use the right name here.
-sheet = client.open("Magic Item Table (Xyffei Test)").sheet1
+sheet = client.open("Magic Item Table (Bot)").sheet1
+ritSheet = client.open("Reward Item Table (Bot)").sheet1
 token = os.environ['TOKEN']
 client = discord.Client()
 
@@ -76,11 +75,13 @@ alphabetList = list(ascii_lowercase)
 commandPrefix = '.'
 timezoneVar = 'US/Central'
 
+ritTierArray = getTiers(ritSheet.row_values(2))
+ritSubArray = ritSheet.row_values(3)
+
 one = '1⃣'
 two = '2⃣'
 three = '3⃣'
 four = '4⃣'
-
 
 left = '\N{BLACK LEFT-POINTING TRIANGLE}'
 right = '\N{BLACK RIGHT-POINTING TRIANGLE}'
@@ -88,5 +89,5 @@ back = '\N{LEFTWARDS ARROW WITH HOOK}'
 
 numberEmojis = ['1⃣','2⃣','3⃣','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣','🔟',]
 
-alphaEmojis = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬','🇭','🇮','🇯','🇰']
-# '🇱','🇲','🇳','🇴','🇵','🇶','🇷','🇸','🇹','🇺','🇻','🇼','🇽','🇾','🇿']
+alphaEmojis = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬','🇭','🇮','🇯','🇰',
+'🇱','🇲','🇳','🇴','🇵','🇶','🇷','🇸','🇹','🇺','🇻','🇼','🇽','🇾','🇿']

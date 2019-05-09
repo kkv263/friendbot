@@ -29,27 +29,12 @@ async def help(ctx):
       title='Available Commands'
     )
     helpEmbed.add_field(name=commandPrefix + "mit", value="Shows you items from the Magic Item Table" )
-    helpEmbed.add_field(name=commandPrefix + "rit", value="(Coming Soon) Shows you items from the DM Rewards Item Table" )
+    helpEmbed.add_field(name=commandPrefix + "rit", value="Shows you items from the DM Rewards Item Table" )
     helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Command Available in Game rooms. Start a timer to keep track of time and rewards for games." )
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)
 
-
-@bot.command()
-async def rit(ctx):
-    channel = ctx.channel
-
-    mitEmbed = discord.Embed (
-      title= 'Reward Item Table',
-      description= "Type the corresponding bolded letter to access the Reward Item Table",
-      colour = discord.Colour.orange(),
-    )
-    mitItemEmbed = discord.Embed (
-      colour = discord.Colour.orange(),
-    )
-
-@bot.command()
-async def mit(ctx):
+async def itemTable(tierArray, tierSubArray,sheet, ctx):
     def mitEmbedCheck(r, u):
         return (str(r.emoji) in alphaEmojis or str(r.emoji) == '❌') and u == ctx.author
     
@@ -93,14 +78,14 @@ async def mit(ctx):
     mitEmbed.set_footer(text= "React with ❌ to cancel")
 
 
-    choices = getChoices(tpArray)
+    choices = getChoices(tierSubArray)
     alphaIndex = 0
     for j in range(len(tierArray) - 1):
         k = tierArray[j]
         mitString = ""
-        for k in range(k, tierArray[j+1] - 1):
-            mitString = mitString + alphaEmojis[alphaIndex] + ": " + tpArray[k] + '\n'
-            if tpArray[k] != "":
+        for k in range(k, tierArray[j+1] - 1 if tierArray[j+1] < len(tierSubArray) else len(tierSubArray)):
+            mitString = mitString + alphaEmojis[alphaIndex] + ": " + tierSubArray[k] + '\n'
+            if tierSubArray[k] != "":
               alphaIndex += 1
         mitEmbed.add_field(name="Tier " + str(j+1), value=mitString, inline=True)
 
@@ -187,11 +172,19 @@ async def mit(ctx):
 
         await mitStart.edit(embed=mitItemEmbed) 
         await mitStart.clear_reactions()
+
+@bot.command()
+async def rit(ctx):
+    await itemTable(ritTierArray, ritSubArray, ritSheet, ctx)
+  
+
+@bot.command()
+async def mit(ctx):
+    await itemTable(tierArray, tpArray, sheet, ctx) 
             
 @bot.command()
 @commands.cooldown(1, float('inf'), type=commands.BucketType.channel)
 async def timerstart(ctx, *, game="D&D Game"):
-
     def startEmbedcheck(r, u):
         return (str(r.emoji) == one or str(r.emoji) == two or str(r.emoji) == three or str(r.emoji) == four or str(r.emoji) == '❌' and u == ctx.author)
 
@@ -264,7 +257,6 @@ async def timerstart(ctx, *, game="D&D Game"):
         embed.add_field(name="Time Ended", value=dateend +  "CDT", inline=True)
         embed.add_field(name="Time Duration", value=durationString, inline=False)
         embed.add_field(name=role +" Friend Awards", value=treasureString, inline=True)
-        embed.add_field(name="DM Awards", value=dmTreasureString, inline=True)
         await channel.send(embed=embed)
         timerstart.reset_cooldown(ctx)
 
