@@ -1,19 +1,21 @@
 import time
 import asyncio
-from datetime import datetime
+import re
 import pytz
+from datetime import datetime
 from discord.ext import commands
 from string import ascii_lowercase
 from random import randint
 
-
 from bfunc import *
+
 
 bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 
 @bot.event
 async def on_ready():
     print('We have logged in as ' + bot.user.name)
+    await bot.change_presence(activity=discord.Game(name='D&D Friends | ' + commandPrefix + 'help'))
 
 bot.remove_command('help')
 
@@ -36,6 +38,7 @@ async def help(ctx):
     helpEmbed.add_field(name=commandPrefix + "mit", value="Shows you items from the Magic Item Table" )
     helpEmbed.add_field(name=commandPrefix + "rit", value="Shows you items from the DM Rewards Item Table" )
     helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Command Available in Game rooms. Start a timer to keep track of time and rewards for games." )
+    helpEmbed.add_field(name=commandPrefix + "treasure [XhYm] [tier] ", value="Calculates treasure based on time and tier. Example: " + commandPrefix + 'treasure 3h30m Elite' )
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)
 
@@ -73,6 +76,11 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
 
     channel = ctx.channel
 
+    if ctx.author == 'skel#2648':
+      userName = 'Sir'
+    else:
+      userName = ctx.author.name
+
     if random.lower() != 'random':
         random = ''
 
@@ -85,8 +93,8 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
       colour = discord.Colour.orange(),
     )
 
-    mitEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-    mitItemListEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+    mitEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
+    mitItemListEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
     mitEmbed.set_footer(text= "React with ❌ to cancel")
 
 
@@ -184,7 +192,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
           title = mitItem[3] + " - Tier " + str(getTier(choiceIndex)) + ": " + sheet.cell(3,choiceIndex+1).value,
           colour = discord.Colour.orange(),
         )
-        mitItemEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        mitItemEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
         mitItemEmbed.set_image(url=mitItem[1])
 
         await mitStart.edit(embed=mitItemEmbed) 
@@ -216,11 +224,17 @@ async def timerstart(ctx, *, game="D&D Game"):
     channel = ctx.channel
     user = ctx.author.display_name
 
+    if ctx.author == 'skel#2648':
+      userName = 'Sir'
+    else:
+      userName = ctx.author.name
+
+
     startEmbed = discord.Embed (
       colour = discord.Colour.blue(),
     )
     startEmbed.add_field(name='React with [1-4] for your type of game: **' + game + "**", value=one + ' New / Junior Friend [1-4]\n' + two + ' Journey Friend [5-10]\n' + three + ' Elite Friend [11-16]\n' + four + ' True Friend [17-20]' , inline=False)
-    startEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+    startEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
     startEmbed.set_footer(text= "React with ❌ to cancel")
 
     embed = discord.Embed (
@@ -228,7 +242,7 @@ async def timerstart(ctx, *, game="D&D Game"):
       description=user + ', you stopped the timer.',
       colour = discord.Colour.blue(),
     )
-    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=userName, icon_url=ctx.author.avatar_url)
 
     try:
         startEmbedmsg = await channel.send(embed=startEmbed)
@@ -271,11 +285,32 @@ async def timerstart(ctx, *, game="D&D Game"):
         treasureString = str(treasureArray[0]) + " CP \n" + str(treasureArray[1]) + " TP \n" + str(treasureArray[2]) + " GP"
         dmTreasureString = str(treasureArray[3]) + " CP \n" + str(treasureArray[4]) + " TP \n" + str(treasureArray[5]) + " GP"
 
-        embed.add_field(name="Time Started", value=datestart + "CDT", inline=True)
-        embed.add_field(name="Time Ended", value=dateend +  "CDT", inline=True)
+        embed.add_field(name="Time Started", value=datestart + " CDT", inline=True)
+        embed.add_field(name="Time Ended", value=dateend +  " CDT", inline=True)
         embed.add_field(name="Time Duration", value=durationString, inline=False)
         embed.add_field(name=role +" Friend Awards", value=treasureString, inline=True)
         await channel.send(embed=embed)
         timerstart.reset_cooldown(ctx)
+
+@commands.cooldown(1, 5, type=commands.BucketType.member)
+@bot.command()
+async def treasure(ctx, timeString, tier):
+    seconds_per_unit = { "m": 60, "h": 3600 }
+    def convert_to_seconds(s):
+      return int(s[:-1]) * seconds_per_unit[s[-1]]
+
+    if tier.lower().capitalize() not in roleArray:
+        await ctx.channel.send(content='You did not type a valid tier. The valid tiers are: ' + ', '.join(roleArray))
+        return
+
+    l = list((re.findall('.*?[hm]', timeString.lower())))
+    totalTime = 0
+    for time in l:
+        totalTime += convert_to_seconds(time)
+
+    treasureArray = calculateTreasure(totalTime, tier)
+    treasureString = str(treasureArray[0]) + " CP, " + str(treasureArray[1]) + " TP, and " + str(treasureArray[2]) + " GP"
+    dmTreasureString = str(treasureArray[3]) + " CP, " + str(treasureArray[4]) + " TP, and " + str(treasureArray[5]) + " GP"
+    await ctx.channel.send(content='Playing that amount would give you as a\n\n**Player:** ' + treasureString + "\n" + "**DM:** " + dmTreasureString)
 
 bot.run(token)
