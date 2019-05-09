@@ -1,12 +1,13 @@
 import time
 import asyncio
 from datetime import datetime
+import pytz
 from discord.ext import commands
 from string import ascii_lowercase
 
 from bfunc import *
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 
 @bot.event
 async def on_ready():
@@ -14,16 +15,24 @@ async def on_ready():
 
 bot.remove_command('help')
 
+@bot.event
+async def on_command_error(ctx,error):
+    if isinstance(error, commands.CommandOnCooldown):
+        msg = 'There is already a timer that has started in this channel! If you started the timer, type `' + commandPrefix + 'timerstop` to stop the current timer'
+        await ctx.channel.send(msg)
+    else:
+        raise error
+
 @bot.command()
 async def help(ctx):
-		helpEmbed = discord.Embed (
-			title='Available Commands'
-		)
-		helpEmbed.add_field(name="!mit", value="Shows you items from the Magic Item Table" )
-		helpEmbed.add_field(name="!rit", value="(Coming Soon) Shows you items from the DM Rewards Item Table" )
-		helpEmbed.add_field(name="!timerstart", value="Command Available in Game rooms. Start a timer to keep track of time and rewards for games." )
+    helpEmbed = discord.Embed (
+      title='Available Commands'
+    )
+    helpEmbed.add_field(name=commandPrefix + "mit", value="Shows you items from the Magic Item Table" )
+    helpEmbed.add_field(name=commandPrefix + "rit", value="(Coming Soon) Shows you items from the DM Rewards Item Table" )
+    helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Command Available in Game rooms. Start a timer to keep track of time and rewards for games." )
 
-		helpMsg = await ctx.channel.send(embed=helpEmbed)
+    helpMsg = await ctx.channel.send(embed=helpEmbed)
 
 
 @bot.command()
@@ -81,6 +90,8 @@ async def mit(ctx):
 
     mitEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
     mitItemListEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+    mitEmbed.set_footer(text= "React with ❌ to cancel")
+
 
     choices = getChoices(tpArray)
     alphaIndex = 0
@@ -103,7 +114,7 @@ async def mit(ctx):
     else:
         # await mitStart.delete()
         if mitChoice.emoji == '❌':
-            await mitStart.edit(embed=None, content='Magic Item Table canceled. Type `!mit` to open the Magic Item Table!')
+            await mitStart.edit(embed=None, content='Magic Item Table canceled. Type `' + commandPrefix + 'mit` to open the Magic Item Table!')
             await mitStart.clear_reactions()
             return
 
@@ -114,10 +125,10 @@ async def mit(ctx):
         mitResults = sheet.col_values(choiceIndex + 1)
 
         def mitItemListCheck(r,u):
-            return u == ctx.author and (str(r.emoji) == left or str(r.emoji) == right or str(r.emoji) == '❌' or str(r.emoji) in numberEmojis)
+            return u == ctx.author and (str(r.emoji) == left or str(r.emoji) == right or str(r.emoji) == '❌' or str(r.emoji) == back or str(r.emoji) in numberEmojis)
 
         page = 0;
-        perPage = 10
+        perPage = 9
         tpNumber = mitResults.pop(2)
         mitResults.pop(0)
         mitResults.pop(0)
@@ -132,13 +143,14 @@ async def mit(ctx):
                 mitResultsString = mitResultsString + numberEmojis[numberEmoji] + ": " + mitResults[i] + "\n"
                 numberEmoji += 1
             mitItemListEmbed.add_field(name="[Tier "+ str(getTier(choiceIndex)) +  "] " + tpNumber + ": React with the corresponding number", value=mitResultsString, inline=True)
-            mitItemListEmbed.set_footer(text= "Page " + str(page+1) + " of " + str(numPages) + " -- use ⏪ or ⏩ to navigate")
+            mitItemListEmbed.set_footer(text= "Page " + str(page+1) + " of " + str(numPages) + " -- use " + left + " or " + right + " to navigate, " + back + " to go back, or ❌ to cancel")
             await mitStart.edit(embed=mitItemListEmbed) 
             if page != 0:
                 await mitStart.add_reaction(left) 
             if page + 1 != numPages:
                 await mitStart.add_reaction(right)
 
+            await mitStart.add_reaction(back)
             await mitStart.add_reaction('❌')
             try:
                 react, pUser = await bot.wait_for("reaction_add", check=mitItemListCheck, timeout=90.0)
@@ -151,9 +163,12 @@ async def mit(ctx):
                 elif react.emoji == right:
                     page += 1
                 elif react.emoji == '❌':
-                    await mitStart.edit(embed=None, content='Magic Item Table canceled. Type `!mit` to open the Magic Item Table!')
+                    await mitStart.edit(embed=None, content='Magic Item Table canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
                     await mitStart.clear_reactions()
                     return
+                elif react.emoji == back:
+                    await mitStart.delete()
+                    await ctx.reinvoke()
                 elif react.emoji in numberEmojis:
                     break
                 mitItemListEmbed.clear_fields()
@@ -164,7 +179,7 @@ async def mit(ctx):
         mitItem = sheet.cell((int(str(react.emoji)[0])) + pageStart + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
 
         mitItemEmbed = discord.Embed (
-          title = mitItem[3],
+          title = mitItem[3] + " - Tier " + str(getTier(choiceIndex)) + ": " + sheet.cell(3,choiceIndex+1).value,
           colour = discord.Colour.orange(),
         )
         mitItemEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
@@ -174,7 +189,7 @@ async def mit(ctx):
         await mitStart.clear_reactions()
             
 @bot.command()
-@commands.cooldown(1, 100, type=commands.BucketType.channel)
+@commands.cooldown(1, float('inf'), type=commands.BucketType.channel)
 async def timerstart(ctx, *, game="D&D Game"):
 
     def startEmbedcheck(r, u):
@@ -189,17 +204,13 @@ async def timerstart(ctx, *, game="D&D Game"):
 
     channel = ctx.channel
     user = ctx.author.display_name
-    lastmsg = await channel.history().get(author__name='friend')
 
     startEmbed = discord.Embed (
-      title= 'React with [1-4] for your type of game: **' + game + "**\nReact with [X] to cancel",
       colour = discord.Colour.blue(),
     )
-    startEmbed.add_field(name="[1]: ", value='New/Junior' , inline=True)
-    startEmbed.add_field(name="[2]", value='Journey Friend' , inline=True)
-    startEmbed.add_field(name="[3]", value='Elite Friend' , inline=True)
-    startEmbed.add_field(name="[4]", value='True Friend' , inline=True)
+    startEmbed.add_field(name='React with [1-4] for your type of game: **' + game + "**", value=one + ' New / Junior Friend [1-4]\n' + two + ' Journey Friend [5-10]\n' + three + ' Elite Friend [11-16]\n' + four + ' True Friend [17-20]' , inline=False)
     startEmbed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+    startEmbed.set_footer(text= "React with ❌ to cancel")
 
     embed = discord.Embed (
       title= 'Timer: ' + game,
@@ -208,12 +219,6 @@ async def timerstart(ctx, *, game="D&D Game"):
     )
     embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
 
-    # If the last message from the bot start's with Timer: will exit function (if someone typed !timerstart again or something)
-    if lastmsg is not None:
-        if lastmsg.content.startswith('Timer:'):
-          await channel.send("Timer: There is a timer already running, type `!timerstop` to stop the current timer") 
-          return
-
     try:
         startEmbedmsg = await channel.send(embed=startEmbed)
         await startEmbedmsg.add_reaction(one)
@@ -221,7 +226,7 @@ async def timerstart(ctx, *, game="D&D Game"):
         await startEmbedmsg.add_reaction(three)
         await startEmbedmsg.add_reaction(four)
         await startEmbedmsg.add_reaction('❌')
-        reaction, tUser = await bot.wait_for("reaction_add", check=startEmbedcheck, timeout=30)
+        reaction, tUser = await bot.wait_for("reaction_add", check=startEmbedcheck, timeout=60)
     except asyncio.TimeoutError:
         await startEmbedmsg.delete()
         await channel.send('Timer timed out! Try starting the timer again.')
@@ -231,32 +236,35 @@ async def timerstart(ctx, *, game="D&D Game"):
         await startEmbedmsg.clear_reactions()
 
         if str(reaction.emoji) == '❌':
-            await startEmbedmsg.edit(embed=None, content='Timer canceled. Type `!timerstart` to start another timer!')
+            await startEmbedmsg.edit(embed=None, content='Timer canceled. Type `' + commandPrefix + 'timerstart` to start another timer!')
             timerstart.reset_cooldown(ctx)
             return
 
         role = roleArray[int(str(reaction.emoji)[0]) - 1]
 
-        start = time.time()
-        datestart= datetime.now().strftime("%Y-%m-%d %H:%M");
-        await startEmbedmsg.edit(embed=None, content="Timer: Starting the timer for - " + "**" + game + "** " + "(" + role + " Friend). Type `!timerstop` to stop the current timer" )
 
-        msg = await bot.wait_for('message', check=lambda m: m.content == '!timerstop' and m.content != '!timerstart' and m.channel == channel and m.author == ctx.author)
+        start = time.time()
+        datestart= datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %-H:%-M");
+        await startEmbedmsg.edit(embed=None, content="Timer: Starting the timer for - " + "**" + game + "** " + "(" + role + " Friend). Type `" + commandPrefix + "timerstop` to stop the current timer" )
+
+        msg = await bot.wait_for('message', check=lambda m: m.content == (commandPrefix + 'timerstop') and m.channel == channel and (m.author == ctx.author or "Mod Friend".lower() in [r.name.lower() for r in m.author.roles] or "Admins".lower() in [r.name.lower() for r in m.author.roles]))
 
         end = time.time()
-        dateend=datetime.now().strftime("%Y-%m-%d %H:%M");
+        dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %-H:%-M");
         duration = end - start
 
-        durationString = (time.strftime('%H Hours and %M Minutes', time.gmtime(duration)))
+        durationString = (time.strftime('%-H Hours and %-M Minutes', time.gmtime(duration)))
 
         treasureArray = calculateTreasure(duration,role)
 
         treasureString = str(treasureArray[0]) + " CP \n" + str(treasureArray[1]) + " TP \n" + str(treasureArray[2]) + " GP"
+        dmTreasureString = str(treasureArray[3]) + " CP \n" + str(treasureArray[4]) + " TP \n" + str(treasureArray[5]) + " GP"
 
-        embed.add_field(name="Time Started", value=datestart, inline=True)
-        embed.add_field(name="Time Ended", value=dateend, inline=True)
+        embed.add_field(name="Time Started", value=datestart + "CDT", inline=True)
+        embed.add_field(name="Time Ended", value=dateend +  "CDT", inline=True)
         embed.add_field(name="Time Duration", value=durationString, inline=False)
-        embed.add_field(name=role +" Friend Awards", value=treasureString, inline=False)
+        embed.add_field(name=role +" Friend Awards", value=treasureString, inline=True)
+        embed.add_field(name="DM Awards", value=treasureString, inline=True)
         await channel.send(embed=embed)
         timerstart.reset_cooldown(ctx)
 

@@ -34,9 +34,14 @@ def calculateTreasure(seconds, role):
       tp = cp
       gp = cp * 600
 
-    return [cp, tp, gp]
+    # refactor later
+    dcp = int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
+    dtp = int(decimal.Decimal((tp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
+    dgp = int(decimal.Decimal((gp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
 
-# use creds to create a client to interact with the Google Drive API
+    return [cp, tp, gp, dcp, dtp, dgp]
+
+use creds to create a client to interact with the Google Drive API
 gSecret = {
   "type": "service_account",
   "project_id": "magic-item-table",
@@ -49,6 +54,7 @@ gSecret = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": os.environ['C_CERT']
 }
+
 
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -67,6 +73,8 @@ roleArray = ['Junior', 'Journey', 'Elite', 'True']
 tierArray = getTiers(sheet.row_values(2))
 tpArray = sheet.row_values(3)
 alphabetList = list(ascii_lowercase)
+commandPrefix = '.'
+timezoneVar = 'US/Central'
 
 one = '1⃣'
 two = '2⃣'
@@ -74,8 +82,9 @@ three = '3⃣'
 four = '4⃣'
 
 
-left = '⏪'
-right = '⏩'
+left = '\N{BLACK LEFT-POINTING TRIANGLE}'
+right = '\N{BLACK RIGHT-POINTING TRIANGLE}'
+back = '\N{LEFTWARDS ARROW WITH HOOK}'
 
 numberEmojis = ['1⃣','2⃣','3⃣','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣','🔟',]
 
