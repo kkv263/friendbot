@@ -75,7 +75,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
 
     channel = ctx.channel
 
-    if ctx.author == 'skel#2648':
+    if ctx.author.id == 194049802143662080:
       userName = 'Sir'
     else:
       userName = ctx.author.name
@@ -224,7 +224,7 @@ async def timerstart(ctx, *, game="D&D Game"):
     channel = ctx.channel
     user = ctx.author.display_name
 
-    if ctx.author == 'skel#2648':
+    if ctx.author.id == 194049802143662080:
       userName = 'Sir'
     else:
       userName = ctx.author.name
