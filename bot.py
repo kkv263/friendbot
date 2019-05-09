@@ -4,6 +4,8 @@ from datetime import datetime
 import pytz
 from discord.ext import commands
 from string import ascii_lowercase
+from random import randint
+
 
 from bfunc import *
 
@@ -34,9 +36,12 @@ async def help(ctx):
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)
 
-async def itemTable(tierArray, tierSubArray,sheet, ctx):
+async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
     def mitEmbedCheck(r, u):
-        return (str(r.emoji) in alphaEmojis or str(r.emoji) == '❌') and u == ctx.author
+        sameMessage = False
+        if mitStart.id == r.message.id:
+            sameMessage = True
+        return (str(r.emoji) in alphaEmojis or str(r.emoji) == '❌') and u == ctx.author and sameMessage
     
     def mitItemEmbedCheck(m):
         return (m.content.lower() in [str(x) for x in range(1,len(mitResults) + 1)]) and m.channel == channel and m.author == ctx.author
@@ -64,9 +69,12 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx):
 
     channel = ctx.channel
 
+    if random.lower() != 'random':
+        random = ''
+
     mitEmbed = discord.Embed (
-      title= 'Magic Item Table',
-      description= "React with the corresponding bolded letter to access the Magic Item Table",
+      title= ctx.command.name.upper() + " " + random.capitalize(),
+      description= "React with the corresponding bolded letter to access the " + ctx.command.name.upper(),
       colour = discord.Colour.orange(),
     )
     mitItemListEmbed = discord.Embed (
@@ -95,11 +103,11 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx):
         mitChoice, mUser = await bot.wait_for('reaction_add', check=mitEmbedCheck,timeout=60.0)
     except asyncio.TimeoutError:
         await mitStart.delete()
-        await channel.send('Magic Item Table timed out!')
+        await channel.send(ctx.command.name.upper() + ' timed out!')
     else:
         # await mitStart.delete()
         if mitChoice.emoji == '❌':
-            await mitStart.edit(embed=None, content='Magic Item Table canceled. Type `' + commandPrefix + 'mit` to open the Magic Item Table!')
+            await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `' + commandPrefix + 'mit` to open the Magic Item Table!')
             await mitStart.clear_reactions()
             return
 
@@ -110,7 +118,10 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx):
         mitResults = sheet.col_values(choiceIndex + 1)
 
         def mitItemListCheck(r,u):
-            return u == ctx.author and (str(r.emoji) == left or str(r.emoji) == right or str(r.emoji) == '❌' or str(r.emoji) == back or str(r.emoji) in numberEmojis)
+            sameMessage = False
+            if mitStart.id == r.message.id:
+                sameMessage = True
+            return sameMessage and u == ctx.author and (str(r.emoji) == left or str(r.emoji) == right or str(r.emoji) == '❌' or str(r.emoji) == back or str(r.emoji) in numberEmojis)
 
         page = 0;
         perPage = 9
@@ -119,7 +130,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx):
         mitResults.pop(0)
         numPages =((len(mitResults)) // perPage) + 1
 
-        while True:
+        while True and not random:
             pageStart = perPage*page
             pageEnd = perPage * (page + 1) 
             mitResultsString = ""
@@ -141,14 +152,14 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx):
                 react, pUser = await bot.wait_for("reaction_add", check=mitItemListCheck, timeout=90.0)
             except asyncio.TimeoutError:
                 await mitStart.delete()
-                await channel.send('Magic Item Table timed out!')
+                await channel.send(ctx.command.name.upper()+ ' timed out!')
             else:
                 if react.emoji == left:
                     page -= 1
                 elif react.emoji == right:
                     page += 1
                 elif react.emoji == '❌':
-                    await mitStart.edit(embed=None, content='Magic Item Table canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
+                    await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
                     await mitStart.clear_reactions()
                     return
                 elif react.emoji == back:
@@ -158,10 +169,12 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx):
                     break
                 mitItemListEmbed.clear_fields()
                 await mitStart.clear_reactions()
-
+        
         await asyncio.sleep(1) 
-
-        mitItem = sheet.cell((int(str(react.emoji)[0])) + pageStart + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
+        if random:
+            mitItem = sheet.cell(randint(0,len(mitResults)+ 3), choiceIndex + 1, value_render_option='FORMULA').value.split('"')
+        else:
+            mitItem = sheet.cell((int(str(react.emoji)[0])) + pageStart + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
 
         mitItemEmbed = discord.Embed (
           title = mitItem[3] + " - Tier " + str(getTier(choiceIndex)) + ": " + sheet.cell(3,choiceIndex+1).value,
@@ -174,13 +187,13 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx):
         await mitStart.clear_reactions()
 
 @bot.command()
-async def rit(ctx):
-    await itemTable(ritTierArray, ritSubArray, ritSheet, ctx)
+async def rit(ctx, random=""):
+    await itemTable(ritTierArray, ritSubArray, ritSheet, ctx, random)
   
 
 @bot.command()
 async def mit(ctx):
-    await itemTable(tierArray, tpArray, sheet, ctx) 
+    await itemTable(tierArray, tpArray, sheet, ctx, '') 
             
 @bot.command()
 @commands.cooldown(1, float('inf'), type=commands.BucketType.channel)
