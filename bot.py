@@ -264,7 +264,7 @@ async def timerstart(ctx, *, game="D&D Game"):
         embed.add_field(name="Time Ended", value=dateend +  "CDT", inline=True)
         embed.add_field(name="Time Duration", value=durationString, inline=False)
         embed.add_field(name=role +" Friend Awards", value=treasureString, inline=True)
-        embed.add_field(name="DM Awards", value=treasureString, inline=True)
+        embed.add_field(name="DM Awards", value=dmTreasureString, inline=True)
         await channel.send(embed=embed)
         timerstart.reset_cooldown(ctx)
 
