@@ -9,7 +9,6 @@ from random import randint
 
 from bfunc import *
 
-
 bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 
 @bot.event
@@ -119,7 +118,8 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
     else:
         # await mitStart.delete()
         if mitChoice.emoji == '❌':
-            await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `' + commandPrefix + 'mit` to open the Magic Item Table!')
+            await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `' + commandPrefix + ctx.command.name + '` to open the '+ ctx.command.name.upper() + '!')
+
             await mitStart.clear_reactions()
             return
 
@@ -278,7 +278,7 @@ async def timerstart(ctx, *, game="D&D Game"):
         dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p");
         duration = end - start
 
-        durationString = (time.strftime('%-H Hours and %-M Minutes', time.gmtime(duration)))
+        durationString = timeConversion(duration)
 
         treasureArray = calculateTreasure(duration,role)
 
@@ -315,7 +315,7 @@ async def treasure(ctx, timeString, tier):
         return
 
     treasureArray = calculateTreasure(totalTime, tier)
-    durationString = (time.strftime('%-H Hours and %-M Minutes', (time.gmtime(totalTime))))
+    durationString = timeConversion(totalTime)
     treasureString = str(treasureArray[0]) + " CP, " + str(treasureArray[1]) + " TP, and " + str(treasureArray[2]) + " GP"
     dmTreasureString = str(treasureArray[3]) + " CP, " + str(treasureArray[4]) + " TP, and " + str(treasureArray[5]) + " GP"
     await ctx.channel.send(content='Playing for ' + durationString + ' would give you as a\n\n**Player:** ' + treasureString + "\n" + "**DM:** " + dmTreasureString)

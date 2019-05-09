@@ -8,6 +8,13 @@ import json
 # from secret import *
 
 
+
+def timeConversion (time):
+		hours = time//3600
+		time = time - 3600*hours
+		minutes = time//60
+		return ('%d Hours %d Minutes' %(hours,minutes))
+		
 def getTiers (tiers):
     getTierArray = []
     for i in range(len(tiers)):
