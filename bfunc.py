@@ -41,7 +41,7 @@ def calculateTreasure(seconds, role):
 
     return [cp, tp, gp, dcp, dtp, dgp]
 
-use creds to create a client to interact with the Google Drive API
+#use creds to create a client to interact with the Google Drive API
 gSecret = {
   "type": "service_account",
   "project_id": "magic-item-table",
