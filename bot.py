@@ -20,7 +20,10 @@ bot.remove_command('help')
 @bot.event
 async def on_command_error(ctx,error):
     if isinstance(error, commands.CommandOnCooldown):
-        msg = 'There is already a timer that has started in this channel! If you started the timer, type `' + commandPrefix + 'timerstop` to stop the current timer'
+        if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
+          msg = 'Woahhh, slow down partner! Try the command in the next {:.2f}s'.format(error.retry_after)
+        if (ctx.command.name == 'timerstart'):
+          msg = 'There is already a timer that has started in this channel! If you started the timer, type `' + commandPrefix + 'timerstop` to stop the current timer'
         await ctx.channel.send(msg)
     else:
         raise error
@@ -41,7 +44,8 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
         sameMessage = False
         if mitStart.id == r.message.id:
             sameMessage = True
-        return (str(r.emoji) in alphaEmojis or str(r.emoji) == '❌') and u == ctx.author and sameMessage
+
+        return (str(r.emoji) in alphaEmojis[:alphaIndex] or str(r.emoji) == '❌') and u == ctx.author and sameMessage
     
     def mitItemEmbedCheck(m):
         return (m.content.lower() in [str(x) for x in range(1,len(mitResults) + 1)]) and m.channel == channel and m.author == ctx.author
@@ -186,11 +190,12 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
         await mitStart.edit(embed=mitItemEmbed) 
         await mitStart.clear_reactions()
 
+@commands.cooldown(1, 5, type=commands.BucketType.member)
 @bot.command()
 async def rit(ctx, random=""):
     await itemTable(ritTierArray, ritSubArray, ritSheet, ctx, random)
   
-
+@commands.cooldown(1, 5, type=commands.BucketType.member)
 @bot.command()
 async def mit(ctx):
     await itemTable(tierArray, tpArray, sheet, ctx, '') 
