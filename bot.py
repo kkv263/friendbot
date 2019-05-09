@@ -37,7 +37,7 @@ async def help(ctx):
     )
     helpEmbed.add_field(name=commandPrefix + "mit", value="Shows you items from the Magic Item Table" )
     helpEmbed.add_field(name=commandPrefix + "rit", value="Shows you items from the DM Rewards Item Table" )
-    helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Command Available in Game rooms. Start a timer to keep track of time and rewards for games." )
+    helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Command Available in Game rooms. Start a timer to keep track of time and rewards for games. Whenever a timer is started, you can stop the timer with " + commandPrefix + 'timerstop' )
     helpEmbed.add_field(name=commandPrefix + "treasure [XhYm] [tier] ", value="Calculates treasure based on time and tier. Example: " + commandPrefix + 'treasure 3h30m Elite' )
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)
@@ -269,13 +269,13 @@ async def timerstart(ctx, *, game="D&D Game"):
 
 
         start = time.time()
-        datestart= datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %-H:%-M");
+        datestart= datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p");
         await startEmbedmsg.edit(embed=None, content="Timer: Starting the timer for - " + "**" + game + "** " + "(" + role + " Friend). Type `" + commandPrefix + "timerstop` to stop the current timer" )
 
         msg = await bot.wait_for('message', check=lambda m: m.content == (commandPrefix + 'timerstop') and m.channel == channel and (m.author == ctx.author or "Mod Friend".lower() in [r.name.lower() for r in m.author.roles] or "Admins".lower() in [r.name.lower() for r in m.author.roles]))
 
         end = time.time()
-        dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %-H:%-M");
+        dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p");
         duration = end - start
 
         durationString = (time.strftime('%-H Hours and %-M Minutes', time.gmtime(duration)))
@@ -303,14 +303,21 @@ async def treasure(ctx, timeString, tier):
         await ctx.channel.send(content='You did not type a valid tier. The valid tiers are: ' + ', '.join(roleArray))
         return
 
-    l = list((re.findall('.*?[hm]', timeString.lower())))
+    lowerTimeString = timeString.lower()
+
+    l = list((re.findall('.*?[hm]', lowerTimeString)))
     totalTime = 0
-    for time in l:
-        totalTime += convert_to_seconds(time)
+    for timeItem in l:
+        totalTime += convert_to_seconds(timeItem)
+
+    if totalTime == 0:
+        await ctx.channel.send(content='You may have formatted the time incorrectly or calculated for 0. Try again with the correct format')
+        return
 
     treasureArray = calculateTreasure(totalTime, tier)
+    durationString = (time.strftime('%-H Hours and %-M Minutes', (time.gmtime(totalTime))))
     treasureString = str(treasureArray[0]) + " CP, " + str(treasureArray[1]) + " TP, and " + str(treasureArray[2]) + " GP"
     dmTreasureString = str(treasureArray[3]) + " CP, " + str(treasureArray[4]) + " TP, and " + str(treasureArray[5]) + " GP"
-    await ctx.channel.send(content='Playing that amount would give you as a\n\n**Player:** ' + treasureString + "\n" + "**DM:** " + dmTreasureString)
+    await ctx.channel.send(content='Playing for ' + durationString + ' would give you as a\n\n**Player:** ' + treasureString + "\n" + "**DM:** " + dmTreasureString)
 
 bot.run(token)
