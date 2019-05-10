@@ -206,6 +206,10 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             queryResultsString = ""
             alphaIndex = len(queryResults) if len(queryResults) < 9 else 9
 
+            for j in list(queryResults):
+                if j.row < 4:
+                    queryResults.remove(j)
+
             for i in range(0, alphaIndex):
                 queryResultsString = queryResultsString + numberEmojis[i] + ": " +  queryResults[i].value +  '\n'
 
