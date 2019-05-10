@@ -49,18 +49,18 @@ def calculateTreasure(seconds, role):
     return [cp, tp, gp, dcp, dtp, dgp]
 
 # use creds to create a client to interact with the Google Drive API
-# gSecret = {
-#   "type": "service_account",
-#   "project_id": "magic-item-table",
-#   "private_key_id": os.environ['PKEY_ID'],
-#   "private_key": os.environ['PKEY'],
-#   "client_email": os.environ['CEMAIL'],
-#   "client_id": os.environ['C_ID'],
-#   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-#   "token_uri": "https://oauth2.googleapis.com/token",
-#   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-#   "client_x509_cert_url": os.environ['C_CERT']
-# }
+gSecret = {
+  "type": "service_account",
+  "project_id": "magic-item-table",
+  "private_key_id": os.environ['PKEY_ID'],
+  "private_key": os.environ['PKEY'],
+  "client_email": os.environ['CEMAIL'],
+  "client_id": os.environ['C_ID'],
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": os.environ['C_CERT']
+}
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
@@ -71,7 +71,7 @@ client = gspread.authorize(creds)
 # Make sure you use the right name here.
 sheet = client.open("Magic Item Table (Bot)").sheet1
 ritSheet = client.open("Reward Item Table (Bot)").sheet1
-# token = os.environ['TOKEN']
+token = os.environ['TOKEN']
 client = discord.Client()
 
 gameCategory = "Game Rooms"
