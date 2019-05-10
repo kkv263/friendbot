@@ -34,10 +34,12 @@ async def help(ctx):
     helpEmbed = discord.Embed (
       title='Available Commands'
     )
-    helpEmbed.add_field(name=commandPrefix + "mit", value="Shows you items from the Magic Item Table" )
-    helpEmbed.add_field(name=commandPrefix + "rit", value="Shows you items from the DM Rewards Item Table" )
-    helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Command Available in Game rooms. Start a timer to keep track of time and rewards for games. Whenever a timer is started, you can stop the timer with " + commandPrefix + 'timerstop' )
-    helpEmbed.add_field(name=commandPrefix + "treasure [XhYm] [tier] ", value="Calculates treasure based on time and tier. Example: " + commandPrefix + 'treasure 3h30m Elite' )
+    helpEmbed.add_field(name=commandPrefix + "mit", value="Shows you a list of items from the Magic Item Table. React to the lists to view items." )
+    helpEmbed.add_field(name=commandPrefix + "rit", value="Shows you a list of items from the Reward Item Table. React to the lists to view items." )
+    helpEmbed.add_field(name=commandPrefix + "rit random", value="Randomly awards you a Reward Item based on which tier you react to." )
+    helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Only available in **Game Rooms**. Start a timer to keep track of time and rewards for games")
+    helpEmbed.add_field(name=commandPrefix + "timerstop", value="Only available in **Game Rooms**. Stop a timer that you have started to show how much to CP, TP, and gp to reward the players who played the full duration of the game. Only the person who started the timer can stop it.")
+    helpEmbed.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="Calculates player and DM rewards based on the time and tier you type in. You **MUST** use the format displayed or it will not work. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite' )
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)
 
@@ -288,13 +290,13 @@ async def timerstart(ctx, *, game="D&D Game"):
         embed.add_field(name="Time Started", value=datestart + " CDT", inline=True)
         embed.add_field(name="Time Ended", value=dateend +  " CDT", inline=True)
         embed.add_field(name="Time Duration", value=durationString, inline=False)
-        embed.add_field(name=role +" Friend Awards", value=treasureString, inline=True)
+        embed.add_field(name=role +" Friend Rewards", value=treasureString, inline=True)
         await channel.send(embed=embed)
         timerstart.reset_cooldown(ctx)
 
 @commands.cooldown(1, 5, type=commands.BucketType.member)
 @bot.command()
-async def treasure(ctx, timeString, tier):
+async def reward(ctx, timeString, tier):
     seconds_per_unit = { "m": 60, "h": 3600 }
     def convert_to_seconds(s):
       return int(s[:-1]) * seconds_per_unit[s[-1]]
