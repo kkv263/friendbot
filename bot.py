@@ -19,14 +19,6 @@ async def on_ready():
 bot.remove_command('help')
 
 @bot.event
-async def on_message(message):
-      thanks = ['thanks bot', 'thx bot', 'thnks bot', 'thank you bot', 'thank bot', 'nice bot', 'good bot']
-
-      if any(x in message.content.lower() for x in thanks):
-        await message.channel.send("You're welcome friend!")
-
-
-@bot.event
 async def on_command_error(ctx,error):
     if isinstance(error, commands.CommandOnCooldown):
         if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
