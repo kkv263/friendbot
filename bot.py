@@ -189,11 +189,15 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             
     await asyncio.sleep(1) 
 
+    mitQuery = None
+
     if random.lower() == 'random':
         mitItem = sheet.cell(randint(0,len(mitResults)+ 3), choiceIndex + 1, value_render_option='FORMULA').value.split('"')
     elif random.lower() != 'random' and random:
         query = re.compile(random, re.IGNORECASE)
+        gClient.login()
         queryResults = sheet.findall(query)
+
 
         if len(queryResults) == 1:
             choiceIndex = queryResults[0].col - 1

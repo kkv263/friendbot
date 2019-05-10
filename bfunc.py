@@ -63,17 +63,17 @@ gSecret = {
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
 
-client = gspread.authorize(creds)
+gClient = gspread.authorize(creds)
 
 # Find a workbook by name and open the first sheet
 # Make sure you use the right name here.
-sheet = client.open("Magic Item Tables").sheet1
-ritSheet = client.open("Magic Item Tables").get_worksheet(1)
-# sheet = client.open("Magic Item Table").sheet1
-# ritSheet = client.open("Reward Item Table").sheet1
+sheet = gClient.open("Magic Item Tables").sheet1
+ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
+# sheet = gClient.open("Magic Item Table").sheet1
+# ritSheet = gClient.open("Reward Item Table").sheet1
 
 token = os.environ['TOKEN']
-client = discord.Client()
+discordClient = discord.Client()
 
 gameCategory = "Game Rooms"
 roleArray = ['Junior', 'Journey', 'Elite', 'True']
