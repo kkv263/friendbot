@@ -189,8 +189,6 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             
     await asyncio.sleep(1) 
 
-    
-
     if random.lower() == 'random':
         mitItem = sheet.cell(randint(0,len(mitResults)+ 3), choiceIndex + 1, value_render_option='FORMULA').value.split('"')
     elif random.lower() != 'random' and random:
@@ -201,6 +199,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             choiceIndex = queryResults[0].col - 1
             mitItem = sheet.cell(queryResults[0].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
         elif not queryResults:
+            await ctx.channel.send('Your query did not find any results. Try accessing the Magic Item Tables menu by using ' + commandPrefix + '`' + ctx.command.name + '` or better your query.')
             return
         else:
             queryResultsString = ""
@@ -251,20 +250,20 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
     if random.lower() != 'random' and random:
         if mitQuery:
             await mitQuery.edit(embed=mitItemEmbed)
-            mitQuery.clear_reactions()
+            await mitQuery.clear_reactions()
         else:
             await ctx.channel.send(embed=mitItemEmbed)
 
     else:
         await mitStart.edit(embed=mitItemEmbed) 
-        mitStart.clear_reactions()
+        await mitStart.clear_reactions()
 
-@commands.cooldown(1, 5, type=commands.BucketType.member)
+@commands.cooldown(1, 10, type=commands.BucketType.member)
 @bot.command()
 async def rit(ctx, *, random=""):
     await itemTable(ritTierArray, ritSubArray, ritSheet, ctx, random)
   
-@commands.cooldown(1, 5, type=commands.BucketType.member)
+@commands.cooldown(1, 10, type=commands.BucketType.member)
 @bot.command()
 async def mit(ctx, *, queryString=""):
     await itemTable(tierArray, tpArray, sheet, ctx, queryString) 
