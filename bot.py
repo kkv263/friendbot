@@ -22,7 +22,7 @@ bot.remove_command('help')
 async def on_command_error(ctx,error):
     if isinstance(error, commands.CommandOnCooldown):
         if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
-          msg = 'Woahhh, slow down partner! Try the command in the next {:.2f}s'.format(error.retry_after)
+          msg = 'Woahhh, slow down partner! Try the command in the next {:.1f}s'.format(error.retry_after)
         if (ctx.command.name == 'timerstart'):
           msg = 'There is already a timer that has started in this channel! If you started the timer, type `' + commandPrefix + 'timerstop` to stop the current timer'
         await ctx.channel.send(msg)
@@ -214,9 +214,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             alphaIndex = len(queryResults) if len(queryResults) < 9 else 9
 
             if queryResults:
-                print(queryResults)
                 for i in range(0, alphaIndex):
-                    print(i)
                     queryResultsString = queryResultsString + numberEmojis[i] + ": " +  queryResults[i].value +  '\n'
 
             mitQueryEmbed = discord.Embed (
