@@ -233,7 +233,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             else:
                 if qReaction.emoji == '❌':
                     await mitQuery.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
-                    await mitStart.clear_reactions()
+                    await mitQuery.clear_reactions()
                     return
                 queryResultsIndex = (int(str(qReaction.emoji)[0])) - 1
                 choiceIndex = queryResults[queryResultsIndex].col - 1
