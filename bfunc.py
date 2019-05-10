@@ -80,7 +80,7 @@ roleArray = ['Junior', 'Journey', 'Elite', 'True']
 tierArray = getTiers(sheet.row_values(2))
 tpArray = sheet.row_values(3)
 alphabetList = list(ascii_lowercase)
-commandPrefix = '.'
+commandPrefix = '$'
 timezoneVar = 'US/Central'
 
 ritTierArray = getTiers(ritSheet.row_values(2))
