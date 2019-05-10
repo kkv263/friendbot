@@ -69,8 +69,8 @@ client = gspread.authorize(creds)
 
 # Find a workbook by name and open the first sheet
 # Make sure you use the right name here.
-sheet = client.open("Magic Item Table : 20 April").sheet1
-ritSheet = client.open("Reward Item Table : 30 March").sheet1
+sheet = client.open("Magic Item Table").sheet1
+ritSheet = client.open("Reward Item Table").sheet1
 token = os.environ['TOKEN']
 client = discord.Client()
 
