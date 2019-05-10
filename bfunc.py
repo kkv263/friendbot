@@ -72,7 +72,7 @@ ritSheet = client.open("Magic Item Tables").get_worksheet(1)
 # sheet = client.open("Magic Item Table").sheet1
 # ritSheet = client.open("Reward Item Table").sheet1
 
-# token = os.environ['TOKEN']
+token = os.environ['TOKEN']
 client = discord.Client()
 
 gameCategory = "Game Rooms"
