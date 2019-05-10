@@ -203,18 +203,21 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             choiceIndex = queryResults[0].col - 1
             mitItem = sheet.cell(queryResults[0].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
         elif not queryResults:
-            await ctx.channel.send('Your query did not find any results. Try accessing the Magic Item Tables menu by using ' + commandPrefix + '`' + ctx.command.name + '` or better your query.')
+            await ctx.channel.send('Your query `$' + random + '` did not find any results. Try accessing the Magic Item Tables menu by using ' + commandPrefix + '`' + ctx.command.name + '` or better your query.')
             return
         else:
-            queryResultsString = ""
-            alphaIndex = len(queryResults) if len(queryResults) < 9 else 9
-
             for j in list(queryResults):
                 if j.row < 4:
                     queryResults.remove(j)
 
-            for i in range(0, alphaIndex):
-                queryResultsString = queryResultsString + numberEmojis[i] + ": " +  queryResults[i].value +  '\n'
+            queryResultsString = ""
+            alphaIndex = len(queryResults) if len(queryResults) < 9 else 9
+
+            if queryResults:
+                print(queryResults)
+                for i in range(0, alphaIndex):
+                    print(i)
+                    queryResultsString = queryResultsString + numberEmojis[i] + ": " +  queryResults[i].value +  '\n'
 
             mitQueryEmbed = discord.Embed (
               title = "Magic Item Tables",
