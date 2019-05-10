@@ -203,7 +203,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             choiceIndex = queryResults[0].col - 1
             mitItem = sheet.cell(queryResults[0].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
         elif not queryResults:
-            await ctx.channel.send('Your query `$' + random + '` did not find any results. Try accessing the Magic Item Tables menu by using ' + commandPrefix + '`' + ctx.command.name + '` or better your query.')
+            await ctx.channel.send('Your query `"' + random + '"` did not find any results. Try accessing the Magic Item Tables menu by using ' + commandPrefix + '`' + ctx.command.name + '` or better your query.')
             return
         else:
             for j in list(queryResults):
