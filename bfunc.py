@@ -5,7 +5,7 @@ import os
 from oauth2client.service_account import ServiceAccountCredentials
 from string import ascii_lowercase
 import json
-from secret import *
+# from secret import *
 
 
 
