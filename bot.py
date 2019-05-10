@@ -320,6 +320,6 @@ async def reward(ctx, timeString, tier):
     durationString = timeConversion(totalTime)
     treasureString = str(treasureArray[0]) + " CP, " + str(treasureArray[1]) + " TP, and " + str(treasureArray[2]) + " GP"
     dmTreasureString = str(treasureArray[3]) + " CP, " + str(treasureArray[4]) + " TP, and " + str(treasureArray[5]) + " GP"
-    await ctx.channel.send(content='A ' + durationString + ' game would give a' + tier.capitalize() + '\n\n**Player:** ' + treasureString + "\n" + "**DM:** " + dmTreasureString)
+    await ctx.channel.send(content='A ' + durationString + ' game would give a ' + tier.capitalize() + 'Friend\n\n**Player:** ' + treasureString + "\n" + "**DM:** " + dmTreasureString)
 
 bot.run(token)
