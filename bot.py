@@ -208,7 +208,6 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
 
             for i in range(0, alphaIndex):
                 queryResultsString = queryResultsString + numberEmojis[i] + ": " +  queryResults[i].value +  '\n'
-            print(queryResultsString)
 
             mitQueryEmbed = discord.Embed (
               title = "Magic Item Tables",
@@ -216,7 +215,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             )
             mitQueryEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
             mitQueryEmbed.add_field(name="React with the following number.", value=queryResultsString)
-            mitEmbed.set_footer(text= "React with ❌ to cancel")
+            mitQueryEmbed.set_footer(text= "React with ❌ to cancel")
             mitQuery = await ctx.channel.send(embed = mitQueryEmbed)
             try:
                 await mitQuery.add_reaction('❌')
@@ -246,9 +245,15 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
     mitItemEmbed.set_image(url=mitItem[1])
 
     if random.lower() != 'random' and random:
-        await ctx.channel.send(embed=mitItemEmbed) 
+        if mitQuery:
+            await mitQuery.edit(embed=mitItemEmbed)
+            mitQuery.clear_reactions()
+        else:
+            await ctx.channel.send(embed=mitItemEmbed)
+
     else:
         await mitStart.edit(embed=mitItemEmbed) 
+        mitStart.clear_reactions()
 
 @commands.cooldown(1, 5, type=commands.BucketType.member)
 @bot.command()
