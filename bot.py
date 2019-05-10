@@ -34,8 +34,8 @@ async def help(ctx):
     helpEmbed = discord.Embed (
       title='Available Commands'
     )
-    helpEmbed.add_field(name=commandPrefix + "mit", value="Shows you a list of items from the Magic Item Table. React to the lists to view items." )
-    helpEmbed.add_field(name=commandPrefix + "rit", value="Shows you a list of items from the Reward Item Table. React to the lists to view items." )
+    helpEmbed.add_field(name=commandPrefix + "mit [optional name search]", value="Shows you a list of items from the Magic Item Table. React to the lists to view items. You can also search by name, for example: " + commandPrefix + "mit Cloak of Displacement" )
+    helpEmbed.add_field(name=commandPrefix + "rit [optional name search]", value="Shows you a list of items from the Reward Item Table. React to the lists to view items.You can also search by name, for example: " + commandPrefix + "rit Moon-Touched Sword" )
     helpEmbed.add_field(name=commandPrefix + "rit random", value="Randomly awards you a Reward Item based on which tier and sub-tier you react to." )
     helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Only available in **Game Rooms**. Start a timer to keep track of time and rewards for games. Only one timer per game room can be active at once.")
     helpEmbed.add_field(name=commandPrefix + "timerstop", value="Only available in **Game Rooms**. Stop a timer that you have started to show how much to CP, TP, and gp to reward the players who played the full duration of the game. Only the person who started the timer can stop it.")
@@ -50,6 +50,12 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             sameMessage = True
 
         return (str(r.emoji) in alphaEmojis[:alphaIndex] or str(r.emoji) == '❌') and u == ctx.author and sameMessage
+
+    def mitQueryCheck(r, u):
+        sameMessage = False
+        if mitQuery.id == r.message.id:
+            sameMessage = True
+        return (str(r.emoji) in numberEmojis[:alphaIndex] or str(r.emoji) == '❌') and u == ctx.author and sameMessage
     
     def mitItemEmbedCheck(m):
         return (m.content.lower() in [str(x) for x in range(1,len(mitResults) + 1)]) and m.channel == channel and m.author == ctx.author
@@ -82,9 +88,6 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
     else:
       userName = ctx.author.name
 
-    if random.lower() != 'random':
-        random = ''
-
     mitEmbed = discord.Embed (
       title= ctx.command.name.upper() + " " + random.capitalize(),
       description= "React with the corresponding bolded letter to access the " + ctx.command.name.upper(),
@@ -98,117 +101,164 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
     mitItemListEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
     mitEmbed.set_footer(text= "React with ❌ to cancel")
 
+    if not random or random.lower() == 'random':
+        choices = getChoices(tierSubArray)
+        alphaIndex = 0
+        for j in range(len(tierArray) - 1):
+            k = tierArray[j]
+            mitString = ""
+            for k in range(k, tierArray[j+1] - 1 if tierArray[j+1] < len(tierSubArray) else len(tierSubArray)):
+                mitString = mitString + alphaEmojis[alphaIndex] + ": " + tierSubArray[k] + '\n'
+                if tierSubArray[k] != "":
+                  alphaIndex += 1
+            mitEmbed.add_field(name="Tier " + str(j+1), value=mitString, inline=True)
 
-    choices = getChoices(tierSubArray)
-    alphaIndex = 0
-    for j in range(len(tierArray) - 1):
-        k = tierArray[j]
-        mitString = ""
-        for k in range(k, tierArray[j+1] - 1 if tierArray[j+1] < len(tierSubArray) else len(tierSubArray)):
-            mitString = mitString + alphaEmojis[alphaIndex] + ": " + tierSubArray[k] + '\n'
-            if tierSubArray[k] != "":
-              alphaIndex += 1
-        mitEmbed.add_field(name="Tier " + str(j+1), value=mitString, inline=True)
-
-    mitStart = await ctx.channel.send(embed=mitEmbed)
-    try:
-        await mitStart.add_reaction('❌')
-        mitChoice, mUser = await bot.wait_for('reaction_add', check=mitEmbedCheck,timeout=60.0)
-    except asyncio.TimeoutError:
-        await mitStart.delete()
-        await channel.send(ctx.command.name.upper() + ' timed out!')
-    else:
-        # await mitStart.delete()
-        if mitChoice.emoji == '❌':
-            await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `' + commandPrefix + ctx.command.name + '` to open the '+ ctx.command.name.upper() + '!')
-
-            await mitStart.clear_reactions()
-            return
-
-        await asyncio.sleep(1) 
-        await mitStart.clear_reactions()
-
-        choiceIndex = choices.index(str(mitChoice.emoji)) 
-        mitResults = sheet.col_values(choiceIndex + 1)
-
-        def mitItemListCheck(r,u):
-            sameMessage = False
-            if mitStart.id == r.message.id:
-                sameMessage = True
-            return sameMessage and u == ctx.author and (str(r.emoji) == left or str(r.emoji) == right or str(r.emoji) == '❌' or str(r.emoji) == back or str(r.emoji) in numberEmojis)
-
-        page = 0;
-        perPage = 9
-        tpNumber = mitResults.pop(2)
-        mitResults.pop(0)
-        mitResults.pop(0)
-        numPages =((len(mitResults)) // perPage) + 1
-
-        while True and not random:
-            pageStart = perPage*page
-            pageEnd = perPage * (page + 1) 
-            mitResultsString = ""
-            numberEmoji = 0
-            for i in range(pageStart, pageEnd if pageEnd < (len(mitResults) - 1) else (len(mitResults)) ):
-                mitResultsString = mitResultsString + numberEmojis[numberEmoji] + ": " + mitResults[i] + "\n"
-                numberEmoji += 1
-            mitItemListEmbed.add_field(name="[Tier "+ str(getTier(choiceIndex)) +  "] " + tpNumber + ": React with the corresponding number", value=mitResultsString, inline=True)
-            mitItemListEmbed.set_footer(text= "Page " + str(page+1) + " of " + str(numPages) + " -- use " + left + " or " + right + " to navigate, " + back + " to go back, or ❌ to cancel")
-            await mitStart.edit(embed=mitItemListEmbed) 
-            if page != 0:
-                await mitStart.add_reaction(left) 
-            if page + 1 != numPages:
-                await mitStart.add_reaction(right)
-
-            await mitStart.add_reaction(back)
+        mitStart = await ctx.channel.send(embed=mitEmbed)
+        try:
             await mitStart.add_reaction('❌')
+            mitChoice, mUser = await bot.wait_for('reaction_add', check=mitEmbedCheck,timeout=60.0)
+        except asyncio.TimeoutError:
+            await mitStart.delete()
+            await channel.send(ctx.command.name.upper() + ' timed out!')
+        else:
+            # await mitStart.delete()
+            if mitChoice.emoji == '❌':
+                await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `' + commandPrefix + ctx.command.name + '` to open the '+ ctx.command.name.upper() + '!')
+
+                await mitStart.clear_reactions()
+                return
+
+            await asyncio.sleep(1) 
+            await mitStart.clear_reactions()
+
+            choiceIndex = choices.index(str(mitChoice.emoji)) 
+            mitResults = sheet.col_values(choiceIndex + 1)
+
+            def mitItemListCheck(r,u):
+                sameMessage = False
+                if mitStart.id == r.message.id:
+                    sameMessage = True
+                return sameMessage and u == ctx.author and (str(r.emoji) == left or str(r.emoji) == right or str(r.emoji) == '❌' or str(r.emoji) == back or str(r.emoji) in numberEmojis)
+
+            page = 0;
+            perPage = 9
+            tpNumber = mitResults.pop(2)
+            mitResults.pop(0)
+            mitResults.pop(0)
+            numPages =((len(mitResults)) // perPage) + 1
+
+            while True and not random:
+                pageStart = perPage*page
+                pageEnd = perPage * (page + 1) 
+                mitResultsString = ""
+                numberEmoji = 0
+                for i in range(pageStart, pageEnd if pageEnd < (len(mitResults) - 1) else (len(mitResults)) ):
+                    mitResultsString = mitResultsString + numberEmojis[numberEmoji] + ": " + mitResults[i] + "\n"
+                    numberEmoji += 1
+                mitItemListEmbed.add_field(name="[Tier "+ str(getTier(choiceIndex)) +  "] " + tpNumber + ": React with the corresponding number", value=mitResultsString, inline=True)
+                mitItemListEmbed.set_footer(text= "Page " + str(page+1) + " of " + str(numPages) + " -- use " + left + " or " + right + " to navigate, " + back + " to go back, or ❌ to cancel")
+                await mitStart.edit(embed=mitItemListEmbed) 
+                if page != 0:
+                    await mitStart.add_reaction(left) 
+                if page + 1 != numPages:
+                    await mitStart.add_reaction(right)
+
+                await mitStart.add_reaction(back)
+                await mitStart.add_reaction('❌')
+                try:
+                    react, pUser = await bot.wait_for("reaction_add", check=mitItemListCheck, timeout=90.0)
+                except asyncio.TimeoutError:
+                    await mitStart.delete()
+                    await channel.send(ctx.command.name.upper()+ ' timed out!')
+                else:
+                    if react.emoji == left:
+                        page -= 1
+                    elif react.emoji == right:
+                        page += 1
+                    elif react.emoji == '❌':
+                        await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
+                        await mitStart.clear_reactions()
+                        return
+                    elif react.emoji == back:
+                        await mitStart.delete()
+                        await ctx.reinvoke()
+                    elif react.emoji in numberEmojis:
+                        break
+                    mitItemListEmbed.clear_fields()
+                    await mitStart.clear_reactions()
+            
+    await asyncio.sleep(1) 
+
+    
+
+    if random.lower() == 'random':
+        mitItem = sheet.cell(randint(0,len(mitResults)+ 3), choiceIndex + 1, value_render_option='FORMULA').value.split('"')
+    elif random.lower() != 'random' and random:
+        query = re.compile(random, re.IGNORECASE)
+        queryResults = sheet.findall(query)
+
+        if len(queryResults) == 1:
+            choiceIndex = queryResults[0].col - 1
+            mitItem = sheet.cell(queryResults[0].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
+        elif not queryResults:
+            return
+        else:
+            queryResultsString = ""
+            alphaIndex = len(queryResults) if len(queryResults) < 9 else 9
+
+            for i in range(0, alphaIndex):
+                queryResultsString = queryResultsString + numberEmojis[i] + ": " +  queryResults[i].value +  '\n'
+            print(queryResultsString)
+
+            mitQueryEmbed = discord.Embed (
+              title = "Magic Item Tables",
+              colour = discord.Colour.orange(),
+            )
+            mitQueryEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
+            mitQueryEmbed.add_field(name="React with the following number.", value=queryResultsString)
+            mitEmbed.set_footer(text= "React with ❌ to cancel")
+            mitQuery = await ctx.channel.send(embed = mitQueryEmbed)
             try:
-                react, pUser = await bot.wait_for("reaction_add", check=mitItemListCheck, timeout=90.0)
+                await mitQuery.add_reaction('❌')
+                qReaction, qUser = await bot.wait_for('reaction_add', check=mitQueryCheck,timeout=60.0)
             except asyncio.TimeoutError:
-                await mitStart.delete()
+                await mitQuery.delete()
                 await channel.send(ctx.command.name.upper()+ ' timed out!')
             else:
-                if react.emoji == left:
-                    page -= 1
-                elif react.emoji == right:
-                    page += 1
-                elif react.emoji == '❌':
-                    await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
+                if qReaction.emoji == '❌':
+                    await mitQuery.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
                     await mitStart.clear_reactions()
                     return
-                elif react.emoji == back:
-                    await mitStart.delete()
-                    await ctx.reinvoke()
-                elif react.emoji in numberEmojis:
-                    break
-                mitItemListEmbed.clear_fields()
-                await mitStart.clear_reactions()
-        
-        await asyncio.sleep(1) 
-        if random:
-            mitItem = sheet.cell(randint(0,len(mitResults)+ 3), choiceIndex + 1, value_render_option='FORMULA').value.split('"')
-        else:
-            mitItem = sheet.cell((int(str(react.emoji)[0])) + pageStart + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
+                queryResultsIndex = (int(str(qReaction.emoji)[0])) - 1
+                choiceIndex = queryResults[queryResultsIndex].col - 1
+                mitItem = sheet.cell(queryResults[queryResultsIndex].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
 
-        mitItemEmbed = discord.Embed (
-          title = mitItem[3] + " - Tier " + str(getTier(choiceIndex)) + ": " + sheet.cell(3,choiceIndex+1).value,
-          colour = discord.Colour.orange(),
-        )
-        mitItemEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
-        mitItemEmbed.set_image(url=mitItem[1])
+    else:
+        mitItem = sheet.cell((int(str(react.emoji)[0])) + pageStart + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
 
+    tierColumn = str(getTier(choiceIndex))
+
+    mitItemEmbed = discord.Embed (
+      title = mitItem[3] + " - Tier " + tierColumn + ": " + sheet.cell(3,choiceIndex+1).value,
+      colour = discord.Colour.orange(),
+    )
+    mitItemEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
+    mitItemEmbed.set_image(url=mitItem[1])
+
+    if random.lower() != 'random' and random:
+        await ctx.channel.send(embed=mitItemEmbed) 
+    else:
         await mitStart.edit(embed=mitItemEmbed) 
-        await mitStart.clear_reactions()
 
 @commands.cooldown(1, 5, type=commands.BucketType.member)
 @bot.command()
-async def rit(ctx, random=""):
+async def rit(ctx, *, random=""):
     await itemTable(ritTierArray, ritSubArray, ritSheet, ctx, random)
   
 @commands.cooldown(1, 5, type=commands.BucketType.member)
 @bot.command()
-async def mit(ctx):
-    await itemTable(tierArray, tpArray, sheet, ctx, '') 
+async def mit(ctx, *, queryString=""):
+    await itemTable(tierArray, tpArray, sheet, ctx, queryString) 
             
 @bot.command()
 @commands.cooldown(1, float('inf'), type=commands.BucketType.channel)

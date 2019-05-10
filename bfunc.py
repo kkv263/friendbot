@@ -7,8 +7,6 @@ from string import ascii_lowercase
 import json
 # from secret import *
 
-
-
 def timeConversion (time):
 		hours = time//3600
 		time = time - 3600*hours
@@ -69,9 +67,12 @@ client = gspread.authorize(creds)
 
 # Find a workbook by name and open the first sheet
 # Make sure you use the right name here.
-sheet = client.open("Magic Item Table").sheet1
-ritSheet = client.open("Reward Item Table").sheet1
-token = os.environ['TOKEN']
+sheet = client.open("Magic Item Tables").sheet1
+ritSheet = client.open("Magic Item Tables").get_worksheet(1)
+# sheet = client.open("Magic Item Table").sheet1
+# ritSheet = client.open("Reward Item Table").sheet1
+
+# token = os.environ['TOKEN']
 client = discord.Client()
 
 gameCategory = "Game Rooms"
