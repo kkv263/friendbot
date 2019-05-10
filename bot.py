@@ -232,7 +232,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
                 await channel.send(ctx.command.name.upper()+ ' timed out!')
             else:
                 if qReaction.emoji == '❌':
-                    await mitQuery.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
+                    await mitQuery.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + ctx.command.name() + '` to open the Magic Item Table!')
                     await mitQuery.clear_reactions()
                     return
                 queryResultsIndex = (int(str(qReaction.emoji)[0])) - 1
