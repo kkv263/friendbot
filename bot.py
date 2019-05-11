@@ -195,7 +195,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, queryString):
     mitQuery = None
 
     if queryString.lower() == 'random':
-        mitItem = sheet.cell(randint(0,len(mitResults)+ 3), choiceIndex + 1, value_render_option='FORMULA').value.split('"')
+        mitItem = sheet.cell(randint(1,len(mitResults)) + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
     elif queryString.lower() != 'random' and queryString:
         query = re.compile(queryString, re.IGNORECASE)
         gClient.login()
