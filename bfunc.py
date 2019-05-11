@@ -86,16 +86,11 @@ timezoneVar = 'US/Central'
 ritTierArray = getTiers(ritSheet.row_values(2))
 ritSubArray = ritSheet.row_values(3)
 
-one = '1⃣'
-two = '2⃣'
-three = '3⃣'
-four = '4⃣'
-
 left = '\N{BLACK LEFT-POINTING TRIANGLE}'
 right = '\N{BLACK RIGHT-POINTING TRIANGLE}'
 back = '\N{LEFTWARDS ARROW WITH HOOK}'
 
-numberEmojis = ['1⃣','2⃣','3⃣','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣','🔟',]
+numberEmojis = ['1⃣','2⃣','3⃣','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣']
 
 alphaEmojis = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬','🇭','🇮','🇯','🇰',
 '🇱','🇲','🇳','🇴','🇵','🇶','🇷','🇸','🇹','🇺','🇻','🇼','🇽','🇾','🇿']

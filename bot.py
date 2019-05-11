@@ -1,15 +1,16 @@
-import time
 import asyncio
 import re
-import pytz
 from datetime import datetime
 from discord.ext import commands
 from string import ascii_lowercase
 from random import randint
+from os import listdir
+from os.path import isfile, join
 
 from bfunc import *
 
 bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
+cogs_dir = "cogs"
 
 @bot.event
 async def on_ready():
@@ -43,22 +44,22 @@ async def help(ctx):
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)
 
-async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
+async def itemTable(tierArray, tierSubArray,sheet, ctx, queryString):
     def mitEmbedCheck(r, u):
         sameMessage = False
         if mitStart.id == r.message.id:
             sameMessage = True
 
-        return (str(r.emoji) in alphaEmojis[:alphaIndex] or str(r.emoji) == '❌') and u == ctx.author and sameMessage
+        return (r.emoji in alphaEmojis[:alphaIndex] or r.emoji == '❌') and u == author and sameMessage
 
     def mitQueryCheck(r, u):
         sameMessage = False
         if mitQuery.id == r.message.id:
             sameMessage = True
-        return (str(r.emoji) in numberEmojis[:alphaIndex] or str(r.emoji) == '❌') and u == ctx.author and sameMessage
+        return (r.emoji in numberEmojis[:alphaIndex] or r.emoji == '❌') and u == author and sameMessage
     
     def mitItemEmbedCheck(m):
-        return (m.content.lower() in [str(x) for x in range(1,len(mitResults) + 1)]) and m.channel == channel and m.author == ctx.author
+        return (m.content.lower() in [str(x) for x in range(1,len(mitResults) + 1)]) and m.channel == channel and m.author == author
 
     def getTier(choiceIndex):
         if choiceIndex >= tierArray[0] and choiceIndex < tierArray[1]:
@@ -82,26 +83,29 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
         return choices
 
     channel = ctx.channel
+    author = ctx.author
+    commandName = ctx.command.name
+    commandUpper = commandName.upper() 
 
-    if ctx.author.id == 194049802143662080:
+    if author.id == 194049802143662080:
       userName = 'Sir'
     else:
-      userName = ctx.author.name
+      userName = author.name
 
     mitEmbed = discord.Embed (
-      title= ctx.command.name.upper() + " " + random.capitalize(),
-      description= "React with the corresponding bolded letter to access the " + ctx.command.name.upper(),
+      title= f"{commandUpper} {queryString.capitalize()}",
+      description= f"React with the corresponding bolded letter to access the {commandUpper}",
       colour = discord.Colour.orange(),
     )
     mitItemListEmbed = discord.Embed (
       colour = discord.Colour.orange(),
     )
 
-    mitEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
-    mitItemListEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
+    mitEmbed.set_author(name=userName, icon_url=author.avatar_url)
+    mitItemListEmbed.set_author(name=userName, icon_url=author.avatar_url)
     mitEmbed.set_footer(text= "React with ❌ to cancel")
 
-    if not random or random.lower() == 'random':
+    if not queryString or queryString.lower() == 'random':
         choices = getChoices(tierSubArray)
         alphaIndex = 0
         for j in range(len(tierArray) - 1):
@@ -119,11 +123,10 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             mitChoice, mUser = await bot.wait_for('reaction_add', check=mitEmbedCheck,timeout=60.0)
         except asyncio.TimeoutError:
             await mitStart.delete()
-            await channel.send(ctx.command.name.upper() + ' timed out!')
+            await channel.send(commandUpper + ' timed out!')
         else:
-            # await mitStart.delete()
             if mitChoice.emoji == '❌':
-                await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `' + commandPrefix + ctx.command.name + '` to open the '+ ctx.command.name.upper() + '!')
+                await mitStart.edit(embed=None, content=f"{commandUpper} canceled. Type `{commandPrefix}{commandName}` to open the {commandUpper}!")
 
                 await mitStart.clear_reactions()
                 return
@@ -138,7 +141,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
                 sameMessage = False
                 if mitStart.id == r.message.id:
                     sameMessage = True
-                return sameMessage and u == ctx.author and (str(r.emoji) == left or str(r.emoji) == right or str(r.emoji) == '❌' or str(r.emoji) == back or str(r.emoji) in numberEmojis)
+                return sameMessage and u == author and (r.emoji == left or r.emoji == right or r.emoji == '❌' or r.emoji == back or r.emoji in numberEmojis)
 
             page = 0;
             perPage = 9
@@ -147,7 +150,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             mitResults.pop(0)
             numPages =((len(mitResults)) // perPage) + 1
 
-            while True and not random:
+            while True and not queryString:
                 pageStart = perPage*page
                 pageEnd = perPage * (page + 1) 
                 mitResultsString = ""
@@ -155,8 +158,8 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
                 for i in range(pageStart, pageEnd if pageEnd < (len(mitResults) - 1) else (len(mitResults)) ):
                     mitResultsString = mitResultsString + numberEmojis[numberEmoji] + ": " + mitResults[i] + "\n"
                     numberEmoji += 1
-                mitItemListEmbed.add_field(name="[Tier "+ str(getTier(choiceIndex)) +  "] " + tpNumber + ": React with the corresponding number", value=mitResultsString, inline=True)
-                mitItemListEmbed.set_footer(text= "Page " + str(page+1) + " of " + str(numPages) + " -- use " + left + " or " + right + " to navigate, " + back + " to go back, or ❌ to cancel")
+                mitItemListEmbed.add_field(name=f"[Tier {str(getTier(choiceIndex))}] {tpNumber}: React with the corresponding number", value=mitResultsString, inline=True)
+                mitItemListEmbed.set_footer(text= f"Page {page+1} of {numPages} -- use {left} or {right} to navigate, {back} to go back, or ❌ to cancel")
                 await mitStart.edit(embed=mitItemListEmbed) 
                 if page != 0:
                     await mitStart.add_reaction(left) 
@@ -169,14 +172,14 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
                     react, pUser = await bot.wait_for("reaction_add", check=mitItemListCheck, timeout=90.0)
                 except asyncio.TimeoutError:
                     await mitStart.delete()
-                    await channel.send(ctx.command.name.upper()+ ' timed out!')
+                    await channel.send(f"{commandUpper} timed out!")
                 else:
                     if react.emoji == left:
                         page -= 1
                     elif react.emoji == right:
                         page += 1
                     elif react.emoji == '❌':
-                        await mitStart.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + 'mit` to open the Magic Item Table!')
+                        await mitStart.edit(embed=None, content=f"{commandUpper} canceled. Type `{commandPrefix}{commandName}` to open the Magic Item Table!")
                         await mitStart.clear_reactions()
                         return
                     elif react.emoji == back:
@@ -191,10 +194,10 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
 
     mitQuery = None
 
-    if random.lower() == 'random':
+    if queryString.lower() == 'random':
         mitItem = sheet.cell(randint(0,len(mitResults)+ 3), choiceIndex + 1, value_render_option='FORMULA').value.split('"')
-    elif random.lower() != 'random' and random:
-        query = re.compile(random, re.IGNORECASE)
+    elif queryString.lower() != 'random' and queryString:
+        query = re.compile(queryString, re.IGNORECASE)
         gClient.login()
         queryResults = sheet.findall(query)
 
@@ -203,7 +206,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
             choiceIndex = queryResults[0].col - 1
             mitItem = sheet.cell(queryResults[0].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
         elif not queryResults:
-            await ctx.channel.send('Your query `"' + random + '"` did not find any results. Try accessing the Magic Item Tables menu by using ' + commandPrefix + '`' + ctx.command.name + '` or better your query.')
+            await ctx.channel.send(f"Your query `{queryString}` did not find any results. Try accessing the Magic Item Tables menu by using `{commandPrefix}{commandName}` or better your query.")
             return
         else:
             for j in list(queryResults):
@@ -221,7 +224,7 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
               title = "Magic Item Tables",
               colour = discord.Colour.orange(),
             )
-            mitQueryEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
+            mitQueryEmbed.set_author(name=userName, icon_url=author.avatar_url)
             mitQueryEmbed.add_field(name="React with the following number.", value=queryResultsString)
             mitQueryEmbed.set_footer(text= "React with ❌ to cancel")
             mitQuery = await ctx.channel.send(embed = mitQueryEmbed)
@@ -230,10 +233,10 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
                 qReaction, qUser = await bot.wait_for('reaction_add', check=mitQueryCheck,timeout=60.0)
             except asyncio.TimeoutError:
                 await mitQuery.delete()
-                await channel.send(ctx.command.name.upper()+ ' timed out!')
+                await channel.send(commandUpper+ ' timed out!')
             else:
                 if qReaction.emoji == '❌':
-                    await mitQuery.edit(embed=None, content=ctx.command.name.upper() + ' canceled. Type `'+ commandPrefix + ctx.command.name + '` to open the ' + ctx.command.name.upper() )
+                    await mitQuery.edit(embed=None, content=f"{commandUpper} canceled. Type `{commandPrefix}{commandName}` to open the {commandUpper}")
                     await mitQuery.clear_reactions()
                     return
                 queryResultsIndex = (int(str(qReaction.emoji)[0])) - 1
@@ -249,10 +252,10 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
       title = mitItem[3] + " - Tier " + tierColumn + ": " + sheet.cell(3,choiceIndex+1).value,
       colour = discord.Colour.orange(),
     )
-    mitItemEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
+    mitItemEmbed.set_author(name=userName, icon_url=author.avatar_url)
     mitItemEmbed.set_image(url=mitItem[1])
 
-    if random.lower() != 'random' and random:
+    if queryString.lower() != 'random' and queryString:
         if mitQuery:
             await mitQuery.edit(embed=mitItemEmbed)
             await mitQuery.clear_reactions()
@@ -265,124 +268,20 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, random):
 
 @commands.cooldown(1, 10, type=commands.BucketType.member)
 @bot.command()
-async def rit(ctx, *, random=""):
-    await itemTable(ritTierArray, ritSubArray, ritSheet, ctx, random)
+async def rit(ctx, *, queryString=""):
+    await itemTable(ritTierArray, ritSubArray, ritSheet, ctx, queryString)
   
 @commands.cooldown(1, 10, type=commands.BucketType.member)
 @bot.command()
 async def mit(ctx, *, queryString=""):
     await itemTable(tierArray, tpArray, sheet, ctx, queryString) 
             
-@bot.command()
-@commands.cooldown(1, float('inf'), type=commands.BucketType.channel)
-async def timerstart(ctx, *, game="D&D Game"):
-    def startEmbedcheck(r, u):
-        return (str(r.emoji) == one or str(r.emoji) == two or str(r.emoji) == three or str(r.emoji) == four or str(r.emoji) == '❌' and u == ctx.author)
-
-    # can try  checks
-    if str(ctx.channel.category).lower() != gameCategory.lower():
-        await ctx.channel.send('Try this command in a game channel!')
-        return
-
-        await ctx.channel.send(game)
-
-    channel = ctx.channel
-    user = ctx.author.display_name
-
-    if ctx.author.id == 194049802143662080:
-      userName = 'Sir'
-    else:
-      userName = ctx.author.name
-
-
-    startEmbed = discord.Embed (
-      colour = discord.Colour.blue(),
-    )
-    startEmbed.add_field(name='React with [1-4] for your type of game: **' + game + "**", value=one + ' New / Junior Friend [1-4]\n' + two + ' Journey Friend [5-10]\n' + three + ' Elite Friend [11-16]\n' + four + ' True Friend [17-20]' , inline=False)
-    startEmbed.set_author(name=userName, icon_url=ctx.author.avatar_url)
-    startEmbed.set_footer(text= "React with ❌ to cancel")
-
-    embed = discord.Embed (
-      title= 'Timer: ' + game,
-      description=user + ', you stopped the timer.',
-      colour = discord.Colour.blue(),
-    )
-    embed.set_author(name=userName, icon_url=ctx.author.avatar_url)
-
-    try:
-        startEmbedmsg = await channel.send(embed=startEmbed)
-        await startEmbedmsg.add_reaction(one)
-        await startEmbedmsg.add_reaction(two)
-        await startEmbedmsg.add_reaction(three)
-        await startEmbedmsg.add_reaction(four)
-        await startEmbedmsg.add_reaction('❌')
-        reaction, tUser = await bot.wait_for("reaction_add", check=startEmbedcheck, timeout=60)
-    except asyncio.TimeoutError:
-        await startEmbedmsg.delete()
-        await channel.send('Timer timed out! Try starting the timer again.')
-        timerstart.reset_cooldown(ctx)
-    else:
-        await asyncio.sleep(1) 
-        await startEmbedmsg.clear_reactions()
-
-        if str(reaction.emoji) == '❌':
-            await startEmbedmsg.edit(embed=None, content='Timer canceled. Type `' + commandPrefix + 'timerstart` to start another timer!')
-            timerstart.reset_cooldown(ctx)
-            return
-
-        role = roleArray[int(str(reaction.emoji)[0]) - 1]
-
-
-        start = time.time()
-        datestart= datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p");
-        await startEmbedmsg.edit(embed=None, content="Timer: Starting the timer for - " + "**" + game + "** " + "(" + role + " Friend). Type `" + commandPrefix + "timerstop` to stop the current timer" )
-
-        msg = await bot.wait_for('message', check=lambda m: m.content == (commandPrefix + 'timerstop') and m.channel == channel and (m.author == ctx.author or "Mod Friend".lower() in [r.name.lower() for r in m.author.roles] or "Admins".lower() in [r.name.lower() for r in m.author.roles]))
-
-        end = time.time()
-        dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p");
-        duration = end - start
-
-        durationString = timeConversion(duration)
-
-        treasureArray = calculateTreasure(duration,role)
-
-        treasureString = str(treasureArray[0]) + " CP \n" + str(treasureArray[1]) + " TP \n" + str(treasureArray[2]) + " GP"
-        dmTreasureString = str(treasureArray[3]) + " CP \n" + str(treasureArray[4]) + " TP \n" + str(treasureArray[5]) + " GP"
-
-        embed.add_field(name="Time Started", value=datestart + " CDT", inline=True)
-        embed.add_field(name="Time Ended", value=dateend +  " CDT", inline=True)
-        embed.add_field(name="Time Duration", value=durationString, inline=False)
-        embed.add_field(name=role +" Friend Rewards", value=treasureString, inline=True)
-        await channel.send(embed=embed)
-        timerstart.reset_cooldown(ctx)
-
-@commands.cooldown(1, 5, type=commands.BucketType.member)
-@bot.command()
-async def reward(ctx, timeString, tier):
-    seconds_per_unit = { "m": 60, "h": 3600 }
-    def convert_to_seconds(s):
-      return int(s[:-1]) * seconds_per_unit[s[-1]]
-
-    if tier.lower().capitalize() not in roleArray:
-        await ctx.channel.send(content='You did not type a valid tier. The valid tiers are: ' + ', '.join(roleArray))
-        return
-
-    lowerTimeString = timeString.lower()
-
-    l = list((re.findall('.*?[hm]', lowerTimeString)))
-    totalTime = 0
-    for timeItem in l:
-        totalTime += convert_to_seconds(timeItem)
-
-    if totalTime == 0:
-        await ctx.channel.send(content='You may have formatted the time incorrectly or calculated for 0. Try again with the correct format')
-        return
-
-    treasureArray = calculateTreasure(totalTime, tier)
-    durationString = timeConversion(totalTime)
-    treasureString = str(treasureArray[0]) + " CP, " + str(treasureArray[1]) + " TP, and " + str(treasureArray[2]) + " GP"
-    dmTreasureString = str(treasureArray[3]) + " CP, " + str(treasureArray[4]) + " TP, and " + str(treasureArray[5]) + " GP"
-    await ctx.channel.send(content='A ' + durationString + ' game would give a ' + tier.capitalize() + ' Friend\n\n**Player:** ' + treasureString + "\n" + "**DM:** " + dmTreasureString)
+if __name__ == '__main__':
+    for extension in [f.replace('.py', '') for f in listdir(cogs_dir) if isfile(join(cogs_dir, f))]:
+        try:
+            bot.load_extension(cogs_dir + "." + extension)
+        except (discord.ClientException, ModuleNotFoundError):
+            print(f'Failed to load extension {extension}.')
+            traceback.print_exc()
 
 bot.run(token)
