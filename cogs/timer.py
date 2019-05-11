@@ -20,7 +20,7 @@ class Timer(commands.Cog):
         author = ctx.author
         user = author.display_name
 
-        if str(channel.category).lower() != gameCategory.lower():
+        if str(channel.category).lower() not in gameCategory:
             await channel.send('Try this command in a game channel!')
             return
 

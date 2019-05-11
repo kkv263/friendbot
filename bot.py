@@ -38,8 +38,8 @@ async def help(ctx):
     helpEmbed.add_field(name=commandPrefix + "mit [optional name search]", value="Shows you a list of items from the Magic Item Table. React to the lists to view items. You can also search by name, for example: " + commandPrefix + "mit Cloak of Displacement" )
     helpEmbed.add_field(name=commandPrefix + "rit [optional name search]", value="Shows you a list of items from the Reward Item Table. React to the lists to view items.You can also search by name, for example: " + commandPrefix + "rit Moon-Touched Sword" )
     helpEmbed.add_field(name=commandPrefix + "rit random", value="Randomly awards you a Reward Item based on which tier and sub-tier you react to." )
-    helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Only available in **Game Rooms**. Start a timer to keep track of time and rewards for games. Only one timer per game room can be active at once.")
-    helpEmbed.add_field(name=commandPrefix + "timerstop", value="Only available in **Game Rooms**. Stop a timer that you have started to show how much to CP, TP, and gp to reward the players who played the full duration of the game. Only the person who started the timer can stop it.")
+    helpEmbed.add_field(name=commandPrefix + "timerstart [optional game name]", value="Only available in **Game Rooms** and **Campaigns** Start a timer to keep track of time and rewards for games. Only one timer per game room can be active at once.")
+    helpEmbed.add_field(name=commandPrefix + "timerstop", value="Only available in and **Game Rooms** **Campaigns**. Stop a timer that you have started to show how much to CP, TP, and gp to reward the players who played the full duration of the game. Only the person who started the timer can stop it.")
     helpEmbed.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="Calculates player and DM rewards based on the time and tier you type in. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite' )
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)

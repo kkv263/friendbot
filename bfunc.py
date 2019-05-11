@@ -75,7 +75,7 @@ ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
 token = os.environ['TOKEN']
 discordClient = discord.Client()
 
-gameCategory = "Game Rooms"
+gameCategory = ["game rooms", "campaigns"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True']
 tierArray = getTiers(sheet.row_values(2))
 tpArray = sheet.row_values(3)
