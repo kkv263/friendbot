@@ -135,6 +135,8 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, queryString):
             await mitStart.clear_reactions()
 
             choiceIndex = choices.index(str(mitChoice.emoji)) 
+            
+            refreshKey(refreshTime)
             mitResults = sheet.col_values(choiceIndex + 1)
 
             def mitItemListCheck(r,u):
@@ -195,15 +197,17 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, queryString):
     mitQuery = None
 
     if queryString.lower() == 'random':
+        refreshKey(refreshTime)
         mitItem = sheet.cell(randint(1,len(mitResults)) + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
     elif queryString.lower() != 'random' and queryString:
         query = re.compile(queryString, re.IGNORECASE)
-        gClient.login()
+        refreshKey(refreshTime)
         queryResults = sheet.findall(query)
 
 
         if len(queryResults) == 1:
             choiceIndex = queryResults[0].col - 1
+            refreshKey(refreshTime)
             mitItem = sheet.cell(queryResults[0].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
         elif not queryResults:
             await ctx.channel.send(f"Your query `{queryString}` did not find any results. Try accessing the Magic Item Tables menu by using `{commandPrefix}{commandName}` or better your query.")
@@ -241,13 +245,16 @@ async def itemTable(tierArray, tierSubArray,sheet, ctx, queryString):
                     return
                 queryResultsIndex = (int(str(qReaction.emoji)[0])) - 1
                 choiceIndex = queryResults[queryResultsIndex].col - 1
+                refreshKey(refreshTime)
                 mitItem = sheet.cell(queryResults[queryResultsIndex].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
 
     else:
+        refreshKey(refreshTime)
         mitItem = sheet.cell((int(str(react.emoji)[0])) + pageStart + 3, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
 
     tierColumn = str(getTier(choiceIndex))
 
+    refreshKey(refreshTime)
     mitItemEmbed = discord.Embed (
       title = mitItem[3] + " - Tier " + tierColumn + ": " + sheet.cell(3,choiceIndex+1).value,
       colour = discord.Colour.orange(),

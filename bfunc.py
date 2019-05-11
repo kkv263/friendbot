@@ -2,9 +2,10 @@ import discord
 import gspread
 import decimal
 import os
+import time
+import json
 from oauth2client.service_account import ServiceAccountCredentials
 from string import ascii_lowercase
-import json
 # from secret import *
 
 def timeConversion (time):
@@ -46,6 +47,14 @@ def calculateTreasure(seconds, role):
 
     return [cp, tp, gp, dcp, dtp, dgp]
 
+def refreshKey (timeStarted):
+		if (time.time() - timeStarted > 60 * 59):
+				gClient.login()
+				print("Sucessfully refreshed OAuth")
+				global refreshTime
+				refreshTime = time.time()
+		return
+
 # use creds to create a client to interact with the Google Drive API
 gSecret = {
   "type": "service_account",
@@ -64,6 +73,7 @@ scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/au
 creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
 
 gClient = gspread.authorize(creds)
+refreshTime = time.time()
 
 # Find a workbook by name and open the first sheet
 # Make sure you use the right name here.
