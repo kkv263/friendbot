@@ -5,7 +5,6 @@ import os
 import time
 import json
 from oauth2client.service_account import ServiceAccountCredentials
-from string import ascii_lowercase
 # from secret import *
 
 def timeConversion (time):
@@ -89,7 +88,6 @@ gameCategory = ["game rooms", "campaigns"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True']
 tierArray = getTiers(sheet.row_values(2))
 tpArray = sheet.row_values(3)
-alphabetList = list(ascii_lowercase)
 commandPrefix = '$'
 timezoneVar = 'US/Central'
 
