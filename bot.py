@@ -24,7 +24,8 @@ async def on_command_error(ctx,error):
     if isinstance(error, commands.CommandOnCooldown):
         if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
             msg = 'Woahhh, slow down partner! Try the command in the next {:.1f}s'.format(error.retry_after)
-        print(ctx.command.name)
+        if (ctx.command.name == 'addme'):
+            msg = 'You have already added yourself to the timer'
         if (ctx.command.name == 'start'):
             msg = f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer"
         await ctx.channel.send(msg)
@@ -43,6 +44,7 @@ async def help(ctx):
     helpEmbed.add_field(name=commandPrefix + "timer start [optional game name]", value="Only available in **Game Rooms** and **Campaigns**. Start a timer to keep track of time and rewards for games. Only one timer per game room can be active at once.")
     helpEmbed.add_field(name=commandPrefix + "timer stamp", value="Only available in **Game Rooms** and **Campaigns**. View the elapsed time on the timer running. If you want to leave early from a game, this command allows you to calculate your rewards as well.")
     helpEmbed.add_field(name=commandPrefix + "timer addme", value="Only available in **Game Rooms** and **Campaigns**. If you join a game late, this command will add you to the timer running. Once the timer is stopped your rewards will be displayed at the end.")
+    helpEmbed.add_field(name=commandPrefix + "timer removeme", value="Only available in **Game Rooms** and **Campaigns**. If you you wish to leave early, This command will calculate your awards for you and remove you from the timer (if you added yourself joining late)")
     helpEmbed.add_field(name=commandPrefix + "timer stop", value="Only available in **Game Rooms** and **Campaigns**. Stop a timer that you have started to show how much to CP, TP, and gp to reward the players who played the full duration of the game. Only the person who started the timer can stop it.")
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)

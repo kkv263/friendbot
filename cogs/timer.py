@@ -67,60 +67,73 @@ class Timer(commands.Cog):
             datestart = datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p")
             startTimes = {f"{role} Friend Awards":start} 
 
-            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer.\n`{commandPrefix}timer stamp` - to view the time elapsed or rewards if you are leaving early.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer." )
+            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer.\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you you wish to leave early, calculate your awards and remove you from the timer. (if you added yourself joining late" )
 
             timerStopped = False
 
             while not timerStopped:
-                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme") and m.channel == channel)
+                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme") and m.channel == channel)
                 if msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     timerStopped = True
                     await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart)
                 elif msg.content == f"{commandPrefix}timer stamp":
-                    await ctx.invoke(self.timer.get_command('stamp'), stamp=startTimes[f"{role} Friend Awards"], role=role, game=game, author=msg.author)
+                    await ctx.invoke(self.timer.get_command('stamp'), stamp=startTimes[f"{role} Friend Awards"], role=role, game=game, author=msg.author, start=startTimes)
                 elif msg.content == f"{commandPrefix}timer addme":
                     startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, user=msg.author.display_name)
+                elif msg.content == f"{commandPrefix}timer removeme":
+                    startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=msg.author.display_name )
 
             self.timer.get_command('start').reset_cooldown(ctx)
+            self.timer.get_command('addme').reset_cooldown(ctx)
             return
 
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
     @timer.command()
     async def addme(self,ctx,start={},user=""):
         if ctx.invoked_with == 'start':
-            timeJoined = datetime.now(pytz.timezone(timezoneVar)).strftime("%I:%M %p")
-            datestart = f'[{user} - {timeJoined} CDT]'
-            start[datestart] = time.time()
-            await ctx.channel.send(content=f"I've added {user} to the timer.")
+            if user not in start.keys(): 
+                datestart = user
+                start[datestart] = time.time()
+                await ctx.channel.send(content=f"I've added {user} to the timer.")
+            else:
+                await ctx.channel.send(content='You have already added yourself to the timer')
+        elif ctx.invoked_with == 'addme':
+            self.timer.get_command('addme').reset_cooldown(ctx)
+
+        return start
+
+    @timer.command()
+    async def removeme(self,ctx,start={},role="",user=""):
+        if ctx.invoked_with == 'start':
+            if user in start.keys():
+                duration = time.time() - start[user] 
+                del start[user]
+            else:
+                duration = time.time() - start[f"{role} Friend Awards"]
+
+            treasureArray = calculateTreasure(duration,role)
+            treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
+            await ctx.channel.send(content=f"I've have removed {user} from the timer.\n{user}, your rewards for leaving early are - {treasureString}")
+            self.timer.get_command('addme').reset_cooldown(ctx)
 
         return start
     
     @timer.command()
-    async def stamp(self,ctx, stamp=0, role="", game="", author=""):
-        def stampCheck(r, u):
-            return (str(r.emoji) == '✅' or str(r.emoji) == '❌') and u == author
-
+    async def stamp(self,ctx, stamp=0, role="", game="", author="", start={}):
         if ctx.invoked_with == 'start':
             user = author.display_name
             end = time.time()
             duration = end - stamp
             durationString = timeConversion(duration)
-            msg = await ctx.channel.send(content=f"The timer for **{game}** has been running for {durationString}. \n{user}, did you leave early from this game? I can calculate your rewards for you. (ONLY if you did not join late)")
-            await msg.add_reaction('✅')
-            await msg.add_reaction('❌')
-            try:
-                sReaction, sUser = await self.bot.wait_for("reaction_add", check=stampCheck, timeout=60)
-            except asyncio.TimeoutError:
-                await msg.edit(content=f"The timer for **{game}** has been running for {durationString}.")
-                await msg.clear_reactions()
-            else: 
-                if sReaction.emoji == '✅':
-                    treasureArray = calculateTreasure(duration,role)
-                    treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-                    await msg.edit(content=f"The timer for **{game}** has been running for {durationString}. \n{user} has left the game. {role} Friend Rewards: {treasureString}")
-                elif sReaction.emoji == '❌':
-                    await msg.edit(content=f"The timer for **{game}** has been running for {durationString}.")
-                await msg.clear_reactions()
 
+            timerListString = "\n" 
+            for key, value in start.items():
+                if ("Awards" in key):
+                    pass
+                else:
+                    timerListString = timerListString + f"{key} - {timeConversion(end - value)}\n"
+
+            msg = await ctx.channel.send(content=f"The timer for **{game}** has been running for {durationString}.{timerListString}")
 
     @timer.command()
     async def stop(self,ctx,*,start={}, role="", game="", datestart=""):
