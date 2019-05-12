@@ -67,7 +67,7 @@ class Timer(commands.Cog):
             datestart = datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p")
             startTimes = {f"{role} Friend Awards":start} 
 
-            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer.\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you you wish to leave early, calculate your awards and remove you from the timer. (if you added yourself joining late" )
+            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer.\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you you wish to leave early, calculate your awards and remove you from the timer. (if you added yourself joining late)" )
 
             timerStopped = False
 
