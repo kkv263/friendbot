@@ -53,7 +53,7 @@ async def help(ctx):
     helpEmbedTimer.add_field(name=commandPrefix + "timer addme", value="Only available in **Game Rooms** and **Campaigns**.  If you join a game late, this command will add you to the running timer. Your individual rewards will be displayed once the timer has been stopped.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer removeme", value="Only available in **Game Rooms** and **Campaigns**. If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer stop", value="Only available in **Game Rooms** and **Campaigns**. This stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer check", value="Lists the channels where there are timers currently running.")
+    helpEmbedTimer.add_field(name=commandPrefix + "timer list", value="Lists the channels where there are timers currently running.")
 
     numPages = len(helpList)
 

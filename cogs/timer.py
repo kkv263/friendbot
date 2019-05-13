@@ -21,12 +21,10 @@ class Timer(commands.Cog):
         def startEmbedcheck(r, u):
             return (r.emoji in numberEmojis[:4] or str(r.emoji) == '❌') and u == author
 
+        global currentTimers
         channel = ctx.channel
         author = ctx.author
         user = author.display_name
-
-        global currentTimers
-        currentTimers.append('#'+channel.name)
 
         if str(channel.category).lower() not in gameCategory:
             await channel.send('Try this command in a game channel!')
@@ -72,6 +70,7 @@ class Timer(commands.Cog):
             startTimes = {f"{role} Friend Awards":start} 
 
             await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer).\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you wish to leave early, this command will calculate your rewards. (If you joined late using $timer addme, it will remove you from the timer.)" )
+            currentTimers.append('#'+channel.name)
 
             timerStopped = False
 
@@ -173,7 +172,7 @@ class Timer(commands.Cog):
         return
 
     @timer.command()
-    async def check(self,ctx):
+    async def list(self,ctx):
         if not currentTimers:
             currentTimersString = "There are currently NO timers running!"
         else:
