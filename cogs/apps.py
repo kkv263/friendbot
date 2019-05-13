@@ -14,6 +14,7 @@ class Apps(commands.Cog):
         pass
       
     @app.command()
+		@commands.has_any_role('Mod Friend', 'Admins')
     async def edit(self, ctx, num, *, editString=""):
         # The Bot
         botUser = self.bot.get_user(566024681824452619)

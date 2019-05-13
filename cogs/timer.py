@@ -67,7 +67,7 @@ class Timer(commands.Cog):
 
             start = time.time()
             datestart = datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p")
-            startTimes = {f"{role} Friend Awards":start} 
+            startTimes = {f"{role} Friend Rewards":start} 
 
             await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer).\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you wish to leave early, this command will calculate your rewards. (If you joined late using $timer addme, it will remove you from the timer.)" )
             currentTimers.append('#'+channel.name)
@@ -80,7 +80,7 @@ class Timer(commands.Cog):
                     timerStopped = True
                     await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart)
                 elif msg.content == f"{commandPrefix}timer stamp":
-                    await ctx.invoke(self.timer.get_command('stamp'), stamp=startTimes[f"{role} Friend Awards"], role=role, game=game, author=msg.author, start=startTimes)
+                    await ctx.invoke(self.timer.get_command('stamp'), stamp=startTimes[f"{role} Friend Rewards"], role=role, game=game, author=msg.author, start=startTimes)
                 elif msg.content == f"{commandPrefix}timer addme":
                     startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, user=msg.author.display_name)
                 elif msg.content == f"{commandPrefix}timer removeme":
@@ -113,7 +113,7 @@ class Timer(commands.Cog):
                 duration = time.time() - start[user] 
                 del start[user]
             else:
-                duration = time.time() - start[f"{role} Friend Awards"]
+                duration = time.time() - start[f"{role} Friend Rewards"]
 
             treasureArray = calculateTreasure(duration,role)
             treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
@@ -132,7 +132,7 @@ class Timer(commands.Cog):
 
             timerListString = "\n" 
             for key, value in start.items():
-                if ("Awards" in key):
+                if ("Rewards" in key):
                     pass
                 else:
                     timerListString = timerListString + f"{key} - {timeConversion(end - value)}\n"
@@ -158,7 +158,16 @@ class Timer(commands.Cog):
             stopEmbed = discord.Embed()
             stopEmbed.title = f"Timer: {game}"
             stopEmbed.description = f"{user}, you stopped the timer."
-            stopEmbed.colour = discord.Colour.red()
+
+            if role == "True":
+                stopEmbed.colour = discord.Colour(0x9c3dca)
+            elif role == "Elite":
+                stopEmbed.colour = discord.Colour(0xa87fff)
+            elif role == "Journey":
+                stopEmbed.colour = discord.Colour(0x689eff)
+            else:
+                stopEmbed.colour = discord.Colour(0x38ceff)
+            
             stopEmbed.clear_fields()
             stopEmbed.set_footer(text=stopEmbed.Empty)
             stopEmbed.add_field(name="Time Started", value=f"{datestart} CDT", inline=True)
@@ -172,13 +181,14 @@ class Timer(commands.Cog):
         return
 
     @timer.command()
+    @commands.has_any_role('Mod Friend', 'Admins')
     async def list(self,ctx):
         if not currentTimers:
             currentTimersString = "There are currently NO timers running!"
         else:
             currentTimersString = "There are currently timers running in these channels:\n"
         for i in currentTimers:
-            currentTimersString = f"{currentTimersString} `- {i}` \n"
+            currentTimersString = f"{currentTimersString} - {i} \n"
         await ctx.channel.send(content=currentTimersString)
 
 def setup(bot):
