@@ -61,6 +61,7 @@ class Apps(commands.Cog):
             await botMsg.add_reaction('🚼')
 
             mReaction, mUser = await self.bot.wait_for("reaction_add", check=msgCheck)
+
             appDict = botMsg.embeds[0].to_dict()
             appNum = appDict['title'].split('#')[1] 
             appDiscord = appDict['fields'][0]['value']

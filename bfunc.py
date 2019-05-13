@@ -5,7 +5,7 @@ import os
 import time
 import json
 from oauth2client.service_account import ServiceAccountCredentials
-from secret import *
+# from secret import *
 
 def timeConversion (time):
 		hours = time//3600
@@ -55,18 +55,18 @@ def refreshKey (timeStarted):
 		return
 
 # use creds to create a client to interact with the Google Drive API
-# gSecret = {
-#   "type": "service_account",
-#   "project_id": "magic-item-table",
-#   "private_key_id": os.environ['PKEY_ID'],
-#   "private_key": os.environ['PKEY'],
-#   "client_email": os.environ['CEMAIL'],
-#   "client_id": os.environ['C_ID'],
-#   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-#   "token_uri": "https://oauth2.googleapis.com/token",
-#   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-#   "client_x509_cert_url": os.environ['C_CERT']
-# }
+gSecret = {
+  "type": "service_account",
+  "project_id": "magic-item-table",
+  "private_key_id": os.environ['PKEY_ID'],
+  "private_key": os.environ['PKEY'],
+  "client_email": os.environ['CEMAIL'],
+  "client_id": os.environ['C_ID'],
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": os.environ['C_CERT']
+}
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
@@ -81,7 +81,7 @@ ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
 # sheet = gClient.open("Magic Item Table").sheet1
 # ritSheet = gClient.open("Reward Item Table").sheet1
 
-# token = os.environ['TOKEN']
+token = os.environ['TOKEN']
 discordClient = discord.Client()
 
 gameCategory = ["game rooms", "campaigns"]
