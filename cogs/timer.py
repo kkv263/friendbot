@@ -67,7 +67,7 @@ class Timer(commands.Cog):
             datestart = datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p")
             startTimes = {f"{role} Friend Awards":start} 
 
-            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer.\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you you wish to leave early, calculate your awards and remove you from the timer. (if you added yourself joining late)" )
+            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** ({role} Friend). Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer).\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you wish to leave early, this command will calculate your rewards. (If you joined late using $timer addme, it will remove you from the timer.)" )
 
             timerStopped = False
 
@@ -113,7 +113,7 @@ class Timer(commands.Cog):
 
             treasureArray = calculateTreasure(duration,role)
             treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-            await ctx.channel.send(content=f"I've have removed {user} from the timer.\n{user}, your rewards for leaving early are - {treasureString}")
+            await ctx.channel.send(content=f"{user}, I've have removed you from the timer.\nSince you have played for {timeConversion(duration)}, your rewards are - {treasureString}")
             self.timer.get_command('addme').reset_cooldown(ctx)
 
         return start
@@ -149,10 +149,8 @@ class Timer(commands.Cog):
                 duration = end - startItemValue
                 treasureArray = calculateTreasure(duration,role)
                 treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-                allRewardStrings[startItemKey] = treasureString
+                allRewardStrings[f"{startItemKey} - {timeConversion(duration)}"] = treasureString
 
-            durationString = timeConversion(end - start[f"{role} Friend Awards"])
-            
             stopEmbed = discord.Embed()
             stopEmbed.title = f"Timer: {game}"
             stopEmbed.description = f"{user}, you stopped the timer."
@@ -161,11 +159,9 @@ class Timer(commands.Cog):
             stopEmbed.set_footer(text=stopEmbed.Empty)
             stopEmbed.add_field(name="Time Started", value=f"{datestart} CDT", inline=True)
             stopEmbed.add_field(name="Time Ended", value=f"{dateend} CDT", inline=True)
-            stopEmbed.add_field(name="Time Duration", value=durationString, inline=False)
 
             for key, value in allRewardStrings.items():
                 stopEmbed.add_field(name=key, value=value, inline=False)
-
 
             await ctx.channel.send(embed=stopEmbed)
 
