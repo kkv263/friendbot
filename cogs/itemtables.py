@@ -132,11 +132,8 @@ class ItemTables(commands.Cog):
                     mitItemListEmbed.add_field(name=f"[Tier {str(getTier(choiceIndex))}] {tpNumber}: React with the corresponding number", value=mitResultsString, inline=True)
                     mitItemListEmbed.set_footer(text= f"Page {page+1} of {numPages} -- use {left} or {right} to navigate, {back} to go back, or ❌ to cancel")
                     await mitStart.edit(embed=mitItemListEmbed) 
-                    if page != 0:
-                        await mitStart.add_reaction(left) 
-                    if page + 1 != numPages:
-                        await mitStart.add_reaction(right)
-
+                    await mitStart.add_reaction(left) 
+                    await mitStart.add_reaction(right)
                     await mitStart.add_reaction(back)
                     await mitStart.add_reaction('❌')
                     try:
@@ -144,11 +141,16 @@ class ItemTables(commands.Cog):
                     except asyncio.TimeoutError:
                         await mitStart.delete()
                         await channel.send(f"{commandUpper} timed out!")
+                        return
                     else:
                         if react.emoji == left:
                             page -= 1
+                            if page < 1:
+                              page = numPages - 1;
                         elif react.emoji == right:
                             page += 1
+                            if page > numPages - 1: 
+                              page = 0
                         elif react.emoji == '❌':
                             await mitStart.edit(embed=None, content=f"{commandUpper} canceled. Type `{commandPrefix}{commandName}` to open the Magic Item Table!")
                             await mitStart.clear_reactions()
