@@ -82,6 +82,7 @@ ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
 # ritSheet = gClient.open("Reward Item Table").sheet1
 
 token = os.environ['TOKEN']
+currentTimers = []
 discordClient = discord.Client()
 
 gameCategory = ["game rooms", "campaigns"]

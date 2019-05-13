@@ -46,6 +46,7 @@ async def help(ctx):
     helpEmbed.add_field(name=commandPrefix + "timer addme", value="Only available in **Game Rooms** and **Campaigns**. If you join a game late, this command will add you to the timer running. Once the timer is stopped your rewards will be displayed at the end.")
     helpEmbed.add_field(name=commandPrefix + "timer removeme", value="Only available in **Game Rooms** and **Campaigns**. If you you wish to leave early, This command will calculate your awards for you and remove you from the timer (if you added yourself joining late)")
     helpEmbed.add_field(name=commandPrefix + "timer stop", value="Only available in **Game Rooms** and **Campaigns**. Stop a timer that you have started to show how much to CP, TP, and gp to reward the players who played the full duration of the game. Only the person who started the timer can stop it.")
+    helpEmbed.add_field(name=commandPrefix + "timer check", value="View the channels where there are timer's currently running")
 
     helpMsg = await ctx.channel.send(embed=helpEmbed)
 

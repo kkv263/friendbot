@@ -4,7 +4,7 @@ import asyncio
 import time
 from datetime import datetime
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers
 
 class Timer(commands.Cog):
     def __init__ (self, bot):
@@ -15,7 +15,6 @@ class Timer(commands.Cog):
     async def timer(self, ctx):	
         pass
 
-
     @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
     @timer.command()
     async def start(self, ctx, *, game="D&D Game"):
@@ -25,6 +24,9 @@ class Timer(commands.Cog):
         channel = ctx.channel
         author = ctx.author
         user = author.display_name
+
+        global currentTimers
+        currentTimers.append('#'+channel.name)
 
         if str(channel.category).lower() not in gameCategory:
             await channel.send('Try this command in a game channel!')
@@ -52,6 +54,7 @@ class Timer(commands.Cog):
             await startEmbedmsg.delete()
             await channel.send('Timer timed out! Try starting the timer again.')
             self.timer.get_command('start').reset_cooldown(ctx)
+            currentTimers.remove('#'+channel.name)
         else:
             await asyncio.sleep(1) 
             await startEmbedmsg.clear_reactions()
@@ -59,6 +62,7 @@ class Timer(commands.Cog):
             if tReaction.emoji == '❌':
                 await startEmbedmsg.edit(embed=None, content=f"Timer canceled. Type `{commandPrefix}timer start` to start another timer!")
                 self.timer.get_command('start').reset_cooldown(ctx)
+                currentTimers.remove('#'+channel.name)
                 return
 
             role = roleArray[int(tReaction.emoji[0]) - 1]
@@ -85,6 +89,7 @@ class Timer(commands.Cog):
 
             self.timer.get_command('start').reset_cooldown(ctx)
             self.timer.get_command('addme').reset_cooldown(ctx)
+            currentTimers.remove('#'+channel.name)
             return
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
@@ -166,6 +171,16 @@ class Timer(commands.Cog):
             await ctx.channel.send(embed=stopEmbed)
 
         return
+
+    @timer.command()
+    async def check(self,ctx):
+        if not currentTimers:
+            currentTimersString = "There are currently NO timers running!"
+        else:
+            currentTimersString = "There are currently timers running in these channels:\n"
+        for i in currentTimers:
+            currentTimersString = f"{currentTimersString} `- {i}` \n"
+        await ctx.channel.send(content=currentTimersString)
 
 def setup(bot):
     bot.add_cog(Timer(bot))
