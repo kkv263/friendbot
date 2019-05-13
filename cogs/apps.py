@@ -99,7 +99,7 @@ class Apps(commands.Cog):
                 await botMsg.clear_reactions()
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! Unfortunately, the D&D Friends Mod team has declined your application since we do not allow members who are under 18 years of age who are not fine with explicit/adult content (and answered 'No' on the application form). If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - https://www.reddit.com/user/DnDFriends/\nTwitter - https://twitter.com/DnD_Friends\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
              
-            elif mReaction.emoji = '🚼':
+            elif mReaction.emoji == '🚼':
                 await botMsg.edit(embed=None, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [DENIED - Under 15]")
                 await botMsg.clear_reactions()
                 await appMember.send(f"Hello, {appMember.name}.\n\nUnfortunately, the D&D Friends Mod team has declined your application since we do not allow members who are under 15 years of age. If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - https://www.reddit.com/user/DnDFriends/\nTwitter - https://twitter.com/DnD_Friends\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
