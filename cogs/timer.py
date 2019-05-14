@@ -146,7 +146,6 @@ class Timer(commands.Cog):
             user = author.display_name
             end = time.time()
             dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p")
-
             allRewardStrings = {}
 
             for startItemKey, startItemValue in start.items():
