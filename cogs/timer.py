@@ -145,7 +145,7 @@ class Timer(commands.Cog):
             author = ctx.author
             user = author.display_name
             end = time.time()
-            dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%m-%y %I:%M %p")
+            dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%I:%M %p")
             allRewardStrings = {}
 
             for startItemKey, startItemValue in start.items():
@@ -155,8 +155,8 @@ class Timer(commands.Cog):
                 allRewardStrings[f"{startItemKey} - {timeConversion(duration)}"] = treasureString
 
             stopEmbed = discord.Embed()
-            stopEmbed.title = f"Timer: {game}"
-            stopEmbed.description = f"{user}, you stopped the timer."
+            stopEmbed.title = f"Timer: {game} [END]"
+            stopEmbed.description = f"{datestart} to {dateend} CDT" 
 
             if role == "True":
                 stopEmbed.colour = discord.Colour(0x9c3dca)
@@ -169,8 +169,6 @@ class Timer(commands.Cog):
             
             stopEmbed.clear_fields()
             stopEmbed.set_footer(text=stopEmbed.Empty)
-            stopEmbed.add_field(name="Time Started", value=f"{datestart} CDT", inline=True)
-            stopEmbed.add_field(name="Time Ended", value=f"{dateend} CDT", inline=True)
 
             for key, value in allRewardStrings.items():
                 stopEmbed.add_field(name=key, value=value, inline=False)
