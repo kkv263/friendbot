@@ -70,6 +70,10 @@ class Apps(commands.Cog):
             appAge = appDict['fields'][1]['value']
             appMember = guild.get_member_named(appDiscord)
 
+						if appMember is None:
+								ctx.send.channel(content=f"Something went wrong. The application could not find the discord name {appDiscord} for application {appNum}. Please delete this message once this is resolved.")
+								return
+
             if mReaction.emoji == '✅':
                 # Session Channel
                 sessionChannel = self.bot.get_channel(382045698931294208)
