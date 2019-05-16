@@ -41,6 +41,7 @@ class Apps(commands.Cog):
         await asyncio.sleep(30) 
         await delMessage.delete()
         await ctx.message.delete() 
+        await editMessage.clear_reactions()
 
     @commands.Cog.listener()
     async def on_message(self,msg):
