@@ -36,7 +36,7 @@ class Apps(commands.Cog):
             await ctx.message.delete() 
             return
 
-        await editMessage.edit(content=editString embed=None)
+        await editMessage.edit(content=editString, embed=None)
         delMessage = await ctx.channel.send(content=f"I have edited the message {num}.\n```{editString}```\nPlease double check that the edit is correct. I will now delete your message and this message in 30 seconds")
         await asyncio.sleep(30) 
         await delMessage.delete()
