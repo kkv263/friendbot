@@ -52,7 +52,6 @@ class Timer(commands.Cog):
             await startEmbedmsg.delete()
             await channel.send('Timer timed out! Try starting the timer again.')
             self.timer.get_command('start').reset_cooldown(ctx)
-            currentTimers.remove('#'+channel.name)
         else:
             await asyncio.sleep(1) 
             await startEmbedmsg.clear_reactions()
@@ -60,7 +59,6 @@ class Timer(commands.Cog):
             if tReaction.emoji == '❌':
                 await startEmbedmsg.edit(embed=None, content=f"Timer canceled. Type `{commandPrefix}timer start` to start another timer!")
                 self.timer.get_command('start').reset_cooldown(ctx)
-                currentTimers.remove('#'+channel.name)
                 return
 
             role = roleArray[int(tReaction.emoji[0]) - 1]
