@@ -19,7 +19,7 @@ class Timer(commands.Cog):
     @timer.command()
     async def start(self, ctx, *, game="D&D Game"):
         def startEmbedcheck(r, u):
-            return (r.emoji in numberEmojis[:4] or str(r.emoji) == '❌') and u == author
+            return (r.emoji in numberEmojis[:5] or str(r.emoji) == '❌') and u == author
 
         global currentTimers
         channel = ctx.channel
@@ -36,16 +36,14 @@ class Timer(commands.Cog):
             userName = author.name
 
 
-        startEmbed = discord.Embed (
-          colour = discord.Colour.green(),
-        )
-        startEmbed.add_field(name=f"React with [1-4] for your type of game: **{game}**", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journey Friend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]", inline=False)
+        startEmbed = discord.Embed ()
+        startEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journey Friend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
         startEmbed.set_author(name=userName, icon_url=author.avatar_url)
         startEmbed.set_footer(text= "React with ❌ to cancel")
 
         try:
             startEmbedmsg = await channel.send(embed=startEmbed)
-            for num in range(0,4): await startEmbedmsg.add_reaction(numberEmojis[num])
+            for num in range(0,5): await startEmbedmsg.add_reaction(numberEmojis[num])
             await startEmbedmsg.add_reaction('❌')
             tReaction, tUser = await self.bot.wait_for("reaction_add", check=startEmbedcheck, timeout=60)
         except asyncio.TimeoutError:
@@ -145,11 +143,13 @@ class Timer(commands.Cog):
             end = time.time()
             dateend=datetime.now(pytz.timezone(timezoneVar)).strftime("%I:%M %p")
             allRewardStrings = {}
+            treasureString = "No Rewards"
 
             for startItemKey, startItemValue in start.items():
                 duration = end - startItemValue
-                treasureArray = calculateTreasure(duration,role)
-                treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
+                if role != "":
+                    treasureArray = calculateTreasure(duration,role)
+                    treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
                 allRewardStrings[f"{startItemKey} - {timeConversion(duration)}"] = treasureString
 
             stopEmbed = discord.Embed()
@@ -162,6 +162,8 @@ class Timer(commands.Cog):
                 stopEmbed.colour = discord.Colour(0xa87fff)
             elif role == "Journey":
                 stopEmbed.colour = discord.Colour(0x689eff)
+            elif role == "":
+                stopEmbed.colour = discord.Colour(0xffffff)
             else:
                 stopEmbed.colour = discord.Colour(0x38ceff)
             

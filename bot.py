@@ -24,6 +24,8 @@ async def on_command_error(ctx,error):
             msg = 'You have already added yourself to the timer'
         if (ctx.command.name == 'start'):
             msg = f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer"
+        if (ctx.command.name == 'add' or ctx.command.name == 'remove'):
+            msg = 'Try the command in the next {:.1f}s'.format(error.retry_after)
         await ctx.channel.send(msg)
     else:
         raise error
@@ -38,8 +40,9 @@ async def help(ctx):
 
     helpEmbedItems = discord.Embed() 
     helpEmbedTimer = discord.Embed()
+    helpEmbedGuild = discord.Embed()
 
-    helpList = [helpEmbedItems ,helpEmbedTimer]
+    helpList = [helpEmbedItems,helpEmbedTimer,helpEmbedGuild]
 
     helpEmbedItems.title = 'Available Item Table Commands'
     helpEmbedItems.add_field(name=commandPrefix + "mit [optional name search]", value="This shows you items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: " + commandPrefix + "mit Cloak of Displacement" )
@@ -53,6 +56,10 @@ async def help(ctx):
     helpEmbedTimer.add_field(name=commandPrefix + "timer addme", value="Only available in **Game Rooms** and **Campaigns**.  If you join a game late, this command will add you to the running timer. Your individual rewards will be displayed once the timer has been stopped.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer removeme", value="Only available in **Game Rooms** and **Campaigns**. If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer stop", value="Only available in **Game Rooms** and **Campaigns**. This stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.")
+
+    helpEmbedGuild.title = 'Available Guild Commands'
+    helpEmbedGuild.add_field(name=commandPrefix + "guild add [username#1234] ", value="This command is only available to **Guild Masters**. Add user to one of the guilds.")
+    helpEmbedGuild.add_field(name=commandPrefix + "guild remove [username#1234] ", value="This command is only available to **Guild Masters**. Remove user to one of the guilds")
 
     numPages = len(helpList)
 
