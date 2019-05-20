@@ -69,7 +69,7 @@ class Timer(commands.Cog):
             if role != "":
                 roleString = f"({role} Friend)"
 
-            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. (Can only be used by the user who has started the timer).\n`{commandPrefix}timer stamp` - to view the time elapsed.\n`{commandPrefix}timer addme` - If you are joining the game late, this will add yourself to the timer.\n`{commandPrefix}timer removeme` - If you wish to leave early, this command will calculate your rewards. (If you joined late using $timer addme, it will remove you from the timer.)" )
+            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer." )
             currentTimers.append('#'+channel.name)
 
             timerStopped = False
