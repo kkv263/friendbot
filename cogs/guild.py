@@ -14,15 +14,15 @@ class Guild(commands.Cog):
 
         guild = ctx.guild
         # Channel where guildsMsg is stored
-        channel = self.bot.get_channel(577611798442803205) 
+        channel = self.bot.get_channel(579858636646383626) 
         author = ctx.author
         # Message where guilds are stored.
-        guildsMsg = await channel.fetch_message(579736784498589708)
+        guildsMsg = await channel.fetch_message(579859120321200138)
         guildMember = guild.get_member_named(member)
         commandName = ctx.command.name
 
         if guildMember is None:
-            await channel.send(content=f"The user {member} is not valid. Please recheck your spelling and try the command again.")
+            await channel.send(content=f"The user {member} is not valid. Make sure the user follows the 'User#1234' format (case-sensitive) and try the command again.")
             return
 
         for char in '@&<>':

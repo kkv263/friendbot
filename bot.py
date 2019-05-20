@@ -58,8 +58,8 @@ async def help(ctx):
     helpEmbedTimer.add_field(name=commandPrefix + "timer stop", value="Only available in **Game Rooms** and **Campaigns**. This stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.")
 
     helpEmbedGuild.title = 'Available Guild Commands'
-    helpEmbedGuild.add_field(name=commandPrefix + "guild add [username#1234] ", value="This command is only available to **Guild Masters**. Add user to one of the guilds.")
-    helpEmbedGuild.add_field(name=commandPrefix + "guild remove [username#1234] ", value="This command is only available to **Guild Masters**. Remove user to one of the guilds")
+    helpEmbedGuild.add_field(name=commandPrefix + "guild add [username#1234] ", value="This command is **case-sensitive** and is only available to Guildmasters. It allows a Guildmaster to add a member to one of the guilds that they are a Guildmaster of.")
+    helpEmbedGuild.add_field(name=commandPrefix + "guild remove [username#1234] ", value="This command is **case-sensitive** and is only available to Guildmasters. It allows a Guildmaster to remove a member from one of the guilds that they are a Guildmaster of.")
 
     numPages = len(helpList)
 
