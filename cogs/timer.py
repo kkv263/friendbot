@@ -37,7 +37,7 @@ class Timer(commands.Cog):
 
 
         startEmbed = discord.Embed ()
-        startEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journey Friend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
+        startEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journey Friend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
         startEmbed.set_author(name=userName, icon_url=author.avatar_url)
         startEmbed.set_footer(text= "React with ❌ to cancel")
 

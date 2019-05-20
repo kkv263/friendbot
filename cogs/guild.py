@@ -10,7 +10,10 @@ class Guild(commands.Cog):
        
     async def guildsList(self, ctx, member):
         def guildEmbedCheck(r, u):
-                return (r.emoji in numberEmojis[:g + 1] or str(r.emoji) == '❌') and u == author
+            sameMessage = False
+            if guildEmbed.id == r.message.id:
+                sameMessage = True
+            return (r.emoji in numberEmojis[:g + 1] or str(r.emoji) == '❌') and u == author and sameMessage
 
         guild = ctx.guild
         # Channel where guildsMsg is stored
