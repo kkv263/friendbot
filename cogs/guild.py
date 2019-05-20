@@ -11,16 +11,18 @@ class Guild(commands.Cog):
     async def guildsList(self, ctx, member):
         def guildEmbedCheck(r, u):
             sameMessage = False
-            if guildEmbed.id == r.message.id:
+            if guildAddMsg.id == r.message.id:
                 sameMessage = True
             return (r.emoji in numberEmojis[:g + 1] or str(r.emoji) == '❌') and u == author and sameMessage
 
         guild = ctx.guild
         # Channel where guildsMsg is stored
         channel = self.bot.get_channel(579858636646383626) 
+        # channel = self.bot.get_channel(575798367414910976) 
         author = ctx.author
         # Message where guilds are stored.
         guildsMsg = await channel.fetch_message(579859120321200138)
+        # guildsMsg = await channel.fetch_message(580108097041727499)
         guildMember = guild.get_member_named(member)
         commandName = ctx.command.name
 
