@@ -8,7 +8,7 @@ class Guild(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
        
-    async def guildsList(self, ctx, *, member):
+    async def guildsList(self, ctx, member):
         def guildEmbedCheck(r, u):
                 return (r.emoji in numberEmojis[:g + 1] or str(r.emoji) == '❌') and u == author
 
@@ -80,14 +80,14 @@ class Guild(commands.Cog):
     @commands.has_role('Guildmaster')
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    async def add(self,ctx,member):
+    async def add(self,ctx, *, member):
         guildCog = self.bot.get_cog('Guild')
         await guildCog.guildsList(ctx,member)
 
     @commands.has_role('Guildmaster')
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    async def remove(self,ctx,member):
+    async def remove(self,ctx, *, member):
         guildCog = self.bot.get_cog('Guild')
         await guildCog.guildsList(ctx,member)
 
