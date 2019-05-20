@@ -65,10 +65,10 @@ class Guild(commands.Cog):
 
             if commandName == "add":
                 await guildMember.add_roles(guildRole, reason=f"{author} used guild command add {member} for guild {guildRole.name}")     
-                await guildAddMsg.edit(embed=None, content=f"You have added {member} to guild {guildRole.name}! Please double check if necessary")
+                await guildAddMsg.edit(embed=None, content=f"You have added {member} to guild {guildRole.name}! Please double check if necessary.")
             if commandName == "remove":
                 await guildMember.remove_roles(guildRole, reason=f"{author} used guild command remove {member} for guild {guildRole.name}")      
-                await guildAddMsg.edit(embed=None, content=f"You have removed {member} from guild {guildRole.name}! Please double check if necessary")
+                await guildAddMsg.edit(embed=None, content=f"You have removed {member} from guild {guildRole.name}! Please double check if necessary.")
             await guildAddMsg.clear_reactions()
 
         return
