@@ -8,7 +8,7 @@ class Guild(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
        
-    async def guildsList(self, ctx, member):
+    async def guildsList(self, ctx, *, member):
         def guildEmbedCheck(r, u):
                 return (r.emoji in numberEmojis[:g + 1] or str(r.emoji) == '❌') and u == author
 
