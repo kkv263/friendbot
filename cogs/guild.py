@@ -77,14 +77,14 @@ class Guild(commands.Cog):
     async def guild(self, ctx):	
         pass
 
-    @commands.has_role('Guild Master')
+    @commands.has_role('Guildmaster')
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
     async def add(self,ctx,member):
         guildCog = self.bot.get_cog('Guild')
         await guildCog.guildsList(ctx,member)
 
-    @commands.has_role('Guild Master')
+    @commands.has_role('Guildmaster')
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
     async def remove(self,ctx,member):
