@@ -21,6 +21,10 @@ class Guild(commands.Cog):
         guildMember = guild.get_member_named(member)
         commandName = ctx.command.name
 
+        if guildMember is None:
+            await channel.send(content=f"The user {member} is not valid. Please recheck your spelling and try the command again.")
+            return
+
         for char in '@&<>':
             guildsMsg.content = guildsMsg.content.replace(char,"")
 
