@@ -141,6 +141,9 @@ class Timer(commands.Cog):
     @timer.command()
     async def stop(self,ctx,*,start={}, role="", game="", datestart=""):
         if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
+            if not self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx):
+                await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you had a timer previously, try `{commandPrefix}timer resume` to resume a timer")
+                return
             author = ctx.author
             user = author.display_name
             end = time.time()
@@ -177,6 +180,8 @@ class Timer(commands.Cog):
                 stopEmbed.add_field(name=key, value=value, inline=False)
 
             await ctx.channel.send(embed=stopEmbed)
+            self.timer.get_command('start').reset_cooldown(ctx)
+            self.timer.get_command('resume').reset_cooldown(ctx)
 
         return
 
@@ -206,6 +211,7 @@ class Timer(commands.Cog):
 
             if self.timer.get_command('start').is_on_cooldown(ctx):
                 await channel.send(f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
+                self.timer.get_command('resume').reset_cooldown(ctx)
                 return
 
             global currentTimers
@@ -264,15 +270,6 @@ class Timer(commands.Cog):
         else:
             await ctx.channel.send(content=f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
             return
-
-            
-        
-
-    @stop.before_invoke
-    async def stop_before(self, ctx):	
-        if not self.timer.get_command('start').is_on_cooldown(ctx) or not self.timer.get_command('resume').is_on_cooldown(ctx):
-            await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you had a timer previously, try `{commandPrefix}timer resume` to resume a timer")
-
 
 def setup(bot):
     bot.add_cog(Timer(bot))
