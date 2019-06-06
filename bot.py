@@ -11,7 +11,7 @@ cogs_dir = "cogs"
 @bot.event
 async def on_ready():
     print('We have logged in as ' + bot.user.name)
-    await self.bot.change_presence(activity=discord.Activity(name=f'D&D Friends | {commandPrefix}help', type=discord.ActivityType.watching))
+    await bot.change_presence(activity=discord.Activity(name=f'D&D Friends | {commandPrefix}help', type=discord.ActivityType.watching))
 bot.remove_command('help')
 
 @bot.event
