@@ -212,8 +212,9 @@ class Timer(commands.Cog):
             author = ctx.author
             user = author.display_name
             resumeTimes = {}
+            timerMessage = None
 
-            async for message in ctx.channel.history(limit=100).filter(predicate):
+            async for message in ctx.channel.history(limit=200).filter(predicate):
                 # resumeTimes.append(message.created_at.replace(tzinfo=timezone.utc).timestamp())
                 if "Timer: Starting the timer" in message.content:
                     timerMessage = message
@@ -235,6 +236,11 @@ class Timer(commands.Cog):
                         elif "$timer removeme" in message.content and not message.author.bot: 
                             del resumeTimes[message.author.display_name]
                     break
+
+            if timerMessage is None:
+                await channel.send("There is no timer in the last 200 messages. Please start a new timer.")
+                self.timer.get_command('resume').reset_cooldown(ctx)
+                return
 
             #TODO: if possible reuse below somehow
             await channel.send(embed=None, content=f"Timer: I have resumed the timer for - **{startGame}** {startRole}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer." )

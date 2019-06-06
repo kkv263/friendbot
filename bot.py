@@ -2,16 +2,26 @@ import asyncio
 from discord.ext import commands
 from os import listdir
 from os.path import isfile, join
+from itertools import cycle
 
 from bfunc import *
 
 bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 cogs_dir = "cogs"
 
+async def change_status():
+      await bot.wait_until_ready()
+      statusLoop = cycle(statuses)
+
+      while not bot.is_closed():
+          current_status = next(statusLoop)
+          await bot.change_presence(activity=discord.Activity(name=current_status, type=discord.ActivityType.watching))
+          await asyncio.sleep(5)
+
 @bot.event
 async def on_ready():
     print('We have logged in as ' + bot.user.name)
-    await bot.change_presence(activity=discord.Activity(name=f'D&D Friends | {commandPrefix}help', type=discord.ActivityType.watching))
+    bot.loop.create_task(change_status())
 bot.remove_command('help')
 
 @bot.event
