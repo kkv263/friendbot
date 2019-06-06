@@ -221,7 +221,6 @@ class Timer(commands.Cog):
             timerMessage = None
 
             async for message in ctx.channel.history(limit=200).filter(predicate):
-                # resumeTimes.append(message.created_at.replace(tzinfo=timezone.utc).timestamp())
                 if "Timer: Starting the timer" in message.content:
                     timerMessage = message
                     startString = (timerMessage.content.split('\n', 1))[0]
@@ -267,6 +266,7 @@ class Timer(commands.Cog):
 
             self.timer.get_command('resume').reset_cooldown(ctx)
             self.timer.get_command('addme').reset_cooldown(ctx)
+            currentTimers.remove('#'+channel.name)
         else:
             await ctx.channel.send(content=f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
             return
