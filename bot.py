@@ -11,7 +11,6 @@ cogs_dir = "cogs"
 @bot.event
 async def on_ready():
     print('We have logged in as ' + bot.user.name)
-    await bot.change_presence(activity=discord.Game(name=f'D&D Friends | {commandPrefix}help'))
 
 bot.remove_command('help')
 
@@ -22,7 +21,7 @@ async def on_command_error(ctx,error):
             msg = 'Woahhh, slow down partner! Try the command in the next {:.1f}s'.format(error.retry_after)
         if (ctx.command.name == 'addme'):
             msg = 'You have already added yourself to the timer'
-        if (ctx.command.name == 'start'):
+        if (ctx.command.name == 'start' or ctx.command.name == 'resume'):
             msg = f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer"
         if (ctx.command.name == 'add' or ctx.command.name == 'remove'):
             msg = 'Try the command in the next {:.1f}s'.format(error.retry_after)
@@ -31,7 +30,7 @@ async def on_command_error(ctx,error):
         raise error
 
 @bot.command()
-async def help(ctx):
+async def help(ctx, *, pageString=''):
     def helpCheck(r,u):
         sameMessage = False
         if helpMsg.id == r.message.id:
@@ -41,6 +40,13 @@ async def help(ctx):
     helpEmbedItems = discord.Embed() 
     helpEmbedTimer = discord.Embed()
     helpEmbedGuild = discord.Embed()
+
+    page = 0
+
+    if 'timer' in pageString:
+        page = 1
+    elif 'guild' in pageString:
+        page = 2
 
     helpList = [helpEmbedItems,helpEmbedTimer,helpEmbedGuild]
 
@@ -56,6 +62,7 @@ async def help(ctx):
     helpEmbedTimer.add_field(name=commandPrefix + "timer addme", value="Only available in **Game Rooms** and **Campaigns**.  If you join a game late, this command will add you to the running timer. Your individual rewards will be displayed once the timer has been stopped.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer removeme", value="Only available in **Game Rooms** and **Campaigns**. If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer stop", value="Only available in **Game Rooms** and **Campaigns**. This stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.")
+    helpEmbedTimer.add_field(name=commandPrefix + "timer resume", value="Only available in **Game Rooms** and **Campaigns**. This resumes the last running timer that was started, and behaves identical to " + commandPrefix + "timer start.")
 
     helpEmbedGuild.title = 'Available Guild Commands'
     helpEmbedGuild.add_field(name=commandPrefix + "guild add [username#1234] ", value="This command is **case-sensitive** and is only available to Guildmasters. It allows a Guildmaster to add a member to one of the guilds that they are a Guildmaster of.")
@@ -66,8 +73,7 @@ async def help(ctx):
     for i in range(0, len(helpList)):
         helpList[i].set_footer(text= f"Page {i+1} of {numPages} -- use {left} or {right} to navigate. ")
 
-    helpMsg = await ctx.channel.send(embed=helpEmbedItems)
-    page = 0
+    helpMsg = await ctx.channel.send(embed=helpList[page])
     while True:
         await helpMsg.add_reaction(left) 
         await helpMsg.add_reaction(right)
@@ -79,7 +85,6 @@ async def help(ctx):
             await helpMsg.add_reaction('💤')
             return
         else:
-
             if hReact.emoji == left:
                 page -= 1
                 if page < 0:

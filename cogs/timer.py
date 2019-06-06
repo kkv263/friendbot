@@ -2,7 +2,8 @@ import discord
 import pytz
 import asyncio
 import time
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 from discord.ext import commands
 from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers
 
@@ -10,11 +11,10 @@ class Timer(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
 
-
     @commands.group()
     async def timer(self, ctx):	
         pass
-
+    
     @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
     @timer.command()
     async def start(self, ctx, *, game="D&D Game"):
@@ -25,16 +25,16 @@ class Timer(commands.Cog):
         channel = ctx.channel
         author = ctx.author
         user = author.display_name
+        userName = author.name
 
         if str(channel.category).lower() not in gameCategory:
             await channel.send('Try this command in a game channel!')
             return
 
-        if author.id == 194049802143662080:
-            userName = 'Sir'
-        else:
-            userName = author.name
-
+        if self.timer.get_command('resume').is_on_cooldown(ctx):
+            await channel.send(f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
+            self.timer.get_command('start').reset_cooldown(ctx)
+            return
 
         startEmbed = discord.Embed ()
         startEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journey Friend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
@@ -73,7 +73,6 @@ class Timer(commands.Cog):
             currentTimers.append('#'+channel.name)
 
             timerStopped = False
-
             while not timerStopped:
                 msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme") and m.channel == channel)
                 if msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
@@ -89,12 +88,12 @@ class Timer(commands.Cog):
             self.timer.get_command('start').reset_cooldown(ctx)
             self.timer.get_command('addme').reset_cooldown(ctx)
             currentTimers.remove('#'+channel.name)
-            return
+        return
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
     @timer.command()
     async def addme(self,ctx,start={},user=""):
-        if ctx.invoked_with == 'start':
+        if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
             if user not in start.keys(): 
                 datestart = user
                 start[datestart] = time.time()
@@ -108,7 +107,7 @@ class Timer(commands.Cog):
 
     @timer.command()
     async def removeme(self,ctx,start={},role="",user=""):
-        if ctx.invoked_with == 'start':
+        if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
             if user in start.keys():
                 duration = time.time() - start[user] 
                 del start[user]
@@ -124,7 +123,7 @@ class Timer(commands.Cog):
     
     @timer.command()
     async def stamp(self,ctx, stamp=0, role="", game="", author="", start={}):
-        if ctx.invoked_with == 'start':
+        if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
             user = author.display_name
             end = time.time()
             duration = end - stamp
@@ -141,7 +140,7 @@ class Timer(commands.Cog):
 
     @timer.command()
     async def stop(self,ctx,*,start={}, role="", game="", datestart=""):
-        if ctx.invoked_with == 'start':
+        if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
             author = ctx.author
             user = author.display_name
             end = time.time()
@@ -191,6 +190,83 @@ class Timer(commands.Cog):
         for i in currentTimers:
             currentTimersString = f"{currentTimersString} - {i} \n"
         await ctx.channel.send(content=currentTimersString)
+
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
+    @timer.command()
+    async def resume(self,ctx):
+        if not self.timer.get_command('start').is_on_cooldown(ctx):
+            def predicate(message):
+                return message.author.bot
+
+            channel=ctx.channel
+        
+            if str(channel.category).lower() not in gameCategory:
+                await channel.send('Try this command in a game channel!')
+                return
+
+            if self.timer.get_command('start').is_on_cooldown(ctx):
+                await channel.send(f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
+                return
+
+            global currentTimers
+            author = ctx.author
+            user = author.display_name
+            resumeTimes = {}
+
+            async for message in ctx.channel.history(limit=100).filter(predicate):
+                # resumeTimes.append(message.created_at.replace(tzinfo=timezone.utc).timestamp())
+                if "Timer: Starting the timer" in message.content:
+                    timerMessage = message
+                    startString = (timerMessage.content.split('\n', 1))[0]
+                    startRole = re.search('\(([^)]+)', startString)
+                    if startRole is None:
+                        startRole = ''
+                    else: 
+                        startRole = startRole.group(1).split()[0]
+                    startGame = re.search('\*\*(.*?)\*\*', startString).group(1)
+                    startTimerCreate = timerMessage.created_at
+                    startTime = startTimerCreate.replace(tzinfo=timezone.utc).timestamp()
+                    resumeTimes = {f"{startRole} Friend Rewards":startTime}
+                    datestart = startTimerCreate.replace(tzinfo=timezone.utc).astimezone(tz=pytz.timezone(timezoneVar)).strftime("%b-%-d-%y %I:%M %p") 
+
+                    async for message in ctx.channel.history(after=timerMessage):
+                        if "$timer addme" in message.content and not message.author.bot:
+                            resumeTimes[message.author.display_name] = message.created_at.replace(tzinfo=timezone.utc).timestamp()
+                        elif "$timer removeme" in message.content and not message.author.bot: 
+                            del resumeTimes[message.author.display_name]
+                    break
+
+            #TODO: if possible reuse below somehow
+            await channel.send(embed=None, content=f"Timer: I have resumed the timer for - **{startGame}** {startRole}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer." )
+            currentTimers.append('#'+channel.name)
+
+            timerStopped = False
+            while not timerStopped:
+                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme") and m.channel == channel)
+                if msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                    timerStopped = True
+                    await ctx.invoke(self.timer.get_command('stop'), start=resumeTimes, role=startRole, game=startGame, datestart=datestart)
+                elif msg.content == f"{commandPrefix}timer stamp":
+                    await ctx.invoke(self.timer.get_command('stamp'), stamp=resumeTimes[f"{startRole} Friend Rewards"], role=startRole, game=startGame, author=msg.author, start=resumeTimes)
+                elif msg.content == f"{commandPrefix}timer addme":
+                    resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, user=msg.author.display_name)
+                elif msg.content == f"{commandPrefix}timer removeme":
+                    resumeTimes = await ctx.invoke(self.timer.get_command('removeme'), start=resumeTimes, role=startRole, user=msg.author.display_name )
+
+            self.timer.get_command('resume').reset_cooldown(ctx)
+            self.timer.get_command('addme').reset_cooldown(ctx)
+        else:
+            await ctx.channel.send(content=f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
+            return
+
+            
+        
+
+    @stop.before_invoke
+    async def stop_before(self, ctx):	
+        if not self.timer.get_command('start').is_on_cooldown(ctx) or not self.timer.get_command('resume').is_on_cooldown(ctx):
+            await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you had a timer previously, try `{commandPrefix}timer resume` to resume a timer")
+
 
 def setup(bot):
     bot.add_cog(Timer(bot))

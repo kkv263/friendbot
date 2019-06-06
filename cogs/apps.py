@@ -45,24 +45,24 @@ class Apps(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self,msg):
-        def msgCheck(r, u):
+        def msgCheck(m):
             sameMessage = False
-            if botMsg.id == r.message.id:
+            appDict = botMsg.embeds[0].to_dict()
+            appNum = appDict['title'].split('#')[1]
+            if appNum in m.content:
                 sameMessage = True
 
-            return ((str(r.emoji) == '✅' or str(r.emoji) == '❌' or str(r.emoji) == '🚼') and sameMessage and u.name != "Bot Friend")
+            return ('approve' in m.content.lower() or 'deny' in m.content.lower() or 'under15' in m.content.lower()) and sameMessage
 
         # appchannel
-        channel = self.bot.get_channel(388591318814949376)
+        channelID = 388591318814949376
+        channel = self.bot.get_channel(channelID)
         guild = msg.guild
-        if channel and channel.id == 388591318814949376 and msg.author.name == 'Application Bot Friend':
+        if channel and channel.id == channelID and msg.author.name == 'Application Bot Friend':
             botMsg = await channel.send(embed=msg.embeds[0])
             await msg.delete()
-            await botMsg.add_reaction('✅')
-            await botMsg.add_reaction('❌')
-            await botMsg.add_reaction('🚼')
 
-            mReaction, mUser = await self.bot.wait_for("reaction_add", check=msgCheck)
+            mMessage = await self.bot.wait_for("message", check=msgCheck)
 
             appDict = botMsg.embeds[0].to_dict()
             appNum = appDict['title'].split('#')[1] 
@@ -75,11 +75,12 @@ class Apps(commands.Cog):
                 ctx.send.channel(content=f"Something went wrong. The application could not find the discord name {appDiscord} for application {appNum}. Please delete this message once this is resolved.")
                 return
 
-            if mReaction.emoji == '✅':
+            if 'approve' in mMessage.content:
                 # Session Channel
                 sessionChannel = self.bot.get_channel(382045698931294208)
                 await botMsg.edit(embed=None, content=f"{appNum}. {appMember.mention} #{appHash}")
                 await botMsg.clear_reactions()
+                await mMessage.delete()
 
                 if int(appAge) < 18:
                     kidRole = get(guild.roles, name = 'Under-18 Friendling')
@@ -103,14 +104,16 @@ class Apps(commands.Cog):
 
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! The D&D Friends Mod team has approved your application and you have been assigned the appropriate roles.\n\nIf you have any further questions then please don't hesitate to ask in our #help-for-players channel or message a Mod Friend!")
 
-            elif mReaction.emoji == '❌':
+            elif 'deny' in mMessage.content:
                 await botMsg.edit(embed=None, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [DENIED - Under 18 and not ok with explicit/adult content]")
                 await botMsg.clear_reactions()
+                await mMessage.delete()
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! Unfortunately, the D&D Friends Mod team has declined your application since we do not allow members under 18 years of age who are not fine with explicit/adult content (and answered 'No' on the application form). If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
              
-            elif mReaction.emoji == '🚼':
+            elif 'under15' in mMessage.content:
                 await botMsg.edit(embed=None, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [DENIED - Under 15]")
                 await botMsg.clear_reactions()
+                await mMessage.delete()
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! Unfortunately, the D&D Friends Mod team has declined your application since you did not meet the cut-off age. If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
                 
 
