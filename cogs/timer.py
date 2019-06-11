@@ -43,6 +43,7 @@ class Timer(commands.Cog):
 
         try:
             startEmbedmsg = await channel.send(embed=startEmbed)
+            for num in range(0,5): await startEmbedmsg.add_reaction(numberEmojis[num])
             await startEmbedmsg.add_reaction('❌')
             tReaction, tUser = await self.bot.wait_for("reaction_add", check=startEmbedcheck, timeout=60)
         except asyncio.TimeoutError:
