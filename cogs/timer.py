@@ -239,7 +239,8 @@ class Timer(commands.Cog):
                         if "$timer addme" in message.content and not message.author.bot:
                             resumeTimes[message.author.display_name] = message.created_at.replace(tzinfo=timezone.utc).timestamp()
                         elif "$timer removeme" in message.content and not message.author.bot: 
-                            del resumeTimes[message.author.display_name]
+                            if message.author.display_name in resumeTimes:
+                                del resumeTimes[message.author.display_name]
                     break
 
             if timerMessage is None:
