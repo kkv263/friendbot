@@ -69,17 +69,25 @@ class Timer(commands.Cog):
             if role != "":
                 roleString = f"({role} Friend)"
 
-            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer." )
+            await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user." )
             currentTimers.append('#'+channel.name)
 
             timerStopped = False
             while not timerStopped:
-                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme") and m.channel == channel)
-                if msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content) and m.channel == channel)
+                if f"{commandPrefix}timer transfer " in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                    newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
+                    newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
+                    if newAuthor is not None:
+                        author = newAuthor
+                        await channel.send(f'{author.mention}, the current timer has been transferred to you. Use `{commandPrefix}timer stop` whenever you would like to stop the timer.')
+                    else:
+                        await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer')
+                elif msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     timerStopped = True
                     await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart)
                 elif msg.content == f"{commandPrefix}timer stamp":
-                    await ctx.invoke(self.timer.get_command('stamp'), stamp=startTimes[f"{role} Friend Rewards"], role=role, game=game, author=msg.author, start=startTimes)
+                    await ctx.invoke(self.timer.get_command('stamp'), stamp=startTimes[f"{role} Friend Rewards"], role=role, game=game, author=author, start=startTimes)
                 elif msg.content == f"{commandPrefix}timer addme":
                     startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, user=msg.author.display_name)
                 elif msg.content == f"{commandPrefix}timer removeme":
@@ -89,6 +97,13 @@ class Timer(commands.Cog):
             self.timer.get_command('addme').reset_cooldown(ctx)
             currentTimers.remove('#'+channel.name)
         return
+
+    @timer.command()
+    async def transfer(self,ctx,user=""):
+        if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
+            guild = ctx.guild
+            newUser = guild.get_member_named(user.split('#')[0])
+            return newUser 
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
     @timer.command()
@@ -136,7 +151,7 @@ class Timer(commands.Cog):
                 else:
                     timerListString = timerListString + f"{key} - {timeConversion(end - value)}\n"
 
-            msg = await ctx.channel.send(content=f"The timer for **{game}** has been running for {durationString}.{timerListString}")
+            msg = await ctx.channel.send(content=f"The timer for **{game}** has been running for {durationString}.{timerListString}Owner: {user}")
 
     @timer.command()
     async def stop(self,ctx,*,start={}, role="", game="", datestart=""):
@@ -249,17 +264,25 @@ class Timer(commands.Cog):
                 return
 
             #TODO: if possible reuse below somehow
-            await channel.send(embed=None, content=f"Timer: I have resumed the timer for - **{startGame}** {startRole}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer." )
+            await channel.send(embed=None, content=f"Timer: I have resumed the timer for - **{startGame}** {startRole}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user." )
             currentTimers.append('#'+channel.name)
 
             timerStopped = False
             while not timerStopped:
-                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme") and m.channel == channel)
-                if msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content) and m.channel == channel)
+                if f"{commandPrefix}timer transfer " in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                    newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
+                    newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
+                    if newAuthor is not None:
+                        author = newAuthor
+                        await channel.send(f'{author.mention}, the current timer has been transferred to you. Use `{commandPrefix}timer stop` whenever you would like to stop the timer.')
+                    else:
+                        await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer')
+                elif msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     timerStopped = True
                     await ctx.invoke(self.timer.get_command('stop'), start=resumeTimes, role=startRole, game=startGame, datestart=datestart)
                 elif msg.content == f"{commandPrefix}timer stamp":
-                    await ctx.invoke(self.timer.get_command('stamp'), stamp=resumeTimes[f"{startRole} Friend Rewards"], role=startRole, game=startGame, author=msg.author, start=resumeTimes)
+                    await ctx.invoke(self.timer.get_command('stamp'), stamp=resumeTimes[f"{startRole} Friend Rewards"], role=startRole, game=startGame, author=author, start=resumeTimes)
                 elif msg.content == f"{commandPrefix}timer addme":
                     resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, user=msg.author.display_name)
                 elif msg.content == f"{commandPrefix}timer removeme":
