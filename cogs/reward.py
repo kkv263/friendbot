@@ -11,18 +11,18 @@ class Reward(commands.Cog):
 		@commands.command()
 
 		async def reward(self,ctx, timeString=None, tier=None):
-				rewardCommand = f"`{commandPrefix}reward [XhYm] [tier]`"
+				rewardCommand = "\nusage: " + f"`{commandPrefix}reward [XhYm] [tier]`"
 
 				def convert_to_seconds(s):
 						return int(s[:-1]) * seconds_per_unit[s[-1]]
 
 				channel = ctx.channel
 				if timeString is None:
-						await channel.send(content=rewardCommand + " Time is required.")
+						await channel.send(content="error: Time is required." + rewardCommand)
 						return
 
 				if tier is None:
-						await channel.send(content=rewardCommand + " Tier is required. The valid tiers are: " + ", ".join(roleArray))
+						await channel.send(content="error: Tier is required. The valid tiers are: " + ", ".join(roleArray) + rewardCommand)
 						return
 
 				seconds_per_unit = { "m": 60, "h": 3600 }
@@ -30,7 +30,7 @@ class Reward(commands.Cog):
 				tierName = tier.lower().capitalize()
 
 				if tierName not in roleArray:
-						await channel.send(content=rewardCommand + " You did not type a valid tier. The valid tiers are: " + ", ".join(roleArray))
+						await channel.send(content="error: You did not type a valid tier. The valid tiers are: " + ", ".join(roleArray) + rewardCommand)
 						return
 
 
@@ -40,7 +40,7 @@ class Reward(commands.Cog):
 						totalTime += convert_to_seconds(timeItem)
 
 				if totalTime == 0:
-						await channel.send(content=rewardCommand + " You may have formatted the time incorrectly or calculated for 0. Try again with the correct format.")
+						await channel.send(content="error: You may have formatted the time incorrectly or calculated for 0. Try again with the correct format." + rewardCommand)
 						return
 
 				treasureArray = calculateTreasure(totalTime, tier)
