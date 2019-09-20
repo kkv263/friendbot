@@ -1,7 +1,7 @@
 import discord
 import re
 from discord.ext import commands
-from bfunc import roleArray, calculateTreasure, timeConversion 
+from bfunc import roleArray, calculateTreasure, timeConversion, commandPrefix
 
 class Reward(commands.Cog):
 		def __init__ (self, bot):
@@ -9,17 +9,28 @@ class Reward(commands.Cog):
 
 		@commands.cooldown(1, 5, type=commands.BucketType.member)
 		@commands.command()
-		async def reward(self,ctx, timeString, tier):
+
+		async def reward(self,ctx, timeString=None, tier=None):
+				rewardCommand = "\nusage: " + f"`{commandPrefix}reward [XhYm] [tier]`"
+
 				def convert_to_seconds(s):
 						return int(s[:-1]) * seconds_per_unit[s[-1]]
+
+				channel = ctx.channel
+				if timeString is None:
+						await channel.send(content="error: Time is required." + rewardCommand)
+						return
+
+				if tier is None:
+						await channel.send(content="error: Tier is required. The valid tiers are: " + ", ".join(roleArray) + rewardCommand)
+						return
 
 				seconds_per_unit = { "m": 60, "h": 3600 }
 				lowerTimeString = timeString.lower()
 				tierName = tier.lower().capitalize()
-				channel = ctx.channel
 
 				if tierName not in roleArray:
-						await channel.send(content='You did not type a valid tier. The valid tiers are: ' + ', '.join(roleArray))
+						await channel.send(content="error: You did not type a valid tier. The valid tiers are: " + ", ".join(roleArray) + rewardCommand)
 						return
 
 
@@ -29,7 +40,7 @@ class Reward(commands.Cog):
 						totalTime += convert_to_seconds(timeItem)
 
 				if totalTime == 0:
-						await channel.send(content='You may have formatted the time incorrectly or calculated for 0. Try again with the correct format.')
+						await channel.send(content="error: You may have formatted the time incorrectly or calculated for 0. Try again with the correct format." + rewardCommand)
 						return
 
 				treasureArray = calculateTreasure(totalTime, tier)
