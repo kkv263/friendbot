@@ -85,7 +85,7 @@ token = os.environ['TOKEN']
 currentTimers = []
 discordClient = discord.Client()
 
-gameCategory = ["game rooms", "campaigns", "mod friends"]
+gameCategory = ["🎲 game rooms", "🐉 campaigns", "mod friends"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True', '']
 tierArray = getTiers(sheet.row_values(2))
 tpArray = sheet.row_values(3)

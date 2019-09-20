@@ -28,8 +28,12 @@ class Timer(commands.Cog):
         userName = author.name
 
         if str(channel.category).lower() not in gameCategory:
-            await channel.send('Try this command in a game channel!')
-            return
+            if "no-context" in channel.name:
+                pass
+            else: 
+                await channel.send('Try this command in a game channel!')
+                self.timer.get_command('start').reset_cooldown(ctx)
+                return
 
         if self.timer.get_command('resume').is_on_cooldown(ctx):
             await channel.send(f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
@@ -221,8 +225,12 @@ class Timer(commands.Cog):
             channel=ctx.channel
         
             if str(channel.category).lower() not in gameCategory:
-                await channel.send('Try this command in a game channel!')
-                return
+                if "no-context" in channel.name:
+                    pass
+                else:
+                    await channel.send('Try this command in a game channel!')
+                    self.timer.get_command('resume').reset_cooldown(ctx)
+                    return
 
             if self.timer.get_command('start').is_on_cooldown(ctx):
                 await channel.send(f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
