@@ -22,6 +22,12 @@ async def change_status():
 async def on_ready():
     print('We have logged in as ' + bot.user.name)
     bot.loop.create_task(change_status())
+
+    #secret area channel
+    channel = bot.get_channel(577611798442803205) 
+    await channel.send('Hello I have restarted uwu')
+
+
 bot.remove_command('help')
 
 @bot.event
