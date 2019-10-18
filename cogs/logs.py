@@ -32,9 +32,14 @@ class Log(commands.Cog):
             newlistCP = patternCP.search(msgSplit[2].replace(" ",""))
 
             oldCurrentCP = oldlistCP.group(3).split('/')
+            oldCurrentCP[0] = oldCurrentCP[0].replace("CP","")
+            oldCurrentCP[1] = oldCurrentCP[1].replace("CP","")
+            print(oldCurrentCP)
             maxCP = float(oldCurrentCP[1])
             addCP = float(newlistCP.group(1))
             currentCP = newlistCP.group(3).split('/')
+            currentCP[0] = currentCP[0].replace("CP","")
+            currentCP[1] = currentCP[1].replace("CP","")
 
             tpItemList = msgSplit[3].split(';')
             print(tpItemList)
@@ -54,6 +59,10 @@ class Log(commands.Cog):
             tpItem = newlistTP.group(2).strip()
             oldCurrentTP = oldlistTP.group(3).split('/')
             currentTP = newlistTP.group(3).split('/')
+            oldCurrentTP[0] = oldCurrentTP[0].replace("TP","")
+            oldCurrentTP[1] = oldCurrentTP[1].replace("TP","")
+            currentTP[0] = currentTP[0].replace("TP","")
+            currentTP[1] = currentTP[1].replace("TP","")
             tpCheck = False
             cpCheck = False
 
