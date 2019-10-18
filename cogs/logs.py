@@ -24,7 +24,7 @@ class Log(commands.Cog):
         numLogs = int(numLogs)
 
         if numLogs > 5:
-            break
+            return
 
         def checkLog(oldMsgSplit,msgSplit):
             patternCP = re.compile(r'([\d.]{0,})(?=CP)\S+(?<=Level)(\d+)[\S?]{0,}\((.*?)\)', re.I)
