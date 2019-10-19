@@ -126,7 +126,7 @@ class Log(commands.Cog):
                 msgSplit = message.content.splitlines()
                 if 'CP' not in message.content and 'TP' not in message.content:
                       continue
-                async for messageOld in channel.history(limit=None before=message, oldest_first=False):
+                async for messageOld in channel.history(limit=None, before=message, oldest_first=False):
                   if 'CP' not in messageOld.content and 'TP' not in messageOld.content:
                       continue
                   if msgSplit[0] == messageOld.content.splitlines()[0]:
