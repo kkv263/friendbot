@@ -17,10 +17,10 @@ class Log(commands.Cog):
     @commands.has_any_role('Mod Friend', 'Admins', 'Trial Mod Friend')
     async def check(self, ctx, numLogs=1):
         # PLayer log channel
-        channel = self.bot.get_channel(551994782814044170) 
+        # channel = self.bot.get_channel(551994782814044170) 
 
         # Test
-        # channel = self.bot.get_channel(577227687962214406) 
+        channel = self.bot.get_channel(577227687962214406) 
         numLogs = int(numLogs)
 
         if numLogs > 5:
@@ -126,7 +126,7 @@ class Log(commands.Cog):
                 msgSplit = message.content.splitlines()
                 if 'CP' not in message.content and 'TP' not in message.content:
                       continue
-                async for messageOld in channel.history(before=message, oldest_first=False):
+                async for messageOld in channel.history(limit=None before=message, oldest_first=False):
                   if 'CP' not in messageOld.content and 'TP' not in messageOld.content:
                       continue
                   if msgSplit[0] == messageOld.content.splitlines()[0]:
