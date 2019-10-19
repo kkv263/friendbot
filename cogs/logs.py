@@ -17,10 +17,10 @@ class Log(commands.Cog):
     @commands.has_any_role('Mod Friend', 'Admins', 'Trial Mod Friend')
     async def check(self, ctx, numLogs=1):
         # PLayer log channel
-        # channel = self.bot.get_channel(551994782814044170) 
+        channel = self.bot.get_channel(551994782814044170) 
 
         # Test
-        channel = self.bot.get_channel(577227687962214406) 
+        # channel = self.bot.get_channel(577227687962214406) 
         numLogs = int(numLogs)
 
         if numLogs > 5:
