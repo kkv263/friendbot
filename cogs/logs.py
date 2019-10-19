@@ -41,13 +41,11 @@ class Log(commands.Cog):
             currentCP[0] = currentCP[0].replace("CP","")
             currentCP[1] = currentCP[1].replace("CP","")
 
-            tpItemList = msgSplit[3].split(';')
-            print(tpItemList)
             print(oldMsgSplit[3])
 
-            patternTP = re.compile(r'([\d.]{0,}\s?(?=T))\S+(?<=P).([\w+ ]{0,})\((.*?)\)', re.I)
-            oldlistTP = patternTP.search(oldMsgSplit[3])
-            newlistTP = patternTP.search(tpItemList[0])
+            patternTP = re.compile(r'([\d.]{0,}\s?(?=T))\S+(?<=P).\s?([\w*, ]{0,})\((.*?)\);?\s?([\w*, ]{0,})\(?([^\)]+)\)?', re.I)
+            oldlistTP = patternTP.search(oldMsgSplit[3] + " ")
+            newlistTP = patternTP.search(msgSplit[3] + " ")
 
             # [1] = CP added, [2] = Current Level, [3] = Current CP / Total CP
             print(oldlistCP.groups())
@@ -56,8 +54,11 @@ class Log(commands.Cog):
             print(newlistTP.groups())
 
             addTP = float(newlistTP.group(1))
-            tpItem = newlistTP.group(2).strip()
-            oldCurrentTP = oldlistTP.group(3).split('/')
+            if oldlistTP.group(5) != " ":
+                oldCurrentTP = oldlistTP.group(5).split('/')
+            else:
+                oldCurrentTP = oldlistTP.group(3).split('/')
+
             currentTP = newlistTP.group(3).split('/')
             oldCurrentTP[0] = oldCurrentTP[0].replace("TP","")
             oldCurrentTP[1] = oldCurrentTP[1].replace("TP","")
@@ -66,18 +67,40 @@ class Log(commands.Cog):
             tpCheck = False
             cpCheck = False
 
+            tpItem = newlistTP.group(2).strip()
             queryTP = sheet.findall(re.compile(tpItem, re.IGNORECASE))[0]
             itemMaxTP = int(sheet.cell(3,queryTP.col).value[0:2])
             refreshKey(refreshTime)
 
-            # TODO check for two items TP
+            if newlistTP.group(5) != " ": 
+                newTpItem = newlistTP.group(4).strip()
+                queryTP = sheet.findall(re.compile(tpItem, re.IGNORECASE))[0]
+                newItemMaxTP = int(sheet.cell(3,queryTP.col).value[0:2])
+                refreshKey(refreshTime)
+                secondCurrentTP = newlistTP.group(5).split('/')
+                secondCurrentTP[0] = float(secondCurrentTP[0].replace("TP",""))
+                secondCurrentTP[1] = float(secondCurrentTP[1].replace("TP",""))
+
             if (float(oldCurrentTP[0]) == float(oldCurrentTP[1])):
-                if addTP == float(currentTP[0]):
-                  tpCheck = True
+                if newlistTP.group(5) != " ": 
+                    if abs(addTP - float(currentTP[1])) > 0 and float(currentTP[1]) == itemMaxTP:
+                        if secondCurrentTP[0] == abs(addTP - float(currentTP[1])) and secondCurrentTP[1] == newItemMaxTP:
+                            tpCheck = True
+                elif addTP == float(currentTP[0]):
+                    tpCheck = True
             else:
                 newCurrentTP = addTP + float(oldCurrentTP[0]) if addTP + float(oldCurrentTP[0]) < itemMaxTP else abs((addTP + float(oldCurrentTP[0])) - itemMaxTP)
-                if newCurrentTP == float(currentTP[0]):
-                    tpCheck = True
+                if newlistTP.group(5) != " ": 
+                    print('hello')
+                    print(float(currentTP[0]) == itemMaxTP)
+                    print(newItemMaxTP == float(secondCurrentTP[1]))
+                    print(newCurrentTP == float(secondCurrentTP[0]))
+
+                    if float(currentTP[0]) == itemMaxTP and newItemMaxTP == float(secondCurrentTP[1]) and newCurrentTP == float(secondCurrentTP[0]):
+                        tpCheck = True
+                else:
+                    if newCurrentTP == float(currentTP[0]):
+                        tpCheck = True
                     
 
             # TODO: Check for levelup
@@ -101,8 +124,11 @@ class Log(commands.Cog):
         async with channel.typing():
             async for message in channel.history(limit=numLogs, oldest_first=False):
                 msgSplit = message.content.splitlines()
-                print(msgSplit)
+                if 'CP' not in message.content and 'TP' not in message.content:
+                      continue
                 async for messageOld in channel.history(before=message, oldest_first=False):
+                  if 'CP' not in messageOld.content and 'TP' not in messageOld.content:
+                      continue
                   if msgSplit[0] == messageOld.content.splitlines()[0]:
                       oldMsgSplit = messageOld.content.splitlines()
                       if (checkLog(oldMsgSplit,msgSplit)):
