@@ -6,7 +6,7 @@ class Uwu(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
 
-    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @commands.cooldown(1, 60, type=commands.BucketType.member)
     @commands.command()
     async def uwu(self,ctx):
         channel = ctx.channel
@@ -18,6 +18,9 @@ class Uwu(commands.Cog):
                 uwuMessage = uwuMessage.replace('l', 'w')
                 uwuMessage = uwuMessage.replace('ove', 'uv')
                 uwuMessage = uwuMessage.replace('.', '!')
+                uwuMessage = uwuMessage.replace(' th', ' d')
+                uwuMessage = uwuMessage.replace('th', 'f')
+                uwuMessage = uwuMessage.replace('mom', 'yeshh')
 
                 for v in vowels:
                   uwuMessage = uwuMessage.replace('n'+ v, 'ny'+v)
