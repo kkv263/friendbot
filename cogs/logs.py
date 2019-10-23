@@ -23,35 +23,70 @@ class Log(commands.Cog):
         # channel = self.bot.get_channel(577227687962214406) 
         numLogs = int(numLogs)
 
-        if numLogs > 5:
+        if numLogs > 10:
             return
 
-        def checkLog(oldMsgSplit,msgSplit):
+        def checkLog(oldMsgSplit,msgSplit, gpMsgSplit):
+            oldCpString=oldTpString=newTpString=newCpString=newGpString=oldGpString = ""
+            print(gpMsgSplit)
+
+            for o in oldMsgSplit:
+                if "CP" in o:
+                    oldCpString = o
+
+                if "TP" in o:
+                    oldTpString = o
+
+                if oldCpString and oldTpString:
+                    break
+
+            for m in msgSplit:
+                if "CP" in m:
+                    newCpString = m
+                if "TP" in m:
+                    newTpString = m
+                if "GP" in m:
+                    newGpString = m
+                if newCpString and newTpString and newGpString:
+                    break
+
+            if gpMsgSplit != list():
+                oldGpString = "1GP: 0GP"
+                            
+            else:
+                for g in oldMsgSplit:
+                    if "GP" in g:
+                       oldGpString = g
+                       break
+
             patternCP = re.compile(r'([\d.]{0,})(?=CP)\S+(?<=Level)(\d+)[\S?]{0,}\((.*?)\)', re.I)
-            oldlistCP = patternCP.search(oldMsgSplit[2].replace(" ",""))
-            newlistCP = patternCP.search(msgSplit[2].replace(" ",""))
+            oldlistCP = patternCP.search(oldCpString.replace(" ",""))
+            newlistCP = patternCP.search(newCpString.replace(" ",""))
 
             oldCurrentCP = oldlistCP.group(3).split('/')
             oldCurrentCP[0] = oldCurrentCP[0].replace("CP","")
             oldCurrentCP[1] = oldCurrentCP[1].replace("CP","")
-            print(oldCurrentCP)
             maxCP = float(oldCurrentCP[1])
             addCP = float(newlistCP.group(1))
             currentCP = newlistCP.group(3).split('/')
             currentCP[0] = currentCP[0].replace("CP","")
             currentCP[1] = currentCP[1].replace("CP","")
 
-            print(oldMsgSplit[3])
-
             patternTP = re.compile(r'([\d.]{0,}\s?(?=T))\S+(?<=P).\s?([\w*, ]{0,})\((.*?)\);?\s?([\w*, ]{0,})\(?([^\)]+)\)?', re.I)
-            oldlistTP = patternTP.search(oldMsgSplit[3] + " ")
-            newlistTP = patternTP.search(msgSplit[3] + " ")
+            oldlistTP = patternTP.search(oldTpString + " ")
+            newlistTP = patternTP.search(newTpString + " ")
+
+            patternGP = re.compile(r'[\d.]+(?=\S?GP)', re.I)
+            oldlistGP = patternGP.findall(oldGpString.replace(" ","").replace(',', ""))
+            newlistGP = patternGP.findall(newGpString.replace(" ","").replace(',', ""))
 
             # [1] = CP added, [2] = Current Level, [3] = Current CP / Total CP
             print(oldlistCP.groups())
             print(newlistCP.groups())
             print(oldlistTP.groups())
             print(newlistTP.groups())
+            print(oldlistGP)
+            print(newlistGP)
 
             addTP = float(newlistTP.group(1))
             if oldlistTP.group(5) != " ":
@@ -66,6 +101,7 @@ class Log(commands.Cog):
             currentTP[1] = currentTP[1].replace("TP","")
             tpCheck = False
             cpCheck = False
+            gpCheck = False
 
             tpItem = newlistTP.group(2).strip()
             queryTP = sheet.findall(re.compile(tpItem, re.IGNORECASE))[0]
@@ -91,10 +127,6 @@ class Log(commands.Cog):
             else:
                 newCurrentTP = addTP + float(oldCurrentTP[0]) if addTP + float(oldCurrentTP[0]) < itemMaxTP else abs((addTP + float(oldCurrentTP[0])) - itemMaxTP)
                 if newlistTP.group(5) != " ": 
-                    print('hello')
-                    print(float(currentTP[0]) == itemMaxTP)
-                    print(newItemMaxTP == float(secondCurrentTP[1]))
-                    print(newCurrentTP == float(secondCurrentTP[0]))
 
                     if float(currentTP[0]) == itemMaxTP and newItemMaxTP == float(secondCurrentTP[1]) and newCurrentTP == float(secondCurrentTP[0]):
                         tpCheck = True
@@ -114,24 +146,34 @@ class Log(commands.Cog):
 
             levelCP = 4 if int(newlistCP.group(2)) < 5 else 8
 
+            if float(oldlistGP[1]) + float(newlistGP[0]) == float(newlistGP[1]) or (int(oldlistGP[0]) == 1 and int(oldlistGP[1]) == 0):
+                gpCheck = True
+
             print (tpCheck)
             print (cpCheck)
+            print (gpCheck)
 
-            return cpCheck and float(currentCP[1]) == levelCP and tpCheck
+            return cpCheck and float(currentCP[1]) == levelCP and tpCheck and gpCheck
 
         # TODO check multiple logs
         msgFound = False
         async with channel.typing():
             async for message in channel.history(limit=numLogs, oldest_first=False):
                 msgSplit = message.content.splitlines()
+                gpMsgSplit = []
                 if 'CP' not in message.content and 'TP' not in message.content:
                       continue
                 async for messageOld in channel.history(limit=None, before=message, oldest_first=False):
                   if 'CP' not in messageOld.content and 'TP' not in messageOld.content:
-                      continue
-                  if msgSplit[0] == messageOld.content.splitlines()[0]:
+                      if 'GP' in messageOld.content:
+                          gpMsgSplit.append(messageOld.content.splitlines())
+                      else:
+                          continue
+                  elif msgSplit[0] == messageOld.content.splitlines()[0]:
                       oldMsgSplit = messageOld.content.splitlines()
-                      if (checkLog(oldMsgSplit,msgSplit)):
+                      if gpMsgSplit != list():
+                          await message.add_reaction(u"\U0001f538")
+                      if (checkLog(oldMsgSplit,msgSplit, gpMsgSplit)):
                           await message.add_reaction('✅')
                       else:
                           await message.add_reaction('❌')

@@ -78,6 +78,9 @@ refreshTime = time.time()
 # Make sure you use the right name here.
 sheet = gClient.open("Magic Item Tables").sheet1
 ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
+charDatabase = gClient.open("Character Database").sheet1
+
+
 # sheet = gClient.open("Magic Item Table").sheet1
 # ritSheet = gClient.open("Reward Item Table").sheet1
 
