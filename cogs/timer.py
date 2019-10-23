@@ -28,6 +28,8 @@ class Timer(commands.Cog):
         userName = author.name
         guild = ctx.guild
 
+        userList = userList.replace(" ", "")
+
 
         if str(channel.category).lower() not in gameCategory:
             if "no-context" in channel.name:
