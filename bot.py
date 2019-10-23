@@ -41,7 +41,18 @@ async def on_command_error(ctx,error):
             msg = f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer"
         if (ctx.command.name == 'add' or ctx.command.name == 'remove'):
             msg = 'Try the command in the next {:.1f}s'.format(error.retry_after)
+        if (ctx.command.name == 'uwu'):
+            return
         await ctx.channel.send(msg)
+    elif isinstance(error, commands.MissingRequiredArgument):
+        if (ctx.command.name == 'start'):
+            msg = f"Woops, it looks like you're missing some information. Please follow this format:\n`$timer start \"@name1, @name2, @name3\" gamename`. \n(Don't forget the quotes wrapped around the names!)"
+            ctx.command.reset_cooldown(ctx)
+        if (ctx.command.name == 'create'): 
+            msg="error"
+        await ctx.channel.send(msg)
+ 
+
     else:
         raise error
 
@@ -73,7 +84,7 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedTimer.title = 'Available Timer Commands'
     helpEmbedTimer.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="This calculates player and DM rewards based on the time and tier you typein. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite' )
-    helpEmbedTimer.add_field(name=commandPrefix + "timer start [optional game name]", value="This is only available in **Game Rooms** and **Campaigns**. This starts a timer to keep track of time and calculate rewards for your game. Only one timer per channel can be active at once, and the timer can only be stopped by the person who started it or a Mod.")
+    helpEmbedTimer.add_field(name=commandPrefix + 'timer start "player1, player2, player3,..." gamename', value="This is only available in **Game Rooms** and **Campaigns**. This starts a timer to keep track of time and calculate rewards for your game. Only one timer per channel can be active at once, and the timer can only be stopped by the person who started it or a Mod.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer transfer", value="Only available in **Game Rooms** and **Campaigns**. Transfer the timer from the owner to another user. The new owner will be able to stop the timer.")
     helpEmbedTimer.add_field(name=commandPrefix + "timer stamp", value="Only available in **Game Rooms** and **Campaigns**. View the elapsed time on the timer running. Will also show the elapsed time for late players")
     helpEmbedTimer.add_field(name=commandPrefix + "timer addme", value="Only available in **Game Rooms** and **Campaigns**.  If you join a game late, this command will add you to the running timer. Your individual rewards will be displayed once the timer has been stopped.")
