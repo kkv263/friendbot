@@ -235,15 +235,18 @@ class Timer(commands.Cog):
             for key, value in start.items():
                 if "?" not in key:
                     playerStamp += start[key]
-                if ("Full Rewards" in key or "?" in key):
+                if ("Full Rewards" in key or "?" in key or 'No Rewards' in key):
                     pass
                 else:
                     timerListString = timerListString + f"{value[0]} - {timeConversion(end - float(key.split(':')[1]))}\n"
+                  
+            if role != "":
+                for p in range(len(playerStamp)):
+                    playerStamp[p] = ctx.guild.get_member_named(playerStamp[p]).display_name
+            else:
+                playerStamp = 'No Rewards'
 
-            for p in range(len(playerStamp)):
-                playerStamp[p] = ctx.guild.get_member_named(playerStamp[p]).display_name
-
-            msg = await ctx.channel.send(content=f"The timer for **{game}** has been running for {durationString}.{timerListString}Owner: {user}\nList of players:{playerStamp}")
+            msg = await ctx.channel.send(content=f"The timer for **{game}** has been running for {durationString}.{timerListString}Owner: {user}\nList of players: {playerStamp}")
             print(start)
 
     @timer.command()
