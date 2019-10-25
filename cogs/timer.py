@@ -347,6 +347,13 @@ class Timer(commands.Cog):
             currentTimersString = f"{currentTimersString} - {i} \n"
         await ctx.channel.send(content=currentTimersString)
 
+    @timer.command()
+    @commands.has_any_role('Mod Friend', 'Admins')
+    async def resetcooldown(self,ctx):
+        self.timer.get_command('start').reset_cooldown(ctx)
+        self.timer.get_command('resume').reset_cooldown(ctx)
+        await ctx.channel.send(f"Timer has been reset in #{ctx.channel}")
+
     @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
     @timer.command()
     async def resume(self,ctx):
