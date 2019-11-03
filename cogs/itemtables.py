@@ -145,7 +145,7 @@ class ItemTables(commands.Cog):
                     else:
                         if react.emoji == left:
                             page -= 1
-                            if page < 1:
+                            if page < 0:
                               page = numPages - 1;
                         elif react.emoji == right:
                             page += 1

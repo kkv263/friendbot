@@ -40,7 +40,7 @@ class Timer(commands.Cog):
                 return
 
         if '"' not in ctx.message.content and userList != "norewards":
-            await channel.send(f"Please make sure you put quotes `\"`` around your list of players and retry the command")
+            await channel.send(f"Please make sure you put quotes `\"` around your list of players and retry the command")
             self.timer.get_command('start').reset_cooldown(ctx)
             return
 
@@ -50,11 +50,12 @@ class Timer(commands.Cog):
             errorList = []
             for p in playerListTemp:
                 if "<@" in p:
-                    u = "".join(c for c in p if c not in ' !<>@')
-                    if guild.get_member(int(u)) is not None: 
-                        playerList.append(guild.get_member(int(u)).display_name)
-                    else:
-                        errorList.append(p)
+                    userListTemp = re.findall(r'<[@!]*(.*?)>',p)
+                    for x in userListTemp:
+                        if guild.get_member(int(x)) is not None: 
+                            playerList.append(guild.get_member(int(x)).display_name)
+                        else:
+                            errorList.append(p)
                 else:
                     if guild.get_member_named(p) is not None: 
                         playerList.append(guild.get_member_named(p).display_name)
@@ -109,10 +110,10 @@ class Timer(commands.Cog):
             if userList != "norewards" and role:
                 userList = userList.split(',')
                 for u in userList:
-                    print(u)
                     if "<@" in u:
-                        u = "".join(c for c in u if c not in ' !<>@')
-                        start.append(f"{guild.get_member(int(u))}")
+                        userListTemp = re.findall(r'<[@!]*(.*?)>',u)
+                        for x in userListTemp:
+                            start.append(f"{guild.get_member(int(x))}")
                     else:
                         start.append(f"{guild.get_member_named(u)}")
                 startTimes = {f"{role} Friend Full Rewards:{startTime}":start} 
@@ -120,12 +121,12 @@ class Timer(commands.Cog):
                 roleString = ""
                 if role != "":
                     roleString = f"({role} Friend)"
-                await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user.\nPlayer list: `{playerList}`" )
+                await startEmbedmsg.edit(embed=None, content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer remove @player` - exact behavior as `$timer removeme`, but to remove @player. (Timer Owner only)\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user.\nPlayer list: `{playerList}`" )
 
             else:
                 startTimes = {f"No Rewards:{startTime}":start}
                 roleString = ""
-                await ctx.channel.send(content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user." )
+                await ctx.channel.send(content=f"Timer: Starting the timer for - **{game}** {roleString}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer remove @player` - exact behavior as `$timer removeme`, but to remove @player. (Timer Owner only)\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user." )
 
             print(startTimes)
 
@@ -133,7 +134,7 @@ class Timer(commands.Cog):
 
             timerStopped = False
             while not timerStopped:
-                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content) and m.channel == channel)
+                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content or f"{commandPrefix}timer remove " in m.content) and m.channel == channel)
                 if f"{commandPrefix}timer transfer " in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
                     newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
@@ -151,6 +152,8 @@ class Timer(commands.Cog):
                     startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, user=guild.get_member(msg.author.id))
                 elif msg.content == f"{commandPrefix}timer removeme":
                     startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=guild.get_member(msg.author.id))
+                elif f"{commandPrefix}timer remove" in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]): 
+                    startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=startTimes, role=role)
 
             self.timer.get_command('start').reset_cooldown(ctx)
             self.timer.get_command('addme').reset_cooldown(ctx)
@@ -167,20 +170,25 @@ class Timer(commands.Cog):
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
     @timer.command()
     async def addme(self,ctx,start={},user=""):
-        print(user)
         if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             userFound = False
+            timeKey = ""
+            startTime = time.time()
             for u, v in startcopy.items():
                 if f"{user.name}#{user.discriminator}" in v:
                     userFound = True
+                    timeKey = u
             if not userFound:
-                startTime = time.time()
-                start[f"Partial Rewards:{startTime}"] = []
-                start[f"Partial Rewards:{startTime}"].append(f"{user.name}#{user.discriminator}")
+                start[f"+Partial Rewards:{startTime}"] = []
+                start[f"+Partial Rewards:{startTime}"].append(f"{user.name}#{user.discriminator}")
                 await ctx.channel.send(content=f"I've added {user.display_name} to the timer.")
-            else:
+            elif '+' in timeKey or 'Full Rewards' in timeKey:
                 await ctx.channel.send(content='You have already been added to the timer')
+            elif '-' in timeKey:
+                await ctx.channel.send(content='You have been re-added to the timer')
+                start[f"{timeKey.replace('-', '+')}:{startTime}"] = start[timeKey]
+                del start[timeKey]
 
         elif ctx.invoked_with == 'addme':
             self.timer.get_command('addme').reset_cooldown(ctx)
@@ -194,33 +202,61 @@ class Timer(commands.Cog):
             startcopy = start.copy()
             userFound = False
             for u, v in startcopy.items():
-                if "?" in u:
-                    continue
-                elif f"{user.name}#{user.discriminator}" in v:
+                if f"{user.name}#{user.discriminator}" in v:
                     userFound = u
 
-            if userFound:
-                endTime = time.time()
-                duration = time.time() - float(userFound.split(':')[1])
-            else:
+            endTime = time.time()
+            if not userFound:
                 await ctx.channel.send(content=f"{user}, I couldn't find you on the timer to remove you.") 
                 return start
 
+            timeSplit = (userFound + f'?{endTime}').split(':')
+
+            duration = 0
+            for t in range(1, len(timeSplit)):
+                ttemp = timeSplit[t].split('?')
+                duration += (float(ttemp[1]) - float(ttemp[0]))
+
+            # duration = time.time() - float(userFound.split(':')[1])
             treasureArray = calculateTreasure(duration,role)
             treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-            
-            if 'Full Rewards' in userFound:
-                start[userFound].remove(f"{user.name}#{user.discriminator}")
-                start[f"Partial Rewards:{userFound.split(':')[1]}?{endTime}"] = [f"{user.name}#{user.discriminator}"]
-            else:
-                start[f"{userFound}?{endTime}"] = start[userFound]
-                del start[userFound]
 
-            await ctx.channel.send(content=f"{user}, I've have removed you from the timer.\nSince you have played for {timeConversion(duration)}, your rewards are - {treasureString}")
+            if '-' in userFound: 
+               await ctx.channel.send(content=f"You have already been removed from the timer.")  
+            
+            elif 'Full Rewards' in userFound:
+                start[userFound].remove(f"{user.name}#{user.discriminator}")
+                start[f"-Partial Rewards:{userFound.split(':')[1]}?{endTime}"] = [f"{user.name}#{user.discriminator}"]
+                await ctx.channel.send(content=f"{user}, I've have removed you from the timer.")
+            elif '+' in userFound:
+                start[f"{userFound.replace('+', '-')}?{endTime}"] = start[userFound]
+                del start[userFound]
+                await ctx.channel.send(content=f"{user}, I've have removed you from the timer.\nSince you have played for {timeConversion(duration)}, your rewards are - {treasureString}")
+
             self.timer.get_command('addme').reset_cooldown(ctx)
 
         print(start)
         return start
+
+    @timer.command()
+    async def remove(self,ctx, msg, start={},role=""):
+        if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
+            guild = ctx.guild
+            removeList = msg.raw_mentions
+            removeUser = ""
+
+            if removeList != list():
+                removeUser = guild.get_member(removeList[0])
+                await ctx.invoke(self.timer.get_command('removeme'), start=start, role=role, user=removeUser)
+            else:
+                await ctx.channel.send(content=f"I cannot find any mention of the user you are trying to remove. Please check your format and spelling")
+
+        elif ctx.invoked_with == 'addme':
+            self.timer.get_command('addme').reset_cooldown(ctx)
+
+        print(start)
+        return start
+
     
     @timer.command()
     async def stamp(self,ctx, stamp=0, role="", game="", author="", start={}):
@@ -235,10 +271,16 @@ class Timer(commands.Cog):
             for key, value in start.items():
                 if "?" not in key:
                     playerStamp += start[key]
-                if ("Full Rewards" in key or "?" in key or 'No Rewards' in key):
+                if ("Full Rewards" in key or "-" in key or 'No Rewards' in key):
                     pass
                 else:
-                    timerListString = timerListString + f"{value[0]} - {timeConversion(end - float(key.split(':')[1]))}\n"
+                    durationEach = 0
+                    timeSplit = (key + f'?{end}').split(':')
+                    for t in range(1, len(timeSplit)):
+                        ttemp = timeSplit[t].split('?')
+                        durationEach += (float(ttemp[1]) - float(ttemp[0]))
+
+                    timerListString = timerListString + f"{value[0]} - {timeConversion(durationEach)}\n"
                   
             if role != "":
                 for p in range(len(playerStamp)):
@@ -264,20 +306,26 @@ class Timer(commands.Cog):
 
 
             for startItemKey, startItemValue in start.items():
+                duration = 0
                 playerList = []
-                startItemsList= startItemKey.split(':')
+                startItemsList = (startItemKey+ f'?{end}').split(':')
                 if "Full Rewards" in startItemKey or  "No Rewards" in startItemKey:
                     totalDuration = timeConversion(end - float(startItemsList[1].split('?')[0]))
+
                 if "?" in startItemKey:
-                    earlyDuration = startItemsList[1].split('?')
-                    duration = float(earlyDuration[1]) - float(earlyDuration[0])
+                    for t in range(1, len(startItemsList)):
+                        ttemp = startItemsList[t].split('?')
+                        duration += (float(ttemp[1]) - float(ttemp[0]))
                 else:
-                    duration = end - float(startItemsList[1])
+                    ttemp = startItemsList[1].split('?')
+                    duration = (float(ttemp[1]) - float(ttemp[0]))
+
                 if role != "":
                     treasureArray = calculateTreasure(duration,role)
                     treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
                 else:
                     treasureString = timeConversion(duration)
+
                 for value in startItemValue:
                     playerList.append(value)
 
@@ -288,9 +336,9 @@ class Timer(commands.Cog):
                         allRewardStrings[treasureString] += playerList 
                 else:
                     if f"{startItemsList[0]} - {treasureString}" not in allRewardStrings:
-                        allRewardStrings[f"{startItemsList[0]} - {treasureString}"] = playerList
+                        allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}"] = playerList
                     else:
-                        allRewardStrings[f"{startItemsList[0]} - {treasureString}"] += playerList
+                        allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}"] += playerList
 
             stopEmbed = discord.Embed()
             stopEmbed.title = f"Timer: {game} [END] - {totalDuration}"
@@ -410,8 +458,9 @@ class Timer(commands.Cog):
                         for u in userList:
                             print(u)
                             if "<@" in u:
-                                u = "".join(c for c in u if c not in ' !<>@')
-                                start.append(f"{guild.get_member(int(u))}")
+                                userListTemp = re.findall(r'<[@!]*(.*?)>',u)
+                                for x in userListTemp:
+                                    start.append(f"{guild.get_member(int(x))}")
                             else:
                                 start.append(f"{guild.get_member_named(u)}")
                         resumeTimes = {f"{startRole} Friend Full Rewards:{startTime}":start} 
@@ -421,22 +470,44 @@ class Timer(commands.Cog):
 
                     async for message in ctx.channel.history(after=timerMessage):
                         if "$timer addme" in message.content and not message.author.bot:
-                            resumeTimes[f"Partial Rewards:{message.created_at.replace(tzinfo=timezone.utc).timestamp()}"] = [f"{message.author.name}#{message.author.discriminator}"]
-                        elif "$timer removeme" in message.content and not message.author.bot: 
-                            # if message.author.display_name in resumeTimes:
-                            #     del resumeTimes[message.author.display_name]
                             resumeTimesCopy= resumeTimes.copy()
                             userFound = False
+                            timeAdd = message.created_at.replace(tzinfo=timezone.utc).timestamp()
                             for u, v in resumeTimesCopy.items():
-                                if "?" in u:
-                                    continue
-                                elif f"{message.author.name}#{message.author.discriminator}" in v:
+                                if f"{message.author.name}#{message.author.discriminator}" in v:
                                     userFound = u
-                            if 'Full Rewards' in userFound:
-                                resumeTimes[userFound].remove(f"{user.name}#{user.discriminator}")
-                                resumeTimes[f"Partial Rewards:{userFound.split(':')[1]}?{message.created_at.replace(tzinfo=timezone.utc).timestamp()}"] = [f"{message.author.name}#{message.author.discriminator}"]
-                            else:
-                                resumeTimes[f"{userFound}?{message.created_at.replace(tzinfo=timezone.utc).timestamp()}"] = resumeTimes[userFound]
+
+                            if not userFound:
+                                resumeTimes[f"+Partial Rewards:{timeAdd}"] = [f"{message.author.name}#{message.author.discriminator}"]
+                            elif '+' in userFound or 'Full Rewards' in userFound:
+                                pass
+                            elif '-' in userFound:
+                                resumeTimes[f'{userFound.replace("-","+")}:{timeAdd}'] = resumeTimes[userFound]
+                                del resumeTimes[userFound]
+                        elif ("$timer removeme" in message.content or "$timer remove " in message.content) and not message.author.bot: 
+                            if "$timer removeme" in message.content:
+                                resumeUser = message.author
+                            elif "$timer remove " in message.content:
+                              removeList = message.raw_mentions
+                              if removeList != list():
+                                  resumeUser = guild.get_member(removeList[0])
+                              else:
+                                  continue
+                                
+                            resumeTimesCopy= resumeTimes.copy()
+                            userFound = False
+                            timeRemove = message.created_at.replace(tzinfo=timezone.utc).timestamp() 
+                            for u, v in resumeTimesCopy.items():
+                                if f"{resumeUser.name}#{resumeUser.discriminator}" in v:
+                                    userFound = u
+
+                            if not userFound:
+                                pass
+                            elif 'Full Rewards' in userFound:
+                                resumeTimes[userFound].remove(f"{resumeUser.name}#{resumeUser.discriminator}")
+                                resumeTimes[f"-Partial Rewards:{userFound.split(':')[1]}?{timeRemove}"] = [f"{resumeUser.name}#{resumeUser.discriminator}"]
+                            elif '+' in userFound:
+                                resumeTimes[f"{userFound.replace('+', '-')}?{timeRemove}"] = resumeTimes[userFound]
                                 del resumeTimes[userFound]
                     break
 
@@ -448,12 +519,12 @@ class Timer(commands.Cog):
                 return
 
             #TODO: if possible reuse below somehow
-            await channel.send(embed=None, content=f"Timer: I have resumed the timer for - **{startGame}** {startRole}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user." )
+            await channel.send(embed=None, content=f"Timer: I have resumed the timer for - **{startGame}** {startRole}. Type \n\n`{commandPrefix}timer stop` - to stop the current timer. This can only be used by the member who started the timer or a Mod.\n`{commandPrefix}timer stamp` - to view the time elapsed on the running timer.\n`{commandPrefix}timer addme` - to add yourself to a game which you are joining late.\n`{commandPrefix}timer removeme` - to remove yourself from a game if you wish to leave early. This command will also calculate your rewards. If you joined late using `$timer addme`, it will remove you from the timer.\n`{commandPrefix}timer remove @player` - exact behavior as `$timer removeme`, but to remove @player. (Timer Owner only)\n`{commandPrefix}timer transfer` - to transfer the timer from the owner to another user." )
             currentTimers.append('#'+channel.name)
 
             timerStopped = False
             while not timerStopped:
-                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content) and m.channel == channel)
+                msg = await self.bot.wait_for('message', check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer stamp" or m.content == f"{commandPrefix}timer addme" or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content or f"{commandPrefix}timer remove " in m.content) and m.channel == channel)
                 if f"{commandPrefix}timer transfer " in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
                     newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
@@ -471,6 +542,8 @@ class Timer(commands.Cog):
                     resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, user=guild.get_member(msg.author.id))
                 elif msg.content == f"{commandPrefix}timer removeme":
                     resumeTimes = await ctx.invoke(self.timer.get_command('removeme'), start=resumeTimes, role=startRole, user=guild.get_member(msg.author.id))
+                elif f"{commandPrefix}timer remove" in msg.content and '@player' not in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]): 
+                    resumeTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=resumeTimes, role=startRole)
 
             self.timer.get_command('resume').reset_cooldown(ctx)
             self.timer.get_command('addme').reset_cooldown(ctx)
