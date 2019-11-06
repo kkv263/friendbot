@@ -99,9 +99,6 @@ class Apps(commands.Cog):
                     newRole = get(guild.roles, name = 'New Friend')
                     await appMember.add_roles(newRole, reason=f"Approved Application, The user has not played at least one game. I have checked in the last {limit} session-logs")
                 
-                unregRole = get(guild.roles, name = 'Unregistered Friend')
-                await appMember.remove_roles(unregRole)
-
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! The D&D Friends Mod team has approved your application and you have been assigned the appropriate roles.\n\nIf you have any further questions then please don't hesitate to ask in our #help-for-players channel or message a Mod Friend!")
 
             elif 'deny' in mMessage.content:

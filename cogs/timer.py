@@ -334,8 +334,9 @@ class Timer(commands.Cog):
                         allRewardStrings[treasureString] = playerList
                     else:
                         allRewardStrings[treasureString] += playerList 
+                    
                 else:
-                    if f"{startItemsList[0]} - {treasureString}" not in allRewardStrings:
+                    if f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}" not in allRewardStrings:
                         allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}"] = playerList
                     else:
                         allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}"] += playerList

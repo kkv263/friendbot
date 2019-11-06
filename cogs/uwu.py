@@ -38,11 +38,9 @@ class Uwu(commands.Cog):
                   uwuMessage = ''.join(uwuList)
                   i += len(randomFace)
             i += 1
-            stopEmbed = discord.Embed()
-            stopEmbed.set_thumbnail(url=message.author.avatar_url)
             
 
-        await channel.send(embed=stopEmbed, content=message.author.display_name + ":\n" +  uwuMessage)
+        await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
         
 def setup(bot):
