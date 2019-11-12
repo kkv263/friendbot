@@ -145,7 +145,7 @@ class Timer(commands.Cog):
                         await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer')
                 elif msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     timerStopped = True
-                    await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart)
+                    await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart, dmChar=author)
                 elif msg.content == f"{commandPrefix}timer stamp":
                     await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes)
                 elif msg.content == f"{commandPrefix}timer addme":
@@ -292,7 +292,7 @@ class Timer(commands.Cog):
             print(start)
 
     @timer.command()
-    async def stop(self,ctx,*,start={}, role="", game="", datestart=""):
+    async def stop(self,ctx,*,start={}, role="", game="", datestart="", dmChar=""):
         if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
             if not self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx):
                 await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you had a timer previously, try `{commandPrefix}timer resume` to resume a timer")
@@ -336,7 +336,9 @@ class Timer(commands.Cog):
                         allRewardStrings[treasureString] += playerList 
                     
                 else:
-                    if f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}" not in allRewardStrings:
+                    if f'{role} Friend Full Rewards - {treasureString}' in allRewardStrings:
+                        allRewardStrings[f'{role} Friend Full Rewards - {treasureString}'] += playerList
+                    elif f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}" not in allRewardStrings:
                         allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}"] = playerList
                     else:
                         allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '')} - {treasureString}"] += playerList
@@ -365,7 +367,7 @@ class Timer(commands.Cog):
                       temp += f"@{v} | [Char Name]\n"
                     allRewardsTotalString += temp + "\n"
 
-                sessionLogString = f"Thanks for playing! Posted below is a session log you can copy and paste into #session-logs.\n```**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n[Replace this text with a summary of how the quest went!]\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}DM @{author.name}#{author.discriminator} | [Char Name] (Tier #): #CP/#TP/#GP```"
+                sessionLogString = f"Thanks for playing! Posted below is a session log you can copy and paste into #session-logs.\n```**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n[Replace this text with a summary of how the quest went!]\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}DM @{dmChar} | [Char Name] (Tier #): #CP/#TP/#GP```"
                 await ctx.channel.send(sessionLogString)
 
             else:
@@ -451,6 +453,7 @@ class Timer(commands.Cog):
                     async for m in ctx.channel.history(before=timerMessage, limit=10):
                         if "$timer start" in m.content:
                             commandMessage = m.content
+                            author = m.author
                             break
 
                     start = []
@@ -536,7 +539,7 @@ class Timer(commands.Cog):
                         await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer')
                 elif msg.content == f"{commandPrefix}timer stop" and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     timerStopped = True
-                    await ctx.invoke(self.timer.get_command('stop'), start=resumeTimes, role=startRole, game=startGame, datestart=datestart)
+                    await ctx.invoke(self.timer.get_command('stop'), start=resumeTimes, role=startRole, game=startGame, datestart=datestart, dmChar=author)
                 elif msg.content == f"{commandPrefix}timer stamp":
                     await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes)
                 elif msg.content == f"{commandPrefix}timer addme":
