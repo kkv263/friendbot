@@ -78,7 +78,7 @@ class Apps(commands.Cog):
             if 'approve' in mMessage.content:
                 # Session Channel
                 sessionChannel = self.bot.get_channel(382045698931294208)
-                await botMsg.edit(embed=None, content=f"{appNum}. {appMember.mention} #{appHash}")
+                await botMsg.edit(content=f"{appNum}. {appMember.mention} #{appHash}")
                 await botMsg.clear_reactions()
                 await mMessage.delete()
 
