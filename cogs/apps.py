@@ -52,7 +52,7 @@ class Apps(commands.Cog):
             if appNum in m.content:
                 sameMessage = True
 
-            return ('approve' in m.content.lower() or 'deny' in m.content.lower() or 'under15' in m.content.lower()) and sameMessage
+            return ('approve #' in m.content.lower() or 'deny #' in m.content.lower() or 'under15 #' in m.content.lower()) and sameMessage
 
         # appchannel
         channelID = 388591318814949376
@@ -60,7 +60,6 @@ class Apps(commands.Cog):
         guild = msg.guild
         if channel and channel.id == channelID and msg.author.name == 'Application Bot Friend':
             botEmbed = msg.embeds[0]
-            botEmbed.set_footer(text=f"Application Message ID: {botEmbed.id}")
             botMsg = await channel.send(embed=botEmbed)
             await msg.delete()
 
@@ -72,6 +71,7 @@ class Apps(commands.Cog):
             appHash = appDiscord.split('#')[1]
             appAge = appDict['fields'][1]['value']
             appMember = guild.get_member_named(appDiscord)
+            botEmbed.set_footer(text=f"Application Message ID: {botMsg.id}")
 
             if appMember is None:
                 ctx.channel.send(content=f"Something went wrong. The application could not find the discord name {appDiscord} for application {appNum}. Please delete this message once this is resolved.")
@@ -104,13 +104,13 @@ class Apps(commands.Cog):
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! The D&D Friends Mod team has approved your application and you have been assigned the appropriate roles.\n\nIf you have any further questions then please don't hesitate to ask in our #help-for-players channel or message a Mod Friend!")
 
             elif 'deny' in mMessage.content:
-                await botMsg.edit(embed=None, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [DENIED - Under 18 and not ok with explicit/adult content]")
+                await botMsg.edit(content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [DENIED - Under 18 and not ok with explicit/adult content]")
                 await botMsg.clear_reactions()
                 await mMessage.delete()
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! Unfortunately, the D&D Friends Mod team has declined your application since we do not allow members under 18 years of age who are not fine with explicit/adult content (and answered 'No' on the application form). If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
              
             elif 'under15' in mMessage.content:
-                await botMsg.edit(embed=None, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [DENIED - Under 15]")
+                await botMsg.edit(content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [DENIED - Under 15]")
                 await botMsg.clear_reactions()
                 await mMessage.delete()
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! Unfortunately, the D&D Friends Mod team has declined your application since you did not meet the cut-off age. If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
