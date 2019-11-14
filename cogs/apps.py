@@ -36,7 +36,7 @@ class Apps(commands.Cog):
             await ctx.message.delete() 
             return
 
-        await editMessage.edit(content=editString, embed=None)
+        await editMessage.edit(content=editString)
         delMessage = await ctx.channel.send(content=f"I have edited the message {num}.\n```{editString}```\nPlease double check that the edit is correct. I will now delete your message and this message in 30 seconds")
         await asyncio.sleep(30) 
         await delMessage.delete()
@@ -59,7 +59,9 @@ class Apps(commands.Cog):
         channel = self.bot.get_channel(channelID)
         guild = msg.guild
         if channel and channel.id == channelID and msg.author.name == 'Application Bot Friend':
-            botMsg = await channel.send(embed=msg.embeds[0])
+            botEmbed = msg.embeds[0]
+            botEmbed.set_footer(text=f"Application Message ID: {botEmbed.id}")
+            botMsg = await channel.send(embed=botEmbed)
             await msg.delete()
 
             mMessage = await self.bot.wait_for("message", check=msgCheck)
