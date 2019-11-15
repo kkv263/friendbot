@@ -78,7 +78,8 @@ refreshTime = time.time()
 # Make sure you use the right name here.
 sheet = gClient.open("Magic Item Tables").sheet1
 ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
-charDatabase = gClient.open("Character Database").sheet1
+# charDatabase = gClient.open("Character Database").worksheet("Character Database")
+# refListSheet = gClient.open("Character Database").worksheet("Reference Lists")
 
 
 # sheet = gClient.open("Magic Item Table").sheet1
@@ -102,7 +103,8 @@ left = '\N{BLACK LEFT-POINTING TRIANGLE}'
 right = '\N{BLACK RIGHT-POINTING TRIANGLE}'
 back = '\N{LEFTWARDS ARROW WITH HOOK}'
 
-numberEmojis = ['1⃣','2⃣','3⃣','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣']
+numberEmojisMobile = ['1⃣','2⃣','3⃣','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣']
+numberEmojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣']
 
 alphaEmojis = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬','🇭','🇮','🇯','🇰',
 '🇱','🇲','🇳','🇴','🇵','🇶','🇷','🇸','🇹','🇺','🇻','🇼','🇽','🇾','🇿']

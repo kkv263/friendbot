@@ -2,7 +2,7 @@ import discord
 import asyncio
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import  numberEmojis, commandPrefix
+from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix
 
 class Guild(commands.Cog):
     def __init__ (self, bot):
@@ -13,7 +13,7 @@ class Guild(commands.Cog):
             sameMessage = False
             if guildAddMsg.id == r.message.id:
                 sameMessage = True
-            return (r.emoji in numberEmojis[:g + 1] or str(r.emoji) == '❌') and u == author and sameMessage
+            return (r.emoji in numberEmojis[:g + 1] or r.emoji in numberEmojisMobile[:g + 1] or str(r.emoji) == '❌') and u == author and sameMessage
 
         guild = ctx.guild
         # Channel where guildsMsg is stored

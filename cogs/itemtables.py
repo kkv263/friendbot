@@ -4,7 +4,7 @@ import re
 from random import randint
 from discord.ext import commands
 
-from bfunc import tierArray, tpArray, ritTierArray, ritSubArray, ritSheet, sheet, numberEmojis, alphaEmojis,left,right,back, refreshTime, refreshKey, commandPrefix
+from bfunc import tierArray, tpArray, ritTierArray, ritSubArray, ritSheet, sheet, numberEmojis, numberEmojisMobile, alphaEmojis,left,right,back, refreshTime, refreshKey, commandPrefix
 
 
 class ItemTables(commands.Cog):
@@ -23,7 +23,7 @@ class ItemTables(commands.Cog):
             sameMessage = False
             if mitQuery.id == r.message.id:
                 sameMessage = True
-            return (r.emoji in numberEmojis[:alphaIndex] or r.emoji == '❌') and u == author and sameMessage
+            return (r.emoji in numberEmojis[:alphaIndex] or r.emoji in numberEmojisMobile[:alphaIndex] or r.emoji == '❌') and u == author and sameMessage
     
         def mitItemEmbedCheck(m):
             return (m.content.lower() in [str(x) for x in range(1,len(mitResults) + 1)]) and m.channel == channel and m.author == author
@@ -112,7 +112,7 @@ class ItemTables(commands.Cog):
                     sameMessage = False
                     if mitStart.id == r.message.id:
                         sameMessage = True
-                    return sameMessage and u == author and (r.emoji == left or r.emoji == right or r.emoji == '❌' or r.emoji == back or r.emoji in numberEmojis[:numberEmoji])
+                    return sameMessage and u == author and (r.emoji == left or r.emoji == right or r.emoji == '❌' or r.emoji == back or r.emoji in numberEmojis[:numberEmoji] or r.emoji in numberEmojisMobile[:numberEmoji])
 
                 page = 0;
                 perPage = 9
@@ -158,7 +158,7 @@ class ItemTables(commands.Cog):
                         elif react.emoji == back:
                             await mitStart.delete()
                             await ctx.reinvoke()
-                        elif react.emoji in numberEmojis:
+                        elif react.emoji in numberEmojis or react.emoji in numberEmojisMobile:
                             break
                         mitItemListEmbed.clear_fields()
                         await mitStart.clear_reactions()
