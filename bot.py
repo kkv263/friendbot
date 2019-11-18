@@ -21,13 +21,14 @@ async def change_status():
 @bot.event
 async def on_ready():
     print('We have logged in as ' + bot.user.name)
-    bot.loop.create_task(change_status())
+    # bot.loop.create_task(change_status())
+
+    # print(bot.get_guild(575505442109784067).categories)
 
     #secret area channel
     channel = bot.get_channel(577611798442803205) 
     await channel.send('Hello I have restarted uwu')
-
-
+  
 bot.remove_command('help')
 
 @bot.event
@@ -43,16 +44,24 @@ async def on_command_error(ctx,error):
             msg = 'Try the command in the next {:.1f}s'.format(error.retry_after)
         if (ctx.command.name == 'uwu'):
             return
+        if (ctx.command.name == 'create'):
+            msg = f"You have already started creating a character! Please finish the previous character creation before starting a new one"
         await ctx.channel.send(msg)
     elif isinstance(error, commands.MissingRequiredArgument):
         if (ctx.command.name == 'start'):
             msg = f"Woops, it looks like you're missing some information. Please follow this format:\n`$timer start \"@name1, @name2, @name3\" gamename`. \n(Don't forget the quotes wrapped around the names!)"
             ctx.command.reset_cooldown(ctx)
         if (ctx.command.name == 'create'): 
-            msg="error"
+            msg="Woops, it looks like you're missing some information. Please follow this format: `$char create [placeholder]`"
+            ctx.command.reset_cooldown(ctx)
         await ctx.channel.send(msg)
- 
+    elif isinstance(error, commands.UnexpectedQuoteError):
+        if (ctx.command.name == 'create'): 
+            msg="There seems to be an unexpected quote mark somewhere, please check your format"
+            ctx.command.reset_cooldown(ctx)
+        await ctx.channel.send(msg)
 
+ 
     else:
         raise error
 
