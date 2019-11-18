@@ -9,14 +9,14 @@ from bfunc import *
 bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 cogs_dir = "cogs"
 
-async def change_status():
-      await bot.wait_until_ready()
-      statusLoop = cycle(statuses)
+# async def change_status():
+#       await bot.wait_until_ready()
+#       statusLoop = cycle(statuses)
 
-      while not bot.is_closed():
-          current_status = next(statusLoop)
-          await bot.change_presence(activity=discord.Activity(name=current_status, type=discord.ActivityType.watching))
-          await asyncio.sleep(5)
+      # while not bot.is_closed():
+      #     current_status = next(statusLoop)
+      #     await bot.change_presence(activity=discord.Activity(name=current_status, type=discord.ActivityType.watching))
+      #     await asyncio.sleep(5)
 
 @bot.event
 async def on_ready():
