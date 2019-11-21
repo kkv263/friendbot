@@ -91,7 +91,7 @@ class Timer(commands.Cog):
         except asyncio.TimeoutError:
             if userList != "norewards":
                 await startEmbedmsg.delete()
-                await channel.send('Timer timed out! Try starting the timer again.')
+                await channel.send('Timer timed out! You did not pick a tier and will need to start a new timer.')
                 self.timer.get_command('start').reset_cooldown(ctx)
         else:
             role = ""

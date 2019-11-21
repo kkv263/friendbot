@@ -55,14 +55,15 @@ async def on_command_error(ctx,error):
             msg="Woops, it looks like you're missing some information. Please follow this format: `$char create [placeholder]`"
             ctx.command.reset_cooldown(ctx)
         await ctx.channel.send(msg)
-    elif isinstance(error, commands.UnexpectedQuoteError):
-        if (ctx.command.name == 'create'): 
-            msg="There seems to be an unexpected quote mark somewhere, please check your format"
+    elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+        if (ctx.command.name == 'create' or ctx.command.name =="start"): 
+            msg="There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command"
             ctx.command.reset_cooldown(ctx)
         await ctx.channel.send(msg)
 
  
     else:
+        ctx.command.reset_cooldown(ctx)
         raise error
 
 @bot.command()
