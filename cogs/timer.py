@@ -155,31 +155,24 @@ class Timer(commands.Cog):
                             await channel.send(f'{author.mention}, the current timer has been transferred to you. Use `{commandPrefix}timer stop` whenever you would like to stop the timer.')
                         else:
                             await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer')
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif (msg.content == f"{commandPrefix}timer stop" or msg.content == f"{commandPrefix}timer end") and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                         timerStopped = True
-                        await stampEmbedmsg.delete()
                         await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart, dmChar=author)
                     elif msg.content == f"{commandPrefix}timer stamp":
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif msg.content == f"{commandPrefix}timer addme":
                         startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, user=guild.get_member(msg.author.id))
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif msg.content == f"{commandPrefix}timer removeme":
                         startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=guild.get_member(msg.author.id))
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif f"{commandPrefix}timer remove" in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]): 
                         startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=startTimes, role=role)
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
 
                 except asyncio.TimeoutError:
-                    await stampEmbedmsg.delete()
-                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed)
+                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 else:
                     pass
 
@@ -288,7 +281,7 @@ class Timer(commands.Cog):
 
     
     @timer.command()
-    async def stamp(self,ctx, stamp=0, role="", game="", author="", start={}, embed=""):
+    async def stamp(self,ctx, stamp=0, role="", game="", author="", start={}, embed="", embedMsg=""):
         if ctx.invoked_with == 'start' or ctx.invoked_with == 'resume':
             user = author.display_name
             end = time.time()
@@ -325,8 +318,17 @@ class Timer(commands.Cog):
             embed.title = f'**{game}**: {durationString}'
             embed.description = playerListString + timerListString
             embed.set_author(name=f'DM: {user}', icon_url=author.avatar_url)
-            msg = await ctx.channel.send(embed=embed)
-            return msg
+
+            msgAfter = False
+            async for message in ctx.channel.history(after=embedMsg, limit=1):
+                msgAfter = True
+            if not msgAfter:
+                await embedMsg.edit(embed=embed)
+            else:
+                await embedMsg.delete()
+                embedMsg = await ctx.channel.send(embed=embed)
+
+            return embedMsg
             print(start)
 
     @timer.command(aliases=['end'])
@@ -585,30 +587,23 @@ class Timer(commands.Cog):
                             await channel.send(f'{author.mention}, the current timer has been transferred to you. Use `{commandPrefix}timer stop` whenever you would like to stop the timer.')
                         else:
                             await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer')
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif (msg.content == f"{commandPrefix}timer stop" or msg.content == f"{commandPrefix}timer end") and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                         timerStopped = True
-                        await stampEmbedmsg.delete()
                         await ctx.invoke(self.timer.get_command('stop'), start=resumeTimes, role=startRole, game=startGame, datestart=datestart, dmChar=author)
                     elif msg.content == f"{commandPrefix}timer stamp":
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif msg.content == f"{commandPrefix}timer addme":
                         resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, user=guild.get_member(msg.author.id))
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif msg.content == f"{commandPrefix}timer removeme":
                         resumeTimes = await ctx.invoke(self.timer.get_command('removeme'), start=resumeTimes, role=startRole, user=guild.get_member(msg.author.id))
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                     elif f"{commandPrefix}timer remove" in msg.content and '@player' not in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]): 
                         resumeTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=resumeTimes, role=startRole)
-                        await stampEmbedmsg.delete()
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 except asyncio.TimeoutError:
-                    await stampEmbedmsg.delete()
-                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed)
+                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 else:
                     pass
 
