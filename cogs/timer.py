@@ -322,10 +322,11 @@ class Timer(commands.Cog):
             msgAfter = False
             async for message in ctx.channel.history(after=embedMsg, limit=1):
                 msgAfter = True
-            if not msgAfter:
+            if not msgAfter and embedMsg:
                 await embedMsg.edit(embed=embed)
             else:
-                await embedMsg.delete()
+                if embedMsg:
+                    await embedMsg.delete()
                 embedMsg = await ctx.channel.send(embed=embed)
 
             return embedMsg
@@ -573,7 +574,8 @@ class Timer(commands.Cog):
             stampEmbed = discord.Embed()
             stampEmbed.set_footer(text=f'#{ctx.channel}\n{commandPrefix}help timer for help with the timer.')
             stampEmbed.set_author(name=f'DM: {user}', icon_url=author.avatar_url)
-            stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed)
+            stampEmbedmsg = None
+            stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=startRole, game=startGame, author=author, start=resumeTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
 
             timerStopped = False
             while not timerStopped:
