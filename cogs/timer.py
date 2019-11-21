@@ -324,6 +324,7 @@ class Timer(commands.Cog):
 
             embed.title = f'**{game}**: {durationString}'
             embed.description = playerListString + timerListString
+            embed.set_author(name=f'DM: {user}', icon_url=author.avatar_url)
             msg = await ctx.channel.send(embed=embed)
             return msg
             print(start)
