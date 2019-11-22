@@ -292,7 +292,7 @@ class Timer(commands.Cog):
 
             timerListString = "" 
             for key, value in start.items():
-                if "?" not in key:
+                if "-" not in key:
                     playerStamp += start[key]
                 if ("Full Rewards" in key or "-" in key or 'No Rewards' in key):
                     pass
