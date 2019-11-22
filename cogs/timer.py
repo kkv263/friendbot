@@ -288,6 +288,7 @@ class Timer(commands.Cog):
             duration = end - stamp
             durationString = timeConversion(duration)
             playerStamp = []
+            playerListString = ""
 
             timerListString = "" 
             for key, value in start.items():
