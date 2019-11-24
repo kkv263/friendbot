@@ -21,19 +21,20 @@ async def change_status():
 @bot.event
 async def on_ready():
     print('We have logged in as ' + bot.user.name)
-    bot.loop.create_task(change_status())
+    # bot.loop.create_task(change_status())
 
     # print(bot.get_guild(575505442109784067).categories)
 
     #secret area channel
-    channel = bot.get_channel(577611798442803205) 
-    await channel.send('Hello I have restarted uwu')
+    # channel = bot.get_channel(577611798442803205) 
+    # await channel.send('Hello I have restarted uwu')
   
 bot.remove_command('help')
 
 @bot.event
 async def on_command_error(ctx,error):
     if isinstance(error, commands.CommandOnCooldown):
+        msg = None
         if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
             msg = 'Woahhh, slow down partner! Try the command in the next {:.1f}s'.format(error.retry_after)
         if (ctx.command.name == 'addme'):
@@ -46,7 +47,10 @@ async def on_command_error(ctx,error):
             return
         if (ctx.command.name == 'create'):
             msg = f"You have already started creating a character! Please finish the previous character creation before starting a new one"
-        await ctx.channel.send(msg)
+        if (ctx.command.name == 'respec'):
+            msg = f"You have already started respeccing a character! Please finish the previous character respec before starting a new one"
+        if msg:
+            await ctx.channel.send(msg)
     elif isinstance(error, commands.MissingRequiredArgument):
         if (ctx.command.name == 'start'):
             msg = f"Woops, it looks like you're missing some information. Please follow this format:\n`$timer start \"@name1, @name2, @name3\" gamename`. \n(Don't forget the quotes wrapped around the names!)"
@@ -54,12 +58,16 @@ async def on_command_error(ctx,error):
         if (ctx.command.name == 'create'): 
             msg="Woops, it looks like you're missing some information. Please follow this format: `$char create [placeholder]`"
             ctx.command.reset_cooldown(ctx)
-        await ctx.channel.send(msg)
+        if msg:
+            ctx.command.reset_cooldown(ctx)
+            await ctx.channel.send(msg)
     elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
         if (ctx.command.name == 'create' or ctx.command.name =="start"): 
             msg="There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command"
             ctx.command.reset_cooldown(ctx)
-        await ctx.channel.send(msg)
+        if msg:
+            ctx.command.reset_cooldown(ctx)
+            await ctx.channel.send(msg)
 
  
     else:
@@ -75,33 +83,42 @@ async def help(ctx, *, pageString=''):
         return sameMessage and u == ctx.author and (r.emoji == left or r.emoji == right)
 
     helpEmbedItems = discord.Embed() 
-    helpEmbedTimer = discord.Embed()
+    helpEmbedTimerOne = discord.Embed()
+    helpEmbedTimerTwo = discord.Embed()
     helpEmbedGuild = discord.Embed()
 
     page = 0
 
-    if 'timer' in pageString:
+    if 'timer' in pageString or 'timer1' in pageString:
         page = 1
-    elif 'guild' in pageString:
+    if 'timer2' in pageString:
         page = 2
+    elif 'guild' in pageString:
+        page = 3
 
-    helpList = [helpEmbedItems,helpEmbedTimer,helpEmbedGuild]
+    helpList = [helpEmbedItems,helpEmbedTimerOne, helpEmbedTimerTwo, helpEmbedGuild]
 
     helpEmbedItems.title = 'Available Item Table Commands'
     helpEmbedItems.add_field(name=commandPrefix + "mit [optional name search]", value="This shows you items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: " + commandPrefix + "mit Cloak of Displacement" )
     helpEmbedItems.add_field(name=commandPrefix + "rit [optional name search]", value="This shows you items from the Reward Item Table, sorted by tier and Minor / Major. React to the lists to change pages or view items. You can also search by name, for example: " + commandPrefix + "rit Moon-Touched Sword" )
     helpEmbedItems.add_field(name=commandPrefix + "rit random", value="This randomly awards you a Reward Item based on which tier and sub-tier you react to." )
 
-    helpEmbedTimer.title = 'Available Timer Commands'
-    helpEmbedTimer.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="This calculates player and DM rewards based on the time and tier you typein. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite' )
-    helpEmbedTimer.add_field(name=commandPrefix + 'timer start "@player1, @player2, @player3,..." gamename', value="This is only available in **Game Rooms** and **Campaigns**. This starts a timer to keep track of time and calculate rewards for your game. Only one timer per channel can be active at once, and the timer can only be stopped by the person who started it or a Mod.")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer transfer", value="Only available in **Game Rooms** and **Campaigns**. Transfer the timer from the owner to another user. The new owner will be able to stop the timer.")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer stamp", value="Only available in **Game Rooms** and **Campaigns**. View the elapsed time on the timer running. Will also show the elapsed time for late players")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer addme", value="Only available in **Game Rooms** and **Campaigns**.  If you join a game late, this command will add you to the running timer. Your individual rewards will be displayed once the timer has been stopped.")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer remove @player", value="Only available in **Game Rooms** and **Campaigns**. This command will remove the user mentioned from the running timer and display their individual rewards for the time they played.")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer removeme", value="Only available in **Game Rooms** and **Campaigns**. If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer stop", value="Only available in **Game Rooms** and **Campaigns**. This stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.")
-    helpEmbedTimer.add_field(name=commandPrefix + "timer resume", value="Only available in **Game Rooms** and **Campaigns**. This resumes the last running timer that was started, and behaves identical to " + commandPrefix + "timer start.")
+    helpEmbedTimerOne.title = 'Available Timer Commands: Before starting a timer; pt1.\n(Only available in **Game Rooms** and **Campaigns**)'
+    helpEmbedTimerOne.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="This calculates player and DM rewards based on the time and tier you typein. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite', inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep "@player1, @player2, @player3,..." #guild1, #guild2 gamename', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards.", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer signup charactername', value="Signs up your character to participate and be eligible for rewards", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer add @player', value="Adds a player to the roster so they can signup their character", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer remove @player', value="Removes a player from the roster", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer start', value=f"**Followed by **:`{commandPrefix}timer prep` - Starts a timer to keep track of time and calculate rewards for your game. Only one timer per channel can be active at once, and the timer can only be stopped by the person who started it or a Mod.", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + "timer resume", value="Resumes the last running timer that was started, and behaves identical to " + commandPrefix + "timer start.", inline=False)
+
+    helpEmbedTimerTwo.title = 'Available Timer Commands: During a timer; pt2.\n(Only available in **Game Rooms** and **Campaigns**)'
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer transfer", value="Transfer the timer from the owner to another user. The new owner will be able to stop the timer.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer add @player:charactername \"consumables\"", value="**DM Only**: If you join a game late, this command will add @player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer remove @player", value="**DM Only**: Remove the user mentioned from the running timer and display their individual rewards for the time they played.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer removeme", value="If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer reward @player \"rewards\"", value="**DM Only**: Rewards @player item(s) from the RIT. Reward limits depend on your Noodle Role.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer stop", value="**DM Only**: Stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.", inline=False)
 
     helpEmbedGuild.title = 'Available Guild Commands'
     helpEmbedGuild.add_field(name=commandPrefix + "guild add [username#1234] ", value="This command is **case-sensitive** and is only available to Guildmasters. It allows a Guildmaster to add a member to one of the guilds that they are a Guildmaster of.")
