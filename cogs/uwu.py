@@ -42,6 +42,13 @@ class Uwu(commands.Cog):
 
         await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
+    
+    @commands.Cog.listener()
+    async def on_message(self,msg):
+        if any(word in msg.content.lower() for word in ['thank', 'thank you', 'thx', 'gracias']) and 'bot friend' in msg.content.lower():
+            await msg.add_reaction('❤️')
+            await msg.channel.send("You're welcome friend!")
+            
         
 def setup(bot):
     bot.add_cog(Uwu(bot))
