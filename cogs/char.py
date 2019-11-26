@@ -496,7 +496,7 @@ class Character(commands.Cog):
         try:
             playersCollection.insert_one(charDict)
         except Exception as e:
-            print ('MONGO ERROR:' + e)
+            print ('MONGO ERROR: ' + str(e))
             charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
         else:
             print('Success')
@@ -820,7 +820,7 @@ class Character(commands.Cog):
             # playersCollection.update_one({'_id': charID}, {"$set": data})
             pass
         except Exception as e:
-            print ('MONGO ERROR:' + e)
+            print ('MONGO ERROR: ' + str(e))
             charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
         else:
             print('Success')
@@ -885,7 +885,7 @@ class Character(commands.Cog):
                         # playersCollection.delete_one({'_id': charID})
                         pass
                     except Exception as e:
-                        print ('MONGO ERROR:' + e)
+                        print ('MONGO ERROR: ' + str(e))
                         charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try retiring your character again.")
                     else:
                         print('Success')
@@ -1001,7 +1001,7 @@ class Character(commands.Cog):
                                 # playersCollection.delete_one({'_id': charID})
                                 pass
                             except Exception as e:
-                                print ('MONGO ERROR:' + e)
+                                print ('MONGO ERROR: ' + str(e))
                                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try retiring your character again.")
                             else:
                                 print('Success')
@@ -1039,7 +1039,7 @@ class Character(commands.Cog):
                         playersCollection = db.players
                         playersCollection.update_one({'_id': charID}, {"$set": data, "$unset": {"Death":1}})
                     except Exception as e:
-                        print ('MONGO ERROR:' + e)
+                        print ('MONGO ERROR: ' + str(e))
                         charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
                     else:
                         print("Success")
@@ -1059,17 +1059,37 @@ class Character(commands.Cog):
         charEmbed = discord.Embed()
         charEmbedmsg = None
 
-        print(roleColors)
         characterCog = self.bot.get_cog('Character')
 
+        statusEmoji = ""
         charDict, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
         if charDict:
+            charEmbed.set_footer(text= charEmbed.Empty)
             charLevel = charDict['Level']
-                
+            if charLevel < 5:
+                role = 1
+                charEmbed.colour = (roleColors['Junior Friend'])
+            elif charLevel < 11:
+                role = 2
+                charEmbed.colour = (roleColors['Journey Friend'])
+            elif charLevel < 17:
+                role = 3
+                charEmbed.colour = (roleColors['Elite Friend'])
+            elif charLevel < 21:
+                role = 4
+                charEmbed.colour = (roleColors['True Friend'])
+
+            if charLevel == 4 or 10 or 16:
+                charEmbed.set_footer(text = f'❕ You will no longer recieve Tier {role} TP the next time you level. Please plan accordingly')
+
+            if 'Death' in charDict:
+                statusEmoji = "⚰️"
+                charEmbed.title = f"{statusEmoji} Status: **DYING** - please use {commandPrefix}char death for your character." 
+                charEmbed.colour = discord.Colour(0xbb0a1e)
+
             charDictAuthor = guild.get_member(int(charDict['User ID']))
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
             charEmbed.clear_fields()    
-            charEmbed.set_footer(text= charEmbed.Empty)
             charEmbed.add_field(name='Name', value=charDict['Name'], inline=True)
             charEmbed.add_field(name='Race', value=charDict['Race'], inline=True)
             charEmbed.add_field(name='Level', value=charLevel, inline=True)
@@ -1079,30 +1099,22 @@ class Character(commands.Cog):
             charEmbed.add_field(name='CP', value=f"{charDict['CP']}", inline=True)
             charEmbed.add_field(name='GP', value=f"{charDict['GP']} GP", inline=True)
             charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
-            charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=True)
-            charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=True)
+            for i in range (1,5):
+                if f"T{i} TP" in charDict:
+                    charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
+ 
+            charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
+            charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
             charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
             if 'Image' in charDict:
                 charEmbed.set_thumbnail(url=charDict['Image'])
 
-            if charLevel < 5:
-                charEmbed.colour = (roleColors['Junior Friend'])
-            elif charLevel < 11:
-                charEmbed.colour = (roleColors['Journey Friend'])
-            elif charLevel < 17:
-                charEmbed.colour = (roleColors['Elite Friend'])
-            elif charLevel < 21:
-                charEmbed.colour = (roleColors['True Friend'])
-
-            if 'Death' in charDict:
-                charEmbed.title = f"Status: **DYING** - please use {commandPrefix}char death for your character." 
-                charEmbed.colour = discord.Colour(0xbb0a1e)
-            
             if not charEmbedmsg:
-                await ctx.channel.send(embed=charEmbed)
+                charEmbedmsg = await ctx.channel.send(embed=charEmbed)
             else:
                 await charEmbedmsg.edit(embed=charEmbed)
+
             self.char.get_command('info').reset_cooldown(ctx)
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
@@ -1127,7 +1139,7 @@ class Character(commands.Cog):
                 playersCollection = db.players
                 playersCollection.update_one({'_id': charID}, {"$set": data})
             except Exception as e:
-                print ('MONGO ERROR:' + e)
+                print ('MONGO ERROR: ' + str(e))
                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
             else:
                 print('Success')
@@ -1429,7 +1441,7 @@ class Character(commands.Cog):
                 #     playersCollection = db.players
                 #     playersCollection.update_one({'_id': charID}, {"$set": data})
                 # except Exception as e:
-                #     print ('MONGO ERROR:' + e)
+                #     print ('MONGO ERROR: ' + str(e))
                 #     charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
                 # else:
                 #     print("Success")
@@ -1457,6 +1469,34 @@ class Character(commands.Cog):
                     await levelUpEmbedmsg.add_reaction('🙌')
                     await levelUpEmbedmsg.add_reaction('🎊')
                     await levelUpEmbedmsg.add_reaction('🍾')
+
+
+    # TODO: attune items
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @commands.command()
+    async def attune(self,ctx, *, char, mItems):
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        charEmbed = discord.Embed ()
+        characterCog = self.bot.get_cog('Character')
+        charRecords, charEmbedmsg = await characterCog.checkForChar(ctx, char, levelUpEmbed)
+        if "Attuned" not in charRecords:
+            attuned = []
+        else:
+            attuned = charRecords['Attuned'].split(', ')
+
+        #TODO: attuned for 3 items unless artificer (10 - 4, 13-5, 16-6)
+        
+        if charRecords:
+            for m in mItems:
+                if m not in charRecords['Magic Items']:
+                    msg = f"You don't have the item {m} in your inventory or it does not exist on the magic item table."
+                else:
+                    attuned.append(m)
+
+                    
+
 
     async def checkForChar(self, ctx, char, charEmbed=""):
         channel = ctx.channel

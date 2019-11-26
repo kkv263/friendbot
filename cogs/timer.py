@@ -884,7 +884,7 @@ class Timer(commands.Cog):
                     # print(r)
                     playersCollection.bulk_write(timerData)
                 except Exception as e:
-                    print ('MONGO ERROR:' + e)
+                    print ('MONGO ERROR: ' + str(e))
                     charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
                 else:
                     print('Success')
