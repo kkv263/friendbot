@@ -1103,8 +1103,9 @@ class Character(commands.Cog):
             for i in range (1,5):
                 if f"T{i} TP" in charDict:
                     charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
- 
             charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
+            if 'Attuned' in charDict:
+                charEmbed.add_field(name='Attuned', value=charDict['Attuned'], inline=False)
             charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
             charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
             if 'Image' in charDict:
@@ -1474,28 +1475,127 @@ class Character(commands.Cog):
     # TODO: attune items
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command()
-    async def attune(self,ctx, *, char, mItems):
+    async def attune(self,ctx, char, m):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
         charEmbed = discord.Embed ()
         characterCog = self.bot.get_cog('Character')
-        charRecords, charEmbedmsg = await characterCog.checkForChar(ctx, char, levelUpEmbed)
-        if "Attuned" not in charRecords:
-            attuned = []
-        else:
-            attuned = charRecords['Attuned'].split(', ')
+        charRecords, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
 
-        #TODO: attuned for 3 items unless artificer (10 - 4, 13-5, 16-6)
-        
         if charRecords:
-            for m in mItems:
-                if m not in charRecords['Magic Items']:
-                    msg = f"You don't have the item {m} in your inventory or it does not exist on the magic item table."
-                else:
-                    attuned.append(m)
+            attuneLength = 3
+            if charRecords['Class'] == 'Artificer':
+                if charRecords['Level'] >= 16:
+                    attuneLength = 6
+                elif charRecords['Level'] >= 13:
+                    attuneLength = 5
+                elif charRecords['Level'] >= 10:
+                    attuneLength = 4
 
+            if "Attuned" not in charRecords:
+                attuned = []
+            else:
+                attuned = charRecords['Attuned'].split(', ')
+
+            charID = charRecords['_id']
+            charRecordMagicItems = charRecords['Magic Items'].split(', ')
+            if len(attuned) >= attuneLength:
+                await channel.send(f"You cannot attune to anymore items.")
+                return
+
+            mRecord = await characterCog.callAPI(ctx, 'MIT', m)
+            if m.lower() not in [x.lower() for x in charRecordMagicItems] or not mRecord:
+                await channel.send(f"You don't have the item `{m}` in your inventory or it does not exist on the magic item table.")
+                return
+            else:
+                if mRecord['Name'] in attuned:
+                    await channel.send(f"You are already attuned to `{mRecord['Name']}`")
+                    return
+                elif 'Attunement' in mRecord:
+                    attuned.append(mRecord['Name'])
+                else:
+                    await channel.send(f"`{m}` does not have an attunement property, so there is no need to attune this item.")
+                    return
+                        
+
+            try:
+                playersCollection = db.players
+                playersCollection.update_one({'_id': charID}, {"$set": {"Attuned": ', '.join(attuned)}})
+            except Exception as e:
+                print ('MONGO ERROR: ' + str(e))
+                charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
+            else:
+                await channel.send(f"You succesfully attuned to `{mRecord['Name']}`")
+
+    # TODO: attune items
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @commands.command()
+    async def unattune(self,ctx, char, m):
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        charEmbed = discord.Embed ()
+        characterCog = self.bot.get_cog('Character')
+        charRecords, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
+
+        if charRecords:
+            if "Attuned" not in charRecords:
+                await channel.send(f"You have no attuned items to unattune")
+                return
+            else:
+                attuned = charRecords['Attuned'].split(', ')
+
+            charID = charRecords['_id']
+            mRecord = await characterCog.callAPI(ctx, 'MIT', m)
+            if not mRecord:
+                await channel.send(f"`{m}` does not exist on the magic item table.")
+                return
+            else:
+                if mRecord['Name'] not in attuned:
+                    await channel.send(f"`{mRecord['Name']}` cannot be unatunned because it is currently not attuned to you")
+                    return
+                else:
+                    attuned.remove(mRecord['Name'])
+                    try:
+                        playersCollection = db.players
+                        playersCollection.update_one({'_id': charID}, {"$set": {"Attuned": ', '.join(attuned)}})
+                    except Exception as e:
+                        print ('MONGO ERROR: ' + str(e))
+                        charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
+                    else:
+                        await channel.send(f"You succesfully unattuned to `{mRecord['Name']}`")
                     
+
+    async def callAPI(self, ctx, table, query):
+        if query == "":
+            return False
+
+        API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
+        r = requests.get(API_URL, headers=headers)
+        r = r.json()
+
+        if r['records'] == list():
+            return False
+        else:
+            if (len(r['records']) > 1):
+                if table == 'Races' or table == "Background":
+                    for x in r['records']:
+                        print(x['fields']['Name'])
+                        print(query)
+                        if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
+                            return x['fields']
+
+                if table == 'RIT':
+                    minimum = {'fields': {'Tier': 0}}
+                    for x in r['records']:
+                        if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
+                            min = x
+                    
+                    return min['fields']
+
+            else:
+                return r['records'][0]['fields']
 
 
     async def checkForChar(self, ctx, char, charEmbed=""):
