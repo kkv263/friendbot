@@ -6,7 +6,7 @@ import asyncio
 from discord.utils import get        
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
-from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db
+from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db, callAPI, checkForChar
 
 class Character(commands.Cog):
     def __init__ (self, bot):
@@ -81,37 +81,6 @@ class Character(commands.Cog):
         if lvl not in roleSet:
             msg += "- You cannot create a character of this level! You do not have the correct role!\n"
         
-
-        # For API requests below
-        def callAPI(table, query):
-            if query == "":
-                return False
-
-            API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
-            r = requests.get(API_URL, headers=headers)
-            r = r.json()
-
-            if r['records'] == list():
-                return False
-            else:
-                if (len(r['records']) > 1):
-                    if table == 'Races' or table == "Background":
-                        for x in r['records']:
-                            print(x['fields']['Name'])
-                            print(query)
-                            if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
-                                return x['fields']
-
-                    if table == 'RIT':
-                        minimum = {'fields': {'Tier': 0}}
-                        for x in r['records']:
-                            if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
-                                min = x
-                        
-                        return min['fields']
-
-                else:
-                    return r['records'][0]['fields']
         # CP
         if lvl < 5:
             maxCP = 4
@@ -521,8 +490,7 @@ class Character(commands.Cog):
         charEmbed.set_footer(text= "React with ❌ to cancel")
         statNames = ['STR','DEX','CON','INT','WIS','CHA']
 
-        characterCog = self.bot.get_cog('Character')
-        charDict, charEmbedmsg = await characterCog.checkForChar(ctx, name, charEmbed)
+        charDict, charEmbedmsg = await checkForChar(ctx, name, charEmbed)
         charID = charDict['_id']
 
         print(charDict)
@@ -546,37 +514,6 @@ class Character(commands.Cog):
 
         charDict['Name'] = newname
 
-        # For API requests below
-        def callAPI(table, query):
-            if query == "":
-                return False
-
-            API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
-            r = requests.get(API_URL, headers=headers)
-            r = r.json()
-
-            if r['records'] == list():
-                return False
-            else:
-                if (len(r['records']) > 1):
-                    if table == 'Races' or table == "Background":
-                        for x in r['records']:
-                            print(x['fields']['Name'])
-                            print(query)
-                            if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
-                                return x['fields']
-
-                    if table == 'RIT':
-                        minimum = {'fields': {'Tier': 0}}
-                        for x in r['records']:
-                            if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
-                                min = x
-                        
-                        return min['fields']
-
-                else:
-                    return r['records'][0]['fields']
-        
         #TODO: Charges, attunement
         # check magic items and TP
         prevMagicItems = charDict['Magic Items'].split(',')
@@ -843,7 +780,7 @@ class Character(commands.Cog):
 
         characterCog = self.bot.get_cog('Character')
 
-        charDict, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
+        charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         def retireEmbedCheck(r, u):
             sameMessage = False
@@ -908,7 +845,7 @@ class Character(commands.Cog):
 
         characterCog = self.bot.get_cog('Character')
 
-        charDict, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
+        charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         def retireEmbedCheck(r, u):
             sameMessage = False
@@ -1062,7 +999,7 @@ class Character(commands.Cog):
         characterCog = self.bot.get_cog('Character')
 
         statusEmoji = ""
-        charDict, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
+        charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
             charEmbed.set_footer(text= charEmbed.Empty)
             charLevel = charDict['Level']
@@ -1104,10 +1041,54 @@ class Character(commands.Cog):
                 if f"T{i} TP" in charDict:
                     charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
             charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
-            if 'Attuned' in charDict:
-                charEmbed.add_field(name='Attuned', value=charDict['Attuned'], inline=False)
             charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
+            # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
+            if 'Attuned' in charDict:
+                # TODO: Stats:
+                charEmbed.add_field(name='Attuned', value=charDict['Attuned'], inline=False)
+                statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
+                for a in charDict['Attuned'].split(', '):
+                    if '(' in a and ')' in a:
+                        statBonus = a[a.find("(")+1:a.find(")")] 
+                        if '+' not in statBonus and '-' not in statBonus:
+                            statSplit = statBonus.split(' ')
+                            modStat = str(charDict[statSplit[0]])
+                            if '(' in modStat and ')' in modStat:
+                                if '+' not in statBonus and '-' not in statBonus:
+                                    oldStat = modStat[modStat.find("(")+1:modStat.find(")")] 
+                                    modStat = modStat.split(' (')[0]
+                                    if int(oldStat) > int(statSplit[1]):
+                                        statSplit[1] = oldStat
+                                else:
+                                    pass
+
+
+                            if int(statSplit[1]) > int(modStat):
+                                charDict[statSplit[0]] = f"{modStat} ({statSplit[1]})"
+
+                        elif '+' in statBonus:
+                            statBonusSplit = statBonus.split(';')
+                            statSplit = statBonusSplit[0].split(' +')
+                            modStat = str(charDict[statSplit[0]])
+                            modStat = modStat.split(' (')[0]
+                            statBonusDict[statSplit[0]] += int(statSplit[1])
+                            statName = charDict[statSplit[0]]
+                            maxStatBonus = []
+
+                            # TODO: reaplce (+2) with 19
+                                
+                            if 'MAX' in statBonus:
+                                maxStatBonus = statBonusSplit[1].split(' ')
+                                maxCalc = (int(modStat) + int(statBonusDict[statSplit[0]])) > int(maxStatBonus[3])
+                                if maxCalc:
+                                    statBonusDict[statSplit[0]] = int(maxStatBonus[3]) - int(charDict[statSplit[0]])
+                                    
+                            charDict[statSplit[0]] = f"{charDict[statSplit[0]]} (+{statBonusDict[statSplit[0]]})" 
+                        
+                        print(statBonus)
+                
             charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+
             if 'Image' in charDict:
                 charEmbed.set_thumbnail(url=charDict['Image'])
 
@@ -1128,7 +1109,7 @@ class Character(commands.Cog):
         charEmbed = discord.Embed()
 
         characterCog = self.bot.get_cog('Character')
-        infoRecords, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
+        infoRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if infoRecords:
             charID = infoRecords['_id']
@@ -1154,7 +1135,7 @@ class Character(commands.Cog):
         guild = ctx.guild
         levelUpEmbed = discord.Embed ()
         characterCog = self.bot.get_cog('Character')
-        infoRecords, levelUpEmbedmsg = await characterCog.checkForChar(ctx, char, levelUpEmbed)
+        infoRecords, levelUpEmbedmsg = await checkForChar(ctx, char, levelUpEmbed)
         if infoRecords:
             charID = infoRecords['_id']
             print(charID)
@@ -1472,7 +1453,6 @@ class Character(commands.Cog):
                     await levelUpEmbedmsg.add_reaction('🍾')
 
 
-    # TODO: attune items
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command()
     async def attune(self,ctx, char, m):
@@ -1481,7 +1461,7 @@ class Character(commands.Cog):
         guild = ctx.guild
         charEmbed = discord.Embed ()
         characterCog = self.bot.get_cog('Character')
-        charRecords, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
+        charRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if charRecords:
             attuneLength = 3
@@ -1504,7 +1484,7 @@ class Character(commands.Cog):
                 await channel.send(f"You cannot attune to anymore items.")
                 return
 
-            mRecord = await characterCog.callAPI(ctx, 'MIT', m)
+            mRecord = callAPI('MIT', m)
             if m.lower() not in [x.lower() for x in charRecordMagicItems] or not mRecord:
                 await channel.send(f"You don't have the item `{m}` in your inventory or it does not exist on the magic item table.")
                 return
@@ -1513,22 +1493,27 @@ class Character(commands.Cog):
                     await channel.send(f"You are already attuned to `{mRecord['Name']}`")
                     return
                 elif 'Attunement' in mRecord:
-                    attuned.append(mRecord['Name'])
+                    data = {}
+                    if 'Stat Bonuses' in mRecord:
+                        attuned.append(f"{mRecord['Name']} ({mRecord['Stat Bonuses']})")
+                    else:
+                        attuned.append(mRecord['Name'])
                 else:
                     await channel.send(f"`{m}` does not have an attunement property, so there is no need to attune this item.")
                     return
                         
+            
+            data['Attuned'] = ', '.join(attuned)
 
             try:
                 playersCollection = db.players
-                playersCollection.update_one({'_id': charID}, {"$set": {"Attuned": ', '.join(attuned)}})
+                playersCollection.update_one({'_id': charID}, {"$set": data})
             except Exception as e:
                 print ('MONGO ERROR: ' + str(e))
                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
             else:
                 await channel.send(f"You succesfully attuned to `{mRecord['Name']}`")
 
-    # TODO: attune items
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command()
     async def unattune(self,ctx, char, m):
@@ -1537,7 +1522,7 @@ class Character(commands.Cog):
         guild = ctx.guild
         charEmbed = discord.Embed ()
         characterCog = self.bot.get_cog('Character')
-        charRecords, charEmbedmsg = await characterCog.checkForChar(ctx, char, charEmbed)
+        charRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if charRecords:
             if "Attuned" not in charRecords:
@@ -1547,16 +1532,19 @@ class Character(commands.Cog):
                 attuned = charRecords['Attuned'].split(', ')
 
             charID = charRecords['_id']
-            mRecord = await characterCog.callAPI(ctx, 'MIT', m)
+            mRecord = callAPI('MIT', m)
             if not mRecord:
                 await channel.send(f"`{m}` does not exist on the magic item table.")
                 return
             else:
-                if mRecord['Name'] not in attuned:
-                    await channel.send(f"`{mRecord['Name']}` cannot be unatunned because it is currently not attuned to you")
+                if mRecord['Name'] not in [a.split(' (')[0] for a in attuned]:
+                    await channel.send(f"`{mRecord['Name']}` cannot be unattuned because it is currently not attuned to you")
                     return
                 else:
-                    attuned.remove(mRecord['Name'])
+                    if 'Stat Bonuses' in mRecord:
+                        attuned.remove(f"{mRecord['Name']} ({mRecord['Stat Bonuses']})") 
+                    else:
+                        attuned.remove(mRecord['Name'])
                     try:
                         playersCollection = db.players
                         playersCollection.update_one({'_id': charID}, {"$set": {"Attuned": ', '.join(attuned)}})
@@ -1566,87 +1554,6 @@ class Character(commands.Cog):
                     else:
                         await channel.send(f"You succesfully unattuned to `{mRecord['Name']}`")
                     
-
-    async def callAPI(self, ctx, table, query):
-        if query == "":
-            return False
-
-        API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
-        r = requests.get(API_URL, headers=headers)
-        r = r.json()
-
-        if r['records'] == list():
-            return False
-        else:
-            if (len(r['records']) > 1):
-                if table == 'Races' or table == "Background":
-                    for x in r['records']:
-                        print(x['fields']['Name'])
-                        print(query)
-                        if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
-                            return x['fields']
-
-                if table == 'RIT':
-                    minimum = {'fields': {'Tier': 0}}
-                    for x in r['records']:
-                        if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
-                            min = x
-                    
-                    return min['fields']
-
-            else:
-                return r['records'][0]['fields']
-
-
-    async def checkForChar(self, ctx, char, charEmbed=""):
-        channel = ctx.channel
-        author = ctx.author
-        guild = ctx.guild
-
-        playersCollection = db.players
-        charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": char, '$options': 'i' }}))
-
-        if charRecords == list():
-            await channel.send(content=f'I was not able to find your character named {char}. Please check your spelling and try again')
-            self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
-            return None, None
-
-        else:
-            if len(charRecords) > 1:
-                infoString = ""
-                charRecords = list(charRecords)
-                print(charRecords)
-                for i in range(0, min(len(charRecords), 9)):
-                    infoString += f"{numberEmojis[i]}: {charRecords[i]['Name']}\n"
-                
-                try:
-                    def infoCharEmbedcheck(r, u):
-                        sameMessage = False
-                        if charEmbedmsg.id == r.message.id:
-                            sameMessage = True
-                        return (r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌') and u == author
-
-                    charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character.", value=infoString, inline=False)
-                    charEmbedmsg = await channel.send(embed=charEmbed)
-                    for num in range(0,min(len(charRecords), 6)): await charEmbedmsg.add_reaction(numberEmojis[num])
-                    await charEmbedmsg.add_reaction('❌')
-                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
-                except asyncio.TimeoutError:
-                    await charEmbedmsg.delete()
-                    await channel.send('Character information timed out! Try using the command again')
-                    self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
-                    return None, None
-                else:
-                    if tReaction.emoji == '❌':
-                        await charEmbedmsg.edit(embed=None, content=f"Character information canceled. User `{commandPrefix}char info` command and try again!")
-                        await charEmbedmsg.clear_reactions()
-                        self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
-                        return None, None
-                charEmbed.clear_fields()
-                await charEmbedmsg.clear_reactions()
-                return charRecords[int(tReaction.emoji[0]) - 1], charEmbedmsg
-
-        return charRecords[0], None
 
     async def pointBuy(self,ctx, statsArray, rRecord, charEmbed, charEmbedmsg):
         author = ctx.author

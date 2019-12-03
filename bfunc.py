@@ -4,6 +4,7 @@ import decimal
 import os
 import time
 import json
+import requests
 from oauth2client.service_account import ServiceAccountCredentials
 from pymongo import MongoClient
 from secret import *
@@ -46,6 +47,86 @@ def calculateTreasure(seconds, role):
     dgp = int(decimal.Decimal((gp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
 
     return [cp, tp, gp, dcp, dtp, dgp]
+
+def callAPI(table, query):
+    if query == "":
+        return False
+
+    API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
+    r = requests.get(API_URL, headers=headers)
+    r = r.json()
+
+    if r['records'] == list():
+        return False
+    else:
+        if (len(r['records']) > 1):
+            if table == 'Races' or table == "Background":
+                for x in r['records']:
+                    print(x['fields']['Name'])
+                    print(query)
+                    if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
+                        return x['fields']
+
+            if table == 'RIT':
+                minimum = {'fields': {'Tier': 0}}
+                for x in r['records']:
+                    if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
+                        min = x
+                
+                return min['fields']
+
+        else:
+            return r['records'][0]['fields']
+
+async def checkForChar(ctx, char, charEmbed=""):
+    channel = ctx.channel
+    author = ctx.author
+    guild = ctx.guild
+
+    playersCollection = db.players
+    charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": char, '$options': 'i' }}))
+
+    if charRecords == list():
+        await channel.send(content=f'I was not able to find your character named {char}. Please check your spelling and try again')
+        self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
+        return None, None
+
+    else:
+        if len(charRecords) > 1:
+            infoString = ""
+            charRecords = list(charRecords)
+            print(charRecords)
+            for i in range(0, min(len(charRecords), 9)):
+                infoString += f"{numberEmojis[i]}: {charRecords[i]['Name']}\n"
+            
+            try:
+                def infoCharEmbedcheck(r, u):
+                    sameMessage = False
+                    if charEmbedmsg.id == r.message.id:
+                        sameMessage = True
+                    return (r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌') and u == author
+
+                charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character.", value=infoString, inline=False)
+                charEmbedmsg = await channel.send(embed=charEmbed)
+                for num in range(0,min(len(charRecords), 6)): await charEmbedmsg.add_reaction(numberEmojis[num])
+                await charEmbedmsg.add_reaction('❌')
+                tReaction, tUser = await self.bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
+            except asyncio.TimeoutError:
+                await charEmbedmsg.delete()
+                await channel.send('Character information timed out! Try using the command again')
+                self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                return None, None
+            else:
+                if tReaction.emoji == '❌':
+                    await charEmbedmsg.edit(embed=None, content=f"Character information canceled. User `{commandPrefix}char info` command and try again!")
+                    await charEmbedmsg.clear_reactions()
+                    self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                    return None, None
+            charEmbed.clear_fields()
+            await charEmbedmsg.clear_reactions()
+            return charRecords[int(tReaction.emoji[0]) - 1], charEmbedmsg
+
+    return charRecords[0], None
 
 def refreshKey (timeStarted):
 		if (time.time() - timeStarted > 60 * 59):
