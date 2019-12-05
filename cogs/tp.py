@@ -132,9 +132,12 @@ class Tp(commands.Cog):
                             tpEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{mRecord['Name']}** - ({tpSplit[0]}/{tpSplit[1]}) => {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅ : Yes\n\n❌: Cancel"
 
 
-                    if charRecords['Magic Items'] == "None":
+                    if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
+                        pass
+                    elif charRecords['Magic Items'] == "None":
                         charRecords['Magic Items'] = mRecord['Name']
                     else:
+                        print('hello there')
                         newMagicItems = charRecords['Magic Items'].split(', ')
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
@@ -163,20 +166,34 @@ class Tp(commands.Cog):
                             tpEmbed.clear_fields()
                             try:
                                 playersCollection = db.players
-                                # uncomment when ready
+                                setData = {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items']}
+                                statSplit = None
+                                unsetTP = False
+                                if 'Attunement' not in mRecord and 'Stat Bonuses' in mRecord:
+                                    statSplit = mRecord['Stat Bonuses'].split(' +')
+                                    setData[statSplit[0]] = charRecords[statSplit[0]] + int(statSplit[1]) 
+                                
                                 if newTP:
                                     if charRecords[f"T{tierNum} TP"] == 0:
-                                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items']}, "$unset": {f"T{tierNum} TP":1}})
+                                        unsetTP = True
                                     else:
-                                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items'], f"T{tierNum} TP":charRecords[f"T{tierNum} TP"]}})
-                                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items'], f"T{tierNum} TP":charRecords[f"T{tierNum} TP"]}})
+                                        setData[f"T{tierNum} TP"] = charRecords[f"T{tierNum} TP"] 
                                 elif newGP:
                                     if refundTP:
                                         if f"T{tierNum} TP" not in charRecords:
                                             charRecords[f"T{tierNum} TP"] = 0 
-                                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items'], f"T{tierNum} TP":charRecords[f"T{tierNum} TP"] + refundTP, 'GP':newGP}})
+
+                                        setData[f"T{tierNum} TP"] = charRecords[f"T{tierNum} TP"] + refundTP 
+                                        setData['GP'] = newGP
                                     else:
-                                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items'], 'GP':newGP}})
+                                        setData['GP'] = newGP
+
+                                if unsetTP:
+                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": setData, "$unset": {f"T{tierNum} TP":1}})
+                                else:
+                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": setData})
+
+                                
                             except Exception as e:
                                 print ('MONGO ERROR: ' + str(e))
                                 tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try tp buy again.")

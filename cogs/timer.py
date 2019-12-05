@@ -547,6 +547,12 @@ class Timer(commands.Cog):
                         await ctx.channel.send(content=f"{rewardUser} is not on the timer to recieve rewards.")
             return start
 
+    # TODO addme command
+    @timer.command()
+    async def addme(self,ctx, msg, start="", charName="",prep=None, resume=False):
+        if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
+            pass
+
     @timer.command()
     async def add(self,ctx,msg, start="", charName="",prep=None, resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':

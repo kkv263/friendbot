@@ -78,6 +78,36 @@ def callAPI(table, query):
         else:
             return r['records'][0]['fields']
 
+def callShopAPI(table, query):
+    if query == "":
+        return False
+
+    API_URL = ('https://api.airtable.com/v0/apprmgL8TfOUoJfl4/MIT?/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
+    r = requests.get(API_URL, headers=headers)
+    r = r.json()
+
+    if r['records'] == list():
+        return False
+    else:
+        if (len(r['records']) > 1):
+            if table == 'Races' or table == "Background":
+                for x in r['records']:
+                    print(x['fields']['Name'])
+                    print(query)
+                    if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
+                        return x['fields']
+
+            if table == 'RIT':
+                minimum = {'fields': {'Tier': 0}}
+                for x in r['records']:
+                    if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
+                        min = x
+                
+                return min['fields']
+
+        else:
+            return r['records'][0]['fields']
+
 async def checkForChar(ctx, char, charEmbed=""):
     channel = ctx.channel
     author = ctx.author

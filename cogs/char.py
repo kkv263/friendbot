@@ -40,7 +40,6 @@ class Character(commands.Cog):
 
         charDict = {
           'User ID': str(author.id),
-          'Discord ID': f"{author.name}#{author.discriminator}",
           'Name': name,
           'Level': int(level),
           'HP': 0,
@@ -57,7 +56,8 @@ class Character(commands.Cog):
           'GP': 0,
           'Magic Items': 'None',
           'Consumables': 'None',
-          'Feats': 'None'
+          'Feats': 'None',
+          'Inventory': 'None'
         }
 
         lvl = int(level)
@@ -1044,7 +1044,7 @@ class Character(commands.Cog):
             charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
             # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
             if 'Attuned' in charDict:
-                # TODO: Stats:
+                # TODO: '-' Magic items? 
                 charEmbed.add_field(name='Attuned', value=charDict['Attuned'], inline=False)
                 statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
                 for a in charDict['Attuned'].split(', '):
@@ -1054,16 +1054,20 @@ class Character(commands.Cog):
                             statSplit = statBonus.split(' ')
                             modStat = str(charDict[statSplit[0]])
                             if '(' in modStat and ')' in modStat:
-                                if '+' not in statBonus and '-' not in statBonus:
-                                    oldStat = modStat[modStat.find("(")+1:modStat.find(")")] 
+                                oldStat = modStat[modStat.find("(")+1:modStat.find(")")] 
+                                print(modStat)
+                                if '+' not in modStat and '-' not in modStat:
                                     modStat = modStat.split(' (')[0]
                                     if int(oldStat) > int(statSplit[1]):
-                                        statSplit[1] = oldStat
+                                        charDict[statSplit[0]] = f"{modStat} ({oldStat})"
                                 else:
-                                    pass
+                                    modStat = modStat.split(' (')[0]
+                                    if (int(modStat) + int(statBonusDict[statSplit[0]])) > int(statSplit[1]):
+                                        charDict[statSplit[0]] = f"{modStat} (+{statBonusDict[statSplit[0]]})" 
+                                    else:
+                                        charDict[statSplit[0]] = f"{modStat} ({statSplit[1]})"
 
-
-                            if int(statSplit[1]) > int(modStat):
+                            elif int(statSplit[1]) > int(modStat):
                                 charDict[statSplit[0]] = f"{modStat} ({statSplit[1]})"
 
                         elif '+' in statBonus:
@@ -1074,17 +1078,17 @@ class Character(commands.Cog):
                             statBonusDict[statSplit[0]] += int(statSplit[1])
                             statName = charDict[statSplit[0]]
                             maxStatBonus = []
-
-                            # TODO: reaplce (+2) with 19
                                 
                             if 'MAX' in statBonus:
                                 maxStatBonus = statBonusSplit[1].split(' ')
                                 maxCalc = (int(modStat) + int(statBonusDict[statSplit[0]])) > int(maxStatBonus[3])
                                 if maxCalc:
                                     statBonusDict[statSplit[0]] = int(maxStatBonus[3]) - int(charDict[statSplit[0]])
-                                    
-                            charDict[statSplit[0]] = f"{charDict[statSplit[0]]} (+{statBonusDict[statSplit[0]]})" 
-                        
+                            if statBonusDict[statSplit[0]] > 0: 
+                                charDict[statSplit[0]] = f"{modStat} (+{statBonusDict[statSplit[0]]})" 
+                            else:
+                                charDict[statSplit[0]] = f"{modStat}" 
+
                         print(statBonus)
                 
             charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
