@@ -58,7 +58,7 @@ class Apps(commands.Cog):
         channelID = 388591318814949376
         channel = self.bot.get_channel(channelID)
         guild = msg.guild
-        if channel and channel.id == channelID and msg.author.name == 'Application Bot Friend':
+        if channel and msg.channel.id == channelID and msg.author.name == 'Application Bot Friend':
             botEmbed = msg.embeds[0]
             botMsg = await channel.send(embed=botEmbed)
             await msg.delete()
