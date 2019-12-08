@@ -14,7 +14,6 @@ class Tp(commands.Cog):
     async def tp(self, ctx):	
         pass
       
-    #TODO: Stat bonuses for unattuned items
     @tp.command()
     async def buy(self, ctx , charName, mItem):
 

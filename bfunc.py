@@ -82,7 +82,7 @@ def callShopAPI(table, query):
     if query == "":
         return False
 
-    API_URL = ('https://api.airtable.com/v0/apprmgL8TfOUoJfl4/MIT?/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
+    API_URL = ('https://api.airtable.com/v0/apprmgL8TfOUoJfl4/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
     r = requests.get(API_URL, headers=headers)
     r = r.json()
 
@@ -203,6 +203,7 @@ discordClient = discord.Client()
 
 gameCategory = ["🎲 game rooms", "🐉 campaigns", "mod friends"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True', '']
+noodleRoleArray = ['Good Noodle', 'Elite Noodle', 'True Noodle', 'Mega Noodle']
 tierArray = getTiers(sheet.row_values(2))
 tpArray = sheet.row_values(3)
 commandPrefix = '$'

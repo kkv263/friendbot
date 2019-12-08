@@ -12,12 +12,12 @@ class Character(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
 
-    @commands.group()
-    async def char(self, ctx):	
-        pass
+    # @commands.group()
+    # async def char(self, ctx):	
+    #     pass
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
-    @char.command()
+    @commands.command()
     async def create(self,ctx, name, level, race, cclass, bg, sStr, sDex, sCon, sInt, sWis, sCha, mItems="", consumes=""):
         characterCog = self.bot.get_cog('Character')
         roleCreationDict = {
@@ -26,7 +26,8 @@ class Character(commands.Cog):
             'Elite Noodle':[4,5],
             'True Noodle':[4,5,6],
             'Mega Noodle':[4,5,6,8],
-            'Guild Fanatic':[11],
+            'Friend Fanatic': [11,10,9],
+            'Guild Fanatic':[11,10,9]
         }
         roles = [r.name for r in ctx.author.roles]
         author = ctx.author
@@ -57,7 +58,8 @@ class Character(commands.Cog):
           'Magic Items': 'None',
           'Consumables': 'None',
           'Feats': 'None',
-          'Inventory': 'None'
+          'Inventory': 'None',
+          'Games': 0
         }
 
         lvl = int(level)
@@ -75,7 +77,7 @@ class Character(commands.Cog):
 
         roleSet = set(roleSet)
 
-        if "Nitro Booster" in roles:
+        if "Nitro Booster" in roles and lvl < 11:
             roleSet = roleSet.union(set(map(lambda x: x+1,roleSet.copy())))
 
         if lvl not in roleSet:
@@ -333,7 +335,7 @@ class Character(commands.Cog):
 
                 if int(m['Class']['Subclass Level']) <= int(m['Level']) and msg == "":
                     subclassesList = m['Class']['Subclasses'].split(',')
-                    subclass, charEmbedmsg= await characterCog.chooseSubclass(ctx, subclassesList, m['Class']['Name'], charEmbed, charEmbedmsg)
+                    subclass, charEmbedmsg = await characterCog.chooseSubclass(ctx, subclassesList, m['Class']['Name'], charEmbed, charEmbedmsg)
                     if not subclass:
                         return
 
@@ -445,17 +447,13 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.add_field(name='Name', value=charDict['Name'], inline=True)
-        charEmbed.add_field(name='Race', value=charDict['Race'], inline=True)
-        charEmbed.add_field(name='Level', value=charDict['Level'], inline=True)
-        charEmbed.add_field(name='HP', value=charDict['HP'], inline=True)
-        charEmbed.add_field(name='Background', value=charDict["Background"], inline=True)
-        charEmbed.add_field(name='Class', value=f'{charDict["Class"]}', inline=True)
-        charEmbed.add_field(name='CP', value=f"{charDict['CP']}", inline=True)
-        charEmbed.add_field(name='GP', value=f"{charDict['GP']} GP", inline=True)
+        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
+        charEmbed.description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
-        charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=True)
-        charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=True)
+        if charDict['Magic Items'] != 'None':
+            charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
+        if charDict['Consumables'] != 'None':
+            charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
         charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=True)
         charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
@@ -479,7 +477,7 @@ class Character(commands.Cog):
 
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
-    @char.command()
+    @commands.command(aliases=['rs'])
     async def respec(self,ctx, name, newname, race, cclass, bg, sStr, sDex, sCon, sInt, sWis, sCha, mItems="", consumes=""):
         characterCog = self.bot.get_cog('Character')
         author = ctx.author
@@ -734,27 +732,20 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.add_field(name='Name', value=charDict['Name'], inline=True)
-        charEmbed.add_field(name='Race', value=charDict['Race'], inline=True)
-        charEmbed.add_field(name='Level', value=charDict['Level'], inline=True)
-        charEmbed.add_field(name='HP', value=charDict['HP'], inline=True)
-        charEmbed.add_field(name='Background', value=charDict["Background"], inline=True)
-        charEmbed.add_field(name='Class', value=f'{charDict["Class"]}', inline=True)
-        charEmbed.add_field(name='CP', value=f"{charDict['CP']}", inline=True)
-        charEmbed.add_field(name='GP', value=f"{charDict['GP']} GP", inline=True)
+        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
+        charEmbed.description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
-        charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=True)
-        charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=True)
-        charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=True)
+        charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
+        charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
+        charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
         charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
 
         data = charDict
 
         try:
-            # TODO: uncomment when ready.
-            # playersCollection = db.players
-            # playersCollection.update_one({'_id': charID}, {"$set": data})
+            playersCollection = db.players
+            playersCollection.update_one({'_id': charID}, {"$set": data})
             pass
         except Exception as e:
             print ('MONGO ERROR: ' + str(e))
@@ -767,10 +758,10 @@ class Character(commands.Cog):
             else: 
                 charEmbedmsg = await channel.send(embed=charEmbed, content="Congratulations! You have respecced your character.")
 
-        self.char.get_command('respec').reset_cooldown(ctx)
+        self.bot.get_command('respec').reset_cooldown(ctx)
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @char.command()
+    @commands.command()
     async def retire(self,ctx, *, char):
         channel = ctx.channel
         author = ctx.author
@@ -835,7 +826,7 @@ class Character(commands.Cog):
                             charEmbedmsg = await channel.send(embed=None, content="Congratulations! You have retired your character.")
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @char.command()
+    @commands.command()
     async def death (self,ctx, *, char):
         channel = ctx.channel
         author = ctx.author
@@ -987,8 +978,8 @@ class Character(commands.Cog):
                             charEmbedmsg = await channel.send(embed=None, content=surviveString)
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @char.command()
-    async def info(self,ctx, *, char):
+    @commands.command(aliases=['bag','inventory', 'i'])
+    async def inv(self,ctx, *, char):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -1001,7 +992,7 @@ class Character(commands.Cog):
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
-            charEmbed.set_footer(text= charEmbed.Empty)
+            footer = f"To view character's info: {commandPrefix}inv {charDict['Name']}"
             charLevel = charDict['Level']
             if charLevel < 5:
                 role = 1
@@ -1016,36 +1007,131 @@ class Character(commands.Cog):
                 role = 4
                 charEmbed.colour = (roleColors['True Friend'])
 
-            if charLevel == 4 or 10 or 16:
-                charEmbed.set_footer(text = f'❕ You will no longer recieve Tier {role} TP the next time you level. Please plan accordingly')
+
+            charDictAuthor = guild.get_member(int(charDict['User ID']))
+            charEmbed.title = f"{charDict['Name']} (Lv.{charLevel}): Inventory"
+            charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
+            charEmbed.clear_fields()    
+            if charDict['Inventory'] != 'None':
+                typeDict = {}
+                for k,v in charDict['Inventory'].items():
+                    type = k.split(':')
+                    if type[1] not in typeDict:
+                        typeDict[type[1]] = [f"+ {type[0]} x{v}\n"]
+                    else:
+                        typeDict[type[1]].append(f"+ {type[0]} x{v}\n")
+
+                for k, v in typeDict.items():
+                    v.sort()
+                    charEmbed.add_field(name=k, value=''.join(v), inline=True)
+
+            charEmbed.add_field(name='Consumables', value='• ' + charDict['Consumables'].replace(', ', '\n• '), inline=True)
+            charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
+            charEmbed.set_footer(text=footer)
+
+            if not charEmbedmsg:
+                charEmbedmsg = await ctx.channel.send(embed=charEmbed)
+            else:
+                await charEmbedmsg.edit(embed=charEmbed)
+
+            self.bot.get_command('inv').reset_cooldown(ctx)
+
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @commands.command()
+    async def stats(self,ctx):
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        charEmbed = discord.Embed()
+        charEmbedmsg = None
+
+        characterCog = self.bot.get_cog('Character')
+
+        usersCollection = db.users
+        userRecords = usersCollection.find_one({"User ID": str(author.id)})
+
+        if userRecords: 
+            playersCollection = db.players
+            charRecords = list(playersCollection.find({"User ID": str(author.id)}))
+            if charRecords:
+                charEmbed.set_author(name=author, icon_url=author.avatar_url)
+                charEmbed.title = f"{author.display_name}"
+
+                totalGamesPlayed = 0
+                charString = ""
+                for charDict in charRecords:
+                    totalGamesPlayed += charDict['Games']
+                    charString += f"• **{charDict['Name']}** (Lv.{charDict['Level']}): {charDict['Race']}, {charDict['Class']}\n"
+
+                charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles:{userRecords['Noodles']}"
+                charEmbed.add_field(name='Characters', value=charString, inline=False)
+
+                if not charEmbedmsg:
+                    charEmbedmsg = await ctx.channel.send(embed=charEmbed)
+                else:
+                    await charEmbedmsg.edit(embed=charEmbed)
+        else:
+            await channel.send(f'{author.display_name} you will need to play at least one game with a character before you can view your user stats')
+            return
+            
+           
+
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @commands.command(aliases=['inf', 'char'])
+    async def info(self,ctx, *, char):
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        roleColors = {r.name:r.colour for r in guild.roles}
+        charEmbed = discord.Embed()
+        charEmbedmsg = None
+        characterCog = self.bot.get_cog('Character')
+
+        statusEmoji = ""
+        charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
+        if charDict:
+            footer = f"To view inventory: {commandPrefix}inv {charDict['Name']}"
+            description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\nGames Played: {charDict['Games']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']}\n"
+            if 'Proficiency' in charDict:
+                description +=  f"Noodle Proficiency Bonus: {charDict['Proficiency']}\n"
+            charLevel = charDict['Level']
+            if charLevel < 5:
+                role = 1
+                charEmbed.colour = (roleColors['Junior Friend'])
+            elif charLevel < 11:
+                role = 2
+                charEmbed.colour = (roleColors['Journey Friend'])
+            elif charLevel < 17:
+                role = 3
+                charEmbed.colour = (roleColors['Elite Friend'])
+            elif charLevel < 21:
+                role = 4
+                charEmbed.colour = (roleColors['True Friend'])
+
+            if charLevel == 4 or charLevel == 10 or charLevel == 16:
+                footer += f'\n❕ You will no longer recieve Tier {role} TP the next time you level. Please plan accordingly'
 
             if 'Death' in charDict:
                 statusEmoji = "⚰️"
-                charEmbed.title = f"{statusEmoji} Status: **DYING** - please use {commandPrefix}char death for your character." 
+                description += f"{statusEmoji} Status: **DYING** - please use {commandPrefix}death for your character." 
                 charEmbed.colour = discord.Colour(0xbb0a1e)
 
             charDictAuthor = guild.get_member(int(charDict['User ID']))
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
+            charEmbed.description = description
             charEmbed.clear_fields()    
-            charEmbed.add_field(name='Name', value=charDict['Name'], inline=True)
-            charEmbed.add_field(name='Race', value=charDict['Race'], inline=True)
-            charEmbed.add_field(name='Level', value=charLevel, inline=True)
-            charEmbed.add_field(name='HP', value=charDict['HP'], inline=True)
-            charEmbed.add_field(name='Background', value=charDict["Background"], inline=True)
-            charEmbed.add_field(name='Class', value=f'{charDict["Class"]}', inline=True)
-            charEmbed.add_field(name='CP', value=f"{charDict['CP']}", inline=True)
-            charEmbed.add_field(name='GP', value=f"{charDict['GP']} GP", inline=True)
-            charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
-            charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=True)
+            charEmbed.title = f"{charDict['Name']} (Lv.{charLevel}) - {charDict['CP']}CP"
+            tpString = ""
             for i in range (1,5):
                 if f"T{i} TP" in charDict:
-                    charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
-            charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
-            charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
+                    # charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
+                    tpString += f"**Tier {i} TP:** {charDict[f'T{i} TP']} " 
             # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
+            charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=False)
+            charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
             if 'Attuned' in charDict:
                 # TODO: '-' Magic items? 
-                charEmbed.add_field(name='Attuned', value=charDict['Attuned'], inline=False)
+                charEmbed.add_field(name='Attuned', value='• ' + charDict['Attuned'].replace(', ', '\n• '), inline=False)
                 statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
                 for a in charDict['Attuned'].split(', '):
                     if '(' in a and ')' in a:
@@ -1092,6 +1178,7 @@ class Character(commands.Cog):
                         print(statBonus)
                 
             charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+            charEmbed.set_footer(text=footer)
 
             if 'Image' in charDict:
                 charEmbed.set_thumbnail(url=charDict['Image'])
@@ -1101,10 +1188,10 @@ class Character(commands.Cog):
             else:
                 await charEmbedmsg.edit(embed=charEmbed)
 
-            self.char.get_command('info').reset_cooldown(ctx)
+            self.bot.get_command('info').reset_cooldown(ctx)
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @char.command()
+    @commands.command(aliases=['img'])
     async def image(self,ctx, char, url):
 
         channel = ctx.channel
@@ -1132,7 +1219,7 @@ class Character(commands.Cog):
                 await ctx.channel.send(content=f'I have updated the image for the character {char}. Please check using the `{commandPrefix}char info` command')
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @commands.command()
+    @commands.command(aliases=['lvl', 'lvlup', 'lv'])
     async def levelup(self,ctx, *, char):
         channel = ctx.channel
         author = ctx.author
@@ -1458,7 +1545,7 @@ class Character(commands.Cog):
 
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @commands.command()
+    @commands.command(aliases=['att'])
     async def attune(self,ctx, char, m):
         channel = ctx.channel
         author = ctx.author
@@ -1519,7 +1606,7 @@ class Character(commands.Cog):
                 await channel.send(f"You succesfully attuned to `{mRecord['Name']}`")
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @commands.command()
+    @commands.command(aliases=['uatt'])
     async def unattune(self,ctx, char, m):
         channel = ctx.channel
         author = ctx.author

@@ -2,7 +2,7 @@ import discord
 import asyncio
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix
+from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, noodleRoleArray, db
 
 class Guild(commands.Cog):
     def __init__ (self, bot):
@@ -95,6 +95,41 @@ class Guild(commands.Cog):
     async def remove(self,ctx, *, member):
         guildCog = self.bot.get_cog('Guild')
         await guildCog.guildsList(ctx,member)
+
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @guild.command()
+    async def create(self,ctx, charName, guildName):
+        channel = ctx.channel
+        author = ctx.author
+        guildEmbed = discord.Embed()
+        guildCog = self.bot.get_cog('Guild')
+
+        roles = author.roles
+        noodleRole = None
+        for r in roles:
+            if r.name in noodleRoleArray and r.name != 'Good Noodle':
+                noodleRole = r
+                break
+
+        if noodleRole:
+          noodleLimit = noodleRoleArray.index(noodleRole.name) - 1
+           usersCollection = db.users
+            userRecords = usersCollection.find_one({"User ID": str(author.id)})
+            if userRecords: 
+                charDict, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
+                if charDict:
+                    if 'Guilds' not in charDict: 
+                        charDict['Guilds'] = 0
+
+                    if charRecords['Guild'] > noodleLimit:
+                        await channel.send(f"{author.display_name}, your current role {noodleRole.name} does not let you create another guild")
+                        return
+
+                    # Create guild and add to DB... also GP stuff.
+        else:
+            await channel.send(f'{author.display_name}, you need the `Elite Noodle` role or higher to create a guild. ')
+            return
+
 
 def setup(bot):
     bot.add_cog(Guild(bot))
