@@ -1062,6 +1062,9 @@ class Character(commands.Cog):
                 for charDict in charRecords:
                     totalGamesPlayed += charDict['Games']
                     charString += f"• **{charDict['Name']}** (Lv.{charDict['Level']}): {charDict['Race']}, {charDict['Class']}\n"
+                    if 'Guild' in charDict:
+                        charString += f"\a\a+ Guild: {charDict['Guild']}\n"
+
 
                 charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles:{userRecords['Noodles']}"
                 charEmbed.add_field(name='Characters', value=charString, inline=False)
@@ -1091,9 +1094,10 @@ class Character(commands.Cog):
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
             footer = f"To view inventory: {commandPrefix}inv {charDict['Name']}"
-            description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\nGames Played: {charDict['Games']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']}\n"
+            description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\nGames Played: {charDict['Games']}\n"
             if 'Proficiency' in charDict:
                 description +=  f"Noodle Proficiency Bonus: {charDict['Proficiency']}\n"
+            description += f":moneybag: {charDict['GP']}gp\n"
             charLevel = charDict['Level']
             if charLevel < 5:
                 role = 1
@@ -1107,6 +1111,10 @@ class Character(commands.Cog):
             elif charLevel < 21:
                 role = 4
                 charEmbed.colour = (roleColors['True Friend'])
+
+            cpSplit = charDict['CP'].split('/')
+            if float(cpSplit[0]) >= float(cpSplit[1]):
+                footer += f'\n❕ You need to level up! Use {commandPrefix}levelup before playing in your next game.'
 
             if charLevel == 4 or charLevel == 10 or charLevel == 16:
                 footer += f'\n❕ You will no longer recieve Tier {role} TP the next time you level. Please plan accordingly'
@@ -1127,7 +1135,9 @@ class Character(commands.Cog):
                     # charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
                     tpString += f"**Tier {i} TP:** {charDict[f'T{i} TP']} " 
             # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
-            charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=False)
+            charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=True)
+            if 'Guild' in charDict:
+                charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\n:sparkles: ({charDict['Reputation']})", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
             if 'Attuned' in charDict:
                 # TODO: '-' Magic items? 
@@ -1177,7 +1187,7 @@ class Character(commands.Cog):
 
                         print(statBonus)
                 
-            charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+            charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
             charEmbed.set_footer(text=footer)
 
             if 'Image' in charDict:

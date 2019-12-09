@@ -14,7 +14,7 @@ class Timer(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
 
-    @commands.group()
+    @commands.group(aliases=['t'])
     async def timer(self, ctx):	
         pass
 

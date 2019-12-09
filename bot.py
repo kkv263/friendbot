@@ -33,6 +33,7 @@ bot.remove_command('help')
 
 @bot.event
 async def on_command_error(ctx,error):
+    # TODO: Fix for char create and guild create
     if isinstance(error, commands.CommandOnCooldown):
         msg = None
         if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
