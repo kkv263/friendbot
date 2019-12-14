@@ -98,7 +98,7 @@ class Guild(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    async def create(self,ctx, charName, *, guildName):
+    async def create(self,ctx, charName, guildName):
         channel = ctx.channel
         author = ctx.author
         guildEmbed = discord.Embed()
@@ -170,7 +170,7 @@ class Guild(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    async def info(self,ctx, *, guildName): 
+    async def info(self,ctx, guildName): 
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -206,7 +206,7 @@ class Guild(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    async def fund(self,ctx, charName,  gpFund, *, guildName): 
+    async def fund(self,ctx, charName,  gpFund, guildName): 
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -225,77 +225,323 @@ class Guild(commands.Cog):
             guildsCollection = db.guilds
             guildRecords = guildsCollection.find_one({"Name": {"$regex": guildName, '$options': 'i' }})
 
-            if guildRecords['Funds'] > 6000:
-                await channel.send(f"`{guildRecords['Name']}` is not expecting any funds. This guild has already been opened")
-                return
-
-            if 'Guild' in charRecords:
-                if charRecords['Guild'] != guildRecords['Name']:
-                    await channel.send(f"{charRecords['Name']} cannot fund `{guildRecords['Name']}` because they belong to the guild `{charRecords['Guild']}`")
+            if guildRecords:
+                if guildRecords['Funds'] > 6000:
+                    await channel.send(f"`{guildRecords['Name']}` is not expecting any funds. This guild has already been opened")
                     return
 
-            gpNeeded = 0
-            refundGP = 0
+                if 'Guild' in charRecords:
+                    if charRecords['Guild'] != guildRecords['Name']:
+                        await channel.send(f"{charRecords['Name']} cannot fund `{guildRecords['Name']}` because they belong to the guild `{charRecords['Guild']}`")
+                        return
 
-            if charRecords['Level'] < 5:
-                gpNeeded = 130
-            elif charRecords['Level'] < 11:
-                gpNeeded = 400
-            elif charRecords['Level'] < 17:
-                gpNeeded = 800
-            elif charRecords['Level'] < 21:
-                gpNeeded = 2000
+                gpNeeded = 0
+                refundGP = 0
 
-            if gpNeeded > charRecords['GP']:
-                await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
+                if charRecords['Level'] < 5:
+                    gpNeeded = 130
+                elif charRecords['Level'] < 11:
+                    gpNeeded = 400
+                elif charRecords['Level'] < 17:
+                    gpNeeded = 800
+                elif charRecords['Level'] < 21:
+                    gpNeeded = 2000
+
+                if gpNeeded > charRecords['GP']:
+                    await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
+                    return
+
+                        
+                guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
+                guildEmbed.description = f"Are you sure you want to fund **{guildRecords['Name']}**?\n❕**{charRecords['Name']} will automatically join {guildRecords['Name']} upon funding.**\n\n✅ : Yes\n\n❌: Cancel"
+
+
+                if guildEmbedmsg:
+                    await guildEmbedmsg.edit(embed=guildEmbed)
+                else:
+                    guildEmbedmsg = await channel.send(embed=guildEmbed)
+                await guildEmbedmsg.add_reaction('✅')
+                await guildEmbedmsg.add_reaction('❌')
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
+                except asyncio.TimeoutError:
+                    await guildEmbedmsg.delete()
+                    await channel.send(f'Guild canceled. Use `{commandPrefix}guild join` command and try again!')
+                    return
+                else:
+                    await guildEmbedmsg.clear_reactions()
+                    if tReaction.emoji == '❌':
+                        await guildEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}tp buy` command and try again!")
+                        await guildEmbedmsg.clear_reactions()
+                        return
+
+                guildRecords['Funds'] += float(gpFund) 
+
+                if  guildRecords['Funds'] > 6000:
+                    refundGP = guildRecords['Funds'] - 6000
+
+                newGP = (charRecords['GP'] - float(gpFund)) + refundGP
+
+                try:
+                    playersCollection = db.players
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Reputation': 0}})
+                    guildsCollection.update_one({'Name': guildRecords['Name']}, {"$set": {'Funds':guildRecords['Funds']}})
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+                else:
+                    guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
+                    guildEmbed.description = f"{charRecords['Name']} has funded **{guildRecords['Name']}** with {gpFund}gp.\nIf the amount puts the guild's funds over 6000, the leftover is refunded\n\n**Current Guild Funds:** {guildRecords['Funds']}gp / 6000gp\n\n**Current gp**: {newGP}\n"
+                    if guildEmbedmsg:
+                        await guildEmbedmsg.edit(embed=guildEmbed)
+                    else:
+                        guildEmbedmsg = await channel.send(embed=guildEmbed)
+
+            else:
+                await channel.send(f'The guild `{guildName}` does not exist. Please try again')
                 return
 
-                    
-            guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
-            guildEmbed.description = f"Are you sure you want to fund **{guildRecords['Name']}**?\n❕**{charRecords['Name']} will automatically join {guildRecords['Name']} upon funding.**\n\n✅ : Yes\n\n❌: Cancel"
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @guild.command()
+    async def join(self,ctx, charName, guildName): 
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        guildEmbed = discord.Embed()
+        guildEmbedEmbedmsg = None
 
+        def guildEmbedCheck(r, u):
+            sameMessage = False
+            if guildEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+
+        charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
+
+        if charRecords:
+            if 'Guild' in charRecords:
+                await channel.send(f"{charRecords['Name']} cannot join any guilds because they belong to the guild `{charRecords['Guild']}`")
+                return
+
+            guildsCollection = db.guilds
+            guildRecords = guildsCollection.find_one({"Name": {"$regex": guildName, '$options': 'i' }})
+
+            if guildRecords:
+                if guildRecords['Funds'] > 6000:
+                    await channel.send(f"`{guildRecords['Name']}` is not open to join.")
+                    return
+
+                gpNeeded = 0
+
+                if charRecords['Level'] < 5:
+                    gpNeeded = 130
+                elif charRecords['Level'] < 11:
+                    gpNeeded = 400
+                elif charRecords['Level'] < 17:
+                    gpNeeded = 800
+                elif charRecords['Level'] < 21:
+                    gpNeeded = 2000
+
+                if gpNeeded > charRecords['GP']:
+                    await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to join `{guildRecords['Name']}`")
+                    return
+
+                        
+                guildEmbed.title = f"Joining Guild: {guildRecords['Name']}"
+                guildEmbed.description = f"Are you sure you want to join **{guildRecords['Name']}**?\n\n✅ : Yes\n\n❌: Cancel"
+
+
+                if guildEmbedmsg:
+                    await guildEmbedmsg.edit(embed=guildEmbed)
+                else:
+                    guildEmbedmsg = await channel.send(embed=guildEmbed)
+                await guildEmbedmsg.add_reaction('✅')
+                await guildEmbedmsg.add_reaction('❌') 
+
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
+                except asyncio.TimeoutError:
+                    await guildEmbedmsg.delete()
+                    await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                    return
+                else:
+                    await guildEmbedmsg.clear_reactions()
+                    if tReaction.emoji == '❌':
+                        await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Use `{commandPrefix}guild join` command and try again!")
+                        await guildEmbedmsg.clear_reactions()
+                        return
+
+                newGP = (charRecords['GP'] - float(gpNeeded)) 
+
+                try:
+                    playersCollection = db.players
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Reputation': 0}})
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+                else:
+                    guildEmbed.description = f"{charRecords['Name']} has joined **{guildRecords['Name']}**\n\n**Current gp**: {newGP}\n"
+                    if guildEmbedmsg:
+                        await guildEmbedmsg.edit(embed=guildEmbed)
+                    else:
+                        guildEmbedmsg = await channel.send(embed=guildEmbed)
+                
+            else:
+                await channel.send(f'The guild `{guildName}` does not exist. Please try again')
+                return
+
+            
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @guild.command()
+    async def leave(self,ctx, charName): 
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        guildEmbed = discord.Embed()
+        guildEmbedEmbedmsg = None
+
+        def guildEmbedCheck(r, u):
+            sameMessage = False
+            if guildEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+
+        charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
+
+        if charRecords:
+            if 'Guild' not in charRecords:
+                await channel.send(f"{charRecords['Name']} cannot leave any guilds because they do not belong to a guild currently")
+                return
+
+            guildEmbed.title = f"Leaving Guild: {charRecords['Guild']}"
+            guildEmbed.description = f"Are you sure you want to leave **{charRecords['Guild']}**? You will donate all your reputation to the guild's bank.\n\n✅ : Yes\n\n❌: Cancel"
 
             if guildEmbedmsg:
                 await guildEmbedmsg.edit(embed=guildEmbed)
             else:
                 guildEmbedmsg = await channel.send(embed=guildEmbed)
             await guildEmbedmsg.add_reaction('✅')
-            await guildEmbedmsg.add_reaction('❌')
+            await guildEmbedmsg.add_reaction('❌') 
+
             try:
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
                 await guildEmbedmsg.delete()
-                await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                await channel.send(f'Guild canceled. Use `{commandPrefix}guild leave` command and try again!')
                 return
             else:
                 await guildEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await guildEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}tp buy` command and try again!")
+                    await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Use `{commandPrefix}guild leave` command and try again!")
                     await guildEmbedmsg.clear_reactions()
                     return
 
-            guildRecords['Funds'] += float(gpFund) 
-
-            if  guildRecords['Funds'] > 6000:
-                refundGP = guildRecords['Funds'] - 6000
-
-            newGP = (charRecords['GP'] - float(gpFund)) + refundGP
-
             try:
                 playersCollection = db.players
-                playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP}})
-                guildsCollection.update_one({'Name': guildRecords['Name']}, {"$set": {'Funds':guildRecords['Funds']}})
+                playersCollection.update_one({'_id': charRecords['_id']}, {"$unset": {'Guild': 1, 'Reputation':1}})
             except Exception as e:
                 print ('MONGO ERROR: ' + str(e))
                 await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
             else:
-                guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
-                guildEmbed.description = f"{charRecords['Name']} has funded **{guildRecords['Name']}** with {gpFund}gp.\nIf the amount puts the guild's funds over 6000, the leftover is refunded\n\n**Current Guild Funds:** {guildRecords['Funds']}gp / 6000gp\n\n**Current gp**: {newGP}\n"
+                guildEmbed.description = f"{charRecords['Name']} has left **{charRecords['Guild']}** and has donated reputation to their bank"
                 if guildEmbedmsg:
                     await guildEmbedmsg.edit(embed=guildEmbed)
                 else:
                     guildEmbedmsg = await channel.send(embed=guildEmbed)
+                
+
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @guild.command()
+    async def rep(self,ctx, charName, sparkleNum=1): 
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        guildEmbed = discord.Embed()
+        guildEmbedEmbedmsg = None
+
+        if not isinstance(sparkleNum,int):
+                await channel.send(f"You entered `{sparkleNum}` which is not a valid number. Please try again.")
+                return
+
+        sparkleNum = int(sparkleNum)
+
+        def guildEmbedCheck(r, u):
+            sameMessage = False
+            if guildEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+
+        charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
+
+        if charRecords:
+            if 'Guild' not in charRecords:
+                await channel.send(f"{charRecords['Name']} cannot buy any sparkles because they do not belong to a guild currently")
+                return
+
+            guildsCollection = db.guilds
+            guildRecords = guildsCollection.find_one({"Name": {"$regex": charRecords['Guild'], '$options': 'i' }})
+
+            if guildRecords['Funds'] < 6000: 
+                await channel.send(f"{charRecords['Name']} cannot buy any sparkles because `{charRecords['Guild']}` is not officially open and still needs funding")
+                return
+
+            gpNeeded = 800 * sparkleNum
+
+            if gpNeeded > charRecords['GP']:
+                await channel.send(f"{charRecords['Name']} does not have `{gpNeeded}gp` to buy {sparkleNum} sparkle(s).")
+                return
+
+            newGP = charRecords['GP'] - gpNeeded
+            sparkleTotal = charRecords['Reputation'] + sparkleNum
+
+            sparkleToGuild = 0
+            guildEmbed.description = f"Are you sure you want to buy **{sparkleNum}** :sparkles:?\n{charRecords['Reputation']} :sparkles: => {sparkleTotal} :sparkles:\n\n✅ : Yes\n\n❌: Cancel"
+            if sparkleTotal > 7:
+                sparkleToGuild = sparkleTotal - 7
+                sparkleTotal = 7  
+                guildEmbed.description = f"Are you sure you want to buy **{sparkleNum}** :sparkles:?\n\n{sparkleToGuild} :sparkles: will go to **{charRecords['Guild']}'s** bank\n\n{charRecords['Reputation']} :sparkles: => {sparkleTotal} :sparkles:\n\n✅ : Yes\n\n❌: Cancel"
+
+            guildEmbed.title = f"Guild Rep: {charRecords['Guild']}"
+
+            if guildEmbedmsg:
+                await guildEmbedmsg.edit(embed=guildEmbed)
+            else:
+                guildEmbedmsg = await channel.send(embed=guildEmbed)
+            await guildEmbedmsg.add_reaction('✅')
+            await guildEmbedmsg.add_reaction('❌') 
+
+            try:
+                tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
+            except asyncio.TimeoutError:
+                await guildEmbedmsg.delete()
+                await channel.send(f'Guild canceled. Use `{commandPrefix}guild leave` command and try again!')
+                return
+            else:
+                await guildEmbedmsg.clear_reactions()
+                if tReaction.emoji == '❌':
+                    await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Use `{commandPrefix}guild leave` command and try again!")
+                    await guildEmbedmsg.clear_reactions()
+                    return
+
+                try:
+                    playersCollection = db.players
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'GP':newGP, 'Reputation': sparkleTotal}})
+                    if sparkleToGuild > 0:
+                        guildsCollection.update_one({'Name': charRecords['Guild']}, {"$set": {'Reputation': guildRecords['Reputation'] + sparkleToGuild}})
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+                else:
+                    guildEmbed.description = f"{charRecords['Name']} now has **{sparkleTotal}** :sparkles:\n\n**Current gp**: {newGP}\n"
+                    if sparkleToGuild > 0:
+                        guildEmbed.description = f"{charRecords['Name']} now has **{sparkleTotal}** :sparkles:\n\n{sparkleToGuild} :sparkles: have been donated to {charRecords['Guild']}\n\n**Current gp**: {newGP}\n"
+                    if guildEmbedmsg:
+                        await guildEmbedmsg.edit(embed=guildEmbed)
+                    else:
+                        guildEmbedmsg = await channel.send(embed=guildEmbed)
+                
 
 
+            
 def setup(bot):
     bot.add_cog(Guild(bot))

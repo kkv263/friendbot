@@ -29,7 +29,7 @@ class Shop(commands.Cog):
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
         
-            bRecord = callShopAPI('Shop',buyItem) 
+            bRecord = callShopAPI('shop',buyItem) 
         
             if bRecord:
                 gpNeeded = bRecord['GP'] * amount
@@ -40,7 +40,7 @@ class Shop(commands.Cog):
 
                 newGP = charRecords['GP'] - gpNeeded
                 shopEmbed.title = f"Buying: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{amount} x {bRecord['Name']} (-{gpNeeded}gp): ** \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
+                shopEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{amount} x {bRecord['Name']} ({gpNeeded}gp): ** \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -101,7 +101,7 @@ class Shop(commands.Cog):
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
         
-            bRecord = callShopAPI('Shop',buyItem) 
+            bRecord = callShopAPI('shop',buyItem) 
         
             if bRecord:
                 if f"{bRecord['Name']}:{bRecord['Type']}" not in charRecords['Inventory']:
@@ -173,7 +173,7 @@ class Shop(commands.Cog):
 
             consumes = charRecords['Consumables'].split(' ,')
 
-            bRecord = callShopAPI('Spells',spellName)
+            bRecord = callShopAPI('spells',spellName)
 
             if bRecord:
                 spellCopied = None

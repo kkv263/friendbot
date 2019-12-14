@@ -48,65 +48,56 @@ def calculateTreasure(seconds, role):
 
     return [cp, tp, gp, dcp, dtp, dgp]
 
-def callAPI(table, query):
+def callAPI(table, query=None):
     if query == "":
         return False
 
-    API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
-    r = requests.get(API_URL, headers=headers)
-    r = r.json()
+    collection = db[table]
+    
+    if query is None:
+        return list(collection.find())
 
-    if r['records'] == list():
+    records = list(collection.find({"Name": {"$regex": query.strip(), '$options': 'i' }}))
+
+    if records == list():
         return False
     else:
-        if (len(r['records']) > 1):
-            if table == 'Races' or table == "Background":
-                for x in r['records']:
-                    print(x['fields']['Name'])
+        if (len(records) > 1):
+            if table == 'races' or table == "backgrounds":
+                for x in records:
+                    print(x['Name'])
                     print(query)
-                    if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
-                        return x['fields']
+                    if len(x['Name'].replace(" ", "")) == len(query.replace(" ", "")):
+                        return x
 
-            if table == 'RIT':
-                minimum = {'fields': {'Tier': 0}}
-                for x in r['records']:
-                    if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
+            if table == 'rit':
+                minimum = {'Tier': 0}
+                for x in records:
+                    if int(x['Tier']) > int(minimum['Tier']):
                         min = x
                 
-                return min['fields']
+                return min
 
         else:
-            return r['records'][0]['fields']
+            return records[0]
 
 def callShopAPI(table, query):
     if query == "":
         return False
 
-    API_URL = ('https://api.airtable.com/v0/apprmgL8TfOUoJfl4/'+ table +'?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
-    r = requests.get(API_URL, headers=headers)
-    r = r.json()
+    shopCollection = db[table]
+    shopRecords = list(shopCollection.find({"Name": {"$regex": query, '$options': 'i' }}))
 
-    if r['records'] == list():
+    if shopRecords == list():
         return False
     else:
-        if (len(r['records']) > 1):
-            if table == 'Races' or table == "Background":
-                for x in r['records']:
-                    print(x['fields']['Name'])
-                    print(query)
-                    if len(x['fields']['Name'].replace(" ", "")) == len(query.replace(" ", "")):
-                        return x['fields']
-
-            if table == 'RIT':
-                minimum = {'fields': {'Tier': 0}}
-                for x in r['records']:
-                    if int(x['fields']['Tier']) > int(minimum['fields']['Tier']):
-                        min = x
-                
-                return min['fields']
+        if (len(shopRecords) > 1):
+            for x in shopRecords:
+                if len(x['Name'].replace(" ", "")) == len(query.replace(" ", "")):
+                    return x
 
         else:
-            return r['records'][0]['fields']
+            return shopRecords[0]
 
 async def checkForChar(ctx, char, charEmbed=""):
     channel = ctx.channel
@@ -125,7 +116,6 @@ async def checkForChar(ctx, char, charEmbed=""):
         if len(charRecords) > 1:
             infoString = ""
             charRecords = list(charRecords)
-            print(charRecords)
             for i in range(0, min(len(charRecords), 9)):
                 infoString += f"{numberEmojis[i]}: {charRecords[i]['Name']}\n"
             
@@ -226,3 +216,16 @@ statuses = [f'D&D Friends | {commandPrefix}help', "We're all friends here!", f"S
 
 connection = MongoClient(mongoConnection) 
 db = connection.dnd
+
+# API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'MIT')
+# # API_URL += '?offset=' + itrUaOyKPMTNGkKJr/recXsvfypQn0AsEXi
+# r = requests.get(API_URL, headers=headers)
+# r = r.json()['records']
+# addList = []
+# for i in r:
+#     print(i['fields'])
+#     addList.append(i['fields'])
+
+
+# playersCollection = db.mit
+# playersCollection.insert_many(addList)

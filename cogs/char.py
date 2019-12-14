@@ -95,7 +95,7 @@ class Character(commands.Cog):
         allMagicItemsString = []
         if lvl > 1 and magicItems != ['']:
             for m in magicItems:
-                mRecord = callAPI('MIT',m) 
+                mRecord = callAPI('mit',m) 
                 if mRecord in allMagicItemsString:
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
@@ -189,7 +189,7 @@ class Character(commands.Cog):
         allRewardItemsString = []
         if lvl > 3 and rewardItems != ['']:
             for r in rewardItems:
-                reRecord = callAPI('RIT',r) 
+                reRecord = callAPI('rit',r) 
                 if not reRecord:
                     msg += '- One or more reward items don\'t exist! Check to see if it\'s on the RIT and check your spelling.\n'
                     break
@@ -282,7 +282,7 @@ class Character(commands.Cog):
             print(tier2Count)
             
         # check race
-        rRecord = callAPI('Races',race)
+        rRecord = callAPI('races',race)
         if not rRecord:
             msg += '- That race isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -301,7 +301,7 @@ class Character(commands.Cog):
                 mLevel = mLevel.group()
                 print(m)
                 print(m[:len(m) - len(mLevel)])
-                mClass = callAPI('Class',m[:len(m) - len(mLevel)])
+                mClass = callAPI('classes',m[:len(m) - len(mLevel)])
                 if not mClass:
                     cRecord = None
                     break
@@ -309,7 +309,7 @@ class Character(commands.Cog):
                 totalLevel += int(mLevel)
 
         else:
-            singleClass = callAPI('Class',cclass)
+            singleClass = callAPI('classes',cclass)
             if singleClass:
                 cRecord.append({'Class':singleClass, 'Level':lvl, 'Subclass': 'None'})
             else:
@@ -354,7 +354,7 @@ class Character(commands.Cog):
             print(cRecord)
         print(charDict['Class'])
         # check bg and gp
-        bRecord = callAPI('Background',bg)
+        bRecord = callAPI('backgrounds',bg)
         if not bRecord:
             msg += '- That background isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -512,7 +512,7 @@ class Character(commands.Cog):
 
         charDict['Name'] = newname
 
-        #TODO: Charges, attunement
+        #TODO: Charges
         # check magic items and TP
         prevMagicItems = charDict['Magic Items'].split(',')
         magicItems = mItems.split(',')
@@ -520,7 +520,7 @@ class Character(commands.Cog):
         bankTP = 0
         if lvl > 1 and magicItems != ['']:
             for m in magicItems:
-                mRecord = callAPI('MIT',m) 
+                mRecord = callAPI('mit',m) 
                 if mRecord in allMagicItemsString:
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
@@ -532,7 +532,7 @@ class Character(commands.Cog):
 
             if prevMagicItems != ['None']:
                 for m in prevMagicItems:
-                    mRecord = callAPI('MIT',m)
+                    mRecord = callAPI('mit',m)
                     if not mRecord:
                         pass
                     bankTP += int(mRecord['TP'])
@@ -576,7 +576,7 @@ class Character(commands.Cog):
         print(allMagicItemsString)
 
         # check race
-        rRecord = callAPI('Races',race)
+        rRecord = callAPI('races',race)
         if not rRecord:
             msg += '- That race isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -595,7 +595,7 @@ class Character(commands.Cog):
                 mLevel = mLevel.group()
                 print(m)
                 print(m[:len(m) - len(mLevel)])
-                mClass = callAPI('Class',m[:len(m) - len(mLevel)])
+                mClass = callAPI('classes',m[:len(m) - len(mLevel)])
                 if not mClass:
                     cRecord = None
                     break
@@ -603,7 +603,7 @@ class Character(commands.Cog):
                 totalLevel += int(mLevel)
 
         else:
-            singleClass = callAPI('Class',cclass)
+            singleClass = callAPI('classes',cclass)
             if singleClass:
                 cRecord.append({'Class':singleClass, 'Level':lvl, 'Subclass': 'None'})
             else:
@@ -644,7 +644,7 @@ class Character(commands.Cog):
 
                   
         # check bg and gp
-        bRecord = callAPI('Background',bg)
+        bRecord = callAPI('backgrounds',bg)
         # TODO: deduct old bg gp?
         if not bRecord:
             msg += '- That background isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
@@ -1257,10 +1257,8 @@ class Character(commands.Cog):
                 await channel.send(f'{charName} is not ready to level up. They currently have {cpSplit[0]}/{cpSplit[1]} CP')
                 return
             else:
-                API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/Class')
-                r = requests.get(API_URL, headers=headers)
-                r = r.json()
-                classRecords = sorted(r['records'], key=lambda k: k['fields']['Name']) 
+                cRecords = callAPI('classes')
+                classRecords = sorted(cRecords, key=lambda k: k['Name']) 
                 print(classRecords)
                 leftCP = float(cpSplit[0]) % float(cpSplit[1])
                 levelUp = float(cpSplit[0]) // float(cpSplit[1])
@@ -1310,7 +1308,7 @@ class Character(commands.Cog):
                     lvlClass = charClass
 
                     # Multiclass Requirements
-                    for cRecord in [c['fields'] for c in classRecords]:
+                    for cRecord in classRecords:
                         if cRecord['Name'] not in charClass:
                             statReq = cRecord['Multiclass'].split(' ')
                             if cRecord['Multiclass'] != 'None':
@@ -1431,7 +1429,7 @@ class Character(commands.Cog):
                         print(lvlClass)
 
                     # Choosing a subclass
-                    for s in [c['fields'] for c in classRecords]:
+                    for s in classRecords:
                         canSubclass = False
                         for x in range(len(subclasses)):
                             if s['Name'] in subclasses[x]['Name'] and int(s['Subclass Level']) == subclasses[x]['Level']:
@@ -1454,7 +1452,7 @@ class Character(commands.Cog):
                     # Feat 
                     featLevels = []
                     for c in subclasses:
-                        if int(c['Level']) in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) in (10)):
+                        if int(c['Level'])+ 1 in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) in (10)):
                             featLevels.append(int(c['Level']))
 
                     charFeatsGained = ""
@@ -1470,7 +1468,7 @@ class Character(commands.Cog):
 
                     # TODO: Tough Feat, Hill Dwarf, Draconic Sorcerer.
                     print(charHP)
-                    for s in [c['fields'] for c in classRecords]:
+                    for s in classRecords:
                         if s['Name'] in lvlClass:
                             charHP += s['Hit Die Average']
                             # CON
@@ -1512,9 +1510,9 @@ class Character(commands.Cog):
 
                 if charFeatsGained != "":
                     if infoRecords['Feats'] == 'None':
-                        data['fields']['Feats'] = charFeatsGained
+                        data['Feats'] = charFeatsGained
                     elif infoRecords['Feats'] != None:
-                        data['fields']['Feats'] = charFeats + ", " + charFeatsGained
+                        data['Feats'] = charFeats + ", " + charFeatsGained
 
                 print('')
                 print(data)
@@ -1585,7 +1583,7 @@ class Character(commands.Cog):
                 await channel.send(f"You cannot attune to anymore items.")
                 return
 
-            mRecord = callAPI('MIT', m)
+            mRecord = callAPI('mit', m)
             if m.lower() not in [x.lower() for x in charRecordMagicItems] or not mRecord:
                 await channel.send(f"You don't have the item `{m}` in your inventory or it does not exist on the magic item table.")
                 return
@@ -1633,7 +1631,7 @@ class Character(commands.Cog):
                 attuned = charRecords['Attuned'].split(', ')
 
             charID = charRecords['_id']
-            mRecord = callAPI('MIT', m)
+            mRecord = callAPI('mit', m)
             if not mRecord:
                 await channel.send(f"`{m}` does not exist on the magic item table.")
                 return
@@ -1893,26 +1891,24 @@ class Character(commands.Cog):
 
                 elif choice == 2:
                     if featChoices == list():
-                        API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/Feats?maxRecords=100&sort%5B0%5D%5Bfield%5D=Name&sort%5B0%5D%5Bdirection%5D=asc').replace(" ", "%20").replace("+", "%2B") 
-                        r = requests.get(API_URL, headers=headers)
-                        r = r.json()
+                        fRecords = callAPI('feats')
 
                         # TODO: feat check restricitons
-                        for feat in r['records']:
+                        for feat in fRecords:
                             featList = []
                             meetsRestriction = False
 
-                            if 'Race Restriction' not in feat['fields'] and 'Class Restriction' not in feat['fields'] and 'Stat Restriction' not in feat['fields'] and feat['fields']['Name'] not in charFeats:
-                                featChoices.append(feat['fields'])
+                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats:
+                                featChoices.append(feat)
 
                             else:
-                                if 'Race Restriction' in feat['fields']:
-                                    featsList = [x.strip() for x in feat['fields']['Race Restriction'].split(',')]
+                                if 'Race Restriction' in feat:
+                                    featsList = [x.strip() for x in feat['Race Restriction'].split(',')]
                                     if race in featsList:
                                         meetsRestriction = True
 
-                                if 'Class Restriction' in feat['fields']:
-                                    featsList = [x.strip() for x in feat['fields']['Class Restriction'].split(',')]
+                                if 'Class Restriction' in feat:
+                                    featsList = [x.strip() for x in feat['Class Restriction'].split(',')]
                                     print(cRecord)
                                     print('cRecord')
                                     for c in cRecord:
@@ -1923,8 +1919,8 @@ class Character(commands.Cog):
                                             if c['Name'] in featList or c['Subclass'] in featsList:
                                                 meetsRestriction = True
 
-                                if 'Stat Restriction' in feat['fields']:
-                                    s = feat['fields']['Stat Restriction']
+                                if 'Stat Restriction' in feat:
+                                    s = feat['Stat Restriction']
                                     statNumber = int(s[-2:])
                                     print(feat)
                                     if '/' in s:
@@ -1940,7 +1936,7 @@ class Character(commands.Cog):
                                             meetsRestriction = True
 
                                 if meetsRestriction:
-                                    featChoices.append(feat['fields'])
+                                    featChoices.append(feat)
 
                     else:
                         featChoices.remove(featPicked)
