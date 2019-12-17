@@ -3,8 +3,10 @@ import gspread
 import decimal
 import os
 import time
-import json
-import requests
+# import json
+# import requests
+from discord.ext import commands
+import asyncio
 from oauth2client.service_account import ServiceAccountCredentials
 from pymongo import MongoClient
 from secret import *
@@ -99,17 +101,21 @@ def callShopAPI(table, query):
         else:
             return shopRecords[0]
 
-async def checkForChar(ctx, char, charEmbed=""):
+async def checkForChar(ctx, char, charEmbed="", mod=False):
     channel = ctx.channel
     author = ctx.author
     guild = ctx.guild
 
     playersCollection = db.players
-    charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": char, '$options': 'i' }}))
+    if mod == True:
+        charRecords = list(playersCollection.find({"Name": {"$regex": char, '$options': 'i' }})) 
+    else:
+        charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": char, '$options': 'i' }}))
 
     if charRecords == list():
-        await channel.send(content=f'I was not able to find your character named {char}. Please check your spelling and try again')
-        self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
+        if not mod:
+            await channel.send(content=f'I was not able to find your character named `{char}`. Please check your spelling and try again')
+        ctx.command.reset_cooldown(ctx)
         return None, None
 
     else:
@@ -117,30 +123,31 @@ async def checkForChar(ctx, char, charEmbed=""):
             infoString = ""
             charRecords = list(charRecords)
             for i in range(0, min(len(charRecords), 9)):
-                infoString += f"{numberEmojis[i]}: {charRecords[i]['Name']}\n"
+                infoString += f"{numberEmojis[i]}: {charRecords[i]['Name']} ({guild.get_member(int(charRecords[i]['User ID']))})\n"
             
-            try:
-                def infoCharEmbedcheck(r, u):
-                    sameMessage = False
-                    if charEmbedmsg.id == r.message.id:
-                        sameMessage = True
-                    return (r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌') and u == author
+            def infoCharEmbedcheck(r, u):
+                sameMessage = False
+                if charEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return (r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌') and u == author
 
-                charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character.", value=infoString, inline=False)
-                charEmbedmsg = await channel.send(embed=charEmbed)
-                for num in range(0,min(len(charRecords), 6)): await charEmbedmsg.add_reaction(numberEmojis[num])
-                await charEmbedmsg.add_reaction('❌')
-                tReaction, tUser = await self.bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
+            charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character.", value=infoString, inline=False)
+            charEmbedmsg = await channel.send(embed=charEmbed)
+            for num in range(0,min(len(charRecords), 9)): await charEmbedmsg.add_reaction(numberEmojis[num])
+            await charEmbedmsg.add_reaction('❌')
+
+            try:
+                tReaction, tUser = await bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
             except asyncio.TimeoutError:
                 await charEmbedmsg.delete()
                 await channel.send('Character information timed out! Try using the command again')
-                self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                ctx.command.reset_cooldown(ctx)
                 return None, None
             else:
                 if tReaction.emoji == '❌':
                     await charEmbedmsg.edit(embed=None, content=f"Character information canceled. User `{commandPrefix}char info` command and try again!")
                     await charEmbedmsg.clear_reactions()
-                    self.char.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                    ctx.command.reset_cooldown(ctx)
                     return None, None
             charEmbed.clear_fields()
             await charEmbedmsg.clear_reactions()
@@ -189,7 +196,6 @@ ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
 
 # token = os.environ['TOKEN']
 currentTimers = []
-discordClient = discord.Client()
 
 gameCategory = ["🎲 game rooms", "🐉 campaigns", "mod friends"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True', '']
@@ -213,6 +219,8 @@ alphaEmojis = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬','🇭','🇮','�
 '🇱','🇲','🇳','🇴','🇵','🇶','🇷','🇸','🇹','🇺','🇻','🇼','🇽','🇾','🇿']
 
 statuses = [f'D&D Friends | {commandPrefix}help', "We're all friends here!", f"See a bug? tell @Xyffei!"]
+discordClient = discord.Client()
+bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 
 connection = MongoClient(mongoConnection) 
 db = connection.dnd

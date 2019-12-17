@@ -362,7 +362,7 @@ class Guild(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
                     await guildEmbedmsg.delete()
-                    await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                    await channel.send(f'Guild canceled. Use `{commandPrefix}shop buy` command and try again!')
                     return
                 else:
                     await guildEmbedmsg.clear_reactions()

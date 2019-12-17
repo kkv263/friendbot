@@ -6,7 +6,6 @@ from itertools import cycle
 
 from bfunc import *
 
-bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 cogs_dir = "cogs"
 
 async def change_status():

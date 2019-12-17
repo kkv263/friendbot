@@ -762,14 +762,12 @@ class Character(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command()
-    async def retire(self,ctx, *, char):
+    async def retire(self,ctx, char):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
         charEmbed = discord.Embed()
         charEmbedmsg = None
-
-        characterCog = self.bot.get_cog('Character')
 
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
@@ -827,14 +825,12 @@ class Character(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command()
-    async def death (self,ctx, *, char):
+    async def death (self,ctx, char):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
         charEmbed = discord.Embed()
         charEmbedmsg = None
-
-        characterCog = self.bot.get_cog('Character')
 
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
@@ -979,7 +975,7 @@ class Character(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command(aliases=['bag','inventory', 'i'])
-    async def inv(self,ctx, *, char):
+    async def inv(self,ctx, char):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -987,12 +983,10 @@ class Character(commands.Cog):
         charEmbed = discord.Embed()
         charEmbedmsg = None
 
-        characterCog = self.bot.get_cog('Character')
-
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
-            footer = f"To view character's info: {commandPrefix}inv {charDict['Name']}"
+            footer = f"To view character's info: {commandPrefix}info {charDict['Name']}"
             charLevel = charDict['Level']
             if charLevel < 5:
                 role = 1
@@ -1045,8 +1039,6 @@ class Character(commands.Cog):
         charEmbed = discord.Embed()
         charEmbedmsg = None
 
-        characterCog = self.bot.get_cog('Character')
-
         usersCollection = db.users
         userRecords = usersCollection.find_one({"User ID": str(author.id)})
 
@@ -1066,7 +1058,10 @@ class Character(commands.Cog):
                         charString += f"\a\a+ Guild: {charDict['Guild']}\n"
 
 
-                charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles:{userRecords['Noodles']}"
+                if 'Noodles' in charDict:
+                    charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"
+                else:
+                    charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to recieve Noodles!)"
                 charEmbed.add_field(name='Characters', value=charString, inline=False)
 
                 if not charEmbedmsg:
@@ -1078,17 +1073,16 @@ class Character(commands.Cog):
             return
             
            
-
+    # TODO: We can also have person react to view their inventory
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command(aliases=['inf', 'char'])
-    async def info(self,ctx, *, char):
+    async def info(self,ctx, char):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
         roleColors = {r.name:r.colour for r in guild.roles}
         charEmbed = discord.Embed()
         charEmbedmsg = None
-        characterCog = self.bot.get_cog('Character')
 
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
@@ -1209,7 +1203,6 @@ class Character(commands.Cog):
         guild = ctx.guild
         charEmbed = discord.Embed()
 
-        characterCog = self.bot.get_cog('Character')
         infoRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if infoRecords:
@@ -1230,7 +1223,7 @@ class Character(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command(aliases=['lvl', 'lvlup', 'lv'])
-    async def levelup(self,ctx, *, char):
+    async def levelup(self,ctx, char):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -1559,7 +1552,6 @@ class Character(commands.Cog):
         author = ctx.author
         guild = ctx.guild
         charEmbed = discord.Embed ()
-        characterCog = self.bot.get_cog('Character')
         charRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if charRecords:
@@ -1620,7 +1612,6 @@ class Character(commands.Cog):
         author = ctx.author
         guild = ctx.guild
         charEmbed = discord.Embed ()
-        characterCog = self.bot.get_cog('Character')
         charRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if charRecords:
