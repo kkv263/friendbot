@@ -37,7 +37,7 @@ def calculateTreasure(seconds, role):
 
     if role == "true":
       tp = cp
-      gp = cp * 360
+      gp = cp * 600
 
     # refactor later
     dcp = int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
