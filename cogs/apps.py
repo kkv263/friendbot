@@ -94,12 +94,13 @@ class Apps(commands.Cog):
                     if appMember.mentioned_in(message):
                         playedGame = True
                         juniorRole = get(guild.roles, name = 'Junior Friend')
+                        t1Role = get(guild.roles, name = 'Tier 1')
                         await appMember.add_roles(juniorRole, reason=f"Approved Application, the user has played at least one game. I have checked in the last {limit} session-logs")
+                        await appMember.add_roles(t1Role, reason=f"Approved Application, the user has played at least one game. I have checked in the last {limit} session-logs")
                         break
 
-                if not playedGame:
-                    newRole = get(guild.roles, name = 'New Friend')
-                    await appMember.add_roles(newRole, reason=f"Approved Application, The user has not played at least one game. I have checked in the last {limit} session-logs")
+                newRole = get(guild.roles, name = 'D&D Friend')
+                await appMember.add_roles(newRole, reason=f"Approved Application, the user has been given the base role.")
                 
                 await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! The D&D Friends Mod team has approved your application and you have been assigned the appropriate roles.\n\nIf you have any further questions then please don't hesitate to ask in our #help-for-players channel or message a Mod Friend!")
 

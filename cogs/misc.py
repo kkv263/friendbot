@@ -46,7 +46,7 @@ class Misc(commands.Cog):
         await ctx.message.delete()
     
     # @commands.Cog.listener()
-    # async def on_raw_reaction_remove(self,payload):
+    # async def on_raw_reaction_add(self,payload):
     #     # Message for reaction
     #     tMessage = 658358843553611776
     #     guild = self.bot.get_guild(payload.guild_id)
@@ -80,6 +80,12 @@ class Misc(commands.Cog):
     #                     await member.remove_roles(role)
     #                     successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have removed the role `{name}`. You will no longer be notified for these type of games through pings.")
     #                     await asyncio.sleep(15) 
+    #                 else:
+    #                     channel = guild.get_channel(payload.channel_id)
+    #                     errorMsg = await member.send(f"D&D Friends: ❗ {member.display_name}, You can't remove the role `{name}` because you don't have the the required roles! - ({', '.join(validRoles)})")
+    #                     originalMessage = await channel.fetch_message(tMessage)
+    #                     await originalMessage.remove_reaction(payload.emoji,member)
+    #                     await asyncio.sleep(15) 
 
     #             else:
     #                 print('member not found')
@@ -87,7 +93,7 @@ class Misc(commands.Cog):
     #             print('role not found')
 
     # @commands.Cog.listener()
-    # async def on_raw_reaction_add(self,payload):
+    # async def on_raw_reaction_remove(self,payload):
     #     # Message for reaction
     #     tMessage = 658358843553611776
 
@@ -124,12 +130,6 @@ class Misc(commands.Cog):
     #                 if any(role in roles for role in validRoles):    
     #                     await member.add_roles(role)
     #                     successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have added the role `{name}`. You will be notified for these type of games through pings.")
-    #                     await asyncio.sleep(15) 
-    #                 else:
-    #                     channel = guild.get_channel(payload.channel_id)
-    #                     errorMsg = await member.send(f"D&D Friends: ❗ {member.display_name}, You can't add the role `{name}` because you don't have the the required roles! - ({', '.join(validRoles)})")
-    #                     originalMessage = await channel.fetch_message(tMessage)
-    #                     await originalMessage.remove_reaction(payload.emoji,member)
     #                     await asyncio.sleep(15) 
                         
     #             else:
