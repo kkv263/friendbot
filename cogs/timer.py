@@ -441,7 +441,7 @@ class Timer(commands.Cog):
         await ctx.channel.send(content=currentTimersString)
 
     @timer.command()
-    @commands.has_any_role('Mod Friend', 'Admins')
+    @commands.has_any_role('Dev Friend')
     async def resetcooldown(self,ctx):
         self.timer.get_command('start').reset_cooldown(ctx)
         self.timer.get_command('resume').reset_cooldown(ctx)
