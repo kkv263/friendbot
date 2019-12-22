@@ -3,6 +3,7 @@ import pytz
 import re
 import requests
 import asyncio
+import collections
 from discord.utils import get        
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
@@ -535,10 +536,12 @@ class Character(commands.Cog):
                     mRecord = callAPI('mit',m)
                     if not mRecord:
                         pass
-                    bankTP += int(mRecord['TP'])
+                    else:
+                        bankTP += int(mRecord['TP'])
 
             print(allMagicItemsString)
 
+            # Fix 'NoneType' object has no attribute 'group'
             currentPrevTP = int(re.search('\(([^)]+)', charDict['Current Item']).group(1).split('/')[0])
             print(currentPrevTP)
 
@@ -569,7 +572,7 @@ class Character(commands.Cog):
                 else:
                     charDict['Magic Items'] = ', '.join([str(string['Name']) for string in magicItemsBought])
         elif lvl > 1 and magicItems == ['']:
-            msg += 'In order to create your character at this level, you must purchase magic item(s) with your TP\n' 
+            msg += 'In order to create your character at this level, you must respec magic item(s) with your TP\n' 
         elif lvl == 1 and magicItems != ['']:
             msg += 'You cannot purchase magic items at Level 1\n'
 
@@ -974,8 +977,8 @@ class Character(commands.Cog):
                             charEmbedmsg = await channel.send(embed=None, content=surviveString)
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @commands.command(aliases=['bag','inventory', 'i'])
-    async def inv(self,ctx, char):
+    @commands.command(aliases=['bag','inv', 'i'])
+    async def inventory(self,ctx, char):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -1011,15 +1014,24 @@ class Character(commands.Cog):
                 for k,v in charDict['Inventory'].items():
                     type = k.split(':')
                     if type[1] not in typeDict:
-                        typeDict[type[1]] = [f"+ {type[0]} x{v}\n"]
+                        typeDict[type[1]] = [f"• {type[0]} x{v}\n"]
                     else:
-                        typeDict[type[1]].append(f"+ {type[0]} x{v}\n")
+                        typeDict[type[1]].append(f"• {type[0]} x{v}\n")
 
                 for k, v in typeDict.items():
                     v.sort()
                     charEmbed.add_field(name=k, value=''.join(v), inline=True)
 
-            charEmbed.add_field(name='Consumables', value='• ' + charDict['Consumables'].replace(', ', '\n• '), inline=True)
+            consumesCount = collections.Counter(charDict['Consumables'].split(', '))
+
+            consumesString = ""
+            for k, v in consumesCount.items():
+                if v == 1:
+                    consumesString += f"• {k}\n"
+                else:
+                    consumesString += f"• {k} x{v}\n"
+
+            charEmbed.add_field(name='Consumables', value=consumesString, inline=True)
             charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
             charEmbed.set_footer(text=footer)
 

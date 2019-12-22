@@ -7,7 +7,7 @@ import re
 from discord.utils import get        
 from datetime import datetime, timezone
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, headers, db
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, headers, db, callAPI
 from pymongo import UpdateOne
 
 class Timer(commands.Cog):
@@ -175,7 +175,7 @@ class Timer(commands.Cog):
                 else:
                     await channel.send('You cannot remove yourself from the timer.')
 
-            elif msg.content == "$timer start":
+            elif msg.content == f"{commandPrefix}timer start":
                 print(signedPlayers)
                 if author not in [a[0] for a in signedPlayers]:
                     await channel.send(f'The DM has not signed up yet! Please `{commandPrefix}signup` your character before starting the timer.') 
@@ -442,32 +442,15 @@ class Timer(commands.Cog):
                             return start
 
 
-                    headers = {
-                        "Authorization": "Bearer keyw9zLleR35sm21O",
-                        "Content-Type": "application/json"
-                    }
-
                     for query in consumablesList:
-                        API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/RIT?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
+                        # API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/RIT?&filterByFormula=(FIND(LOWER(SUBSTITUTE("' + query.replace(" ", "%20") + '"," ","")),LOWER(SUBSTITUTE({Name}," ",""))))').replace("+", "%2B") 
 
-                        r = requests.get(API_URL, headers=headers)
-                        r = r.json()
+                        rewardConsumable = callAPI('rit',query) 
 
-                        if r['records'] == list():
+                        if not rewardConsumable:
                             if not resume:
                                 await channel.send('This does not seem to be a valid reward.')
                         else:
-                            if (len(r['records']) > 1):
-                                minimum = {'fields': {'Tier': 5}}
-                                for x in r['records']:
-                                    if int(x['fields']['Tier']) < int(minimum['fields']['Tier']):
-                                        minimum = x
-                                rewardConsumable =  minimum['fields']
-
-                            elif (len(r['records']) == 1):
-                                rewardConsumable = r['records'][0]['fields']
-                                author = msg.author
-
                             minor = dmChar[4][2]
                             major = dmChar[4][1]
                               
@@ -1043,7 +1026,7 @@ class Timer(commands.Cog):
                                     resumeString.append(f"{f['name']}={f['value']}")
                             commandMessage.content = ', '.join(resumeString)
 
-                        if m.content == '$timer start':
+                        if m.content == f'{commandPrefix}timer start':
                             playerResumeList = [m.author.id] + commandMessage.raw_mentions
                             author = m.author
                             break
@@ -1144,6 +1127,7 @@ class Timer(commands.Cog):
         user = author.display_name
         while not timerStopped:
             try:
+                # TODO add alias [$t]
                 msg = await self.bot.wait_for('message', timeout=5.0, check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer end" or f"{commandPrefix}timer add" in m.content or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer death " in m.content or m.content.startswith('-') or f"{commandPrefix}timer reward" in m.content) and m.channel == channel)
                 if f"{commandPrefix}timer transfer " in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
