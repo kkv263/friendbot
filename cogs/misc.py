@@ -219,7 +219,7 @@ class Misc(commands.Cog):
                 for x in removeRoles:
                     remove = get(guild.roles, name = x)
                     await m.remove_roles(remove)
-            elif 'Junior Friend' in [r.name for r in roles] or 'New Friend' in [r.name for r in roles]:
+            elif 'Junior Friend' in [r.name for r in roles]:
                 addRoles = ['Tier 1']
                 for a in addRoles:
                     add = get(guild.roles, name = a)
