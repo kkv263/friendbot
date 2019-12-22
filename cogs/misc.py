@@ -78,9 +78,8 @@ class Misc(commands.Cog):
     #                 channel = guild.get_channel(payload.channel_id)
     #                 if any(role in roles for role in validRoles):
     #                     await member.remove_roles(role)
-    #                     successMsg = await channel.send(f":tada: {member.display_name}, I have removed the role `{name}`. You will no longer be notified for these type of games through pings.")
+    #                     successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have removed the role `{name}`. You will no longer be notified for these type of games through pings.")
     #                     await asyncio.sleep(15) 
-    #                     await successMsg.delete()
 
     #             else:
     #                 print('member not found')
@@ -124,17 +123,14 @@ class Misc(commands.Cog):
 
     #                 if any(role in roles for role in validRoles):    
     #                     await member.add_roles(role)
-    #                     successMsg = await channel.send(f":tada: {member.display_name}, I have added the role `{name}`. You will be notified for these type of games through pings.")
+    #                     successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have added the role `{name}`. You will be notified for these type of games through pings.")
     #                     await asyncio.sleep(15) 
-    #                     await successMsg.delete()
     #                 else:
     #                     channel = guild.get_channel(payload.channel_id)
-    #                     errorMsg = await channel.send(f"❗ {member.display_name}, You can't add the role `{name}` because you don't have the the required roles! - ({', '.join(validRoles)})")
+    #                     errorMsg = await member.send(f"D&D Friends: ❗ {member.display_name}, You can't add the role `{name}` because you don't have the the required roles! - ({', '.join(validRoles)})")
     #                     originalMessage = await channel.fetch_message(tMessage)
     #                     await originalMessage.remove_reaction(payload.emoji,member)
     #                     await asyncio.sleep(15) 
-    #                     await errorMsg.delete()
-
                         
     #             else:
     #                 print('member not found')
@@ -233,6 +229,8 @@ class Misc(commands.Cog):
                 for a in addRoles:
                     add = get(guild.roles, name = a)
                     await m.add_roles(add)
+
+        print("done")
         
 def setup(bot):
     bot.add_cog(Misc(bot))
