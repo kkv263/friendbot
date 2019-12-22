@@ -71,7 +71,7 @@ class Apps(commands.Cog):
             appHash = appDiscord.split('#')[1]
             appAge = appDict['fields'][1]['value']
             appMember = guild.get_member_named(appDiscord)
-            botEmbed.set_footer(text=f"Application Message ID: {botMsg.id}")
+            botEmbed.set_footer(text=f"Application Message ID: {botMsg.id}\nMod: {mMessage.author}")
 
             if appMember is None:
                 ctx.channel.send(content=f"Something went wrong. The application could not find the discord name {appDiscord} for application {appNum}. Please delete this message once this is resolved.")
