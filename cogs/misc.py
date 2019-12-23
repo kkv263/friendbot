@@ -45,97 +45,97 @@ class Misc(commands.Cog):
         await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
     
-    # @commands.Cog.listener()
-    # async def on_raw_reaction_add(self,payload):
-    #     # Message for reaction
-    #     tMessage = 658358843553611776
-    #     guild = self.bot.get_guild(payload.guild_id)
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self,payload):
+        # Message for reaction
+        tMessage = 658423423592169556
+        guild = self.bot.get_guild(payload.guild_id)
 
-    #     if payload.message_id == tMessage:
-    #         if payload.emoji.name == "1️⃣" or payload.emoji.name == '1⃣':
-    #             name = 'Tier 1' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
-    #         elif payload.emoji.name == "2️⃣" or payload.emoji.name == '2⃣':
-    #             name = 'Tier 2' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
-    #         elif payload.emoji.name == "3️⃣" or payload.emoji.name == '3⃣':
-    #             name = 'Tier 3' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['Elite Friend', 'True Friend']
-    #         elif payload.emoji.name == "4️⃣" or payload.emoji.name == '4⃣':
-    #             name = 'Tier 4' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['True Friend']
-    #         else:
-    #             role = None
+        if payload.message_id == tMessage:
+            if payload.emoji.name == "1️⃣" or payload.emoji.name == '1⃣':
+                name = 'Tier 1' 
+                role = get(guild.roles, name = name)
+                validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
+            elif payload.emoji.name == "2️⃣" or payload.emoji.name == '2⃣':
+                name = 'Tier 2' 
+                role = get(guild.roles, name = name)
+                validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
+            elif payload.emoji.name == "3️⃣" or payload.emoji.name == '3⃣':
+                name = 'Tier 3' 
+                role = get(guild.roles, name = name)
+                validRoles = ['Elite Friend', 'True Friend']
+            elif payload.emoji.name == "4️⃣" or payload.emoji.name == '4⃣':
+                name = 'Tier 4' 
+                role = get(guild.roles, name = name)
+                validRoles = ['True Friend']
+            else:
+                role = None
 
-    #         if role is not None:
-    #             member = guild.get_member(payload.user_id)
-    #             if member is not None:
-    #                 roles = [r.name for r in member.roles]
-    #                 channel = guild.get_channel(payload.channel_id)
-    #                 if any(role in roles for role in validRoles):
-    #                     await member.remove_roles(role)
-    #                     successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have removed the role `{name}`. You will no longer be notified for these type of games through pings.")
-    #                     await asyncio.sleep(15) 
-    #                 else:
-    #                     channel = guild.get_channel(payload.channel_id)
-    #                     errorMsg = await member.send(f"D&D Friends: ❗ {member.display_name}, You can't remove the role `{name}` because you don't have the the required roles! - ({', '.join(validRoles)})")
-    #                     originalMessage = await channel.fetch_message(tMessage)
-    #                     await originalMessage.remove_reaction(payload.emoji,member)
-    #                     await asyncio.sleep(15) 
+            if role is not None:
+                member = guild.get_member(payload.user_id)
+                if member is not None:
+                    roles = [r.name for r in member.roles]
+                    channel = guild.get_channel(payload.channel_id)
+                    if any(role in roles for role in validRoles):
+                        await member.remove_roles(role)
+                        successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have removed the role `{name}`. You will no longer be notified for these type of games through pings.")
+                        await asyncio.sleep(15) 
+                    else:
+                        channel = guild.get_channel(payload.channel_id)
+                        errorMsg = await member.send(f"D&D Friends: ❗ {member.display_name}, You can't remove the role `{name}` because you don't have the the required roles! - ({', '.join(validRoles)})")
+                        originalMessage = await channel.fetch_message(tMessage)
+                        await originalMessage.remove_reaction(payload.emoji,member)
+                        await asyncio.sleep(15) 
 
-    #             else:
-    #                 print('member not found')
-    #         else:
-    #             print('role not found')
+                else:
+                    print('member not found')
+            else:
+                print('role not found')
 
-    # @commands.Cog.listener()
-    # async def on_raw_reaction_remove(self,payload):
-    #     # Message for reaction
-    #     tMessage = 658358843553611776
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self,payload):
+        # Message for reaction
+        tMessage = 658423423592169556
 
-    #     guild = self.bot.get_guild(payload.guild_id)
-    #     validRoles = []
+        guild = self.bot.get_guild(payload.guild_id)
+        validRoles = []
 
-    #     if payload.message_id == tMessage:
-    #         if payload.emoji.name == "1️⃣" or payload.emoji.name == '1⃣':
-    #             name = 'Tier 1' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
-    #         elif payload.emoji.name == "2️⃣" or payload.emoji.name == '2⃣':
-    #             name = 'Tier 2' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
-    #         elif payload.emoji.name == "3️⃣" or payload.emoji.name == '3⃣':
-    #             name = 'Tier 3' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['Elite Friend', 'True Friend']
-    #         elif payload.emoji.name == "4️⃣" or payload.emoji.name == '4⃣':
-    #             name = 'Tier 4' 
-    #             role = get(guild.roles, name = name)
-    #             validRoles = ['True Friend']
-    #         else:
-    #             role = None
+        if payload.message_id == tMessage:
+            if payload.emoji.name == "1️⃣" or payload.emoji.name == '1⃣':
+                name = 'Tier 1' 
+                role = get(guild.roles, name = name)
+                validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
+            elif payload.emoji.name == "2️⃣" or payload.emoji.name == '2⃣':
+                name = 'Tier 2' 
+                role = get(guild.roles, name = name)
+                validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
+            elif payload.emoji.name == "3️⃣" or payload.emoji.name == '3⃣':
+                name = 'Tier 3' 
+                role = get(guild.roles, name = name)
+                validRoles = ['Elite Friend', 'True Friend']
+            elif payload.emoji.name == "4️⃣" or payload.emoji.name == '4⃣':
+                name = 'Tier 4' 
+                role = get(guild.roles, name = name)
+                validRoles = ['True Friend']
+            else:
+                role = None
 
-    #         if role is not None:
-    #             member = guild.get_member(payload.user_id)
+            if role is not None:
+                member = guild.get_member(payload.user_id)
 
-    #             if member is not None:
-    #                 roles = [r.name for r in member.roles]
-    #                 channel = guild.get_channel(payload.channel_id)
+                if member is not None:
+                    roles = [r.name for r in member.roles]
+                    channel = guild.get_channel(payload.channel_id)
 
-    #                 if any(role in roles for role in validRoles):    
-    #                     await member.add_roles(role)
-    #                     successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have added the role `{name}`. You will be notified for these type of games through pings.")
-    #                     await asyncio.sleep(15) 
+                    if any(role in roles for role in validRoles):    
+                        await member.add_roles(role)
+                        successMsg = await member.send(f"D&D Friends: :tada: {member.display_name}, I have added the role `{name}`. You will be notified for these type of games through pings.")
+                        await asyncio.sleep(15) 
                         
-    #             else:
-    #                 print('member not found')
-    #         else:
-    #             print('role not found')
+                else:
+                    print('member not found')
+            else:
+                print('role not found')
             
 
     @commands.Cog.listener()
@@ -182,9 +182,9 @@ class Misc(commands.Cog):
     async def roleremove(self,ctx):
         guild = ctx.guild
 
-        channel = guild.get_channel(624410188295962664);
+        channel = guild.get_channel(463884158964465664);
 
-        msg = await channel.fetch_message(658358843553611776)
+        msg = await channel.fetch_message(658423423592169556)
         await msg.add_reaction('1️⃣')
         await msg.add_reaction('2️⃣')
         await msg.add_reaction('3️⃣')
