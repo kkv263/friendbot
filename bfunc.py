@@ -25,7 +25,7 @@ def getTiers (tiers):
 def calculateTreasure(seconds, role):
     cp = ((seconds + 900) // 1800) / 2
     tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-    gp = cp * 40
+    gp = cp * 60
     role = role.lower()
 
     if role == 'journey':
@@ -33,11 +33,11 @@ def calculateTreasure(seconds, role):
 
     if role == "elite":
       tp = cp
-      gp = cp * 240
+      gp = cp * 180
 
     if role == "true":
       tp = cp
-      gp = cp * 600
+      gp = cp * 240
 
     # refactor later
     dcp = int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
