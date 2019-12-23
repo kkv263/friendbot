@@ -187,25 +187,27 @@ class Misc(commands.Cog):
 
             if 'True Friend' in[r.name for r in roles]:
                 addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'Tier 4', 'D&D Friend']
-                removeRoles = ["Elite Friend", 'Journey Friend', 'Junior Friend', 'New Friend']
+                removeRoles = ["Elite Friend", 'Journeyfriend', 'Junior Friend', 'New Friend']
                 for a in addRoles:
                     add = get(guild.roles, name = a)
                     await m.add_roles(add)
 
                 for x in removeRoles:
                     remove = get(guild.roles, name = x)
-                    await m.remove_roles(remove)
+                    if remove:
+                        await m.remove_roles(remove)
 
             elif 'Elite Friend' in [r.name for r in roles]:
                 addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'D&D Friend']
-                removeRoles = ['Journey Friend', 'Junior Friend', 'New Friend']
+                removeRoles = ['Journeyfriend', 'Junior Friend', 'New Friend']
                 for a in addRoles:
                     add = get(guild.roles, name = a)
                     await m.add_roles(add)
 
                 for x in removeRoles:
                     remove = get(guild.roles, name = x)
-                    await m.remove_roles(remove)
+                    if remove:
+                        await m.remove_roles(remove)
             elif 'Journey Friend' in [r.name for r in roles]:
                 addRoles = ['Tier 1', 'Tier 2', 'D&D Friend']
                 removeRoles = ['Junior Friend', 'New Friend']
@@ -215,7 +217,8 @@ class Misc(commands.Cog):
 
                 for x in removeRoles:
                     remove = get(guild.roles, name = x)
-                    await m.remove_roles(remove)
+                    if remove:
+                        await m.remove_roles(remove)
             elif 'Junior Friend' in [r.name for r in roles]:
                 addRoles = ['Tier 1', 'D&D Friend']
                 for a in addRoles:
