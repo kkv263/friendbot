@@ -204,6 +204,7 @@ class Timer(commands.Cog):
                 charName = char.content.split(f'{commandPrefix}timer signup ')[1]
 
             else:
+                #TODO: make it work with charnames in quotes
                 if 'timer add ' in char.content:
                     charName = char.content.split(f'{commandPrefix}timer add ')[1].split(':')[1]
                     charName = charName.strip()
@@ -538,12 +539,20 @@ class Timer(commands.Cog):
             return start
 
     @timer.command()
-    async def addme(self,ctx, *, msg, start="" ,prep=None, user="", resume=False):
+    async def addme(self,ctx, *, msg, start="" ,prep=None, user="", dmChar="", resume=False, ):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             userFound = False;
             timeKey = ""
             addUser = user
+            channel = ctx.channel
+
+            def addMeEmbedCheck(r, u):
+                sameMessage = False
+                if addEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == dmChar[0]
+
             if not resume:
                 startTime = time.time()
             else:
@@ -558,20 +567,39 @@ class Timer(commands.Cog):
             if not userFound:
                 userInfo =  await ctx.invoke(self.timer.get_command('signup'), char=msg, author=addUser) 
                 if userInfo:
-                    start[f"+Partial Rewards:{startTime}"] = [userInfo]
                     if not resume:
-                        await ctx.channel.send(content=f"I've added {addUser.display_name} to the timer.")
+                        addEmbed = discord.Embed()
+                        addEmbed.title = f"Add {userInfo[1]['Name']} to timer?"
+                        addEmbed.description = f"{addUser.mention} character would to be added to the timer.\n{userInfo[1]['Name']} - Level {userInfo[1]['Level']}: {userInfo[1]['Race']} {userInfo[1]['Class']}\nConsumables: {', '.join(userInfo[2])}\n\n✅ : Add to timer\n\n❌: Deny"
+                        addEmbedmsg = await channel.send(embed=addEmbed, content=dmChar[0].mention)
+                        await addEmbedmsg.add_reaction('✅')
+                        await addEmbedmsg.add_reaction('❌')
+
+                        try:
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=addMeEmbedCheck , timeout=60)
+                        except asyncio.TimeoutError:
+                            await addEmbedmsg.delete()
+                            await channel.send(f'Timer addme canceled. Use `{commandPrefix}timer addme` command and try again!')
+                            return start
+                        else:
+                            await addEmbedmsg.clear_reactions()
+                            if tReaction.emoji == '❌':
+                                await addEmbedmsg.edit(embed=None, content=f"Request to be added to timer denied.")
+                                await addEmbedmsg.clear_reactions()
+                                return start
+                            await addEmbedmsg.edit(embed=None, content=f"I've added {addUser.display_name} to the timer.")
+                    start[f"+Partial Rewards:{startTime}"] = [userInfo]
                 else:
                     pass
             elif '%' in timeKey:
                 if not resume:
-                    await ctx.channel.send(content='Your character is dead, you cannot be re-added to the timer.')
+                    await channel.send(content='Your character is dead, you cannot be re-added to the timer.')
             elif '+' in timeKey or 'Full Rewards' in timeKey:
                 if not resume:
-                    await ctx.channel.send(content='You have already been added to the timer')
+                    await channel.send(content='You have already been added to the timer')
             elif '-' in timeKey:
                 if not resume:
-                    await ctx.channel.send(content='You have been re-added to the timer')
+                    await channel.send(content='You have been re-added to the timer')
                 start[f"{timeKey.replace('-', '+')}:{startTime}"] = start[timeKey]
                 del start[timeKey]
             
@@ -1074,7 +1102,7 @@ class Timer(commands.Cog):
                         if "$timer add " in message.content and not message.author.bot:
                             resumeTimes = await ctx.invoke(self.timer.get_command('add'), start=resumeTimes, msg=message, resume=True)
                         elif  "$timer addme" in message.content and not message.author.bot:
-                            resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, msg=message, user=message.author, resume=True) 
+                            resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, dmChar=dmChar, msg=message, user=message.author, resume=True) 
                         elif ("$timer removeme" in message.content or "$timer remove " in message.content) and not message.author.bot: 
                             if "$timer removeme" in message.content:
                                 resumeTimes = await ctx.invoke(self.timer.get_command('removeme'), msg=message, start=resumeTimes, role=startRole, user=message.author, resume=True)
@@ -1145,7 +1173,7 @@ class Timer(commands.Cog):
                     startTimes = await ctx.invoke(self.timer.get_command('add'), start=startTimes, msg=msg)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif f"{commandPrefix}timer addme" in msg.content and '@player' not in msg.content:
-                    startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, msg=msg, user=msg.author)
+                    startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, msg=msg, user=msg.author, dmChar=dmChar)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif msg.content == f"{commandPrefix}timer removeme":
                     startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=msg.author)

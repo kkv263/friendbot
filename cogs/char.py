@@ -1070,7 +1070,7 @@ class Character(commands.Cog):
                         charString += f"\a\a+ Guild: {charDict['Guild']}\n"
 
 
-                if 'Noodles' in charDict:
+                if 'Noodles' in userRecords:
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"
                 else:
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to recieve Noodles!)"

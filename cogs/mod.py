@@ -55,7 +55,7 @@ class Mod(commands.Cog):
         for key, value in records.items():
             if key != "_id":
                 recordString += f"{key} : {value}"
-                if key in ("CP", 'T1 TP', 'T2 TP', 'T3 TP', 'T4 TP', 'GP', 'Reputation', 'Games', 'Proficiency', 'Noodles', 'Guilds'):
+                if key in ("CP", 'T1 TP', 'T2 TP', 'T3 TP', 'T4 TP', 'GP', 'Reputation', 'Games', 'Proficiency', 'Noodles'):
                     recordString+= " 🔹"    
                 elif key in ('Magic Items', 'Consumables', 'Inventory'):
                     recordString += " 🔸"
@@ -389,11 +389,53 @@ class Mod(commands.Cog):
 
       #TODO: user
         elif dbName == "user":
-            pass
+            mentions = ctx.message.mentions
+            if not mentions:
+                mentionMsg = await channel.send(f'{name} is not valid in a user edit. Please use a user mention instead. (Ex. )')
+                await mentionMsg.edit(content = f'{name} is not valid in a user edit. Please use a user mention instead. (Ex. {mentionMsg.author.mention})')
+                return
+
+            collection = db.users
+            userRecords = collection.find_one({"User ID": str(mentions[0].id)})
+
+            if editKey == 'Noodles': 
+                try:
+                    editValue = int(editValue)
+                except ValueError:
+                    await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                    return
+
+                if editValue < 0:
+                    await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                    return
+
+                editDict = {editKey : editValue}
+
+                if editValue == 0 and editKey in userRecords: 
+                    unsetDict = {editKey:1}
+            else:
+                await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again')
+                return
+
 
         else:
             await channel.send(f'The database `{dbName}` does not exist')
             return
+
+        try:
+            usersCollection = db.users
+            if unsetDict:
+                usersCollection.update_one({'_id': userRecords['_id']}, {"$unset": unsetDict})
+            else:
+                usersCollection.update_one({'_id': userRecords['_id']}, {"$set": editDict})
+        except Exception as e:
+            print ('MONGO ERROR: ' + str(e))
+            await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+        else:
+            if editKey not in userRecords:
+                await channel.send(f"The field {editKey} has been edited to from `0` to `{editValue}` for {mentions[0].display_name}")
+            else:
+                await channel.send(f"The field {editKey} has been edited to from `{userRecords[editKey]}` to `{editValue}` for {mentions[0].display_name}")
 
 
 
