@@ -182,14 +182,6 @@ class Misc(commands.Cog):
     async def roleremove(self,ctx):
         guild = ctx.guild
 
-        channel = guild.get_channel(463884158964465664);
-
-        msg = await channel.fetch_message(658423423592169556)
-        await msg.add_reaction('1️⃣')
-        await msg.add_reaction('2️⃣')
-        await msg.add_reaction('3️⃣')
-        await msg.add_reaction('4️⃣')
-
         for m in guild.members:
             roles = m.roles
 
