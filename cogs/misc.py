@@ -55,11 +55,11 @@ class Misc(commands.Cog):
             if payload.emoji.name == "1️⃣" or payload.emoji.name == '1⃣':
                 name = 'Tier 1' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Junior Friend', 'Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "2️⃣" or payload.emoji.name == '2⃣':
                 name = 'Tier 2' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "3️⃣" or payload.emoji.name == '3⃣':
                 name = 'Tier 3' 
                 role = get(guild.roles, name = name)
@@ -104,11 +104,11 @@ class Misc(commands.Cog):
             if payload.emoji.name == "1️⃣" or payload.emoji.name == '1⃣':
                 name = 'Tier 1' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Junior Friend', 'Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "2️⃣" or payload.emoji.name == '2⃣':
                 name = 'Tier 2' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "3️⃣" or payload.emoji.name == '3⃣':
                 name = 'Tier 3' 
                 role = get(guild.roles, name = name)
