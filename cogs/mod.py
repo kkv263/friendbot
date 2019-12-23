@@ -3,7 +3,7 @@ import asyncio
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar
+from bfunc import db, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, checkForGuild
 
 class Mod(commands.Cog):
     def __init__ (self, bot):
@@ -35,9 +35,7 @@ class Mod(commands.Cog):
             if records:
                 modEmbed.title = f"User Stats: {guild.get_member(int(records['User ID'])).display_name}"
         elif dbName == 'guild':
-            collection = db.guilds
-            records = collection.find_one({"Name": {"$regex": name, '$options': 'i' }})
-
+            records = await checkForGuild(ctx, name)
             if records:
                 modEmbed.title = f"Guild: {records['Name']} (GM: {guild.get_member(int(records['Guildmaster ID'])).display_name})"
         elif dbName == 'char':
@@ -57,7 +55,7 @@ class Mod(commands.Cog):
         for key, value in records.items():
             if key != "_id":
                 recordString += f"{key} : {value}"
-                if key in ("CP", 'T1 TP', 'T2 TP', 'T3 TP', 'T4 TP', 'GP', 'Reputation', 'Games', 'Proficiency', 'Current Item', 'Proficiency', 'Noodles', 'Guilds'):
+                if key in ("CP", 'T1 TP', 'T2 TP', 'T3 TP', 'T4 TP', 'GP', 'Reputation', 'Games', 'Proficiency', 'Noodles', 'Guilds'):
                     recordString+= " 🔹"    
                 elif key in ('Magic Items', 'Consumables', 'Inventory'):
                     recordString += " 🔸"
@@ -252,8 +250,6 @@ class Mod(commands.Cog):
                 else:
                     await channel.send(f"There's no field called `{addKey}` Please try again")
                     return  
-                
-                                
                 try:
                     playersCollection = db.players
                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": addDict})
@@ -265,6 +261,140 @@ class Mod(commands.Cog):
         else:
             await channel.send(f'The {dbName} `{name}` does not have any fields that use this add command. Please try again')
             return
+
+    @mod.command()
+    async def edit(self, ctx, dbName, name, editKey, editValue):
+        channel = ctx.channel
+        author = ctx.author
+        guild = ctx.guild
+        charEmbed = discord.Embed()
+        unsetDict = None
+        if dbName == "char":
+            charRecords, charEmbedmsg = await checkForChar(ctx, name, charEmbed)
+            if charRecords: 
+                if editKey == 'CP':
+                    if '/' not in editValue:
+                        await channel.send(f"The field {editKey} requires two integers with a '/' in between `{editValue}` Example: (3.5/4)")
+                        return
+                        
+                    editValue = editValue.split('/')
+                    for e in range(len(editValue)):
+                        if editValue[e] == "":
+                            editValue[e] = 0
+                        else:
+                            try:
+                                editValue[e] = float(editValue[e])
+                            except ValueError:
+                                await channel.send(f"The field {editKey} doesn't accept `{editValue[e]}` since it is not an integer value")
+                                return
+
+                    if editValue[0] < 0 or editValue[1] < 0:
+                        await channel.send(f"The field {editKey} values `{editValue}` must be higher than 0")
+                        return
+
+                    if editValue[0] % 0.5 != 0 or editValue[1] % 0.5 != 0:
+                        await channel.send(f"The field {editKey} values `{editValue}` must be rounded to the nearest .5 ")
+                        return
+
+                    if editValue[1] != 4.0 and editValue[1] != 8.0:
+                        await channel.send(f"The field {editKey} second value `{editValue[1]}` must be 4.0 or 8.0")
+                        return
+
+                    editValue = f"{editValue[0]}/{editValue[1]}"
+
+                    editDict = {editKey : editValue}
+
+                elif editKey == 'T1 TP' or editKey == 'T2 TP' or editKey == 'T3 TP' or editKey == 'T4 TP' or editKey == 'GP':
+                    try:
+                        editValue = float(editValue)
+                    except ValueError:
+                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                        return
+
+                    if editValue < 0:
+                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                        return
+                    editDict = {editKey : editValue}
+
+                    if editKey != 'GP':
+                        if editValue % 0.5 != 0:
+                            await channel.send(f"The value {editValue} must be rounded to the nearest .5.")
+                            return 
+                        if editValue == 0 and editKey in charRecords: 
+                            unsetDict = {editKey:1}
+
+                elif editKey in ('Reputation', 'Games', 'Proficiency'):
+                    try:
+                        editValue = int(editValue)
+                    except ValueError:
+                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                        return
+
+                    if editValue < 0:
+                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                        return
+
+                    editDict = {editKey : editValue}
+
+                    if editKey == 'Proficiency' and editKey in charRecords and editValue == 0:
+                        unsetDict = {editKey:1}
+
+
+                else:
+                    await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again')
+                    return
+
+                try:
+                    playersCollection = db.players
+                    if unsetDict:
+                        playersCollection.update_one({'_id': charRecords['_id']}, {"$unset": unsetDict})
+                    else:
+                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": editDict})
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+                else:
+                    if editKey not in charRecords:
+                        await channel.send(f"The field {editKey} has been edited to from `0` to `{editValue}` for {charRecords['Name']}")
+                    else:
+                        await channel.send(f"The field {editKey} has been edited to from `{charRecords[editKey]}` to `{editValue}` for {charRecords['Name']}")
+        elif dbName == "guild":
+            guildRecords = await checkForGuild(ctx, name)
+            if guildRecords:
+                if editKey == 'Reputation':
+                    try:
+                        editValue = int(editValue)
+                    except ValueError:
+                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                        return
+
+                    if editValue < 0:
+                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                        return
+
+                    editDict = {editKey : editValue}
+                  
+                else:
+                    await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again')
+                    return
+
+                try:
+                    guildsCollection = db.guilds
+                    guildsCollection.update_one({'_id': guildRecords['_id']}, {"$set": editDict})
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try again.")
+                else:
+                    await channel.send(f"The field {editKey} has been edited to from `{guildRecords[editKey]}` to `{editValue}` for {guildRecords['Name']}")
+
+      #TODO: user
+        elif dbName == "user":
+            pass
+
+        else:
+            await channel.send(f'The database `{dbName}` does not exist')
+            return
+
 
 
 def setup(bot):

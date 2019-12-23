@@ -155,6 +155,20 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
 
     return charRecords[0], None
 
+async def checkForGuild(ctx, name):
+    channel = ctx.channel
+    author = ctx.author
+    guild = ctx.guild
+
+    collection = db.guilds
+    records = collection.find_one({"Name": {"$regex": name, '$options': 'i' }})
+
+    if not records:
+        await channel.send(content=f'I was not able to find the guild named `{name}`. Please check your spelling and try again')
+        return False
+    else:
+        return records
+      
 def refreshKey (timeStarted):
 		if (time.time() - timeStarted > 60 * 59):
 				gClient.login()

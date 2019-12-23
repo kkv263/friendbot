@@ -2,7 +2,7 @@ import discord
 import asyncio
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, noodleRoleArray, db
+from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, checkForGuild, noodleRoleArray, db
 
 class Guild(commands.Cog):
     def __init__ (self, bot):
@@ -132,8 +132,7 @@ class Guild(commands.Cog):
 
                     userRecords['Guilds'] += 1
 
-                    guildsCollection = db.guilds
-                    guildExists = guildsCollection.find_one({"Name": {"$regex": guildName, '$options': 'i' }})
+                    guildExists = await checkForGuild(ctx,guildName) 
 
                     if guildExists:
                         await channel.send(f"There is already a guild by the name of `{guildName}`. Please try creating a guild with a different name")
@@ -177,8 +176,7 @@ class Guild(commands.Cog):
         guildEmbed = discord.Embed()
         guildEmbedEmbedmsg = None
 
-        guildsCollection = db.guilds
-        guildRecords = guildsCollection.find_one({"Name": {"$regex": guildName, '$options': 'i' }})
+        guildRecords = await checkForGuild(ctx,guildName) 
 
         if guildRecords:
             guildEmbed.title = guildRecords['Name']
@@ -222,8 +220,7 @@ class Guild(commands.Cog):
         charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
 
         if charRecords:
-            guildsCollection = db.guilds
-            guildRecords = guildsCollection.find_one({"Name": {"$regex": guildName, '$options': 'i' }})
+            guildRecords = await checkForGuild(ctx,guildName) 
 
             if guildRecords:
                 if guildRecords['Funds'] > 6000:
@@ -323,8 +320,7 @@ class Guild(commands.Cog):
                 await channel.send(f"{charRecords['Name']} cannot join any guilds because they belong to the guild `{charRecords['Guild']}`")
                 return
 
-            guildsCollection = db.guilds
-            guildRecords = guildsCollection.find_one({"Name": {"$regex": guildName, '$options': 'i' }})
+            guildRecords = await checkForGuild(ctx,guildName) 
 
             if guildRecords:
                 if guildRecords['Funds'] > 6000:
@@ -478,8 +474,7 @@ class Guild(commands.Cog):
                 await channel.send(f"{charRecords['Name']} cannot buy any sparkles because they do not belong to a guild currently")
                 return
 
-            guildsCollection = db.guilds
-            guildRecords = guildsCollection.find_one({"Name": {"$regex": charRecords['Guild'], '$options': 'i' }})
+            guildRecords = await checkForGuild(ctx,guildName) 
 
             if guildRecords['Funds'] < 6000: 
                 await channel.send(f"{charRecords['Name']} cannot buy any sparkles because `{charRecords['Guild']}` is not officially open and still needs funding")
