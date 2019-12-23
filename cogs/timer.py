@@ -4,6 +4,7 @@ import asyncio
 import time
 import requests
 import re
+import shlex
 from discord.utils import get        
 from datetime import datetime, timezone
 from discord.ext import commands
@@ -201,23 +202,28 @@ class Timer(commands.Cog):
                 return False
 
             if 'signup' in char.content:
-                charName = char.content.split(f'{commandPrefix}timer signup ')[1]
+                charList = shlex.split(char.content.split(f'{commandPrefix}timer signup ')[1].strip())
+                charName = charList[0]
 
             else:
                 #TODO: make it work with charnames in quotes
                 if 'timer add ' in char.content:
-                    charName = char.content.split(f'{commandPrefix}timer add ')[1].split(':')[1]
-                    charName = charName.strip()
+                    charList = shlex.split(char.content.split(f'{commandPrefix}timer add ')[1].strip())
+                    charName = charList[1]
                 elif 'timer addme' in char.content:
-                    charName = char.content.split(f'{commandPrefix}timer addme')[1]
-                    charName = charName.strip() 
+                    charList = shlex.split(char.content.split(f'{commandPrefix}timer addme')[1].strip())
+                    charName = charList[0]
+                        
+
                 else:
                     await ctx.channel.send("I wasn't able to add this character. Please check your format")
                     return
 
-            if '"' in char.content:
-                consumablesList = charName.split('"')[1::2][0].split(', ')
-                charName = charName.split('"')[0].strip()
+            if charList[len(charList) - 1] != charName:
+                consumablesList = charList[len(charList) - 1].split(', ')
+            # if '"' in char.content:
+                # consumablesList = charName.split('"')[1::2][0].split(', ')
+                # charName = charName.split('"')[0].strip()
 
 
             playersCollection = db.players
@@ -278,7 +284,6 @@ class Timer(commands.Cog):
                             break 
 
                 if notValidConsumables:
-                    print('hello 6')
                     if ctx.invoked_with != "resume":
                         await channel.send(f"These items were not found in your character's consumables:\n`{notValidConsumables}`")
                     return False
@@ -539,7 +544,7 @@ class Timer(commands.Cog):
             return start
 
     @timer.command()
-    async def addme(self,ctx, *, msg, start="" ,prep=None, user="", dmChar="", resume=False, ):
+    async def addme(self,ctx, *, msg, start="" ,prep=None, user="", dmChar=None, resume=False, ):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             userFound = False;
@@ -567,7 +572,7 @@ class Timer(commands.Cog):
             if not userFound:
                 userInfo =  await ctx.invoke(self.timer.get_command('signup'), char=msg, author=addUser) 
                 if userInfo:
-                    if not resume:
+                    if not resume and dmChar :
                         addEmbed = discord.Embed()
                         addEmbed.title = f"Add {userInfo[1]['Name']} to timer?"
                         addEmbed.description = f"{addUser.mention} character would to be added to the timer.\n{userInfo[1]['Name']} - Level {userInfo[1]['Level']}: {userInfo[1]['Race']} {userInfo[1]['Class']}\nConsumables: {', '.join(userInfo[2])}\n\n✅ : Add to timer\n\n❌: Deny"
