@@ -95,6 +95,9 @@ class Apps(commands.Cog):
                         playedGame = True
                         juniorRole = get(guild.roles, name = 'Junior Friend')
                         t1Role = get(guild.roles, name = 'Tier 1')
+                        t0Role = get(guild.roles, name = 'Tier 0')
+
+                        await appMember.remove_roles(t0Role)
                         await appMember.add_roles(juniorRole, reason=f"Approved Application, the user has played at least one game. I have checked in the last {limit} session-logs")
                         await appMember.add_roles(t1Role, reason=f"Approved Application, the user has played at least one game. I have checked in the last {limit} session-logs")
                         break
