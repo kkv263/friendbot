@@ -47,7 +47,7 @@ class Reward(commands.Cog):
 				durationString = timeConversion(totalTime)
 				treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
 				dmTreasureString = f"{treasureArray[3]} CP, {treasureArray[4]} TP, and {treasureArray[5]} GP"
-				await channel.send(content= f"A {durationString} game would give a {tierName} Friend\n\n**Player:** {treasureString} \n**DM:** {dmTreasureString}")
+				await channel.send(content= f"A {durationString} game would give a **{tierName}** Friend\n{treasureString}")
 				return
 
 def setup(bot):

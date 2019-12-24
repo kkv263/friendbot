@@ -353,6 +353,7 @@ class Timer(commands.Cog):
                 startItemsList = (startItemKey+ f'?{end}').split(':')
                 if "Full Rewards" in startItemKey or  "No Rewards" in startItemKey:
                     totalDuration = timeConversion(end - float(startItemsList[1].split('?')[0]))
+                    fullDurationTime = end - float(startItemsList[1].split('?')[0])
 
                 if "?" in startItemKey:
                     for t in range(1, len(startItemsList)):
@@ -409,7 +410,8 @@ class Timer(commands.Cog):
                       temp += f"@{v} | [Char Name]\n"
                     allRewardsTotalString += temp + "\n"
 
-                sessionLogString = f"Thanks for playing! Posted below is a session log you can copy and paste into #session-logs.\n```**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n[Replace this text with a summary of how the quest went!]\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}DM @{dmChar} | [Char Name] (Tier #): #CP/#TP/#GP```"
+                dmTotalArray = [calculateTreasure(fullDurationTime,'junior'), calculateTreasure(fullDurationTime,'journey'), calculateTreasure(fullDurationTime,'elite'), calculateTreasure(fullDurationTime,'true')]
+                sessionLogString = f"Thanks for playing! Posted below is a session log you can copy and paste into #session-logs.\n```**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n[Replace this text with a summary of how the quest went!]\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}DM @{dmChar} | [Char Name] (Tier #): #CP/#TP/#GP\n```\nDM, your rewards are listed below depending on the tier of your character.\nJunior T1: {dmTotalArray[0][0]} CP / {dmTotalArray[0][1]} TP / {dmTotalArray[0][2]} GP\nJourney T2: {dmTotalArray[1][0]} CP / {dmTotalArray[1][1]} TP / {dmTotalArray[1][2]} GP\nElite T3: {dmTotalArray[2][0]} CP / {dmTotalArray[2][1]} TP / {dmTotalArray[2][2]} GP\nTrue T4: {dmTotalArray[3][0]} CP / {dmTotalArray[3][1]} TP / {dmTotalArray[3][2]} GP"
                 await ctx.channel.send(sessionLogString)
 
             else:

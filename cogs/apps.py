@@ -99,6 +99,10 @@ class Apps(commands.Cog):
                         await appMember.add_roles(t1Role, reason=f"Approved Application, the user has played at least one game. I have checked in the last {limit} session-logs")
                         break
 
+                if not playedGame:
+                      t0Role = get(guild.roles, name = 'Tier 0')
+                      await appMember.add_roles(t0Role, reason=f"Approved Application, the user has NOT played at least one game. I have checked in the last {limit} session-logs")
+
                 newRole = get(guild.roles, name = 'D&D Friend')
                 await appMember.add_roles(newRole, reason=f"Approved Application, the user has been given the base role.")
                 

@@ -178,54 +178,58 @@ class Misc(commands.Cog):
             await sMessage.delete()
 
 
-    # @commands.command()
-    # async def roleremove(self,ctx):
-    #     guild = ctx.guild
+    @commands.command()
+    async def roleremove(self,ctx):
+        guild = ctx.guild
 
-    #     for m in guild.members:
-    #         roles = m.roles
+        print ('start')
+        i = 0
+        for m in guild.members:
+            print (str(i)+ " of " + str(len(guild.members)))
+            roles = m.roles
 
-    #         if 'True Friend' in[r.name for r in roles]:
-    #             addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'Tier 4', 'D&D Friend']
-    #             removeRoles = ["Elite Friend", 'Journeyfriend', 'Junior Friend', 'New Friend']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
+            # if 'True Friend' in[r.name for r in roles]:
+            #     addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'Tier 4', 'D&D Friend']
+            #     removeRoles = ["Elite Friend", 'Journeyfriend', 'Junior Friend', 'New Friend']
+            #     for a in addRoles:
+            #         add = get(guild.roles, name = a)
+            #         await m.add_roles(add)
 
-    #             for x in removeRoles:
-    #                 remove = get(guild.roles, name = x)
-    #                 if remove:
-    #                     await m.remove_roles(remove)
+            #     for x in removeRoles:
+            #         remove = get(guild.roles, name = x)
+            #         if remove:
+            #             await m.remove_roles(remove)
 
-    #         elif 'Elite Friend' in [r.name for r in roles]:
-    #             addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'D&D Friend']
-    #             removeRoles = ['Journeyfriend', 'Junior Friend', 'New Friend']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
+            # elif 'Elite Friend' in [r.name for r in roles]:
+            #     addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'D&D Friend']
+            #     removeRoles = ['Journeyfriend', 'Junior Friend', 'New Friend']
+            #     for a in addRoles:
+            #         add = get(guild.roles, name = a)
+            #         await m.add_roles(add)
 
-    #             for x in removeRoles:
-    #                 remove = get(guild.roles, name = x)
-    #                 if remove:
-    #                     await m.remove_roles(remove)
-    #         elif 'Journeyfriend' in [r.name for r in roles]:
-    #             addRoles = ['Tier 1', 'Tier 2', 'D&D Friend']
-    #             removeRoles = ['Junior Friend', 'New Friend']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
+            #     for x in removeRoles:
+            #         remove = get(guild.roles, name = x)
+            #         if remove:
+            #             await m.remove_roles(remove)
+            # elif 'Journeyfriend' in [r.name for r in roles]:
+            #     addRoles = ['Tier 1', 'Tier 2', 'D&D Friend']
+            #     removeRoles = ['Junior Friend', 'New Friend']
+            #     for a in addRoles:
+            #         add = get(guild.roles, name = a)
+            #         await m.add_roles(add)
 
-    #             for x in removeRoles:
-    #                 remove = get(guild.roles, name = x)
-    #                 if remove:
-    #                     await m.remove_roles(remove)
-    #         elif 'Junior Friend' in [r.name for r in roles]:
-    #             addRoles = ['Tier 1', 'D&D Friend']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
+            #     for x in removeRoles:
+            #         remove = get(guild.roles, name = x)
+            #         if remove:
+            #             await m.remove_roles(remove)
+            if 'D&D Friend' in [r.name for r in roles] and len(roles) == 2:
+                addRoles = ['Tier 0']
+                for a in addRoles:
+                    add = get(guild.roles, name = a)
+                    await m.add_roles(add)
+            i+=1
 
-    #     print("done")
+        print("done")
         
 def setup(bot):
     bot.add_cog(Misc(bot))
