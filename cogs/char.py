@@ -1195,10 +1195,9 @@ class Character(commands.Cog):
                 
             charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
             if "Double Rewards Buff" in charDict:
-                #TODO: check positive
                 drRemain = charDict['Double Rewards Buff'] + timedelta(days=3) - datetime.now()
-                print(drRemain)
-                charEmbed.add_field(name='Double Rewards Buff', value=f"{drRemain.days * 24 +drRemain.seconds//3600}h : {(drRemain.seconds//60)%60}m remain", inline=False)
+                if (drRemain > timedelta(seconds=1):
+                    charEmbed.add_field(name='Double Rewards Buff', value=f"{drRemain.days * 24 +drRemain.seconds//3600}h : {(drRemain.seconds//60)%60}m remain", inline=False)
             charEmbed.set_footer(text=footer)
 
             if 'Image' in charDict:

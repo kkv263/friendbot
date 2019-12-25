@@ -785,12 +785,14 @@ class Timer(commands.Cog):
                 leftCP = (float(cp) + float(cpSplit[0])) 
                 tp = float(tp)
                 gp = float(gp)
+                unset = None
 
                 if 'Double Rewards Buff' in char[1]:
                     if char[1]['Double Rewards Buff'] < (datetime.now() + timedelta(days=3)):
                         leftCP *= 2
                         gp *= 2
                         tp *= 2
+                        unset = {'Double Rewards Buff':1}
 
                 totalCP = f'{leftCP}/{float(cpSplit[1])}'
                 charEndConsumables = char[1]['Consumables']
@@ -812,9 +814,12 @@ class Timer(commands.Cog):
                     char[1]['Games'] += 1
 
                 if death:
-                    return ({'_id': char[3], "fields": {'Death': f'{{"GP": {gp}, "{tierTP}": {tp}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {cp}}}'}})
+                    return ({'_id': char[3], "fields": {"$set": {'Death': f'{{"GP": {gp}, "{tierTP}": {tp}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {cp}}}'}}})
                 
-                return {'_id': char[3], "fields": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp,'Consumables': charEndConsumables, 'Magic Items': charEndMagicList, 'CP': totalCP, 'Games':char[1]['Games']}}
+                elif unset:
+                    return {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp,'Consumables': charEndConsumables, 'Magic Items': charEndMagicList, 'CP': totalCP, 'Games':char[1]['Games']}, "$unset":unset }}
+                else:
+                    return {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp,'Consumables': charEndConsumables, 'Magic Items': charEndMagicList, 'CP': totalCP, 'Games':char[1]['Games']}}}
 
             if role == "True":
                 tierNum = 4
@@ -930,27 +935,31 @@ class Timer(commands.Cog):
                 noodleString = "\nCurrent Noodles: " + str(noodles)
                 dmRoleNames = [r.name for r in dmChar[0].roles]
                 if noodles >= 100 and 'True Noodle' in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'Mega Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ noodles")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
-                    noodleString += "\nMega Noodle Role recieved! :tada:"
+                    if 'Mega Noodle' not in dmRoleNames:
+                        noodleRole = get(guild.roles, name = 'Mega Noodle')
+                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ noodles")
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
+                        noodleString += "\nMega Noodle Role recieved! :tada:"
 
                 elif noodles >= 50 and 'Elite Noodle' in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'True Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 50 games. This user has 50+ noodles")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
-                    noodleString += "\nTrue Noodle Role recieved! :tada:"
+                    if 'True Noodle' not in dmRoleNames:
+                        noodleRole = get(guild.roles, name = 'True Noodle')
+                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 50 games. This user has 50+ noodles")
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
+                        noodleString += "\nTrue Noodle Role recieved! :tada:"
                 
                 elif noodles >= 20 and 'Good Noodle' in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'Elite Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 20 games. This user has 20+ noodles")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
-                    noodleString += "\nElite Noodle Role recieved! :tada:"
+                    if 'Elite Noodle' not in dmRoleNames:
+                        noodleRole = get(guild.roles, name = 'Elite Noodle')
+                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 20 games. This user has 20+ noodles")
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
+                        noodleString += "\nElite Noodle Role recieved! :tada:"
 
                 elif noodles >= 10:
-                    noodleRole = get(guild.roles, name = 'Good Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 10 games. This user has 10+ noodles")
-                    noodleString += "\nGood Noodle Role recieved! :tada:"
+                    if 'Good Noodle' not in dmRoleNames:
+                        noodleRole = get(guild.roles, name = 'Good Noodle')
+                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 10 games. This user has 10+ noodles")
+                        noodleString += "\nGood Noodle Role recieved! :tada:"
 
                 guildsCollection = db.guilds
                 guildsListStr = ""
@@ -980,8 +989,7 @@ class Timer(commands.Cog):
                                                 d['fields']['Double Items Buff'] = datetime.now()
                             guildsRecordsList.append(gRecord)
 
-                #TODO: unset batch op error.
-                timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': item['fields']}), data['records']))
+                timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
 
                 stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
