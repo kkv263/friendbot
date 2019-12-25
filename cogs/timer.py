@@ -6,7 +6,7 @@ import requests
 import re
 import shlex
 from discord.utils import get        
-from datetime import datetime, timezone
+from datetime import datetime, timezone,timedelta
 from discord.ext import commands
 from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, headers, db, callAPI
 from pymongo import UpdateOne
@@ -779,11 +779,19 @@ class Timer(commands.Cog):
             guild = ctx.guild
 
 
-
             def updateCharDB(char, tier, cp, tp, gp, death=False):
                 tierTP = f"T{tier} TP"
                 cpSplit= char[1]['CP'].split('/')
                 leftCP = (float(cp) + float(cpSplit[0])) 
+                tp = float(tp)
+                gp = float(gp)
+
+                if 'Double Rewards Buff' in char[1]:
+                    if char[1]['Double Rewards Buff'] < (datetime.now() + timedelta(days=3)):
+                        leftCP *= 2
+                        gp *= 2
+                        tp *= 2
+
                 totalCP = f'{leftCP}/{float(cpSplit[1])}'
                 charEndConsumables = char[1]['Consumables']
                 charEndMagicList = char[1]['Magic Items']
@@ -800,10 +808,13 @@ class Timer(commands.Cog):
                 else:
                     tpAdd = char[1][tierTP]
 
+                if float(cp) >= .5:
+                    char[1]['Games'] += 1
+
                 if death:
-                    return ({'_id': char[3], "fields": {'Death': f'{{"GP": {float(gp)}, "{tierTP}": {float(tp)}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {float(cp)}}}'}})
+                    return ({'_id': char[3], "fields": {'Death': f'{{"GP": {gp}, "{tierTP}": {tp}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {cp}}}'}})
                 
-                return {'_id': char[3], "fields": {'GP': char[1]['GP'] + float(gp), tierTP: tpAdd + float(tp),'Consumables': charEndConsumables, 'Magic Items': charEndMagicList, 'CP': totalCP, 'Games':char[1]['Games'] + 1}}
+                return {'_id': char[3], "fields": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp,'Consumables': charEndConsumables, 'Magic Items': charEndMagicList, 'CP': totalCP, 'Games':char[1]['Games']}}
 
             if role == "True":
                 tierNum = 4
@@ -848,7 +859,8 @@ class Timer(commands.Cog):
 
 
                 for value in startItemValue:
-                    data["records"].append(updateCharDB(value, tierNum, treasureArray[0], treasureArray[1], treasureArray[2], (value in deathChars)))
+                    charRewards = updateCharDB(value, tierNum, treasureArray[0], treasureArray[1], treasureArray[2], (value in deathChars))
+                    data["records"].append(charRewards)
                     playerList.append(value)
 
                 if "Partial Rewards" in startItemKey and role == "":
@@ -879,7 +891,10 @@ class Timer(commands.Cog):
                             if '+' in r:
                                 vRewardList.append(r)
                         if v not in deathChars:
-                            temp += f"{v[0].mention} | {v[1]['Name']} {', '.join(vRewardList).strip()}\n"
+                            if 'Double Rewards Buff'  in v[1]:
+                                temp += f"{v[0].mention} | {v[1]['Name']} **DOUBLE REWARDS!** {', '.join(vRewardList).strip()}\n"
+                            else:
+                                temp += f"{v[0].mention} | {v[1]['Name']} {', '.join(vRewardList).strip()}\n"
                         else:
                             temp += f"~~{v[0].mention} | {v[1]['Name']}~~ **DEATH** {', '.join(vRewardList).strip()}\n"
                     if temp == "":
@@ -900,15 +915,14 @@ class Timer(commands.Cog):
 
                 dmtreasureArray = calculateTreasure(totalDurationTime,dmRole)    
                 # DM update
-                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, treasureArray[3], treasureArray[4], treasureArray[5]))
+                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, treasureArray[0], treasureArray[1], treasureArray[2]))
 
                 playersCollection = db.players
                 usersCollection = db.users
                 uRecord  = usersCollection.find_one({"User ID": str(dmChar[0].id)})
                 noodles = 0
-                noodlesGained = int(totalDuration.split(' Hours')[0]) // 3
-
-                print(uRecord)
+                hoursPlayed = int(totalDuration.split(' Hours')[0])
+                noodlesGained = hoursPlayed // 3
 
                 if uRecord:
                     noodles += uRecord['Noodles'] + noodlesGained
@@ -938,25 +952,56 @@ class Timer(commands.Cog):
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 10 games. This user has 10+ noodles")
                     noodleString += "\nGood Noodle Role recieved! :tada:"
 
+                guildsCollection = db.guilds
+                guildsListStr = ""
+                guildsRecordsList = list()
+                if guildsList != list():
+                    guildsListStr = "Guilds: "
+                    for g in guildsList:
+                        gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
+                        # if gRecord and hoursPlayed >= 3:
+                        if gRecord:
+                            if 'Games' not in gRecord:
+                                gRecord['Games'] = 1
+                            else:
+                                gRecord['Games'] += 1
+                                if gRecord['Games'] % 10 == 0:
+                                    guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
+                                    if guildBuffList:
+                                        for d in data['records']:
+                                            if d['_id'] in [gb['_id'] for gb in guildBuffList]:
+                                                d['fields']['Double Rewards Buff'] = datetime.now()
+
+                                elif gRecord['Games'] % 5 == 0:
+                                    guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
+                                    if guildBuffList:
+                                        for d in data['records']:
+                                            if d['_id'] in [gb['_id'] for gb in guildBuffList]:
+                                                d['fields']['Double Items Buff'] = datetime.now()
+                            guildsRecordsList.append(gRecord)
+
+                #TODO: unset batch op error.
                 timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': item['fields']}), data['records']))
+
+                stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
+                stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
+                if 'Double Rewards Buff' in dmChar[1]:
+                    stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {':star:' * noodlesGained}{noodleString}", name=f"DM Rewards **(DOUBLE REWARDS)**: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0] * 2} CP, {dmtreasureArray[1] * 2} TP, and {dmtreasureArray[2] * 2} GP**\n")
+                else:
+                    stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {':star:' * noodlesGained}{noodleString}", name=f"DM Rewards : (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
+                sessionLogString = f"\n**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}\nGame ID:"
 
                 try:
                     usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
                     playersCollection.bulk_write(timerData)
+                    if guildsRecordsList != list():
+                        guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games']}}), guildsRecordsList))
+                        guildsCollection.bulk_write(guildsData)
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
-                    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
+                    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 else:
                     print('Success')
-
-                guildsListStr = ""
-                if guildsList != list():
-                    guildsListStr = "Guilds: "
-                
-                stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
-                stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
-                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {':star:' * noodlesGained}{noodleString}", name=f"DM Rewards : (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[3]} CP, {dmtreasureArray[4]} TP, and {dmtreasureArray[5]} GP**\n")
-                sessionLogString = f"\n**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}\nGame ID:"
 
                 # Session Log Channel
                 logChannel = self.bot.get_channel(577227687962214406) 
