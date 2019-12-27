@@ -66,6 +66,7 @@ class Character(commands.Cog):
         lvl = int(level)
         msg = ""
         # name should be less then 50 chars
+        # TODO: no duplicates of your name
         if len(name) > 64:
             msg += "- Your character's name is too long! The limit is 64 characters.\n"
         
@@ -474,7 +475,7 @@ class Character(commands.Cog):
             else: 
                 charEmbedmsg = await channel.send(embed=charEmbed, content="Congratulations! You have created your character.")
 
-            self.char.get_command('create').reset_cooldown(ctx)
+            # self.char.get_command('create').reset_cooldown(ctx)
 
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
@@ -1198,6 +1199,12 @@ class Character(commands.Cog):
                 drRemain = charDict['Double Rewards Buff'] + timedelta(days=3) - datetime.now()
                 if drRemain > timedelta(seconds=1):
                     charEmbed.add_field(name='Double Rewards Buff', value=f"{drRemain.days * 24 +drRemain.seconds//3600}h : {(drRemain.seconds//60)%60}m remain", inline=False)
+
+            if "Double Items Buff" in charDict:
+                diRemain = charDict['Double Items Buff'] + timedelta(days=3) - datetime.now()
+                if diRemain > timedelta(seconds=1):
+                    charEmbed.add_field(name='Double Items Buff', value=f"{diRemain.days * 24 +diRemain.seconds//3600}h : {(diRemain.seconds//60)%60}m remain", inline=False) 
+
             charEmbed.set_footer(text=footer)
 
             if 'Image' in charDict:

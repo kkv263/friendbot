@@ -164,7 +164,6 @@ async def checkForGuild(ctx, name):
     records = collection.find_one({"Name": {"$regex": name, '$options': 'i' }})
 
     if not records:
-        await channel.send(content=f'I was not able to find the guild named `{name}`. Please check your spelling and try again')
         return False
     else:
         return records
@@ -239,8 +238,10 @@ bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 connection = MongoClient(mongoConnection) 
 db = connection.dnd
 
+
+
 # API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'MIT')
-# # API_URL += '?offset=' + itrUaOyKPMTNGkKJr/recXsvfypQn0AsEXi
+# API_URL += '?offset=' + 'itrszVrUNck2e2t67/recvH1L3ah7alp3Uy' 
 # r = requests.get(API_URL, headers=headers)
 # r = r.json()['records']
 # addList = []

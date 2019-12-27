@@ -96,20 +96,27 @@ class Guild(commands.Cog):
         guildCog = self.bot.get_cog('Guild')
         await guildCog.guildsList(ctx,member)
 
+    # TODO role and channel
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    async def create(self,ctx, charName, guildName):
+    async def create(self,ctx, charName, guildName, roleName, channelName):
         channel = ctx.channel
         author = ctx.author
         guildEmbed = discord.Embed()
         guildCog = self.bot.get_cog('Guild')
+
+        guildRole = ctx.message.role_mentions
+        guildChannel = ctx.message.channel_mentions
+        if guildRole == list() or guildChannel == list():
+            await channel.send(f"A guild role or guild channel must be supplied")
+            return 
+            
 
         roles = author.roles
         noodleRole = None
         for r in roles:
             if r.name in noodleRoleArray and r.name != 'Good Noodle':
                 noodleRole = r
-                break
 
         if noodleRole:
             noodleLimit = noodleRoleArray.index(noodleRole.name) - 1
@@ -138,10 +145,12 @@ class Guild(commands.Cog):
                         await channel.send(f"There is already a guild by the name of `{guildName}`. Please try creating a guild with a different name")
                         return
                         
-                    guildsDict = {'Name': guildName, 'Funds': 0, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': 0}
+                    guildsDict = {'Role ID': guildRole[0].id, 'Channel ID': guildChannel[0].id, 'Name': guildName, 'Funds': 0, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': 0}
+                    await author.add_roles(guildRole[0], reason=f"Created guild {guildName}")
 
                     try:
                         playersCollection = db.players
+                        guildsCollection = db.guilds
                         playersCollection.update_one({'_id': charID}, {"$set": {"Guild": guildName, 'Reputation': 0}})
                         usersCollection.update_one({"User ID": str(author.id)}, {"$set": {"Guilds": userRecords['Guilds']}})
                         guildsCollection.insert_one(guildsDict)
@@ -278,9 +287,12 @@ class Guild(commands.Cog):
                     refundGP = guildRecords['Funds'] - 6000
 
                 newGP = (charRecords['GP'] - float(gpFund)) + refundGP
+                await author.add_roles(guild.get_role(guildRecords['Role ID']), reason=f"Funded guild {guildRecords['Name']}")
+
 
                 try:
                     playersCollection = db.players
+                    guildsCollection = db.guilds
                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Reputation': 0}})
                     guildsCollection.update_one({'Name': guildRecords['Name']}, {"$set": {'Funds':guildRecords['Funds']}})
                 except Exception as e:
@@ -346,7 +358,6 @@ class Guild(commands.Cog):
                 guildEmbed.title = f"Joining Guild: {guildRecords['Name']}"
                 guildEmbed.description = f"Are you sure you want to join **{guildRecords['Name']}**?\n\n✅ : Yes\n\n❌: Cancel"
 
-
                 if guildEmbedmsg:
                     await guildEmbedmsg.edit(embed=guildEmbed)
                 else:
@@ -368,6 +379,7 @@ class Guild(commands.Cog):
                         return
 
                 newGP = (charRecords['GP'] - float(gpNeeded)) 
+                await author.add_roles(guild.get_role(guildRecords['Role ID']), reason=f"Joined guild {guildName}")
 
                 try:
                     playersCollection = db.players
@@ -431,6 +443,8 @@ class Guild(commands.Cog):
                     await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Use `{commandPrefix}guild leave` command and try again!")
                     await guildEmbedmsg.clear_reactions()
                     return
+
+            await author.remove_roles(get(guild.roles, name = charRecords['Guild']), reason=f"Left guild {charRecords['Guild']}")
 
             try:
                 playersCollection = db.players
