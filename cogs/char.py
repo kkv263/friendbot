@@ -282,6 +282,7 @@ class Character(commands.Cog):
             print(tier1CountMNC)
             print(tier1Count)
             print(tier2Count)
+
             
         # check race
         rRecord = callAPI('races',race)
@@ -326,6 +327,97 @@ class Character(commands.Cog):
             msg += 'Your classes do not add up to the total level. Please recheck your multiclasses\n'
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
+
+            # starting equipment
+            def alphaEmbedCheck(r, u):
+                sameMessage = False
+                if charEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+
+            if 'Starting Equipment' in cRecord[0]['Class']:
+                startEquipmentChoice = []
+                charEmbedmsg = await channel.send(embed=charEmbed)
+                for item in cRecord[0]['Class']['Starting Equipment']:
+                    seTotalString = ""
+                    alphaIndex = 0
+                    for seList in item:
+                        seString = ""
+                        for elk, elv in seList.items():
+                            seString += f"{elk.replace('%', '')} x{elv}, "
+                        seTotalString += f"{alphaEmojis[alphaIndex]}: {seString}\n"
+                        alphaIndex += 1
+                    await charEmbedmsg.clear_reactions()
+                    charEmbed.add_field(name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seTotalString, inline=False)
+                    await charEmbedmsg.edit(embed=charEmbed)
+                    for num in range(0,alphaIndex): await charEmbedmsg.add_reaction(alphaEmojis[num])
+                    await charEmbedmsg.add_reaction('❌')
+                    try:
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
+                    except asyncio.TimeoutError:
+                        await charEmbedmsg.delete()
+                        await channel.send('Character creation timed out! Try using the command again')
+                        self.bot.get_command('create').reset_cooldown(ctx)
+                        return 
+                    else:
+                        if tReaction.emoji == '❌':
+                            await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                            await charEmbedmsg.clear_reactions()
+                            self.bot.get_command('create').reset_cooldown(ctx)
+                            return 
+                             
+                    await charEmbedmsg.clear_reactions()
+                    startEquipmentItem = item[alphaEmojis.index(tReaction.emoji)]
+                  
+                    seiString = ""
+                    for seik, seiv in startEquipmentItem.items():
+                        seiString += f"{seik} x{seiv}\n"
+
+                    charEmbed.set_field_at(len(startEquipmentChoice), name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString, inline=False)
+
+                    for k,v in startEquipmentItem.items():
+                        # TODO: 2 or more martial weapons
+                        print(k)
+                        if '(' in k and ')' in k:
+                            type = k.split('(')
+                            invCollection = db.shop
+                            charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(')','')}.*")]}}))
+
+                            charInvString = "Please choose from the choices below:\n"
+                            alphaIndex = 0
+                            for c in charInv:
+                                charInvString += f"{alphaEmojis[alphaIndex]}: {c['Name']}\n"
+                                alphaIndex += 1
+
+                            charEmbed.set_field_at(len(startEquipmentChoice), name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=charInvString, inline=False)
+                            await charEmbedmsg.clear_reactions()
+                            await charEmbedmsg.add_reaction('❌')
+                            await charEmbedmsg.edit(embed=charEmbed)
+
+                            try:
+                                tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
+                            except asyncio.TimeoutError:
+                                await charEmbedmsg.delete()
+                                await channel.send('Character creation timed out! Try using the command again')
+                                self.bot.get_command('create').reset_cooldown(ctx)
+                                return 
+                            else:
+                                if tReaction.emoji == '❌':
+                                    await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                                    await charEmbedmsg.clear_reactions()
+                                    self.bot.get_command('create').reset_cooldown(ctx)
+                                    return 
+                            startEquipmentItem = charInv[alphaEmojis.index(tReaction.emoji)]
+                            charEmbed.set_field_at(len(startEquipmentChoice), name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString.replace(k,startEquipmentItem['Name']), inline=False)
+
+                    
+                    startEquipmentChoice.append(startEquipmentItem)
+
+                    print(startEquipmentChoice)
+
+            return
+
+            # charInv = list(invCollection.find({"Name": {'$in': list(charDict['Inventory'].keys())}}))
 
             # Subclass
             for m in cRecord:
@@ -460,6 +552,32 @@ class Character(commands.Cog):
         charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
 
+        def charCreateCheck(r, u):
+            sameMessage = False
+            if charEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+
+
+        charEmbedmsg = await channel.send(embed=charEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish creating your character or \n❌ to cancel ")
+
+        await charEmbedmsg.add_reaction('✅')
+        await charEmbedmsg.add_reaction('❌')
+        try:
+            tReaction, tUser = await self.bot.wait_for("reaction_add", check=charCreateCheck , timeout=60)
+        except asyncio.TimeoutError:
+            await charEmbedmsg.delete()
+            await channel.send(f'Character creation canceled. Use `{commandPrefix}create` command and try again!')
+            self.bot.get_command('create').reset_cooldown(ctx)
+            return
+        else:
+            await charEmbedmsg.clear_reactions()
+            if tReaction.emoji == '❌':
+                await charEmbedmsg.edit(embed=None, content=f"Character creatcion canceled. Use `{commandPrefix}create` command and try again!")
+                await charEmbedmsg.clear_reactions()
+                self.bot.get_command('create').reset_cooldown(ctx)
+                return
+
         playersCollection = db.players
 
         try:
@@ -471,11 +589,11 @@ class Character(commands.Cog):
             print('Success')
             if charEmbedmsg:
                 await charEmbedmsg.clear_reactions()
-                await charEmbedmsg.edit(embed=charEmbed, content ="Congratulations! You have created your character.")
+                await charEmbedmsg.edit(embed=charEmbed, content ="Congratulations! :tada: You have created your character.")
             else: 
                 charEmbedmsg = await channel.send(embed=charEmbed, content="Congratulations! You have created your character.")
 
-            # self.char.get_command('create').reset_cooldown(ctx)
+        self.bot.get_command('create').reset_cooldown(ctx)
 
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
@@ -745,6 +863,32 @@ class Character(commands.Cog):
         charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
 
+        def charCreateCheck(r, u):
+            sameMessage = False
+            if charEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+
+
+        charEmbedmsg = await channel.send(embed=charEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish respeccing your character or \n❌ to cancel ")
+
+        await charEmbedmsg.add_reaction('✅')
+        await charEmbedmsg.add_reaction('❌')
+        try:
+            tReaction, tUser = await self.bot.wait_for("reaction_add", check=charCreateCheck , timeout=60)
+        except asyncio.TimeoutError:
+            await charEmbedmsg.delete()
+            await channel.send(f'Character respec canceled. Use `{commandPrefix}respec` command and try again!')
+            self.bot.get_command('respec').reset_cooldown(ctx)
+            return
+        else:
+            await charEmbedmsg.clear_reactions()
+            if tReaction.emoji == '❌':
+                await charEmbedmsg.edit(embed=None, content=f"Character respec canceled. Use `{commandPrefix}respec` command and try again!")
+                await charEmbedmsg.clear_reactions()
+                self.bot.get_command('respec').reset_cooldown(ctx)
+                return
+
         data = charDict
 
         try:
@@ -808,12 +952,10 @@ class Character(commands.Cog):
                     charEmbed.clear_fields()
 
                     try:
-                        # TODO: uncomment when ready.
-                        # playersCollection = db.players
-                        # deadCollection = db.dead
-                        # deadCollection.insert_one(charDict)
-                        # playersCollection.delete_one({'_id': charID})
-                        pass
+                        playersCollection = db.players
+                        deadCollection = db.dead
+                        deadCollection.insert_one(charDict)
+                        playersCollection.delete_one({'_id': charID})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
                         charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try retiring your character again.")
@@ -1012,12 +1154,19 @@ class Character(commands.Cog):
             charEmbed.clear_fields()    
             if charDict['Inventory'] != 'None':
                 typeDict = {}
-                for k,v in charDict['Inventory'].items():
-                    type = k.split(':')
-                    if type[1] not in typeDict:
-                        typeDict[type[1]] = [f"• {type[0]} x{v}\n"]
+                invCollection = db.shop
+                charInv = list(invCollection.find({"Name": {'$in': list(charDict['Inventory'].keys())}}))
+                for i in charInv:
+                    type = i['Type'].split('(')
+                    if len(type) == 1:
+                        type.append("")
                     else:
-                        typeDict[type[1]].append(f"• {type[0]} x{v}\n")
+                        type[1] = '(' + type[1]
+
+                    if type[0].strip() not in typeDict:
+                        typeDict[type[0]] = [f"• {i['Name']} {type[1]} x{charDict['Inventory'][i['Name']]}\n"]
+                    else:
+                        typeDict[type[0]].append(f"• {i['Name']} {type[1]} x{charDict['Inventory'][i['Name']]}\n")
 
                 for k, v in typeDict.items():
                     v.sort()
@@ -1031,6 +1180,13 @@ class Character(commands.Cog):
                     consumesString += f"• {k}\n"
                 else:
                     consumesString += f"• {k} x{v}\n"
+
+            if 'Spellbook' in charDict:
+                spellBookString = ""
+                for s in charDict['Spellbook']:
+                    spellBookString += f"• {s['Name']} ({s['School']})\n" 
+                charEmbed.add_field(name='Spellbook', value=spellBookString, inline=True)
+                    
 
             charEmbed.add_field(name='Consumables', value=consumesString, inline=True)
             charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)

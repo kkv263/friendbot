@@ -64,12 +64,12 @@ class Shop(commands.Cog):
                     elif tReaction.emoji == '✅':
 
                         if charRecords['Inventory'] == "None":
-                            charRecords['Inventory'] = {f"{bRecord['Name']}:{bRecord['Type']}" : amount}
+                            charRecords['Inventory'] = {f"{bRecord['Name']}" : amount}
                         else:
                             if bRecord['Name'] not in charRecords['Inventory']:
-                                charRecords['Inventory'][f"{bRecord['Name']}:{bRecord['Type']}"] = amount 
+                                charRecords['Inventory'][f"{bRecord['Name']}"] = amount 
                             else:
-                                charRecords['Inventory'][f"{bRecord['Name']}:{bRecord['Type']}"] += amount 
+                                charRecords['Inventory'][f"{bRecord['Name']}"] += amount 
                         try:
                             playersCollection = db.players
                             playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Inventory":charRecords['Inventory'], 'GP':newGP}})
@@ -104,11 +104,11 @@ class Shop(commands.Cog):
             bRecord = callShopAPI('shop',buyItem) 
         
             if bRecord:
-                if f"{bRecord['Name']}:{bRecord['Type']}" not in charRecords['Inventory']:
+                if f"{bRecord['Name']}" not in charRecords['Inventory']:
                     await channel.send(f"You do not have any {bRecord['Name']} to sell!")
                     return
 
-                elif charRecords['Inventory'][f"{bRecord['Name']}:{bRecord['Type']}"] < amount:
+                elif charRecords['Inventory'][f"{bRecord['Name']}"] < amount:
                     await channel.send(f"You do not have {amount} {bRecord['Name']} to sell!")
                     return 
 
@@ -138,9 +138,9 @@ class Shop(commands.Cog):
                         await shopEmbedmsg.clear_reactions()
                         return
                     elif tReaction.emoji == '✅':
-                        charRecords['Inventory'][f"{bRecord['Name']}:{bRecord['Type']}"] -= amount
-                        if charRecords['Inventory'][f"{bRecord['Name']}:{bRecord['Type']}"] <= 0:
-                            del charRecords['Inventory'][f"{bRecord['Name']}:{bRecord['Type']}"]
+                        charRecords['Inventory'][f"{bRecord['Name']}"] -= amount
+                        if charRecords['Inventory'][f"{bRecord['Name']}"] <= 0:
+                            del charRecords['Inventory'][f"{bRecord['Name']}"]
                         try:
                             playersCollection = db.players
                             playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Inventory":charRecords['Inventory'], 'GP':newGP}})
@@ -171,14 +171,20 @@ class Shop(commands.Cog):
                 await channel.send(f"You not have the right class/subclass or feat to copy spells!")
                 return 
 
-            consumes = charRecords['Consumables'].split(' ,')
+            consumes = charRecords['Consumables'].split(', ')
 
             bRecord = callShopAPI('spells',spellName)
 
             if bRecord:
+                if 'Spellbook' in charRecords:
+                    if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
+                        await channel.send(f"{charRecords['Name']} does already has the spell `{bRecord['Name']}` to copied in thier spellbook!")
+                        return  
+
                 spellCopied = None
                 for c in consumes:
-                    if spellName in c:
+                    print(c)
+                    if bRecord['Name'] in c and 'Spell Scroll' in c:
                         spellCopied = True
                         consumes.remove(c)
                         break
@@ -189,21 +195,29 @@ class Shop(commands.Cog):
 
                 gpNeeded = bRecord['Level'] * 50
 
+                if charRecords['Level'] >= 2 and bRecord['School'] in charRecords['Class']:
+                    gpNeeded = gpNeeded / 2
+
                 if gpNeeded > charRecords['GP']:
                     await channel.send(f"{charRecords['Name']} does not have enough GP to copy `{bRecord['Name']}`")
                     return
 
                 newGP = charRecords['GP'] - gpNeeded
 
+                if 'Spellbook' not in charRecords:
+                    charRecords['Spellbook'] = [{'Name':bRecord['Name'], 'School':bRecord['School']}]
+                else:
+                    charRecords['Spellbook'].append({'Name':bRecord['Name'], 'School':bRecord['School']})
+
                 try:
                     playersCollection = db.players
-                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP}})
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}})
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
                     shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook!\nSpell Scroll {bRecord['Name']} has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
+                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nSpell Scroll {bRecord['Name']} has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
                     await channel.send (embed=shopEmbed)
 
             else:
