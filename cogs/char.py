@@ -336,19 +336,25 @@ class Character(commands.Cog):
                 return (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
 
             if 'Starting Equipment' in cRecord[0]['Class']:
-                startEquipmentChoice = []
+                if charDict['Inventory'] == "None":
+                    charDict['Inventory'] = {}
+                startEquipmentLength = 0
                 charEmbedmsg = await channel.send(embed=charEmbed)
                 for item in cRecord[0]['Class']['Starting Equipment']:
                     seTotalString = ""
                     alphaIndex = 0
                     for seList in item:
-                        seString = ""
+                        seString = []
                         for elk, elv in seList.items():
-                            seString += f"{elk.replace('%', '')} x{elv}, "
-                        seTotalString += f"{alphaEmojis[alphaIndex]}: {seString}\n"
+                            if 'Pack' in elk:
+                                seString.append(f"{elk} x1")
+                            else:
+                                seString.append(f"{elk} x{elv}")
+                                
+                        seTotalString += f"{alphaEmojis[alphaIndex]}: {', '.join(seString)}\n"
                         alphaIndex += 1
                     await charEmbedmsg.clear_reactions()
-                    charEmbed.add_field(name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seTotalString, inline=False)
+                    charEmbed.add_field(name=f"Starting Equipment: {startEquipmentLength+ 1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seTotalString, inline=False)
                     await charEmbedmsg.edit(embed=charEmbed)
                     for num in range(0,alphaIndex): await charEmbedmsg.add_reaction(alphaEmojis[num])
                     await charEmbedmsg.add_reaction('❌')
@@ -368,56 +374,62 @@ class Character(commands.Cog):
                              
                     await charEmbedmsg.clear_reactions()
                     startEquipmentItem = item[alphaEmojis.index(tReaction.emoji)]
-                  
+
                     seiString = ""
                     for seik, seiv in startEquipmentItem.items():
                         seiString += f"{seik} x{seiv}\n"
+                        if "Pack" in seik:
+                            seiString = f"{seik}:\n"
+                            for pk, pv in seiv.items():
+                                charDict['Inventory'][pk] = pv
+                                seiString += f"+ {pk} x{pv}\n"
 
-                    charEmbed.set_field_at(len(startEquipmentChoice), name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString, inline=False)
+                    charEmbed.set_field_at(startEquipmentLength, name=f"Starting Equipment: {startEquipmentLength + 1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString, inline=False)
 
                     for k,v in startEquipmentItem.items():
-                        # TODO: 2 or more martial weapons
-                        print(k)
                         if '(' in k and ')' in k:
                             type = k.split('(')
                             invCollection = db.shop
                             charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(')','')}.*")]}}))
 
-                            charInvString = "Please choose from the choices below:\n"
-                            alphaIndex = 0
-                            for c in charInv:
-                                charInvString += f"{alphaEmojis[alphaIndex]}: {c['Name']}\n"
-                                alphaIndex += 1
+                            typeEquipmentList = []
+                            for i in range (0,v):
+                                charInvString = f"Please choose from the choices below for {type[0]} {i+1}:\n"
+                                alphaIndex = 0
+                                for c in charInv:
+                                    charInvString += f"{alphaEmojis[alphaIndex]}: {c['Name']}\n"
+                                    alphaIndex += 1
 
-                            charEmbed.set_field_at(len(startEquipmentChoice), name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=charInvString, inline=False)
-                            await charEmbedmsg.clear_reactions()
-                            await charEmbedmsg.add_reaction('❌')
-                            await charEmbedmsg.edit(embed=charEmbed)
+                                charEmbed.set_field_at(startEquipmentLength, name=f"Starting Equipment: {startEquipmentLength+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=charInvString, inline=False)
+                                await charEmbedmsg.clear_reactions()
+                                await charEmbedmsg.add_reaction('❌')
+                                await charEmbedmsg.edit(embed=charEmbed)
 
-                            try:
-                                tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
-                            except asyncio.TimeoutError:
-                                await charEmbedmsg.delete()
-                                await channel.send('Character creation timed out! Try using the command again')
-                                self.bot.get_command('create').reset_cooldown(ctx)
-                                return 
-                            else:
-                                if tReaction.emoji == '❌':
-                                    await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
-                                    await charEmbedmsg.clear_reactions()
+                                try:
+                                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
+                                except asyncio.TimeoutError:
+                                    await charEmbedmsg.delete()
+                                    await channel.send('Character creation timed out! Try using the command again')
                                     self.bot.get_command('create').reset_cooldown(ctx)
                                     return 
-                            startEquipmentItem = charInv[alphaEmojis.index(tReaction.emoji)]
-                            charEmbed.set_field_at(len(startEquipmentChoice), name=f"Starting Equipment: {len(startEquipmentChoice)+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString.replace(k,startEquipmentItem['Name']), inline=False)
+                                else:
+                                    if tReaction.emoji == '❌':
+                                        await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                                        await charEmbedmsg.clear_reactions()
+                                        self.bot.get_command('create').reset_cooldown(ctx)
+                                        return 
+                                typeEquipmentList.append(charInv[alphaEmojis.index(tReaction.emoji)]['Name'])
+                                typeCount = collections.Counter(typeEquipmentList)
+                                typeString = ""
+                                for tk, tv in typeCount.items():
+                                    typeString += f"{tk} x{tv}\n"
+                                    charDict['Inventory'][tk] = tv
 
-                    
-                    startEquipmentChoice.append(startEquipmentItem)
+                            charEmbed.set_field_at(startEquipmentLength, name=f"Starting Equipment: {startEquipmentLength+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString.replace(f"{k} x{v}\n", typeString), inline=False)
 
-                    print(startEquipmentChoice)
-
-            return
-
-            # charInv = list(invCollection.find({"Name": {'$in': list(charDict['Inventory'].keys())}}))
+                        elif 'Pack' not in k:
+                            charDict['Inventory'][k] = v
+                    startEquipmentLength += 1
 
             # Subclass
             for m in cRecord:
@@ -444,9 +456,6 @@ class Character(commands.Cog):
                         charDict['Class'] = className
                     else:
                         charDict['Class'] += f' / {className}'
-            print('cRecord')
-            print(cRecord)
-        print(charDict['Class'])
         # check bg and gp
         bRecord = callAPI('backgrounds',bg)
         if not bRecord:
@@ -511,8 +520,6 @@ class Character(commands.Cog):
             for key, value in statsFeats.items():
                 charDict[key] = value
 
-
-
         #HP
         #TODO: HP maybe function
         if cRecord:
@@ -550,6 +557,12 @@ class Character(commands.Cog):
             charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
         charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=True)
         charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+        
+        charDictInvString = ""
+        print(charDict['Inventory'])
+        for k,v in charDict['Inventory'].items():
+            charDictInvString += f"• {k} x{v}\n"
+        charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
 
         def charCreateCheck(r, u):
@@ -559,7 +572,10 @@ class Character(commands.Cog):
             return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
 
-        charEmbedmsg = await channel.send(embed=charEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish creating your character or \n❌ to cancel ")
+        if not charEmbedmsg:
+            charEmbedmsg = await channel.send(embed=charEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish creating your character or \n❌ to cancel ")
+        else:
+            charEmbedmsg.edit(embed=charEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish creating your character or \n❌ to cancel ")
 
         await charEmbedmsg.add_reaction('✅')
         await charEmbedmsg.add_reaction('❌')
@@ -1170,7 +1186,7 @@ class Character(commands.Cog):
 
                 for k, v in typeDict.items():
                     v.sort()
-                    charEmbed.add_field(name=k, value=''.join(v), inline=True)
+                    charEmbed.add_field(name=k, value=''.join(v), inline=False)
 
             consumesCount = collections.Counter(charDict['Consumables'].split(', '))
 
@@ -1185,10 +1201,10 @@ class Character(commands.Cog):
                 spellBookString = ""
                 for s in charDict['Spellbook']:
                     spellBookString += f"• {s['Name']} ({s['School']})\n" 
-                charEmbed.add_field(name='Spellbook', value=spellBookString, inline=True)
+                charEmbed.add_field(name='Spellbook', value=spellBookString, inline=False)
                     
 
-            charEmbed.add_field(name='Consumables', value=consumesString, inline=True)
+            charEmbed.add_field(name='Consumables', value=consumesString, inline=False)
             charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
             charEmbed.set_footer(text=footer)
 

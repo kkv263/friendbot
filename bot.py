@@ -1,9 +1,9 @@
 import asyncio
+import traceback
 from discord.ext import commands
 from os import listdir
 from os.path import isfile, join
 from itertools import cycle
-import traceback
 
 from bfunc import *
 
@@ -34,60 +34,46 @@ bot.remove_command('help')
 @bot.event
 async def on_command_error(ctx,error):
     # TODO: Fix for char create and guild create
-    if isinstance(error, commands.CommandOnCooldown):
-        msg = None
-        if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
-            msg = 'Woahhh, slow down partner! Try the command in the next {:.1f}s'.format(error.retry_after)
-        if (ctx.command.name == 'addme'):
-            msg = 'You have already added yourself to the timer'
-        if (ctx.command.name == 'start' or ctx.command.name == 'resume'):
-            msg = f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer"
-        if (ctx.command.name == 'add' or ctx.command.name == 'remove'):
-            msg = 'Try the command in the next {:.1f}s'.format(error.retry_after)
-        if (ctx.command.name == 'uwu'):
-            return
-        if (ctx.command.name == 'create'):
-            msg = f"You have already started creating a character! Please finish the previous character creation before starting a new one"
-        if (ctx.command.name == 'respec'):
-            msg = f"You have already started respeccing a character! Please finish the previous character respec before starting a new one"
-        if msg:
-            await ctx.channel.send(msg)
-    elif isinstance(error, commands.MissingRequiredArgument):
-        if (ctx.command.name == 'start'):
-            msg = f"Woops, it looks like you're missing some information. Please follow this format:\n`$timer start \"@name1, @name2, @name3\" gamename`. \n(Don't forget the quotes wrapped around the names!)"
-            ctx.command.reset_cooldown(ctx)
-        if (ctx.command.name == 'create'): 
-            msg="Woops, it looks like you're missing some information. Please follow this format: `$char create [placeholder]`"
-            ctx.command.reset_cooldown(ctx)
-        if msg:
-            ctx.command.reset_cooldown(ctx)
-            await ctx.channel.send(msg)
-    elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
-        if (ctx.command.name == 'create' or ctx.command.name =="start"): 
-            msg="There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command"
-            ctx.command.reset_cooldown(ctx)
-        if msg:
-            ctx.command.reset_cooldown(ctx)
-            await ctx.channel.send(msg)
+    msg = None
+    # if isinstance(error, commands.CommandOnCooldown):
+    #     if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
+    #         msg = 'Woahhh, slow down partner! Try the command in the next {:.1f}s'.format(error.retry_after)
+    #     if (ctx.command.name == 'addme'):
+    #         msg = 'You have already added yourself to the timer'
+    #     if (ctx.command.name == 'start' or ctx.command.name == 'resume'):
+    #         msg = f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer"
+    #     if (ctx.command.name == 'add' or ctx.command.name == 'remove'):
+    #         msg = 'Try the command in the next {:.1f}s'.format(error.retry_after)
+    #     if (ctx.command.name == 'uwu'):
+    #         return
+    #     if (ctx.command.name == 'create'):
+    #         msg = f"You have already started creating a character! Please finish the previous character creation before starting a new one"
+    #     if (ctx.command.name == 'respec'):
+    #         msg = f"You have already started respeccing a character! Please finish the previous character respec before starting a new one"
+    #     if msg:
+    #         await ctx.channel.send(msg)
+    # elif isinstance(error, commands.MissingRequiredArgument):
+    #     if (ctx.command.name == 'start'):
+    #         msg = f"Woops, it looks like you're missing some information. Please follow this format:\n`$timer start \"@name1, @name2, @name3\" gamename`. \n(Don't forget the quotes wrapped around the names!)"
+    #         ctx.command.reset_cooldown(ctx)
+    #     if (ctx.command.name == 'create'): 
+    #         msg="Woops, it looks like you're missing some information. Please follow this format: `$char create [placeholder]`"
+    #         ctx.command.reset_cooldown(ctx)
+    #     if msg:
+    #         ctx.command.reset_cooldown(ctx)
+    #         await ctx.channel.send(msg)
+    # elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+    #     if (ctx.command.name == 'create' or ctx.command.name =="start"): 
+    #         msg="There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command"
+    #         ctx.command.reset_cooldown(ctx)
+    #     if msg:
+    #         ctx.command.reset_cooldown(ctx)
+    #         await ctx.channel.send(msg)
+    if ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
+          return
 
- 
     else:
-        ctx.command.reset_cooldown(ctx)
-        etype = type(error)
-        trace = error.__traceback__
-
-        # the verbosity is how large of a traceback to make
-        # more specifically, it's the amount of levels up the traceback goes from the exception source
-        verbosity = 2
-
-        # 'traceback' is the stdlib module, `import traceback`.
-        lines = traceback.format_exception(etype,error, trace, verbosity)
-
-        # format_exception returns a list with line breaks embedded in the lines, so let's just stitch the elements together
-        traceback_text = ''.join(lines)
-
-        await ctx.channel.send(f"```{traceback_text}```\n Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(220742049631174656).mention} has been notified.")
-        raise error
+        await traceBack(ctx,error)
 
 @bot.command()
 async def help(ctx, *, pageString=''):

@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callShopAPI, checkForChar, noodleRoleArray
+from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callShopAPI, checkForChar, noodleRoleArray,traceBack
 
 class Shop(commands.Cog):
     def __init__ (self, bot):
@@ -13,9 +13,38 @@ class Shop(commands.Cog):
     @commands.group()
     async def shop(self, ctx):	
         pass
+
+    async def cog_command_error(self, ctx,error):
+        msg = None
+            
+        if isinstance(error, commands.MissingRequiredArgument):
+            if error.param.name == 'charName':
+                msg = "You're missing your character name in the command. "
+            elif error.param.name == "buyItem":
+                msg = "You're missing the item you want to buy/sell in the command. "
+            elif error.param.name == "spellName":
+                msg = "You're missing the spell you want to copy in the command. "
+        elif isinstance(error, commands.BadArgument):
+            # convert string to int failed
+            msg = "The amount you want to buy/sell must be a number. "
+        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+           msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
+
+        if msg:
+            if ctx.command.name == "buy":
+                msg += f"Please follow this format:\n`{commandPrefix}shop buy \"character name\" \"item\" amount`.\n"
+            elif ctx.command.name == "sell":
+                msg += f"Please follow this format:\n`{commandPrefix}shop sell \"character name\" \"item\" amount`.\n"
+            elif ctx.command.name == "copy":
+                msg += f"Please follow this format:\n`{commandPrefix}shop copy \"character name\" \"spellname\"`.\n"
+
+            ctx.command.reset_cooldown(ctx)
+            await ctx.channel.send(msg)
+        else:
+            await traceBack(ctx,error)
       
     @shop.command()
-    async def buy(self, ctx , charName, buyItem, amount=1):
+    async def buy(self, ctx, charName, buyItem, amount=1):
         channel = ctx.channel
         author = ctx.author
         shopEmbed = discord.Embed()

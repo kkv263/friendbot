@@ -3,12 +3,14 @@ import gspread
 import decimal
 import os
 import time
+import traceback
 # import json
 # import requests
 from discord.ext import commands
 import asyncio
 from oauth2client.service_account import ServiceAccountCredentials
 from pymongo import MongoClient
+
 from secret import *
 
 def timeConversion (time):
@@ -25,6 +27,24 @@ def getTiers (tiers):
     getTierArray.append(len(sheet.row_values(3)) + 1)
 
     return getTierArray
+
+async def traceBack (ctx,error):
+    ctx.command.reset_cooldown(ctx)
+    etype = type(error)
+    trace = error.__traceback__
+
+    # the verbosity is how large of a traceback to make
+    # more specifically, it's the amount of levels up the traceback goes from the exception source
+    verbosity = 2
+
+    # 'traceback' is the stdlib module, `import traceback`.
+    lines = traceback.format_exception(etype,error, trace, verbosity)
+
+    # format_exception returns a list with line breaks embedded in the lines, so let's just stitch the elements together
+    traceback_text = ''.join(lines)
+
+    await ctx.channel.send(f"```{traceback_text}```\n Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(220742049631174656).mention} has been notified.")
+    raise error
 
 def calculateTreasure(seconds, role):
     cp = ((seconds + 900) // 1800) / 2
