@@ -35,42 +35,25 @@ bot.remove_command('help')
 async def on_command_error(ctx,error):
     # TODO: Fix for char create and guild create
     msg = None
-    # if isinstance(error, commands.CommandOnCooldown):
-    #     if (ctx.command.name == 'rit' or ctx.command.name == 'mit'):
-    #         msg = 'Woahhh, slow down partner! Try the command in the next {:.1f}s'.format(error.retry_after)
-    #     if (ctx.command.name == 'addme'):
-    #         msg = 'You have already added yourself to the timer'
-    #     if (ctx.command.name == 'start' or ctx.command.name == 'resume'):
-    #         msg = f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer"
-    #     if (ctx.command.name == 'add' or ctx.command.name == 'remove'):
-    #         msg = 'Try the command in the next {:.1f}s'.format(error.retry_after)
-    #     if (ctx.command.name == 'uwu'):
-    #         return
-    #     if (ctx.command.name == 'create'):
-    #         msg = f"You have already started creating a character! Please finish the previous character creation before starting a new one"
-    #     if (ctx.command.name == 'respec'):
-    #         msg = f"You have already started respeccing a character! Please finish the previous character respec before starting a new one"
-    #     if msg:
-    #         await ctx.channel.send(msg)
-    # elif isinstance(error, commands.MissingRequiredArgument):
-    #     if (ctx.command.name == 'start'):
-    #         msg = f"Woops, it looks like you're missing some information. Please follow this format:\n`$timer start \"@name1, @name2, @name3\" gamename`. \n(Don't forget the quotes wrapped around the names!)"
-    #         ctx.command.reset_cooldown(ctx)
-    #     if (ctx.command.name == 'create'): 
-    #         msg="Woops, it looks like you're missing some information. Please follow this format: `$char create [placeholder]`"
-    #         ctx.command.reset_cooldown(ctx)
-    #     if msg:
-    #         ctx.command.reset_cooldown(ctx)
-    #         await ctx.channel.send(msg)
-    # elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
-    #     if (ctx.command.name == 'create' or ctx.command.name =="start"): 
-    #         msg="There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command"
-    #         ctx.command.reset_cooldown(ctx)
-    #     if msg:
-    #         ctx.command.reset_cooldown(ctx)
-    #         await ctx.channel.send(msg)
-    if ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
-          return
+    print(ctx.invoked_with)
+
+    if isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+        await ctx.channel.send("There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. ")
+        bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+        return
+
+    elif isinstance(error, commands.CommandOnCooldown):
+        if error.retry_after == float('inf'):
+            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{ctx.invoked_with}` is already in progress, please complete the command before trying again.")
+        else:
+            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{ctx.invoked_with}` is on cooldown for you!\nTry the command in the next " + "{:.1f}seconds".format(error.retry_after))
+        return
+
+    elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
+        return
+
+    elif isinstance(error, commands.CommandNotFound):
+        await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` is not valid, please try again!')
 
     else:
         await traceBack(ctx,error)

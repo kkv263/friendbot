@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar
+from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar 
 
 class Tp(commands.Cog):
     def __init__ (self, bot):
@@ -12,7 +12,36 @@ class Tp(commands.Cog):
     
     @commands.group()
     async def tp(self, ctx):	
+        tpCog = self.bot.get_cog('Tp')
         pass
+
+    async def cog_command_error(self, ctx, error):
+        msg = None
+
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` requires an additional keyword to the command or is invalid, please try again!')
+            return
+            
+        if isinstance(error, commands.MissingRequiredArgument):
+            if error.param.name == 'charName':
+                msg = "You're missing your character name in the command. "
+            elif error.param.name == "mItem":
+                msg = "You're missing the item you want to buy in the command."
+            elif error.param.name == "tierNum":
+                msg = "You're missing the tier for the TP you want to abandon."
+        elif isinstance(error, commands.BadArgument):
+            # convert string to int failed
+            msg = "The amount you want to buy/sell must be a number. "
+        if msg:
+            if ctx.command.name == "buy":
+                msg += f"Please follow this format:\n`{commandPrefix}tp buy \"character name\" \"magicitem\"`.\n"
+            elif ctx.command.name == "discard":
+                msg += f"Please follow this format:\n`{commandPrefix}tp discard \"character name\"`.\n"
+            elif ctx.command.name == "abandon":
+                msg += f"Please follow this format:\n`{commandPrefix}tp abandon \"character name\" tier`.\n"
+
+            ctx.command.reset_cooldown(ctx)
+            await ctx.channel.send(msg)
       
     @tp.command()
     async def buy(self, ctx , charName, mItem):

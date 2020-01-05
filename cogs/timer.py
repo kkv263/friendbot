@@ -28,6 +28,22 @@ class Timer(commands.Cog):
         helpCommand = self.bot.get_command('help')
         await ctx.invoke(helpCommand, pageString='timer')
 
+    async def cog_command_error(self, ctx, error):
+        msg = None
+            
+        if isinstance(error, commands.MissingRequiredArgument):
+            if error.param.name == 'userList':
+                msg = "You're missing players to prep the timer."
+        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+           msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
+
+        if msg:
+            if ctx.command.name == "prep":
+                msg += f'Please follow this format:\n`{commandPrefix}timer prep #guild1 #guild2...* @player1 player2... gamename*`.\n***** - These items are optional'
+
+            ctx.command.reset_cooldown(ctx)
+            await ctx.channel.send(msg)
+
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
     @timer.command()
     async def prep(self, ctx, userList, *, game="D&D Game"):

@@ -12,10 +12,15 @@ class Shop(commands.Cog):
     
     @commands.group()
     async def shop(self, ctx):	
+        shopCog = self.bot.get_cog('Shop')
         pass
 
-    async def cog_command_error(self, ctx,error):
+    async def cog_command_error(self, ctx, error):
         msg = None
+
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` requires an additional keyword to the command or is invalid, please try again!')
+            return
             
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'charName':
@@ -27,9 +32,6 @@ class Shop(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
             msg = "The amount you want to buy/sell must be a number. "
-        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
-           msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
-
         if msg:
             if ctx.command.name == "buy":
                 msg += f"Please follow this format:\n`{commandPrefix}shop buy \"character name\" \"item\" amount`.\n"
@@ -37,11 +39,11 @@ class Shop(commands.Cog):
                 msg += f"Please follow this format:\n`{commandPrefix}shop sell \"character name\" \"item\" amount`.\n"
             elif ctx.command.name == "copy":
                 msg += f"Please follow this format:\n`{commandPrefix}shop copy \"character name\" \"spellname\"`.\n"
+            elif ctx.command.name == "proficiency":
+                msg += f"Please follow this format:\n`{commandPrefix}proficiency \"character name\"`.\n"
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
-        else:
-            await traceBack(ctx,error)
       
     @shop.command()
     async def buy(self, ctx, charName, buyItem, amount=1):

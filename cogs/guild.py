@@ -8,93 +8,131 @@ class Guild(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
        
-    async def guildsList(self, ctx, member):
-        def guildEmbedCheck(r, u):
-            sameMessage = False
-            if guildAddMsg.id == r.message.id:
-                sameMessage = True
-            return (r.emoji in numberEmojis[:g + 1] or r.emoji in numberEmojisMobile[:g + 1] or str(r.emoji) == '❌') and u == author and sameMessage
+    # async def guildsList(self, ctx, member):
+    #     def guildEmbedCheck(r, u):
+    #         sameMessage = False
+    #         if guildAddMsg.id == r.message.id:
+    #             sameMessage = True
+    #         return (r.emoji in numberEmojis[:g + 1] or r.emoji in numberEmojisMobile[:g + 1] or str(r.emoji) == '❌') and u == author and sameMessage
 
-        guild = ctx.guild
-        # Channel where guildsMsg is stored
-        channel = self.bot.get_channel(579858636646383626) 
-        # channel = self.bot.get_channel(575798367414910976) 
-        author = ctx.author
-        # Message where guilds are stored.
-        guildsMsg = await channel.fetch_message(579859120321200138)
-        # guildsMsg = await channel.fetch_message(580108097041727499)
-        guildMember = guild.get_member_named(member)
-        commandName = ctx.command.name
+    #     guild = ctx.guild
+    #     # Channel where guildsMsg is stored
+    #     channel = self.bot.get_channel(579858636646383626) 
+    #     # channel = self.bot.get_channel(575798367414910976) 
+    #     author = ctx.author
+    #     # Message where guilds are stored.
+    #     guildsMsg = await channel.fetch_message(579859120321200138)
+    #     # guildsMsg = await channel.fetch_message(580108097041727499)
+    #     guildMember = guild.get_member_named(member)
+    #     commandName = ctx.command.name
 
-        if guildMember is None:
-            await ctx.channel.send(content=f"The user {member} is not valid. Make sure the user follows the 'User#1234' format (case-sensitive) and try the command again.")
-            return
+    #     if guildMember is None:
+    #         await ctx.channel.send(content=f"The user {member} is not valid. Make sure the user follows the 'User#1234' format (case-sensitive) and try the command again.")
+    #         return
 
-        for char in '@&<>':
-            guildsMsg.content = guildsMsg.content.replace(char,"")
+    #     for char in '@&<>':
+    #         guildsMsg.content = guildsMsg.content.replace(char,"")
 
-        if author.mentioned_in(guildsMsg):
-            guildsList = guildsMsg.content.split(str(author.id) + ' - ',1)[1].split('\n',1)[0].split(',') 
-            guildsList = list(map(int, guildsList))
-            guildsRolesList = []
-        else:
-            return
+    #     if author.mentioned_in(guildsMsg):
+    #         guildsList = guildsMsg.content.split(str(author.id) + ' - ',1)[1].split('\n',1)[0].split(',') 
+    #         guildsList = list(map(int, guildsList))
+    #         guildsRolesList = []
+    #     else:
+    #         return
 
-        guildEmbed = discord.Embed()
-        guildString = ""
+    #     guildEmbed = discord.Embed()
+    #     guildString = ""
 
-        for x in range(0,len(guildsList)):
-            guildsRolesList.append(get(guild.roles, id=guildsList[x]))
+    #     for x in range(0,len(guildsList)):
+    #         guildsRolesList.append(get(guild.roles, id=guildsList[x]))
         
-        for g in range(0, len(guildsList)):
-            guildString = guildString + numberEmojis[g] + ": " + guildsRolesList[g].name + "\n"
+    #     for g in range(0, len(guildsList)):
+    #         guildString = guildString + numberEmojis[g] + ": " + guildsRolesList[g].name + "\n"
 
-        guildEmbed.add_field(name=f"Which guild would you like to {commandName} {member}? \nReact with one of the numbers below.", value=guildString, inline=False)
-        guildEmbed.set_footer(text= "React with ❌ to cancel")
+    #     guildEmbed.add_field(name=f"Which guild would you like to {commandName} {member}? \nReact with one of the numbers below.", value=guildString, inline=False)
+    #     guildEmbed.set_footer(text= "React with ❌ to cancel")
 
-        try:
-            guildAddMsg = await ctx.channel.send(embed = guildEmbed)
-            await guildAddMsg.add_reaction('❌')
-            gReaction, gUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck, timeout=60)
-        except asyncio.TimeoutError:
-            await guildAddMsg.delete()
-            await ctx.channel.send(f'Guild {commandName} command timed out!')
-            return
-        else:
-            if gReaction.emoji == '❌':
-                  await guildAddMsg.edit(embed=None, content=f"Guild {commandName} command canceled.")
-                  await guildAddMsg.clear_reactions()
-                  return
+    #     try:
+    #         guildAddMsg = await ctx.channel.send(embed = guildEmbed)
+    #         await guildAddMsg.add_reaction('❌')
+    #         gReaction, gUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck, timeout=60)
+    #     except asyncio.TimeoutError:
+    #         await guildAddMsg.delete()
+    #         await ctx.channel.send(f'Guild {commandName} command timed out!')
+    #         return
+    #     else:
+    #         if gReaction.emoji == '❌':
+    #               await guildAddMsg.edit(embed=None, content=f"Guild {commandName} command canceled.")
+    #               await guildAddMsg.clear_reactions()
+    #               return
             
-            guildRole = guildsRolesList[int(gReaction.emoji[0]) - 1]
+    #         guildRole = guildsRolesList[int(gReaction.emoji[0]) - 1]
 
-            if commandName == "add":
-                await guildMember.add_roles(guildRole, reason=f"{author} used guild command add {member} for guild {guildRole.name}")     
-                await guildAddMsg.edit(embed=None, content=f"You have added {member} to guild {guildRole.name}! Please double check if necessary.")
-            if commandName == "remove":
-                await guildMember.remove_roles(guildRole, reason=f"{author} used guild command remove {member} for guild {guildRole.name}")      
-                await guildAddMsg.edit(embed=None, content=f"You have removed {member} from guild {guildRole.name}! Please double check if necessary.")
-            await guildAddMsg.clear_reactions()
+    #         if commandName == "add":
+    #             await guildMember.add_roles(guildRole, reason=f"{author} used guild command add {member} for guild {guildRole.name}")     
+    #             await guildAddMsg.edit(embed=None, content=f"You have added {member} to guild {guildRole.name}! Please double check if necessary.")
+    #         if commandName == "remove":
+    #             await guildMember.remove_roles(guildRole, reason=f"{author} used guild command remove {member} for guild {guildRole.name}")      
+    #             await guildAddMsg.edit(embed=None, content=f"You have removed {member} from guild {guildRole.name}! Please double check if necessary.")
+    #         await guildAddMsg.clear_reactions()
 
-        return
+    #     return
 
     @commands.group(aliases=['g'])
     async def guild(self, ctx):	
         pass
 
-    @commands.has_role('Guildmaster')
-    @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @guild.command()
-    async def add(self,ctx, *, member):
-        guildCog = self.bot.get_cog('Guild')
-        await guildCog.guildsList(ctx,member)
+    async def cog_command_error(self, ctx, error):
+        msg = None
 
-    @commands.has_role('Guildmaster')
-    @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @guild.command()
-    async def remove(self,ctx, *, member):
-        guildCog = self.bot.get_cog('Guild')
-        await guildCog.guildsList(ctx,member)
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` requires an additional keyword to the command or is invalid, please try again!')
+            return
+            
+        if isinstance(error, commands.MissingRequiredArgument):
+            if error.param.name == 'charName':
+                msg = "You're missing your character name in the command. "
+            elif error.param.name == "guildName":
+                msg = "You're missing the guild name in the command."
+            elif error.param.name == "roleName":
+                msg = "You're missing the @role for the guild you want to create"
+            elif error.param.name == "channelName":
+                msg = "You're missing the #channel for the guild you want to create"
+            elif error.param.name == "gpName":
+                msg = "You're missing the amount of gp you want to fund a guild." 
+        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+            msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
+
+        if msg:
+            if ctx.command.name == "create":
+                msg += f"Please follow this format:\n`{commandPrefix}guild create \"character name\" \"guild name\" @rolename #channelname`.\n"
+            elif ctx.command.name == "info":
+                msg += f"Please follow this format:\n`{commandPrefix}guild info \"guild name\"`.\n"
+            elif ctx.command.name == "fund":
+                msg += f"Please follow this format:\n`{commandPrefix}guild fund \"character name\" gp \"guild name\"`.\n"
+            elif ctx.command.name == "join":
+                msg += f"Please follow this format:\n`{commandPrefix}guild join \"character name\" \"guild name\"`.\n"
+            elif ctx.command.name == "leave":
+                msg += f"Please follow this format:\n`{commandPrefix}guild leave \"character name\"`.\n"
+            elif ctx.command.name == "rep":
+                msg += f"Please follow this format:\n`{commandPrefix}guild rep \"character name\" sparkles` \n"
+
+            ctx.command.reset_cooldown(ctx)
+            await ctx.channel.send(msg)
+
+    # @commands.has_role('Guildmaster')
+    # @commands.cooldown(1, 5, type=commands.BucketType.member)
+    # @guild.command()
+    # async def add(self,ctx, *, member):
+    #     guildCog = self.bot.get_cog('Guild')
+    #     await guildCog.guildsList(ctx,member)
+
+    # @commands.has_role('Guildmaster')
+    # @commands.cooldown(1, 5, type=commands.BucketType.member)
+    # @guild.command()
+    # async def remove(self,ctx, *, member):
+    #     guildCog = self.bot.get_cog('Guild')
+    #     await guildCog.guildsList(ctx,member)
 
     # TODO role and channel
     @commands.cooldown(1, 5, type=commands.BucketType.member)
