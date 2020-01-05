@@ -493,7 +493,7 @@ class Character(commands.Cog):
                         elif 'Pack' not in k:
                             charDict['Inventory'][k] = v
                     startEquipmentLength += 1
-                await charEmbedmsg.clear_reactions
+                await charEmbedmsg.clear_reactions()
 
             # Subclass
             for m in cRecord:
