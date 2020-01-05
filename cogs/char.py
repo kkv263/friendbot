@@ -1323,6 +1323,7 @@ class Character(commands.Cog):
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command(aliases=['inf', 'char'])
     async def info(self,ctx, char):
+        print('test hello')
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild

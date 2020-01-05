@@ -36,6 +36,7 @@ async def on_command_error(ctx,error):
     # TODO: Fix for char create and guild create
     msg = None
     print(ctx.invoked_with)
+    print(error)
 
     if isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
         await ctx.channel.send("There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. ")
