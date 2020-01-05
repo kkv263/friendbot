@@ -119,6 +119,9 @@ class Guild(commands.Cog):
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+        else:
+            ctx.command.reset_cooldown(ctx)
+            raise error
 
     # @commands.has_role('Guildmaster')
     # @commands.cooldown(1, 5, type=commands.BucketType.member)

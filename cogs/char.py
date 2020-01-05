@@ -59,10 +59,11 @@ class Character(commands.Cog):
                 msg += f'Please follow this format:\n`{commandPrefix}attune "character name" magicitem`.\n'
             elif ctx.command.name == "unattune":
                 msg += f'Please follow this format:\n`{commandPrefix}unattune "character name" magicitem`.\n'
+            ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
         else:
+            ctx.command.reset_cooldown(ctx)
             raise error
-        ctx.command.reset_cooldown(ctx)
 
 
 
@@ -384,7 +385,7 @@ class Character(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+                return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
 
             if 'Starting Equipment' in cRecord[0]['Class'] and msg == "":
                 if charDict['Inventory'] == "None":
@@ -470,7 +471,7 @@ class Character(commands.Cog):
                                     return 
                                 else:
                                     if tReaction.emoji == '❌':
-                                        await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                                        await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
                                         await charEmbedmsg.clear_reactions()
                                         self.bot.get_command('create').reset_cooldown(ctx)
                                         return 
@@ -625,7 +626,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
 
         if not charEmbedmsg:
@@ -940,7 +941,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
 
         charEmbedmsg = await channel.send(embed=charEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish respeccing your character or \n❌ to cancel ")
@@ -996,7 +997,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
         if charDict:
             charID = charDict['_id']
 
@@ -1058,13 +1059,13 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
         def deathEmbedCheck(r, u):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '1️⃣') or (str(r.emoji) == '2️⃣') or (charDict['GP'] >= gpNeeded and str(r.emoji) == '3️⃣') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '1️⃣') or (str(r.emoji) == '2️⃣') or (charDict['GP'] >= gpNeeded and str(r.emoji) == '3️⃣') or (str(r.emoji) == '❌')) and u == author
 
         if charDict:
             if 'Death' not in charDict:
@@ -1542,12 +1543,12 @@ class Character(commands.Cog):
                         sameMessage = False
                         if levelUpEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return ((str(r.emoji) == '✅') or (str(r.emoji) == '🚫') or (str(r.emoji) == '❌')) and u == author
+                        return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '🚫') or (str(r.emoji) == '❌')) and u == author
                 def alphaEmbedCheck(r, u):
                         sameMessage = False
                         if levelUpEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+                        return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
 
 
                 for lvl in range(charLevel, newCharLevel):
@@ -1911,13 +1912,13 @@ class Character(commands.Cog):
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
             anyList.add(r.emoji)
-            return ((len(anyList) == anyCheck+1) or str(r.emoji) == '❌') and u == author
+            return sameMessage and ((len(anyList) == anyCheck+1) or str(r.emoji) == '❌') and u == author
 
         def slashCharEmbedcheck(r, u):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return (r.emoji in numberEmojis[:len(statSplit)]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and (r.emoji in numberEmojis[:len(statSplit)]) or (str(r.emoji) == '❌') and u == author
 
         if rRecord:
             statsBonus = rRecord['Modifiers'].replace(" ", "").split(',')
@@ -1987,7 +1988,7 @@ class Character(commands.Cog):
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None 
                     charEmbed.clear_fields()
-                    charEmbedmsg.clear_reactions()
+                    await charEmbedmsg.clear_reactions()
                     anyList.remove('❌')
                     for s in anyList:
                         statsArray[(int(s[0]) - 1)] -= 1
@@ -2003,7 +2004,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
 
         try:
             subclassString = ""
@@ -2026,7 +2027,7 @@ class Character(commands.Cog):
             return None, None
         else:
             if tReaction.emoji == '❌':
-                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
                 await charEmbedmsg.clear_reactions()
                 self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                 return None, None
@@ -2053,6 +2054,14 @@ class Character(commands.Cog):
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
             return sameMessage and (r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌') and u == author
+
+        def asiCharEmbedCheck2(r, u):
+            sameMessage = False
+            if charEmbedmsg2.id == r.message.id:
+                sameMessage = True
+            return sameMessage and (r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌') and u == author
+
+
         featChoices = []
         featsPickedList = []
 
@@ -2076,7 +2085,7 @@ class Character(commands.Cog):
                 return None, None, None
             else:
                 if tReaction.emoji == '❌':
-                    await charEmbedmsg.edit(embed=None, content=f"Feat selection canceled. Type `{commandPrefix}char create` to try again!")
+                    await charEmbedmsg.edit(embed=None, content=f"Feat selection canceled. Type `{commandPrefix}create` to try again!")
                     await charEmbedmsg.clear_reactions()
                     self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                     return None, None, None
@@ -2102,7 +2111,7 @@ class Character(commands.Cog):
                         return None, None, None
                     else:
                         if tReaction.emoji == '❌':
-                            await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                            await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
                             await charEmbedmsg.clear_reactions()
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None, None
@@ -2117,15 +2126,15 @@ class Character(commands.Cog):
                         charEmbedmsg2 = await channel.send(embed=charEmbed)
                         for num in range(0,6): await charEmbedmsg2.add_reaction(numberEmojis[num])
                         await charEmbedmsg2.add_reaction('❌')
-                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=asiCharEmbedCheck, timeout=60)
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=asiCharEmbedCheck2, timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg2.delete()
                         await channel.send('Character creation timed out! Try using the command again')
-                        return None, None, None
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                        return None, None, None
                     else:
                         if tReaction.emoji == '❌':
-                            await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                            await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
                             await charEmbedmsg.clear_reactions()
                             await charEmbedmsg2.delete()
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
@@ -2258,7 +2267,7 @@ class Character(commands.Cog):
                         sameMessage = False
                         if charEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return (r.emoji in numberEmojis[:len(featBonusList)]) or (str(r.emoji) == '❌') and u == author
+                        return sameMessage and (r.emoji in numberEmojis[:len(featBonusList)]) or (str(r.emoji) == '❌') and u == author
 
                     if 'Stat Bonuses' in featPicked:
                         featBonus = featPicked['Stat Bonuses']
@@ -2286,7 +2295,7 @@ class Character(commands.Cog):
                                 return None, None, None
                             else:
                                 if tReaction.emoji == '❌':
-                                    await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                                    await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
                                     await charEmbedmsg.clear_reactions()
                                     self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                                     return None, None, None

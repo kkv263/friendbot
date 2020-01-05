@@ -42,6 +42,10 @@ class Tp(commands.Cog):
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+        else:
+            ctx.command.reset_cooldown(ctx)
+            raise error
+
       
     @tp.command()
     async def buy(self, ctx , charName, mItem):

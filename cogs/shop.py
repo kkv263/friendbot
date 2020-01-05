@@ -44,6 +44,10 @@ class Shop(commands.Cog):
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+        else:
+            ctx.command.reset_cooldown(ctx)
+            raise error
+
       
     @shop.command()
     async def buy(self, ctx, charName, buyItem, amount=1):

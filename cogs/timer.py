@@ -43,6 +43,10 @@ class Timer(commands.Cog):
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+        else:
+            ctx.command.reset_cooldown(ctx)
+            raise error
+
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
     @timer.command()
