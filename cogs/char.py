@@ -2073,32 +2073,32 @@ class Character(commands.Cog):
         featsPickedList = []
 
         for f in featLevels:
-            try:
                 charEmbed.clear_fields()
                 if f != 'Human (Variant)':
-                    charEmbed.add_field(name=f"Your level allows you to pick either an ability score improvement or a feat. Please react either 1 or 2 for your level {f} feat/ASI", value=f"{numberEmojis[0]}: Ability Score Improvement\n{numberEmojis[1]}: Feat\n", inline=False)
-                    if charEmbedmsg:
-                        await charEmbedmsg.edit(embed=charEmbed)
-                    else: 
-                        charEmbedmsg = await channel.send(embed=charEmbed)
-                    for num in range(0,2): await charEmbedmsg.add_reaction(numberEmojis[num])
-                    await charEmbedmsg.add_reaction('❌')
-                    charEmbed.set_footer(text= f"React with ❌ to cancel")
-                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=featCharEmbedCheck, timeout=60)
-            except asyncio.TimeoutError:
-                await charEmbedmsg.delete()
-                await channel.send('Feat selection timed out! Try using the command again')
-                self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
-                return None, None, None
-            else:
-                if tReaction.emoji == '❌':
-                    await charEmbedmsg.edit(embed=None, content=f"Feat selection canceled. Type `{commandPrefix}create` to try again!")
-                    await charEmbedmsg.clear_reactions()
-                    self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
-                    return None, None, None
+                    try:
+                        charEmbed.add_field(name=f"Your level allows you to pick either an ability score improvement or a feat. Please react either 1 or 2 for your level {f} feat/ASI", value=f"{numberEmojis[0]}: Ability Score Improvement\n{numberEmojis[1]}: Feat\n", inline=False)
+                        if charEmbedmsg:
+                            await charEmbedmsg.edit(embed=charEmbed)
+                        else: 
+                            charEmbedmsg = await channel.send(embed=charEmbed)
+                        for num in range(0,2): await charEmbedmsg.add_reaction(numberEmojis[num])
+                        await charEmbedmsg.add_reaction('❌')
+                        charEmbed.set_footer(text= f"React with ❌ to cancel")
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=featCharEmbedCheck, timeout=60)
+                    except asyncio.TimeoutError:
+                        await charEmbedmsg.delete()
+                        await channel.send('Feat selection timed out! Try using the command again')
+                        self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                        return None, None, None
+                    else:
+                        if tReaction.emoji == '❌':
+                            await charEmbedmsg.edit(embed=None, content=f"Feat selection canceled. Type `{commandPrefix}create` to try again!")
+                            await charEmbedmsg.clear_reactions()
+                            self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                            return None, None, None
 
-                choice = int(tReaction.emoji[0])
-                await charEmbedmsg.clear_reactions()
+                    choice = int(tReaction.emoji[0])
+                    await charEmbedmsg.clear_reactions()
 
                 if f == 'Human (Variant)':
                     choice = 2
