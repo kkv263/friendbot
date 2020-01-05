@@ -134,10 +134,9 @@ class Guild(commands.Cog):
     #     guildCog = self.bot.get_cog('Guild')
     #     await guildCog.guildsList(ctx,member)
 
-    # TODO role and channel
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    async def create(self,ctx, charName, guildName, roleName, channelName):
+    async def create(self,ctx, charName, guildName, roleName="", channelName=""):
         channel = ctx.channel
         author = ctx.author
         guildEmbed = discord.Embed()

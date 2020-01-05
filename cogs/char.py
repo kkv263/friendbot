@@ -1323,7 +1323,6 @@ class Character(commands.Cog):
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command(aliases=['inf', 'char'])
     async def info(self,ctx, char):
-        print('test hello')
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -2041,13 +2040,13 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return (r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and (r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌') and u == author
         
         def asiCharEmbedCheck(r, u):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return (r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and (r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌') and u == author
         featChoices = []
         featsPickedList = []
 
