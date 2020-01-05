@@ -386,7 +386,7 @@ class Character(commands.Cog):
                     sameMessage = True
                 return (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
 
-            if 'Starting Equipment' in cRecord[0]['Class']:
+            if 'Starting Equipment' in cRecord[0]['Class'] and msg == "":
                 if charDict['Inventory'] == "None":
                     charDict['Inventory'] = {}
                 startEquipmentLength = 0
@@ -526,27 +526,23 @@ class Character(commands.Cog):
 
             charDict['GP'] = int(bRecord['GP'] + totalGP)
         
-            if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
-                msg += '- One or more of your stats are not numbers. Please check your spelling\n'
-            else:
-                statsArray = [int(sStr), int(sDex), int(sCon), int(sInt), int(sWis), int(sCha)]
-                print(statsArray)
-                print(rRecord)
-                print(charEmbed)
-                print(charEmbedmsg)
-                statsArray, charEmbedmsg = await characterCog.pointBuy(ctx, statsArray, rRecord, charEmbed, charEmbedmsg)
-                if not statsArray:
-                    return
-                elif statsArray:
-                    totalPoints = 0
-                    for s in statsArray:
-                        if (13-s) < 0:
-                            totalPoints += ((s - 13) * 2) + 5
-                        else:
-                            totalPoints += (s - 8)
+        if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
+            msg += '- One or more of your stats are not numbers. Please check your spelling\n'
+        elif msg == "":
+            statsArray = [int(sStr), int(sDex), int(sCon), int(sInt), int(sWis), int(sCha)]
+            statsArray, charEmbedmsg = await characterCog.pointBuy(ctx, statsArray, rRecord, charEmbed, charEmbedmsg)
+            if not statsArray:
+                return
+            elif statsArray:
+                totalPoints = 0
+                for s in statsArray:
+                    if (13-s) < 0:
+                        totalPoints += ((s - 13) * 2) + 5
+                    else:
+                        totalPoints += (s - 8)
 
-                    if totalPoints != 27:
-                        msg += "- Your stats plus your race's modifers do not add up to 27 using point buy. Please check your point allocation.\n"
+                if totalPoints != 27:
+                    msg += "- Your stats plus your race's modifers do not add up to 27 using point buy. Please check your point allocation.\n"
             print (statsArray)
 
         #feats

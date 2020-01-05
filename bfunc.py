@@ -79,10 +79,11 @@ def callAPI(table, query=None):
     if query is None:
         return list(collection.find())
 
-    query.replace('(', '//(')
-    query.replace(')', '//)')
+    query = query.replace('(', '\\(')
+    query = query.replace(')', '\\)')
 
     records = list(collection.find({"Name": {"$regex": query.strip(), '$options': 'i' }}))
+    print(query)
     print(records)
 
     if records == list():
