@@ -59,16 +59,21 @@ class Character(commands.Cog):
                 msg += f'Please follow this format:\n`{commandPrefix}attune "character name" magicitem`.\n'
             elif ctx.command.name == "unattune":
                 msg += f'Please follow this format:\n`{commandPrefix}unattune "character name" magicitem`.\n'
-
-            ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+        else:
+            raise error
+        ctx.command.reset_cooldown(ctx)
+
+
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @commands.command()
     async def create(self,ctx, name, level, race, cclass, bg, sStr, sDex, sCon, sInt, sWis, sCha, mItems="", consumes=""):
         characterCog = self.bot.get_cog('Character')
         roleCreationDict = {
-            'Journey Friend':[3],
+            'Journeyfriend':[3],
+            'Elite Friend':[3],
+            'True Friend':[3],
             'Good Noodle':[4],
             'Elite Noodle':[4,5],
             'True Noodle':[4,5,6],
@@ -415,7 +420,7 @@ class Character(commands.Cog):
                             return 
                         else:
                             if tReaction.emoji == '❌':
-                                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}char create` to try again!")
+                                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
                                 await charEmbedmsg.clear_reactions()
                                 self.bot.get_command('create').reset_cooldown(ctx)
                                 return 
@@ -525,6 +530,10 @@ class Character(commands.Cog):
                 msg += '- One or more of your stats are not numbers. Please check your spelling\n'
             else:
                 statsArray = [int(sStr), int(sDex), int(sCon), int(sInt), int(sWis), int(sCha)]
+                print(statsArray)
+                print(rRecord)
+                print(charEmbed)
+                print(charEmbedmsg)
                 statsArray, charEmbedmsg = await characterCog.pointBuy(ctx, statsArray, rRecord, charEmbed, charEmbedmsg)
                 if not statsArray:
                     return
@@ -2005,6 +2014,7 @@ class Character(commands.Cog):
             for num in range(len(subclassesList)):
                 subclassString += f'{alphaEmojis[num]}: {subclassesList[num]}\n'
 
+            charEmbed.clear_fields()
             charEmbed.add_field(name=f"Your class **{charClass}** allows you to pick a subclass at the level you're creating your character. React with the choices below to select your subclass.", value=subclassString, inline=False)
             alphaIndex = len(subclassesList)
             if charEmbedmsg:

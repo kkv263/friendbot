@@ -55,6 +55,7 @@ async def on_command_error(ctx,error):
         await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` is not valid, please try again!')
 
     else:
+        ctx.command.reset_cooldown(ctx)
         await traceBack(ctx,error)
 
 @bot.command()
