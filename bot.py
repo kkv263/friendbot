@@ -91,7 +91,7 @@ async def help(ctx, *, pageString=''):
     helpList = [helpEmbedMenu, helpEmbedChar, helpEmbedTimerOne, helpEmbedItems, helpEmbedShop, helpEmbedTp, helpEmbedGuild]
 
     helpEmbedMenu.title = 'Bot Friend Commands - Table of Contents:'
-    helpEmbedMenu.title = 'Please react to the group of commands you would like to see and gain more knowledge about.'
+    helpEmbedMenu.description = 'Please react to the group of commands you would like to see and gain more knowledge about.'
     helpEmbedMenu.add_field(name="1️⃣ Character Commands", value="Manages your character and help with character creation and character leveling process.", inline=False)
     helpEmbedMenu.add_field(name="2️⃣ Timer (Pre/Post Game) Commands", value="Provide a timer that is essential to games as a DM or a player. ", inline=False)
     helpEmbedMenu.add_field(name="3️⃣ Item Table Commands", value="Provide lookup for the Magic Item Table (MIT) or the Reward Item Table (RIT)", inline=False)
