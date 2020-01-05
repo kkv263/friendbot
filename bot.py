@@ -128,7 +128,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedTimerOne.add_field(name=commandPrefix + "- Consumable", value="Consumes the consumable your character uses and deletes it from their inventory", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + "timer stop", value="**DM Only**: Stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="This calculates player and DM rewards based on the time and tier you typein. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite', inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "session edit messageid, summary", value="This calculates player and DM rewards based on the time and tier you typein. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite', inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + "log edit gameid, summary", value="TODO: ADd description", inline=False)
 
     helpEmbedItems.title = 'Available Item Table Commands'
     helpEmbedItems.add_field(name=commandPrefix + "mit [optional name search]", value="This shows you items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: " + commandPrefix + "mit Cloak of Displacement" )
