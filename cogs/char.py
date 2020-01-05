@@ -446,8 +446,14 @@ class Character(commands.Cog):
                     for k,v in startEquipmentItem.items():
                         if '[' in k and ']' in k:
                             type = k.split('[')
+                            print(type)
                             invCollection = db.shop
-                            charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(']','')}.*")]}}))
+                            if 'Spellcasting Focus' in type[1]:
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[1].replace(']','')}.*")]}}))
+                            else:
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(']','')}.*")]}}))
+
+                            charInv = sorted(charInv, key = lambda i: i['Name']) 
 
                             typeEquipmentList = []
                             for i in range (0,v):
@@ -487,6 +493,7 @@ class Character(commands.Cog):
                         elif 'Pack' not in k:
                             charDict['Inventory'][k] = v
                     startEquipmentLength += 1
+                await charEmbedmsg.clear_reactions
 
             # Subclass
             for m in cRecord:
