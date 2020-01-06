@@ -122,7 +122,12 @@ class Character(commands.Cog):
         # TODO: no duplicates of your name
         if len(name) > 64:
             msg += "- Your character's name is too long! The limit is 64 characters.\n"
-        
+
+        playersCollection = db.players
+        userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": name, '$options': 'i' }}))
+
+        if userRecords != list():
+            msg += f"- You already have a character by the name {name} Please use a different name\n"
         
         # level and role check
         roleSet = [1]
@@ -136,7 +141,7 @@ class Character(commands.Cog):
             roleSet = roleSet.union(set(map(lambda x: x+1,roleSet.copy())))
 
         if lvl not in roleSet:
-            msg += "- You cannot create a character of this level! You do not have the correct role!\n"
+            msg += f"- You cannot create a character of {lvl}! You do not have the correct role!\n"
         
         # CP
         if lvl < 5:
@@ -155,7 +160,7 @@ class Character(commands.Cog):
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
                 if not mRecord:
-                    msg += '- One or more magic items don\'t exist! Check to see if it\'s on the MIT and check your spelling.\n'
+                    msg += f'- {m} doesn\'t exist! Check to see if it\'s on the MIT and check your spelling.\n'
                     break
                 else:
                     allMagicItemsString.append(mRecord)
@@ -232,7 +237,7 @@ class Character(commands.Cog):
             else:
                 charDict['Magic Items'] = ', '.join([str(string['Name']) for string in magicItemsBought])
         elif lvl > 1 and magicItems == ['']:
-            msg += 'In order to create your character at this level, you must purchase magic item(s) with your TP\n' 
+            msg += f'In order to create your character at {lvl}, you must purchase magic item(s) with your TP\n' 
         elif lvl == 1 and magicItems != ['']:
             msg += 'You cannot purchase magic items at Level 1\n'
 
@@ -246,7 +251,7 @@ class Character(commands.Cog):
             for r in rewardItems:
                 reRecord = callAPI('rit',r) 
                 if not reRecord:
-                    msg += '- One or more reward items don\'t exist! Check to see if it\'s on the RIT and check your spelling.\n'
+                    msg += f'- {r} doesn\'t exist! Check to see if it\'s on the RIT and check your spelling.\n'
                     break
                 else:
                     allRewardItemsString.append(reRecord)
@@ -341,7 +346,7 @@ class Character(commands.Cog):
         # check race
         rRecord = callAPI('races',race)
         if not rRecord:
-            msg += '- That race isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'- {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
         
@@ -525,7 +530,7 @@ class Character(commands.Cog):
         # check bg and gp
         bRecord = callAPI('backgrounds',bg)
         if not bRecord:
-            msg += '- That background isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'- That {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
             totalGP = 0
@@ -552,7 +557,7 @@ class Character(commands.Cog):
                         totalPoints += (s - 8)
 
                 if totalPoints != 27:
-                    msg += "- Your stats plus your race's modifers do not add up to 27 using point buy. Please check your point allocation.\n"
+                    msg += f"- Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
             print (statsArray)
 
         #feats
@@ -689,7 +694,6 @@ class Character(commands.Cog):
                 self.bot.get_command('create').reset_cooldown(ctx)
                 return
 
-        playersCollection = db.players
 
         try:
             playersCollection.insert_one(charDict)
@@ -741,6 +745,12 @@ class Character(commands.Cog):
         # new name should be less then 50 chars
         if len(newname) > 64:
             msg += "- Your character's new name is too long! The limit is 64 characters.\n"
+        
+        playersCollection = db.players
+        userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": newname, '$options': 'i' }}))
+
+        if userRecords != list() and newname != name:
+            msg += f"- You already have a character by the name {newname}. Please use a different name\n"
 
         charDict['Name'] = newname
 
@@ -757,7 +767,7 @@ class Character(commands.Cog):
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
                 if not mRecord:
-                    msg += '- One or more magic items don\'t exist! Check to see if it\'s on the MIT and check your spelling.\n'
+                    msg += f'- {m} doesn\'t exist! Check to see if it\'s on the MIT and check your spelling.\n'
                     break
                 else:
                     allMagicItemsString.append(mRecord)
@@ -812,7 +822,7 @@ class Character(commands.Cog):
         # check race
         rRecord = callAPI('races',race)
         if not rRecord:
-            msg += '- That race isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'- {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
         
@@ -881,7 +891,7 @@ class Character(commands.Cog):
         bRecord = callAPI('backgrounds',bg)
         # TODO: deduct old bg gp?
         if not bRecord:
-            msg += '- That background isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'- {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
             totalGP = 0
@@ -906,7 +916,7 @@ class Character(commands.Cog):
                         totalPoints += (s - 8)
 
                 if totalPoints != 27:
-                    msg += "- Your stats plus your race's modifers do not add up to 27 using point buy. Please check your point allocation.\n"
+                    msg += f"- Your stats plus your race's modifers do not add up to 27 using point buy {totalPoints}/27. Please check your point allocation.\n"
             print (statsArray) 
 
         #feats
@@ -1004,7 +1014,6 @@ class Character(commands.Cog):
         data = charDict
 
         try:
-            playersCollection = db.players
             playersCollection.update_one({'_id': charID}, {"$set": data})
             pass
         except Exception as e:
