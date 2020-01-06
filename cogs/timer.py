@@ -1364,7 +1364,7 @@ class Timer(commands.Cog):
         while not timerStopped:
             try:
                 # TODO add alias [$t]
-                msg = await self.bot.wait_for('message', timeout=5.0, check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer end" or f"{commandPrefix}timer add" in m.content or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer death " in m.content or m.content.startswith('-') or f"{commandPrefix}timer reward" in m.content) and m.channel == channel)
+                msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer end" or f"{commandPrefix}timer add" in m.content or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer death " in m.content or m.content.startswith('-') or f"{commandPrefix}timer reward" in m.content) and m.channel == channel)
                 if f"{commandPrefix}timer transfer " in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
                     newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
