@@ -104,7 +104,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar.add_field(name=commandPrefix + 'create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="TODO: Add description here", inline=False)
     helpEmbedChar.add_field(name='MULTICLASS Creation -' + commandPrefix + 'create "character name" level "race" "class1 # / class2 #..." level " "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Creates your character.", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'respec "character name" "new character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="TODO: Add description here", inline=False)
-    helpEmbedChar.add_field(name=commandPrefix + 'stats', value="TODO: Add description here", inline=False)
+    helpEmbedChar.add_field(name=commandPrefix + 'stats', value="Shows your TOTAL games played with all characters, your noodles, and all your characters. You must play in at least one game before this command works for you.", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'info "character name"', value="TODO: Add description here", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'image "character name" url', value="TODO: Add description here", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'inventory "character name"', value="TODO: Add description here", inline=False)

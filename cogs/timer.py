@@ -370,7 +370,7 @@ class Timer(commands.Cog):
                     break
 
             if str(channel.category).lower() not in gameCategory:
-                if "no-context" in channel.name or "secret-testing-area" in channel.name:
+                if "no-context" in channel.name or "secret-testing-area" or  "bot2-testing" in channel.name:
                     pass
                 else: 
                     await channel.send('Try this command in a game channel!')
@@ -1196,7 +1196,7 @@ class Timer(commands.Cog):
             channel=ctx.channel
         
             if str(channel.category).lower() not in gameCategory:
-                if "no-context" in channel.name or "secret-testing-area" in channel.name:
+                if "no-context" in channel.name or "secret-testing-area" or  "bot2-testing" in channel.name:
                     pass
                 else:
                     await channel.send('Try this command in a game channel!')
