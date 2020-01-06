@@ -125,6 +125,7 @@ class Timer(commands.Cog):
         prepEmbed.set_footer(text= f"If enough players are signed up, use {commandPrefix}timer start to start the timer.\n`{commandPrefix}timer help` for a list of timer commands")
         await prepEmbedMsg.edit(embed=prepEmbed)
 
+        guildsList = []
         signedPlayers = []
 
         timerStarted = False
