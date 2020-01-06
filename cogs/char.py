@@ -20,27 +20,27 @@ class Character(commands.Cog):
             if error.param.name == 'char':
                 msg = "You're missing your character name in the command. "
             elif error.param.name == "name":
-                msg = "You're missing the name for the character you want to create / respec."
+                msg = "You're missing the name for the character you want to create / respec. "
             elif error.param.name == "newname":
-                msg = "You're missing a new name for your character you want to respec."
+                msg = "You're missing a new name for your character you want to respec. "
             elif error.param.name == "level":
-                msg = "You're missing a level for your character you're looking to create"
+                msg = "You're missing a level for your character you're looking to create. "
             elif error.param.name == "race":
-                msg = "You're missing a race for your character you're looking to create"
+                msg = "You're missing a race for your character you're looking to create. "
             elif error.param.name == "cclass":
-                msg = "You're missing a class for your character you're looking to create"
+                msg = "You're missing a class for your character you're looking to create. "
             elif error.param.name == 'bg':
-                msg = "You're missing a background for your character you're looking to create"
+                msg = "You're missing a background for your character you're looking to create. "
             elif error.param.name == 'sStr' or  error.param.name == 'sDex' or error.param.name == 'sCon' or error.param.name == 'sInt' or error.param.name == 'sWis' or error.param.name == 'sCha':
-                msg = "You're missing a stat (STR, DEX, CON, INT, WIS, or CHA) for your character you're looking to create"
+                msg = "You're missing a stat (STR, DEX, CON, INT, WIS, or CHA) for your character you're looking to create. "
             elif error.param.name == 'url':
-                msg = "You're missing a url to add an image to your character's information window for this command"
+                msg = "You're missing a url to add an image to your character's information window for this command. "
             elif error.param.name == 'm':
-                msg = "You're missing a magic item to attune or unattune from your character"
+                msg = "You're missing a magic item to attune or unattune from your character. "
 
         if msg:
             if ctx.command.name == "create":
-                msg += f'Please follow this format:\n`{commandPrefix}create "name" level race cclass bg str dex con int wis cha "mitem 1, mitem2 ..." "consumable 1, consumable 2,..."`.\n'
+                msg += f'Please follow this format:\n`{commandPrefix}create "name" level race class backgound str dex con int wis cha "mitem 1, mitem2 ..." "consumable 1, consumable 2,..."`.\n'
             elif ctx.command.name == "respec":
                 msg += f'Please follow this format:\n`{commandPrefix}respec "name" "newname" race cclass bg str dex con int wis cha "mitem 1, mitem2 ..." "consumable 1, consumable 2,..."`.\n'
             elif ctx.command.name == "retire":
@@ -653,7 +653,7 @@ class Character(commands.Cog):
         else:
             await charEmbedmsg.clear_reactions()
             if tReaction.emoji == '❌':
-                await charEmbedmsg.edit(embed=None, content=f"Character creatcion canceled. Use `{commandPrefix}create` command and try again!")
+                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Use `{commandPrefix}create` command and try again!")
                 await charEmbedmsg.clear_reactions()
                 self.bot.get_command('create').reset_cooldown(ctx)
                 return
@@ -1229,7 +1229,7 @@ class Character(commands.Cog):
                 charEmbed.colour = (roleColors['Junior Friend'])
             elif charLevel < 11:
                 role = 2
-                charEmbed.colour = (roleColors['Journey Friend'])
+                charEmbed.colour = (roleColors['Journeyfriend'])
             elif charLevel < 17:
                 role = 3
                 charEmbed.colour = (roleColors['Elite Friend'])
@@ -1357,7 +1357,7 @@ class Character(commands.Cog):
                 charEmbed.colour = (roleColors['Junior Friend'])
             elif charLevel < 11:
                 role = 2
-                charEmbed.colour = (roleColors['Journey Friend'])
+                charEmbed.colour = (roleColors['Journeyfriend'])
             elif charLevel < 17:
                 role = 3
                 charEmbed.colour = (roleColors['Elite Friend'])
@@ -1786,8 +1786,8 @@ class Character(commands.Cog):
 
                 roles = []
                 roleName = ""
-                if 'Journey Friend' not in [r.name for r in author.roles] and newCharLevel > 4:
-                    roleName = 'Journey Friend' 
+                if 'Journeyfriend' not in [r.name for r in author.roles] and newCharLevel > 4:
+                    roleName = 'Journeyfriend' 
                     levelRole = get(guild.roles, name = roleName)
                     await author.add_roles(levelRole, reason=f"{author}'s character {charName} is the first character who has reached level 5!")
                 if 'Elite Friend' not in [r.name for r in author.roles] and newCharLevel > 10:
