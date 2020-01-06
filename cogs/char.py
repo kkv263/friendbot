@@ -78,7 +78,8 @@ class Character(commands.Cog):
             'Good Noodle':[4],
             'Elite Noodle':[4,5],
             'True Noodle':[4,5,6],
-            'Mega Noodle':[4,5,6,8],
+            'Mega Noodle':[4,5,6,7],
+            'Super Noodle':[4,5,6,7,8],
             'Friend Fanatic': [11,10,9],
             'Guild Fanatic':[11,10,9]
         }
@@ -273,6 +274,7 @@ class Character(commands.Cog):
                 tier1Count = 2
                 tier2Count = 2
             elif lvl == 11:
+                # TODO: add noodles
                 if 'Good Noodle' in roles:
                     tier1Count = 1
                 elif 'Elite Noodle' in roles:
@@ -376,7 +378,7 @@ class Character(commands.Cog):
         if not cRecord or cRecord == list():
             msg += '- That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         elif totalLevel != lvl and len(cRecord) > 1:
-            msg += 'Your classes do not add up to the total level. Please recheck your multiclasses\n'
+            msg += '- Your classes do not add up to the total level. Please recheck your multiclasses\n'
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
 
@@ -602,6 +604,35 @@ class Character(commands.Cog):
 
             totalHP += ((charDict['CON'] - 10) // 2 ) * lvl
             charDict['HP'] = totalHP
+
+            # Multiclass Requirements
+            if '/' in cclass:
+                for m in cRecord:
+                    statReq = m['Class']['Multiclass'].split(' ')
+                    if m['Class']['Multiclass'] != 'None':
+                        if '/' not in m['Class']['Multiclass'] and '+' not in m['Class']['Multiclass']:
+                            if int(charDict[statReq[0]]) < int(statReq[1]):
+                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {statReq[0]} {charDict[statReq[0]]}\n"
+                                break
+                        elif '/' in m['Class']['Multiclass']:
+                            statReq[0] = statReq[0].split('/')
+                            reqFufill = False
+                            for s in statReq[0]:
+                                if int(charDict[s]) > int(statReq[1]):
+                                  reqFufill = True
+                                  break
+                            if not reqFufill:
+                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n"
+                        elif '+' in m['Class']['Multiclass']:
+                            statReq[0] = statReq[0].split('+')
+                            reqFufill = True
+                            for s in statReq[0]:
+                                if int(charDict[s]) < int(statReq[1]):
+                                  reqFufill = False
+                                  break
+                            if not reqFufill:
+                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n"
+                    
 
 
         if msg:

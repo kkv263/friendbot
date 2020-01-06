@@ -498,7 +498,7 @@ class Timer(commands.Cog):
                                 minor += 1
                             elif rewardConsumable['Minor/Major'] == 'Major':
                                 major += 1
-
+                            #TODO: Add noodles
                             if dmChar[4][0] == 'Mega Noodle':
                                 if ((major == 4 and minor > 4) or (major == 3 and minor > 5) or (major == 2 and minor > 6) or (major == 1 and minor > 7) or (major == 0 and minor > 8))  and rewardConsumable['Minor/Major'] == 'Minor':
                                     if not resume:
@@ -1062,6 +1062,7 @@ class Timer(commands.Cog):
 
                 noodleString = "Current Noodles: " + str(noodles)
                 dmRoleNames = [r.name for r in dmChar[0].roles]
+                #TODO: Adjust nooodles
                 if noodles >= 100 and 'True Noodle' in dmRoleNames:
                     if 'Mega Noodle' not in dmRoleNames:
                         noodleRole = get(guild.roles, name = 'Mega Noodle')
