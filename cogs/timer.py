@@ -131,26 +131,15 @@ class Timer(commands.Cog):
         signedPlayers = []
 
         timerStarted = False
-        validLevelStart = 1
-        validLevelEnd = 1
-
-        if role == "True":
-            validLevelStart = 17
-            validLevelEnd = 20
-        elif role == "Elite":
-            validLevelStart = 11
-            validLevelEnd = 16
-        elif role == "Journey":
-            validLevelStart = 5
-            validLevelEnd = 10
-        elif role == "Junior":
-            validLevelEnd = 4
 
         while not timerStarted:
             msg = await self.bot.wait_for('message', check=lambda m: (f"{commandPrefix}timer signup" in m.content or m.content == f'{commandPrefix}timer start' or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer add " in m.content or f"{commandPrefix}timer cancel" in m.content) and m.channel == channel)
             if f"{commandPrefix}timer signup" in msg.content:
-                if msg.author in playerRoster:
-                    playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author) 
+                if msg.author in playerRoster and msg.author == author:
+                    playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role='DM') 
+                elif msg.author in playerRoster:
+                    playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role=role) 
+
                 else:
                     await channel.send(f"{msg.author.display_name}, you are not on the roster to play in this game.")
                     
@@ -162,18 +151,15 @@ class Timer(commands.Cog):
                         else:
                             signedPlayers.insert(0,playerChar)
                     else:
-                        if playerChar[1]['Level'] >= validLevelStart and playerChar[1]['Level'] <= validLevelEnd:
-                            prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{playerChar[1]['Name']}", value= f"{playerChar[0].mention}\nLevel {playerChar[1]['Level']}: {playerChar[1]['Race']} {playerChar[1]['Class']}\nConsumables: {', '.join(playerChar[2]).strip()}\n", inline=False)
-                            
-                            foundSignedPlayer = False
-                            for s in range(len(signedPlayers)):
-                                if playerChar[0] == signedPlayers[s][0]:
-                                    signedPlayers[s] = playerChar
-                                    foundSignedPlayer = True
-                            if not foundSignedPlayer:
-                                signedPlayers.append(playerChar)
-                        else:
-                            await channel.send(f"{playerChar[1]['Name']} is not between levels {validLevelStart} - {validLevelEnd} to play in this game. Please choose a different character")
+                        prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{playerChar[1]['Name']}", value= f"{playerChar[0].mention}\nLevel {playerChar[1]['Level']}: {playerChar[1]['Race']} {playerChar[1]['Class']}\nConsumables: {', '.join(playerChar[2]).strip()}\n", inline=False)
+                        
+                        foundSignedPlayer = False
+                        for s in range(len(signedPlayers)):
+                            if playerChar[0] == signedPlayers[s][0]:
+                                signedPlayers[s] = playerChar
+                                foundSignedPlayer = True
+                        if not foundSignedPlayer:
+                            signedPlayers.append(playerChar)
                         
                 print(signedPlayers)
 
@@ -203,7 +189,7 @@ class Timer(commands.Cog):
             elif msg.content == f"{commandPrefix}timer start":
                 print(signedPlayers)
                 if author not in [a[0] for a in signedPlayers]:
-                    await channel.send(f'The DM has not signed up yet! Please `{commandPrefix}signup` your character before starting the timer.') 
+                    await channel.send(f'The DM has not signed up yet! Please `{commandPrefix}timer signup` your character before starting the timer.') 
                 elif author in [a[0] for a in signedPlayers] and len(signedPlayers) == 1:
                     await channel.send(f'There are no players signed up! Players, please `{commandPrefix}signup` your character before the DM starts the timer.') 
                 else:
@@ -220,7 +206,7 @@ class Timer(commands.Cog):
         await ctx.invoke(self.timer.get_command('start'), userList = signedPlayers, game=game, role=role, guildsList = guildsList)
 
     @timer.command()
-    async def signup(self,ctx, char="", author=""):
+    async def signup(self,ctx, char="", author="", role=""):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
             channel = ctx.channel
             guild = ctx.guild
@@ -238,7 +224,7 @@ class Timer(commands.Cog):
                 if 'timer add ' in char.content:
                     charList = shlex.split(char.content.split(f'{commandPrefix}timer add ')[1].strip())
                     charName = charList[1]
-                elif 'timer addme' in char.content:
+                elif 'timer addme' in char.content and char.content != f'{commandPrefix}timer addme':
                     charList = shlex.split(char.content.split(f'{commandPrefix}timer addme')[1].strip())
                     charName = charList[0]
                         
@@ -268,12 +254,38 @@ class Timer(commands.Cog):
                     await channel.send(content=f'You cannot signup with `{cRecord[0]["Name"]}`, a dying character, please use `{commandPrefix}char death`.')
                 return False 
 
-            if cpSplit[0] >= cpSplit[1]:
+            validLevelStart = 1
+            validLevelEnd = 1
+            charLevel = cRecord[0]['Level']
+
+            if role == "True":
+                validLevelStart = 17
+                validLevelEnd = 20
+            elif role == "Elite":
+                validLevelStart = 11
+                validLevelEnd = 16
+            elif role == "Journey":
+                validLevelStart = 5
+                validLevelEnd = 10
+            elif role == "Junior":
+                validLevelEnd = 4
+            elif role == "DM":
+                validLevelEnd = 20
+
+            print(role)
+            print(charLevel)
+
+            if charLevel < validLevelStart or charLevel > validLevelEnd:
+                if ctx.invoked_with != "resume":
+                    await channel.send(f"{cRecord[0]['Name']} is not between levels {validLevelStart} - {validLevelEnd} to play in this game. Please choose a different character")
+                return False 
+
+
+            if float(cpSplit[0]) > float(cpSplit[1]):
                 if ctx.invoked_with != "resume":
                     await channel.send(content=f'You need to `{commandPrefix}levelup` your character before you can join the game!')
                 return False 
 
-            charLevel = cRecord[0]['Level']
 
             if consumablesList:
                 charConsumables = cRecord[0]['Consumables'].split(', ')
@@ -566,7 +578,7 @@ class Timer(commands.Cog):
             return start
 
     @timer.command()
-    async def addme(self,ctx, *, msg=None, start="" ,prep=None, user="", dmChar=None, resume=False, ):
+    async def addme(self,ctx, *, role="", msg=None, start="" ,prep=None, user="", dmChar=None, resume=False, ):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             userFound = False;
@@ -592,7 +604,7 @@ class Timer(commands.Cog):
                         timeKey = u
                         
             if not userFound:
-                userInfo =  await ctx.invoke(self.timer.get_command('signup'), char=msg, author=addUser) 
+                userInfo =  await ctx.invoke(self.timer.get_command('signup'), role=role, char=msg, author=addUser) 
                 if userInfo:
                     if not resume and dmChar :
                         addEmbed = discord.Embed()
@@ -637,7 +649,7 @@ class Timer(commands.Cog):
             return start
 
     @timer.command()
-    async def add(self,ctx, *, msg, start="",prep=None, resume=False):
+    async def add(self,ctx, *, msg, role="", start="",prep=None, resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             guild = ctx.guild
             addList = msg.raw_mentions
@@ -647,7 +659,7 @@ class Timer(commands.Cog):
                 if prep:
                     return addUser
                 else:
-                    await ctx.invoke(self.timer.get_command('addme'), start=start, msg=msg, user=addUser, resume=resume) 
+                    await ctx.invoke(self.timer.get_command('addme'), role=role, start=start, msg=msg, user=addUser, resume=resume) 
             return start
 
     @timer.command()
@@ -1295,9 +1307,9 @@ class Timer(commands.Cog):
 
                     async for message in ctx.channel.history(after=timerMessage):
                         if "$timer add " in message.content and not message.author.bot:
-                            resumeTimes = await ctx.invoke(self.timer.get_command('add'), start=resumeTimes, msg=message, resume=True)
-                        elif  "$timer addme" in message.content and not message.author.bot:
-                            resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, dmChar=dmChar, msg=message, user=message.author, resume=True) 
+                            resumeTimes = await ctx.invoke(self.timer.get_command('add'), start=resumeTimes, role=startRole, msg=message, resume=True)
+                        elif  "$timer addme" in message.content and not message.author.bot and message.content != f'{commandPrefix}timer addme':
+                            resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, role=startRole, dmChar=dmChar, msg=message, user=message.author, resume=True) 
                         elif ("$timer removeme" in message.content or "$timer remove " in message.content) and not message.author.bot: 
                             if "$timer removeme" in message.content:
                                 resumeTimes = await ctx.invoke(self.timer.get_command('removeme'), msg=message, start=resumeTimes, role=startRole, user=message.author, resume=True)
@@ -1365,10 +1377,10 @@ class Timer(commands.Cog):
                     await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart, dmChar=dmChar, guildsList=guildsList)
                     return
                 elif f"{commandPrefix}timer add " in msg.content and '@player' not in msg.content:
-                    startTimes = await ctx.invoke(self.timer.get_command('add'), start=startTimes, msg=msg)
+                    startTimes = await ctx.invoke(self.timer.get_command('add'), start=startTimes, role=role, msg=msg)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif f"{commandPrefix}timer addme" in msg.content and '@player' not in msg.content:
-                    startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, msg=msg, user=msg.author, dmChar=dmChar)
+                elif f"{commandPrefix}timer addme" in msg.content and '@player' not in msg.content and msg.content != f'{commandPrefix}timer addme':
+                    startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, role=role, msg=msg, user=msg.author, dmChar=dmChar)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif msg.content == f"{commandPrefix}timer removeme":
                     startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=msg.author)
