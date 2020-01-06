@@ -114,6 +114,7 @@ async def help(ctx, *, pageString=''):
     
     helpEmbedTimerOne.title = 'Available Timer Commands: Before starting a timer; pt1.\n(Only available in **Game Rooms** and **Campaigns**)'
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep #guild1 #guild2(*optional) "@player1, @player2, @player3,..." gamename(*optional) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards.", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer cancel', value="Cancels the current timer prep.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer signup "charactername" "consumable list"', value="Signs up your character to participate and be eligible for rewards", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer add @player', value="Adds a player to the roster so they can signup their character", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer remove @player', value="Removes a player from the roster", inline=False)

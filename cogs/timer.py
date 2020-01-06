@@ -147,7 +147,7 @@ class Timer(commands.Cog):
             validLevelEnd = 4
 
         while not timerStarted:
-            msg = await self.bot.wait_for('message', check=lambda m: (f"{commandPrefix}timer signup" in m.content or m.content == f'{commandPrefix}timer start' or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer add " in m.content) and m.channel == channel)
+            msg = await self.bot.wait_for('message', check=lambda m: (f"{commandPrefix}timer signup" in m.content or m.content == f'{commandPrefix}timer start' or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer add " in m.content or f"{commandPrefix}timer cancel" in m.content) and m.channel == channel)
             if f"{commandPrefix}timer signup" in msg.content:
                 if msg.author in playerRoster:
                     playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author) 
@@ -208,6 +208,11 @@ class Timer(commands.Cog):
                     await channel.send(f'There are no players signed up! Players, please `{commandPrefix}signup` your character before the DM starts the timer.') 
                 else:
                     timerStarted = True
+
+            elif msg.content == f"{commandPrefix}timer cancel":
+                await channel.send(f'Timer canceled! If you would like to prep a new game please use {commandPrefix}timer prep') 
+                self.timer.get_command('prep').reset_cooldown(ctx)
+                return
 
             await prepEmbedMsg.delete()
             prepEmbedMsg = await channel.send(embed=prepEmbed)
@@ -561,7 +566,7 @@ class Timer(commands.Cog):
             return start
 
     @timer.command()
-    async def addme(self,ctx, *, msg, start="" ,prep=None, user="", dmChar=None, resume=False, ):
+    async def addme(self,ctx, *, msg=None, start="" ,prep=None, user="", dmChar=None, resume=False, ):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             userFound = False;
@@ -1144,7 +1149,7 @@ class Timer(commands.Cog):
                     print('Success')
 
                 # Session Log Channel
-                logChannel = self.bot.get_channel(577227687962214406) 
+                logChannel = self.bot.get_channel(663454980140695553) 
                 await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
 
                 sessionMessage = await logChannel.send(embed=stopEmbed)
