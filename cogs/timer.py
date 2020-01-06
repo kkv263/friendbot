@@ -24,9 +24,12 @@ class Timer(commands.Cog):
         pass
 
     @timer.command()
-    async def help(self,ctx):
+    async def help(self,ctx, page="1"):
         helpCommand = self.bot.get_command('help')
-        await ctx.invoke(helpCommand, pageString='timer')
+        if page == "2":
+            await ctx.invoke(helpCommand, pageString='timer 2')
+        else:
+            await ctx.invoke(helpCommand, pageString='timer')
 
     async def cog_command_error(self, ctx, error):
         msg = None
@@ -80,12 +83,6 @@ class Timer(commands.Cog):
             self.timer.get_command('prep').reset_cooldown(ctx)
             return 
 
-        guildsList = []
-        guildsListStr = ""
-        if ctx.message.channel_mentions != list():
-            guildsList = ctx.message.channel_mentions
-            guildsListStr = "Guilds: "
-
         playerRoster = [author] + ctx.message.mentions
 
         prepEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journey Friend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
@@ -117,7 +114,7 @@ class Timer(commands.Cog):
 
         prepEmbed.clear_fields()
         prepEmbed.title = f"{game} (Tier {roleArray.index(role) + 1})"
-        prepEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n**Signup:** {commandPrefix}timer signup charactername \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player"
+        prepEmbed.description = f"**Signup:** {commandPrefix}timer signup charactername \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
         rosterString = ""
         for p in playerRoster:
             if p == author:
@@ -133,7 +130,7 @@ class Timer(commands.Cog):
         timerStarted = False
 
         while not timerStarted:
-            msg = await self.bot.wait_for('message', check=lambda m: (f"{commandPrefix}timer signup" in m.content or m.content == f'{commandPrefix}timer start' or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer add " in m.content or f"{commandPrefix}timer cancel" in m.content) and m.channel == channel)
+            msg = await self.bot.wait_for('message', check=lambda m: (f"{commandPrefix}timer signup" in m.content or m.content == f'{commandPrefix}timer start' or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer add " in m.content or f"{commandPrefix}timer cancel" in m.content or f"{commandPrefix}timer guild" in m.content) and m.channel == channel)
             if f"{commandPrefix}timer signup" in msg.content:
                 if msg.author in playerRoster and msg.author == author:
                     playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role='DM') 
@@ -199,6 +196,17 @@ class Timer(commands.Cog):
                 await channel.send(f'Timer canceled! If you would like to prep a new game please use {commandPrefix}timer prep') 
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
+
+            elif f'{commandPrefix}timer guild' in msg.content and msg.author == author:
+                guildsList = []
+                guildsListStr = ""
+                if msg.channel_mentions != list():
+                    guildsList = msg.channel_mentions
+                    guildsListStr = "Guilds: " 
+                    prepEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n**Signup:** {commandPrefix}timer signup charactername \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
+                else:
+                    await channel.send(f"I couldn't find any mention of a guild. Please follow this format and try again:\n `{commandPrefix}timer guild #guild1 #guild2 ...") 
+
 
             await prepEmbedMsg.delete()
             prepEmbedMsg = await channel.send(embed=prepEmbed)
@@ -421,7 +429,7 @@ class Timer(commands.Cog):
 
             stampEmbed = discord.Embed()
             stampEmbed.title = f'**{game}**: 0 Hours 0 Minutes\n'
-            stampEmbed.set_footer(text=f'#{ctx.channel}\n{commandPrefix}timer help for help with the timer.')
+            stampEmbed.set_footer(text=f'#{ctx.channel}\n{commandPrefix}timer help 2 for help with the timer.')
             stampEmbed.set_author(name=f'DM: {userName}', icon_url=author.avatar_url)
 
             if userList != "norewards":
@@ -1162,7 +1170,8 @@ class Timer(commands.Cog):
                     print('Success')
 
                 # Session Log Channel
-                logChannel = self.bot.get_channel(663454980140695553) 
+                # logChannel = self.bot.get_channel(663454980140695553) 
+                logChannel = self.bot.get_channel(663451042889072660) 
                 await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
 
                 sessionMessage = await logChannel.send(embed=stopEmbed)

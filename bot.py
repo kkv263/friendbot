@@ -70,6 +70,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar = discord.Embed()
     helpEmbedItems = discord.Embed() 
     helpEmbedTimerOne = discord.Embed()
+    helpEmbedTimerTwo = discord.Embed()
     helpEmbedShop = discord.Embed()
     helpEmbedTp = discord.Embed()
     helpEmbedGuild = discord.Embed()
@@ -77,28 +78,31 @@ async def help(ctx, *, pageString=''):
     page = 0
     if 'char' in pageString or 'character' in pageString:
         page = 1
-    elif 'timer' in pageString in pageString:
+    elif 'timer 2' in pageString:
+        page = 3
+    elif 'timer 1' in pageString or 'timer' in pageString:
         page = 2
     elif 'itemtable' in pageString:
-        page = 3
+        page = 4
     elif 'shop' in pageString:
-        page = 4
+        page = 5
     elif 'tp' in pageString:
-        page = 4
-    elif 'guild' in pageString:
         page = 6
+    elif 'guild' in pageString:
+        page = 7
 
 
-    helpList = [helpEmbedMenu, helpEmbedChar, helpEmbedTimerOne, helpEmbedItems, helpEmbedShop, helpEmbedTp, helpEmbedGuild]
+    helpList = [helpEmbedMenu, helpEmbedChar, helpEmbedTimerOne, helpEmbedTimerTwo, helpEmbedItems, helpEmbedShop, helpEmbedTp, helpEmbedGuild]
 
     helpEmbedMenu.title = 'Bot Friend Commands - Table of Contents:'
     helpEmbedMenu.description = 'Please react to the group of commands you would like to see and gain more knowledge about.'
     helpEmbedMenu.add_field(name="1️⃣ Character Commands", value="Manages your character and help with character creation and character leveling process.", inline=False)
-    helpEmbedMenu.add_field(name="2️⃣ Timer (Pre/Post Game) Commands", value="Provide a timer that is essential to games as a DM or a player. ", inline=False)
-    helpEmbedMenu.add_field(name="3️⃣ Item Table Commands", value="Provide lookup for the Magic Item Table (MIT) or the Reward Item Table (RIT)", inline=False)
-    helpEmbedMenu.add_field(name="4️⃣ Shop Commands", value="Purchase or sell items.", inline=False)
-    helpEmbedMenu.add_field(name="5️⃣ TP Commands", value="Purchase magic items.", inline=False)
-    helpEmbedMenu.add_field(name="6️⃣ Guild Commands", value="Manage your guild as a guildmaster, or join / leave a guild", inline=False)
+    helpEmbedMenu.add_field(name="2️⃣ Timer (Pre/Post Game) Commands", value="Prepare and manage a game before and after a timer. ", inline=False)
+    helpEmbedMenu.add_field(name="3️⃣ Timer (During Game) Commands", value="Manage a timer during a game as a DM or a player. ", inline=False)
+    helpEmbedMenu.add_field(name="4️⃣ Item Table Commands", value="Provide lookup for the Magic Item Table (MIT) or the Reward Item Table (RIT)", inline=False)
+    helpEmbedMenu.add_field(name="5️⃣ Shop Commands", value="Purchase or sell items.", inline=False)
+    helpEmbedMenu.add_field(name="6️⃣ TP Commands", value="Purchase magic items.", inline=False)
+    helpEmbedMenu.add_field(name="7️⃣ Guild Commands", value="Manage your guild as a guildmaster, or join / leave a guild", inline=False)
 
     helpEmbedChar.title = 'Available Character Commands'
     helpEmbedChar.add_field(name=commandPrefix + 'create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="TODO: Add description here", inline=False)
@@ -112,26 +116,27 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar.add_field(name=commandPrefix + 'attune "character name" "magic item"', value="TODO: Add description here", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'unattune "character name" "magic item"', value="TODO: Add description here", inline=False)
     
-    helpEmbedTimerOne.title = 'Available Timer Commands: Before starting a timer; pt1.\n(Only available in **Game Rooms** and **Campaigns**)'
-    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep #guild1 #guild2(*optional) "@player1, @player2, @player3,..." gamename(*optional) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards.", inline=False)
+    helpEmbedTimerOne.title = 'Available Timer Commands: Before/After a timer.\n(Only available in **Game Rooms** and **Campaigns**)'
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep "@player1, @player2, @player3,..." gamename(*optional) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer cancel', value="Cancels the current timer prep.", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer guild #guild1, #guild2...', value="**DM Only**: Adds a guild to the game. Guild rewards will apply if appropriate", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer signup "charactername" "consumable list"', value="Signs up your character to participate and be eligible for rewards", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer add @player', value="Adds a player to the roster so they can signup their character", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer remove @player', value="Removes a player from the roster", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer add @player', value="**DM Only**: Adds a player to the roster so they can signup their character", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer remove @player', value="**DM Only**: Removes a player from the roster", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer start', value=f"**Followed by **:`{commandPrefix}timer prep` - Starts a timer to keep track of time and calculate rewards for your game. Only one timer per channel can be active at once, and the timer can only be stopped by the person who started it or a Mod.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + "timer resume", value="Resumes the last running timer that was started, and behaves identical to " + commandPrefix + "timer start.", inline=False)
-
-    helpEmbedTimerOne.add_field(name="=@=@=@=@=@=", value="During a Timer; (Only available in **Game Rooms** and **Campaigns**)", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "timer transfer", value="Transfer the timer from the owner to another user. The new owner will be able to stop the timer.", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "timer add @player \"charactername\" \"consumables\"", value="**DM Only**: If you join a game late, this command will add @player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "timer addme charactername \"consumables\"", value="If you join a game late, this command will add you to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "timer remove @player", value="**DM Only**: Remove the user mentioned from the running timer and display their individual rewards for the time they played.", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "timer removeme", value="If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "timer reward @player \"rewards\"", value="**DM Only**: Rewards @player item(s) from the RIT. Reward limits depend on your Noodle Role.", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "- Consumable", value="Consumes the consumable your character uses and deletes it from their inventory", inline=False)
-    helpEmbedTimerOne.add_field(name=commandPrefix + "timer stop", value="**DM Only**: Stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="This calculates player and DM rewards based on the time and tier you typein. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite', inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + "log edit gameid, summary", value="TODO: ADd description", inline=False)
+
+    helpEmbedTimerTwo.title = "Available Timer Commands: During a timer"
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer transfer", value="Transfer the timer from the owner to another user. The new owner will be able to stop the timer.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer add @player \"charactername\" \"consumables\"", value="**DM Only**: If you join a game late, this command will add @player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer addme charactername \"consumables\"", value="If you join a game late, this command will add you to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer remove @player", value="**DM Only**: Remove the user mentioned from the running timer and display their individual rewards for the time they played.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer removeme", value="If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer reward @player \"rewards\"", value="**DM Only**: Rewards @player item(s) from the RIT. Reward limits depend on your Noodle Role.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "- Consumable", value="Consumes the consumable your character uses and deletes it from their inventory", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer stop", value="**DM Only**: Stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.", inline=False)
 
     helpEmbedItems.title = 'Available Item Table Commands'
     helpEmbedItems.add_field(name=commandPrefix + "mit [optional name search]", value="This shows you items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: " + commandPrefix + "mit Cloak of Displacement" )
