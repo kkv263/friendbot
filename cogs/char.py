@@ -1752,7 +1752,7 @@ class Character(commands.Cog):
                 # Feat 
                 featLevels = []
                 for c in subclasses:
-                    if int(c['Level'])+ 1 in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) in (10)):
+                    if int(c['Level']) in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) in (10)):
                         featLevels.append(int(c['Level']))
 
                 charFeatsGained = ""

@@ -911,7 +911,7 @@ class Timer(commands.Cog):
                     charEndMagicList = 'None'
 
                 if (float(treasureArray[0]) + float(cpSplit[0])) > float(cpSplit[1]):
-                    totalCP = f'{leftCP}/8.0'
+                    totalCP = f'{leftCP}/{cpSplit[1]}'
 
                 if tierTP not in char[1]:
                     tpAdd = 0
