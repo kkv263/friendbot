@@ -1564,9 +1564,8 @@ class Character(commands.Cog):
                 cRecords = callAPI('classes')
                 classRecords = sorted(cRecords, key=lambda k: k['Name']) 
                 print(classRecords)
-                leftCP = float(cpSplit[0]) % float(cpSplit[1])
-                levelUp = float(cpSplit[0]) // float(cpSplit[1])
-                newCharLevel = charLevel + int(levelUp)
+                leftCP = float(cpSplit[0]) - float(cpSplit[1])
+                newCharLevel = charLevel  + 1
                 totalCP = f'{leftCP}/{cpSplit[1]}'
                 subclasses = []
                 if '/' in charClass:
@@ -1601,189 +1600,189 @@ class Character(commands.Cog):
                         return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
 
 
-                for lvl in range(charLevel, newCharLevel):
-                    levelUpEmbed.clear_fields()
-                    newLevel = lvl+1
-                    levelUpEmbed.title = f"{charName} - Level Up! {lvl} -> {newLevel}"
-                    levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
-                    chooseClassString = ""
-                    alphaIndex = 0
-                    classes = []
-                    lvlClass = charClass
+                levelUpEmbed.clear_fields()
+                lvl = charLevel
+                newLevel = charLevel + 1
+                levelUpEmbed.title = f"{charName} - Level Up! {lvl} -> {newLevel}"
+                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
+                chooseClassString = ""
+                alphaIndex = 0
+                classes = []
+                lvlClass = charClass
 
-                    # Multiclass Requirements
-                    for cRecord in classRecords:
-                        if cRecord['Name'] not in charClass:
-                            statReq = cRecord['Multiclass'].split(' ')
-                            if cRecord['Multiclass'] != 'None':
-                                if '/' not in cRecord['Multiclass'] and '+' not in cRecord['Multiclass']:
-                                    if int(infoRecords[statReq[0]]) < int(statReq[1]):
-                                        continue
-                                elif '/' in cRecord['Multiclass']:
-                                    statReq[0] = statReq[0].split('/')
-                                    reqFufill = False
-                                    for s in statReq[0]:
-                                        if int(infoRecords[s]) > int(statReq[1]):
-                                          reqFufill = True
-                                          break
-                                    if not reqFufill:
-                                        continue
-                                elif '+' in cRecord['Multiclass']:
-                                    statReq[0] = statReq[0].split('+')
-                                    reqFufill = True
-                                    for s in statReq[0]:
-                                        if int(infoRecords[s]) < int(statReq[1]):
-                                          reqFufill = False
-                                          break
-                                    if not reqFufill:
-                                        continue
+                # Multiclass Requirements
+                for cRecord in classRecords:
+                    if cRecord['Name'] not in charClass:
+                        statReq = cRecord['Multiclass'].split(' ')
+                        if cRecord['Multiclass'] != 'None':
+                            if '/' not in cRecord['Multiclass'] and '+' not in cRecord['Multiclass']:
+                                if int(infoRecords[statReq[0]]) < int(statReq[1]):
+                                    continue
+                            elif '/' in cRecord['Multiclass']:
+                                statReq[0] = statReq[0].split('/')
+                                reqFufill = False
+                                for s in statReq[0]:
+                                    if int(infoRecords[s]) > int(statReq[1]):
+                                      reqFufill = True
+                                      break
+                                if not reqFufill:
+                                    continue
+                            elif '+' in cRecord['Multiclass']:
+                                statReq[0] = statReq[0].split('+')
+                                reqFufill = True
+                                for s in statReq[0]:
+                                    if int(infoRecords[s]) < int(statReq[1]):
+                                      reqFufill = False
+                                      break
+                                if not reqFufill:
+                                    continue
 
-                            chooseClassString += f"{alphaEmojis[alphaIndex]}: {cRecord['Name']}\n"
-                            alphaIndex += 1
-                            classes.append(cRecord['Name'])
+                        chooseClassString += f"{alphaEmojis[alphaIndex]}: {cRecord['Name']}\n"
+                        alphaIndex += 1
+                        classes.append(cRecord['Name'])
 
-                    # New Multiclass
-                    levelUpEmbed.add_field(name="Would you like to level a new multiclass?", value='✅ : Yes\n\n🚫: No\n\n❌: Cancel')
-                    if not levelUpEmbedmsg:
-                        levelUpEmbedmsg = await channel.send(embed=levelUpEmbed)
-                    else:
-                        await levelUpEmbedmsg.edit(embed=levelUpEmbed)
-                    await levelUpEmbedmsg.add_reaction('✅')
-                    await levelUpEmbedmsg.add_reaction('🚫')
-                    await levelUpEmbedmsg.add_reaction('❌')
-                    try:
-                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=multiclassEmbedCheck, timeout=60)
-                    except asyncio.TimeoutError:
-                        await levelUpEmbedmsg.delete()
-                        await channel.send(f'Level up canceled. Use `{commandPrefix}levelup` command and try again!')
+                # New Multiclass
+                levelUpEmbed.add_field(name="Would you like to level a new multiclass?", value='✅ : Yes\n\n🚫: No\n\n❌: Cancel')
+                if not levelUpEmbedmsg:
+                    levelUpEmbedmsg = await channel.send(embed=levelUpEmbed)
+                else:
+                    await levelUpEmbedmsg.edit(embed=levelUpEmbed)
+                await levelUpEmbedmsg.add_reaction('✅')
+                await levelUpEmbedmsg.add_reaction('🚫')
+                await levelUpEmbedmsg.add_reaction('❌')
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=multiclassEmbedCheck, timeout=60)
+                except asyncio.TimeoutError:
+                    await levelUpEmbedmsg.delete()
+                    await channel.send(f'Level up canceled. Use `{commandPrefix}levelup` command and try again!')
+                    self.bot.get_command('levelup').reset_cooldown(ctx)
+                    return
+                else:
+                    await levelUpEmbedmsg.clear_reactions()
+                    if tReaction.emoji == '❌':
+                        await levelUpEmbedmsg.edit(embed=None, content=f"Level up canceled. Use `{commandPrefix}levelup` command and try again!")
+                        await levelUpEmbedmsg.clear_reactions()
                         self.bot.get_command('levelup').reset_cooldown(ctx)
                         return
-                    else:
-                        await levelUpEmbedmsg.clear_reactions()
-                        if tReaction.emoji == '❌':
-                            await levelUpEmbedmsg.edit(embed=None, content=f"Level up canceled. Use `{commandPrefix}levelup` command and try again!")
-                            await levelUpEmbedmsg.clear_reactions()
+                    elif tReaction.emoji == '✅':
+                        levelUpEmbed.clear_fields()
+                        levelUpEmbed.add_field(name="Pick a new class you would like to multiclass into", value=chooseClassString)
+                        await levelUpEmbedmsg.edit(embed=levelUpEmbed)
+                        await levelUpEmbedmsg.add_reaction('❌')
+                        try:
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
+                        except asyncio.TimeoutError:
+                            await levelUpEmbedmsg.delete()
+                            await channel.send(f'Level up canceled. Use `{commandPrefix}levelup` command and try again!')
                             self.bot.get_command('levelup').reset_cooldown(ctx)
                             return
-                        elif tReaction.emoji == '✅':
+                        else:
+                            await levelUpEmbedmsg.clear_reactions()
+                            if tReaction.emoji == '❌':
+                                await levelUpEmbedmsg.edit(embed=None, content=f"Level up canceled. Use `{commandPrefix}levelup` command and try again!")
+                                await levelUpEmbedmsg.clear_reactions()
+                                self.bot.get_command('levelup').reset_cooldown(ctx)
+                                return
+
+                            if '/' not in charClass:
+                                charClass += ' ' + str(lvl)
+
+                            charClass += f' / {classes[alphaEmojis.index(tReaction.emoji)]} 1'
+                            lvlClass = classes[alphaEmojis.index(tReaction.emoji)]
+                            subclasses.append({'Name': classes[alphaEmojis.index(tReaction.emoji)], 'Subclass': '', 'Level': 1})
+                            levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
                             levelUpEmbed.clear_fields()
-                            levelUpEmbed.add_field(name="Pick a new class you would like to multiclass into", value=chooseClassString)
+                    elif tReaction.emoji == '🚫':
+                        if '/' not in charClass:
+                            lvlClass = charClass
+                            subclasses[0]['Level'] += 1
+                        else:
+                            multiclassLevelString = ""
+                            alphaIndex = 0
+                            for sc in subclasses:
+                                multiclassLevelString += f"{alphaEmojis[alphaIndex]}: {sc['Name']} Level {sc['Level']}\n"
+                                alphaIndex += 1
+                            levelUpEmbed.clear_fields()
+                            levelUpEmbed.add_field(name=f"What class would you like to level?", value=multiclassLevelString, inline=False)
                             await levelUpEmbedmsg.edit(embed=levelUpEmbed)
                             await levelUpEmbedmsg.add_reaction('❌')
                             try:
                                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
                             except asyncio.TimeoutError:
                                 await levelUpEmbedmsg.delete()
-                                await channel.send(f'Level up canceled. Use `{commandPrefix}levelup` command and try again!')
+                                await channel.send('Levelup timed out! Try using the command again')
                                 self.bot.get_command('levelup').reset_cooldown(ctx)
                                 return
                             else:
-                                await levelUpEmbedmsg.clear_reactions()
                                 if tReaction.emoji == '❌':
-                                    await levelUpEmbedmsg.edit(embed=None, content=f"Level up canceled. Use `{commandPrefix}levelup` command and try again!")
+                                    await levelUpEmbedmsg.edit(embed=None, content=f"Level up canceled. Type `{commandPrefix}levelup` to try again!")
                                     await levelUpEmbedmsg.clear_reactions()
                                     self.bot.get_command('levelup').reset_cooldown(ctx)
                                     return
+                            await levelUpEmbedmsg.clear_reactions()
+                            levelUpEmbed.clear_fields()
+                            choiceLevelClass = multiclassLevelString.split('\n')[alphaEmojis.index(tReaction.emoji)]
 
-                                if '/' not in charClass:
-                                    charClass += ' ' + str(lvl)
+                            for s in subclasses:
+                                if s['Name'] in choiceLevelClass:
+                                    lvlClass = s['Name']
+                                    s['Level'] += 1
+                                    break
+                            charClass = charClass.replace(f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level'] - 1}", f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level']}")
+                            levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
 
-                                charClass += f' / {classes[alphaEmojis.index(tReaction.emoji)]} 1'
-                                lvlClass = classes[alphaEmojis.index(tReaction.emoji)]
-                                subclasses.append({'Name': classes[alphaEmojis.index(tReaction.emoji)], 'Subclass': '', 'Level': 1})
-                                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
-                                levelUpEmbed.clear_fields()
-                        elif tReaction.emoji == '🚫':
-                            if '/' not in charClass:
-                                lvlClass = charClass
-                                subclasses[0]['Level'] += 1
-                            else:
-                                multiclassLevelString = ""
-                                alphaIndex = 0
-                                for sc in subclasses:
-                                    multiclassLevelString += f"{alphaEmojis[alphaIndex]}: {sc['Name']} Level {sc['Level']}\n"
-                                    alphaIndex += 1
-                                levelUpEmbed.clear_fields()
-                                levelUpEmbed.add_field(name=f"What class would you like to level?", value=multiclassLevelString, inline=False)
-                                await levelUpEmbedmsg.edit(embed=levelUpEmbed)
-                                await levelUpEmbedmsg.add_reaction('❌')
-                                try:
-                                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
-                                except asyncio.TimeoutError:
-                                    await levelUpEmbedmsg.delete()
-                                    await channel.send('Levelup timed out! Try using the command again')
-                                    self.bot.get_command('levelup').reset_cooldown(ctx)
-                                    return
-                                else:
-                                    if tReaction.emoji == '❌':
-                                        await levelUpEmbedmsg.edit(embed=None, content=f"Level up canceled. Type `{commandPrefix}levelup` to try again!")
-                                        await levelUpEmbedmsg.clear_reactions()
-                                        self.bot.get_command('levelup').reset_cooldown(ctx)
-                                        return
-                                await levelUpEmbedmsg.clear_reactions()
-                                levelUpEmbed.clear_fields()
-                                choiceLevelClass = multiclassLevelString.split('\n')[alphaEmojis.index(tReaction.emoji)]
-
-                                for s in subclasses:
-                                    if s['Name'] in choiceLevelClass:
-                                        lvlClass = s['Name']
-                                        s['Level'] += 1
-                                        break
-                                charClass = charClass.replace(f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level'] - 1}", f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level']}")
-                                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
-
-                    # Choosing a subclass
-                    for s in classRecords:
-                        canSubclass = False
-                        for x in range(len(subclasses)):
-                            if s['Name'] in subclasses[x]['Name'] and int(s['Subclass Level']) == subclasses[x]['Level']:
-                                canSubclass = True
-                                classIndex = x
-                                break
-                            
-                        if canSubclass:
-                            subclassesList = s['Subclasses'].split(', ')
-                            subclassChoice, levelUpEmbedmsg = await characterCog.chooseSubclass(ctx, subclassesList, s['Name'], levelUpEmbed, levelUpEmbedmsg) 
-                            if not subclassChoice:
-                                return
-                            levelUpEmbed.description = levelUpEmbed.description.replace(s['Name'], f"{s['Name']} ({subclassChoice})") 
-                            charClass = charClass.replace(s['Name'], f"{s['Name']} ({subclassChoice})" )
-                            subclasses[classIndex]['Subclass'] = subclassChoice
-
-                    # Feat 
-                    featLevels = []
-                    for c in subclasses:
-                        if int(c['Level'])+ 1 in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) in (10)):
-                            featLevels.append(int(c['Level']))
-
-                    charFeatsGained = ""
-                    charFeatsGainedStr = ""
-                    if featLevels != list():
-                        featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, infoRecords['Race'], charClass, subclasses, featLevels, levelUpEmbed, levelUpEmbedmsg, charStats, charFeats)
-                        if not featsChosen and not statsFeats and not charEmbedmsg:
+                # Choosing a subclass
+                for s in classRecords:
+                    canSubclass = False
+                    for x in range(len(subclasses)):
+                        if s['Name'] in subclasses[x]['Name'] and int(s['Subclass Level']) == subclasses[x]['Level']:
+                            canSubclass = True
+                            classIndex = x
+                            break
+                        
+                    if canSubclass:
+                        subclassesList = s['Subclasses'].split(', ')
+                        subclassChoice, levelUpEmbedmsg = await characterCog.chooseSubclass(ctx, subclassesList, s['Name'], levelUpEmbed, levelUpEmbedmsg) 
+                        if not subclassChoice:
                             return
+                        levelUpEmbed.description = levelUpEmbed.description.replace(s['Name'], f"{s['Name']} ({subclassChoice})") 
+                        charClass = charClass.replace(s['Name'], f"{s['Name']} ({subclassChoice})" )
+                        subclasses[classIndex]['Subclass'] = subclassChoice
 
-                        charStats = statsFeats 
-                        if featsChosen != list():
-                            charFeatsGained = featsChosen
+                # Feat 
+                featLevels = []
+                for c in subclasses:
+                    if int(c['Level'])+ 1 in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) in (10)):
+                        featLevels.append(int(c['Level']))
 
-                    # TODO: Tough Feat, Hill Dwarf, Draconic Sorcerer.
-                    print(charHP)
-                    for s in classRecords:
-                        if s['Name'] in lvlClass:
-                            charHP += s['Hit Die Average']
-                            # CON
-                            print('hpMod')
-                            hpMod = (charStats['CON'] - 10) // 2 
-                            print(hpMod)
-                            hpModDiff = ((charStats['CON'] - 10) // 2 ) - ((int(infoRecords['CON']) - 10) // 2)
-                            print(hpModDiff)
-                            if hpModDiff != 0:
-                                charHP += hpModDiff * newLevel 
-                            else:
-                                charHP += hpMod
+                charFeatsGained = ""
+                charFeatsGainedStr = ""
+                if featLevels != list():
+                    featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, infoRecords['Race'], charClass, subclasses, featLevels, levelUpEmbed, levelUpEmbedmsg, charStats, charFeats)
+                    if not featsChosen and not statsFeats and not charEmbedmsg:
+                        return
 
-                    print(charHP)
+                    charStats = statsFeats 
+                    if featsChosen != list():
+                        charFeatsGained = featsChosen
+
+                # TODO: Tough Feat, Hill Dwarf, Draconic Sorcerer.
+                print(charHP)
+                for s in classRecords:
+                    if s['Name'] in lvlClass:
+                        charHP += s['Hit Die Average']
+                        # CON
+                        print('hpMod')
+                        hpMod = (charStats['CON'] - 10) // 2 
+                        print(hpMod)
+                        hpModDiff = ((charStats['CON'] - 10) // 2 ) - ((int(infoRecords['CON']) - 10) // 2)
+                        print(hpModDiff)
+                        if hpModDiff != 0:
+                            charHP += hpModDiff * newLevel 
+                        else:
+                            charHP += hpMod
+
+                print(charHP)
 
 
                 if charFeatsGained != "":
