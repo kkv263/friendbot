@@ -78,9 +78,9 @@ async def help(ctx, *, pageString=''):
     page = 0
     if 'char' in pageString or 'character' in pageString:
         page = 1
-    elif 'timer 2' in pageString:
+    elif 'timer2' in pageString:
         page = 3
-    elif 'timer 1' in pageString or 'timer' in pageString:
+    elif 'timer1' in pageString or 'timer' in pageString:
         page = 2
     elif 'itemtable' in pageString:
         page = 4
@@ -96,25 +96,25 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedMenu.title = 'Bot Friend Commands - Table of Contents:'
     helpEmbedMenu.description = 'Please react to the group of commands you would like to see and gain more knowledge about.'
-    helpEmbedMenu.add_field(name="1️⃣ Character Commands", value="Manages your character and help with character creation and character leveling process.", inline=False)
-    helpEmbedMenu.add_field(name="2️⃣ Timer (Pre/Post Game) Commands", value="Prepare and manage a game before and after a timer. ", inline=False)
-    helpEmbedMenu.add_field(name="3️⃣ Timer (During Game) Commands", value="Manage a timer during a game as a DM or a player. ", inline=False)
-    helpEmbedMenu.add_field(name="4️⃣ Item Table Commands", value="Provide lookup for the Magic Item Table (MIT) or the Reward Item Table (RIT)", inline=False)
-    helpEmbedMenu.add_field(name="5️⃣ Shop Commands", value="Purchase or sell items.", inline=False)
-    helpEmbedMenu.add_field(name="6️⃣ TP Commands", value="Purchase magic items.", inline=False)
-    helpEmbedMenu.add_field(name="7️⃣ Guild Commands", value="Manage your guild as a guildmaster, or join / leave a guild", inline=False)
+    helpEmbedMenu.add_field(name=f"1️⃣ Character Commands  ({commandPrefix}help char)", value="Manages your character and help with character creation and character leveling process.", inline=False)
+    helpEmbedMenu.add_field(name=f"2️⃣ Timer (Pre/Post Game) Commands  ({commandPrefix}help timer1)", value="Prepare and manage a game before and after a timer.", inline=False)
+    helpEmbedMenu.add_field(name=f"3️⃣ Timer (During Game) Commands ({commandPrefix}help timer2)", value="Manage a timer during a game as a DM or a player.", inline=False)
+    helpEmbedMenu.add_field(name=f"4️⃣ Item Table Commands ({commandPrefix}help itemtable)", value="Provide lookup for the Magic Item Table (MIT) or the Reward Item Table (RIT)", inline=False)
+    helpEmbedMenu.add_field(name=f"5️⃣ Shop Commands ({commandPrefix}help shop)", value="Purchase or sell items.", inline=False)
+    helpEmbedMenu.add_field(name=f"6️⃣ TP Commands ({commandPrefix}help tp)", value="Purchase magic items.", inline=False)
+    helpEmbedMenu.add_field(name=f"7️⃣ Guild Commands ({commandPrefix}help guild)", value="Manage your guild as a guildmaster, or join / leave a guild", inline=False)
 
     helpEmbedChar.title = 'Available Character Commands'
-    helpEmbedChar.add_field(name=commandPrefix + 'create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="TODO: Add description here", inline=False)
-    helpEmbedChar.add_field(name='MULTICLASS Creation -' + commandPrefix + 'create "character name" level "race" "class1 # / class2 #..." level " "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Creates your character.", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Creates your character with the following information.", inline=False)
+    helpEmbedChar.add_field(name='MULTICLASS Creation -' + commandPrefix + 'create "character name" level "race" "class1 # / class2 #..." level " "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Creates your character just like `$create`. However please use this format if you would like to multiclass.", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'respec "character name" "new character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="TODO: Add description here", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'user', value="Shows your TOTAL games played with all characters, your noodles, and all your characters. You must play in at least one game before this command works for you.", inline=False)
-    helpEmbedChar.add_field(name=commandPrefix + 'info "character name"', value="TODO: Add description here", inline=False)
-    helpEmbedChar.add_field(name=commandPrefix + 'image "character name" url', value="TODO: Add description here", inline=False)
-    helpEmbedChar.add_field(name=commandPrefix + 'inventory "character name"', value="TODO: Add description here", inline=False)
-    helpEmbedChar.add_field(name=commandPrefix + 'retire "character name"', value="TODO: Add description here", inline=False)
-    helpEmbedChar.add_field(name=commandPrefix + 'attune "character name" "magic item"', value="TODO: Add description here", inline=False)
-    helpEmbedChar.add_field(name=commandPrefix + 'unattune "character name" "magic item"', value="TODO: Add description here", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}info "character name" [{commandPrefix}i, {commandPrefix}char]', value="Looks up your character and shows their stats and character information", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}image "character name" url [{commandPrefix}img]', value="Adds an image to the `$info` command using a url. Please keep images SFW", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}inventory "character name" [{commandPrefix}inv, {commandPrefix}bag]', value="Show's your character's inventory. Inventories can consist of magic items, mundane items, and consuambles.", inline=False)
+    helpEmbedChar.add_field(name=commandPrefix + 'retire "character name"', value="Retires your character. Your character will no longer be accessible", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}attune "character name" "magic item" [{commandPrefix}att]', value="Attunes a magic item to your character. Stats bonuses from magic items are applied when attuned", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}unattune "character name" "magic item" [{commandPrefix}uatt]', value="Unattunes a magic item from your character. Stat bonuses are removed from magic items with stat bonuses.", inline=False)
     
     helpEmbedTimerOne.title = f"Available Timer Commands: Before/After a timer.\n(Only available in **Game Rooms** and **Campaigns**) - {commandPrefix}timer (aliases={commandPrefix}t)"
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep "@player1, @player2, @player3,..." gamename(*optional) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards.", inline=False)
@@ -144,22 +144,23 @@ async def help(ctx, *, pageString=''):
     helpEmbedItems.add_field(name=commandPrefix + "rit random", value="This randomly awards you a Reward Item based on which tier and sub-tier you react to." )
 
     helpEmbedShop.title = 'Available Shop Commands'
-    helpEmbedShop.add_field(name=commandPrefix + 'shop buy "character name" "item" #', value="TODO: Add description here", inline=False)
-    helpEmbedShop.add_field(name=commandPrefix + 'shop sell "character name" "item" #', value="TODO: Add description here", inline=False)
-    helpEmbedShop.add_field(name=commandPrefix + 'shop copy "character name" "spell" #', value="TODO: Add description here", inline=False)
-    helpEmbedShop.add_field(name=commandPrefix + 'shop proficiency "character name"', value="TODO: Add description here", inline=False)
+    helpEmbedShop.add_field(name=commandPrefix + 'shop buy "character name" "item" #', value="Purchase a number of a single mundane item from the shop", inline=False)
+    helpEmbedShop.add_field(name=commandPrefix + 'shop sell "character name" "item" #', value="Sell a number of a single mundane item to the shop", inline=False)
+    helpEmbedShop.add_field(name=commandPrefix + 'shop copy "character name" "spell" #', value="Limited to classes that have access to a spellbook. This copies a spell scroll into your character's spellbook. Some subclasses offer discounts and are applied.", inline=False)
+    helpEmbedShop.add_field(name=commandPrefix + 'shop proficiency "character name"', value="For noodle roles to purchase proficiencies for your character.", inline=False)
 
     helpEmbedTp.title = 'Available TP Commands'
-    helpEmbedTp.add_field(name=commandPrefix + 'tp buy "character name" "MIT Item" #', value="TODO: Add description here", inline=False)
-    helpEmbedTp.add_field(name=commandPrefix + 'tp discard "character name"', value="TODO: Add description here", inline=False)
-    helpEmbedTp.add_field(name=commandPrefix + 'tp abandon "character name" tier', value="TODO: Add description here", inline=False)
+    helpEmbedTp.add_field(name=commandPrefix + 'tp buy "character name" "MIT Item" #', value="Purchase a magic item with gold or spend TP into a magic item.", inline=False)
+    helpEmbedTp.add_field(name=commandPrefix + 'tp discard "character name"', value="Deletes an incomplete magic item in progress and all TP spent on it.", inline=False)
+    helpEmbedTp.add_field(name=commandPrefix + 'tp abandon "character name" tier', value="Abandon excess TP in the tier of your choosing.", inline=False)
 
     helpEmbedGuild.title = 'Available Guild Commands'
-    helpEmbedGuild.add_field(name=commandPrefix + 'guild create "guild name" @role #channel', value="TODO: Add description here", inline=False)
-    helpEmbedGuild.add_field(name=commandPrefix + 'guild fund "character name" gp "guild name"', value="TODO: Add description here", inline=False)
-    helpEmbedGuild.add_field(name=commandPrefix + 'guild info "guild name"', value="TODO: Add description here", inline=False)
-    helpEmbedGuild.add_field(name=commandPrefix + 'guild leave "character name"', value="TODO: Add description here", inline=False)
-    helpEmbedGuild.add_field(name=commandPrefix + 'guild rep "character name" #', value="TODO: Add description here", inline=False)
+    helpEmbedGuild.add_field(name=commandPrefix + 'guild create "guild name" @role #channel', value="After a role and channel are designated, a guild will be created. It will require funding before it is officially open.", inline=False)
+    helpEmbedGuild.add_field(name=commandPrefix + 'guild fund "character name" gp "guild name"', value="Fund the establishment of the guild. Upon funding the minimum required amount, your character will be added the the guild's roster.", inline=False)
+    helpEmbedGuild.add_field(name=commandPrefix + 'guild info "guild name"', value="Provides a guild roster and the amount of reputation inside a guild bank. If your guild has yet to be funded, it will show the amount GP before the guild will open.", inline=False)
+    helpEmbedGuild.add_field(name=commandPrefix + 'guild leave "character name"', value="Your character leaves the guild leaving all reputation behind.", inline=False)
+    helpEmbedGuild.add_field(name=commandPrefix + 'guild rep "character name" #', value="Purchase a number of sparkles through the guild. Any excess above the max will be donated to the guild instead.", inline=False)
+
 
     numPages = len(helpList)
 

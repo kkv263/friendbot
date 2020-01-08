@@ -28,7 +28,7 @@ class Timer(commands.Cog):
     async def help(self,ctx, page="1"):
         helpCommand = self.bot.get_command('help')
         if page == "2":
-            await ctx.invoke(helpCommand, pageString='timer 2')
+            await ctx.invoke(helpCommand, pageString='timer2')
         else:
             await ctx.invoke(helpCommand, pageString='timer')
 
@@ -86,7 +86,7 @@ class Timer(commands.Cog):
 
         playerRoster = [author] + ctx.message.mentions
 
-        prepEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journey Friend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
+        prepEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journeyfriend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
         prepEmbed.set_author(name=userName, icon_url=author.avatar_url)
         prepEmbed.set_footer(text= "React with ❌ to cancel")
 

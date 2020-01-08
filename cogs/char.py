@@ -1255,7 +1255,7 @@ class Character(commands.Cog):
 
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @commands.command(aliases=['bag','inv', 'i'])
+    @commands.command(aliases=['bag','inv'])
     async def inventory(self,ctx, char):
         channel = ctx.channel
         author = ctx.author
@@ -1378,7 +1378,7 @@ class Character(commands.Cog):
             
            
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @commands.command(aliases=['inf', 'char'])
+    @commands.command(aliases=['i', 'char'])
     async def info(self,ctx, char):
         channel = ctx.channel
         author = ctx.author
@@ -1826,20 +1826,32 @@ class Character(commands.Cog):
                 else:
                     print("Success")
 
-                roles = []
+                roles = [r.name for r in author.roles]
                 roleName = ""
-                if 'Journeyfriend' not in [r.name for r in author.roles] and newCharLevel > 4:
+                if 'Journeyfriend' not in roles and 'Junior Friend' in roles and newCharLevel > 4 and 'Junior Friend in ':
                     roleName = 'Journeyfriend' 
+                    tierRole = 'Tier 2'
+                    roleRemove = 'Junior Friend'
                     levelRole = get(guild.roles, name = roleName)
                     await author.add_roles(levelRole, reason=f"{author}'s character {charName} is the first character who has reached level 5!")
-                if 'Elite Friend' not in [r.name for r in author.roles] and newCharLevel > 10:
+                    await author.add_roles(tierRole, reason=f"{author}'s character {charName} is the first character who has reached level 5!")
+                    await author.remove_roles(roleRemove)
+                if 'Elite Friend' not in roles and 'Journeyfriend' in roles and newCharLevel > 10:
                     roleName = 'Elite Friend'
+                    tierRole = 'Tier 3'
+                    roleRemove = 'Journeyfriend'
                     levelRole = get(guild.roles, name = roleName)
                     await author.add_roles(levelRole, reason=f"{author}'s character {charName} is the first character who has reached level 11!")
-                if 'True Friend' not in [r.name for r in author.roles] and newCharLevel > 16:
+                    await author.add_roles(tierRole, reason=f"{author}'s character {charName} is the first character who has reached level 11!")
+                    await author.remove_roles(roleRemove)
+                if 'True Friend' not in roles and 'Elite Friend' in roles and newCharLevel > 16:
                     roleName = 'True Friend'
+                    tierRole = 'Tier 4'
+                    roleRemove = 'Elite Friend'
                     levelRole = get(guild.roles, name = roleName)
                     await author.add_roles(levelRole, reason=f"{author}'s character {charName} is the first character who has reached level 17!")
+                    await author.add_roles(tierRole, reason=f"{author}'s character {charName} is the first character who has reached level 17!")
+                    await author.remove_roles(roleRemove)
 
                 if roleName != "":
                     levelUpEmbed.title = f":tada: {roleName} role acquired! :tada:\n" + levelUpEmbed.title
