@@ -116,7 +116,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar.add_field(name=commandPrefix + 'attune "character name" "magic item"', value="TODO: Add description here", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'unattune "character name" "magic item"', value="TODO: Add description here", inline=False)
     
-    helpEmbedTimerOne.title = 'Available Timer Commands: Before/After a timer.\n(Only available in **Game Rooms** and **Campaigns**) - {commandPrefix}timer (aliases='{commandPrefix}t)'
+    helpEmbedTimerOne.title = f"Available Timer Commands: Before/After a timer.\n(Only available in **Game Rooms** and **Campaigns**) - {commandPrefix}timer (aliases={commandPrefix}t)"
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep "@player1, @player2, @player3,..." gamename(*optional) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer cancel', value="Cancels the current timer prep.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer guild #guild1, #guild2...', value="**DM Only**: Adds a guild to the game. Guild rewards will apply if appropriate", inline=False)
@@ -128,7 +128,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedTimerOne.add_field(name=commandPrefix + "reward [XhYm] [tier] ", value="This calculates player and DM rewards based on the time and tier you typein. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: " + commandPrefix + 'reward 3h30m Elite', inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + "log edit gameid, summary", value="TODO: ADd description", inline=False)
 
-    helpEmbedTimerTwo.title = f"Available Timer Commands: During a timer - {commandPrefix}timer (aliases='{commandPrefix}t)"
+    helpEmbedTimerTwo.title = f"Available Timer Commands: During a timer - {commandPrefix}timer (aliases={commandPrefix}t)"
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer transfer", value="Transfer the timer from the owner to another user. The new owner will be able to stop the timer.", inline=False)
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer add @player \"charactername\" \"consumables\"", value="**DM Only**: If you join a game late, this command will add @player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer addme charactername \"consumables\"", value="If you join a game late, this command will add you to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
