@@ -124,7 +124,6 @@ class Tp(commands.Cog):
                         await tpEmbedmsg.clear_reactions()
                         return
                     elif tReaction.emoji == '2️⃣':
-                        # TODO: Buy With gold
                         newGP = charRecords['GP'] - gpNeeded
                         if mRecord['Name'] in charRecords['Current Item']:
                             currentMagicItem = re.search('\(([^)]+)', charRecords['Current Item']).group(1)

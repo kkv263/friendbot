@@ -387,7 +387,6 @@ class Mod(commands.Cog):
                 else:
                     await channel.send(f"The field {editKey} has been edited to from `{guildRecords[editKey]}` to `{editValue}` for {guildRecords['Name']}")
 
-      #TODO: user
         elif dbName == "user":
             mentions = ctx.message.mentions
             if not mentions:

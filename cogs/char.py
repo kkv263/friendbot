@@ -119,7 +119,6 @@ class Character(commands.Cog):
         lvl = int(level)
         msg = ""
         # name should be less then 50 chars
-        # TODO: no duplicates of your name
         if len(name) > 64:
             msg += "- Your character's name is too long! The limit is 64 characters.\n"
 
@@ -279,20 +278,23 @@ class Character(commands.Cog):
                 tier1Count = 2
                 tier2Count = 2
             elif lvl == 11:
-                # TODO: add noodles
                 if 'Good Noodle' in roles:
                     tier1Count = 1
                 elif 'Elite Noodle' in roles:
-                    tier2Count = 1
+                    tier1Count = 1
                     tier1CountMNC = 1
+                # TODO relook here
                 elif 'True Noodle' in roles:
+                    tier1CountMNC = 1
+                    tier2Count = 1
+                elif 'Ramen Noodle' in roles:
                     tier1CountMNC = 1
                     tier1Count = 1
                     tier2Count = 1
-                elif 'Mega Noodle' in roles:
+                elif 'Spicy Noodle' in roles:
                     tier1CountMNC = 1
                     tier1Count = 2
-                    tier2Count = 2
+                    tier2Count = 1
 
             if 'Nitro Booster' in roles:
                 tier1CountMNC += 1
@@ -643,7 +645,7 @@ class Character(commands.Cog):
         if msg:
             if charEmbedmsg:
                 await charEmbedmsg.delete()
-            await ctx.channel.send(f'There was an error in creating your character:\n```{msg}```')
+            await ctx.channel.send(f'{author.display_name}, There were error(s) in creating your character:\n```{msg}```')
             self.bot.get_command('create').reset_cooldown(ctx)
             return 
 
@@ -754,7 +756,6 @@ class Character(commands.Cog):
 
         charDict['Name'] = newname
 
-        #TODO: Charges
         # check magic items and TP
         prevMagicItems = charDict['Magic Items'].split(',')
         magicItems = mItems.split(',')
@@ -1192,11 +1193,10 @@ class Character(commands.Cog):
                         elif tReaction.emoji == '✅':
                             charEmbed.clear_fields()
                             try:
-                                # TODO: uncomment when ready.
-                                # playersCollection = db.players
-                                # deadCollection = db.dead
-                                # deadCollection.insert_one(charDict)
-                                # playersCollection.delete_one({'_id': charID})
+                                playersCollection = db.players
+                                deadCollection = db.dead
+                                deadCollection.insert_one(charDict)
+                                playersCollection.delete_one({'_id': charID})
                                 pass
                             except Exception as e:
                                 print ('MONGO ERROR: ' + str(e))
@@ -1372,7 +1372,6 @@ class Character(commands.Cog):
             return
             
            
-    # TODO: We can also have person react to view their inventory
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command(aliases=['inf', 'char'])
     async def info(self,ctx, char):
@@ -2199,7 +2198,6 @@ class Character(commands.Cog):
                     if featChoices == list():
                         fRecords = callAPI('feats')
 
-                        # TODO: feat check restricitons
                         for feat in fRecords:
                             featList = []
                             meetsRestriction = False

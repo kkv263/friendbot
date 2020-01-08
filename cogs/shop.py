@@ -191,7 +191,6 @@ class Shop(commands.Cog):
                 return
 
 
-    # TODO copy spell names
     @shop.command()
     async def copy(self, ctx , charName, spellName):
         channel = ctx.channel
@@ -259,7 +258,6 @@ class Shop(commands.Cog):
                 await channel.send(f'`{spellName}` doesn\'t exist! Check to see if it is a valid item and check your spelling.')
                 return
 
-    #TODO: Noodle Proficiency
     @commands.command(aliases=['prof'])
     async def proficiency(self, ctx , charName):
         channel = ctx.channel

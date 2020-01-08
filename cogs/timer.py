@@ -7,6 +7,7 @@ import re
 import shlex
 import decimal
 import random
+from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
@@ -130,9 +131,17 @@ class Timer(commands.Cog):
 
         timerStarted = False
 
+        timerAlias = ["timer", "t"]
+        timerCommands = ['signup', 'cancel', 'guild', 'start', 'add', 'remove']
+      
+        timerCombined = []
+
+        for x in product(timerAlias,timerCommands):
+            timerCombined.append(f"{commandPrefix}{x[0]} {x[1]}")
+
         while not timerStarted:
-            msg = await self.bot.wait_for('message', check=lambda m: (f"{commandPrefix}timer signup" in m.content or m.content == f'{commandPrefix}timer start' or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer add " in m.content or f"{commandPrefix}timer cancel" in m.content or f"{commandPrefix}timer guild" in m.content) and m.channel == channel)
-            if f"{commandPrefix}timer signup" in msg.content:
+            msg = await self.bot.wait_for('message', check=lambda m: any(x in m.content for x in timerCombined) and m.channel == channel)
+            if f"{commandPrefix}timer signup" in msg.content or f"{commandPrefix}t signup" in msg.content:
                 if msg.author in playerRoster and msg.author == author:
                     playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role='DM') 
                 elif msg.author in playerRoster:
@@ -162,7 +171,7 @@ class Timer(commands.Cog):
                 print(signedPlayers)
 
 
-            elif f"{commandPrefix}timer add " in msg.content and msg.author == author:
+            elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and msg.author == author:
                 addUser = await ctx.invoke(self.timer.get_command('add'), msg=msg, prep=True)
                 if addUser not in playerRoster:
                     prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up a character to play.', inline=False)
@@ -171,7 +180,7 @@ class Timer(commands.Cog):
                     await channel.send(f'{addUser.display_name} is already on the timer.')
 
 
-            elif f"{commandPrefix}timer remove " in msg.content and msg.author == author:
+            elif (f"{commandPrefix}timer remove " in msg.content or f"{commandPrefix}t remove " in msg.content) and msg.author == author:
                 removeUser = await ctx.invoke(self.timer.get_command('remove'), msg=msg, prep=True)
 
                 if playerRoster.index(removeUser) != 0:
@@ -184,7 +193,7 @@ class Timer(commands.Cog):
                 else:
                     await channel.send('You cannot remove yourself from the timer.')
 
-            elif msg.content == f"{commandPrefix}timer start":
+            elif msg.content == f"{commandPrefix}timer start" or msg.content == f"{commandPrefix}t start":
                 print(signedPlayers)
                 if author not in [a[0] for a in signedPlayers]:
                     await channel.send(f'The DM has not signed up yet! Please `{commandPrefix}timer signup` your character before starting the timer.') 
@@ -193,12 +202,12 @@ class Timer(commands.Cog):
                 else:
                     timerStarted = True
 
-            elif msg.content == f"{commandPrefix}timer cancel":
+            elif msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel":
                 await channel.send(f'Timer canceled! If you would like to prep a new game please use {commandPrefix}timer prep') 
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
 
-            elif f'{commandPrefix}timer guild' in msg.content and msg.author == author:
+            elif (f'{commandPrefix}timer guild' in msg.content or f'{commandPrefix}t guild' in msg.content) and msg.author == author:
                 guildsList = []
                 guildsListStr = ""
                 if msg.channel_mentions != list():
@@ -220,21 +229,30 @@ class Timer(commands.Cog):
             channel = ctx.channel
             guild = ctx.guild
             consumablesList = ""
-            if f'{commandPrefix}timer signup' == char.content.strip():
+            if f'{commandPrefix}timer signup' == char.content.strip() or f'{commandPrefix}t signup' == char.content.strip():
                 if ctx.invoked_with != "resume":
                     await channel.send(content=f'You did not input a character, please try again.')
                 return False
 
             if 'signup' in char.content:
-                charList = shlex.split(char.content.split(f'{commandPrefix}timer signup ')[1].strip())
+                if f'{commandPrefix}timer' in char.content:
+                    charList = shlex.split(char.content.split(f'{commandPrefix}timer signup ')[1].strip())
+                elif f'{commandPrefix}t' in char.content:
+                    charList = shlex.split(char.content.split(f'{commandPrefix}t signup ')[1].strip())
                 charName = charList[0]
 
             else:
-                if 'timer add ' in char.content:
-                    charList = shlex.split(char.content.split(f'{commandPrefix}timer add ')[1].strip())
+                if 'timer add ' in char.content or 't add ' in char.content:
+                    if 'timer add ' in char.content:
+                        charList = shlex.split(char.content.split(f'{commandPrefix}timer add ')[1].strip())
+                    elif 't add' in char.content:
+                        charList = shlex.split(char.content.split(f'{commandPrefix}t add ')[1].strip())
                     charName = charList[1]
-                elif 'timer addme' in char.content and char.content != f'{commandPrefix}timer addme':
-                    charList = shlex.split(char.content.split(f'{commandPrefix}timer addme')[1].strip())
+                elif ('timer addme' in char.content or 't addme' in char.content) and (char.content != f'{commandPrefix}timer addme' or char.content != f'{commandPrefix}t addme'):
+                    if 'timer addme' in char.content:
+                        charList = shlex.split(char.content.split(f'{commandPrefix}timer addme')[1].strip())
+                    elif 't addme' in char.content:
+                        charList = shlex.split(char.content.split(f'{commandPrefix}t addme')[1].strip())
                     charName = charList[0]
                         
 
@@ -507,22 +525,30 @@ class Timer(commands.Cog):
                                 minor += 1
                             elif rewardConsumable['Minor/Major'] == 'Major':
                                 major += 1
-                            #TODO: Add noodles
-                            if dmChar[4][0] == 'Mega Noodle':
-                                if ((major == 4 and minor > 4) or (major == 3 and minor > 5) or (major == 2 and minor > 6) or (major == 1 and minor > 7) or (major == 0 and minor > 8))  and rewardConsumable['Minor/Major'] == 'Minor':
+                            if dmChar[4][0] == 'Spicy Noodle':
+                                if ((major == 3 and minor > 4) or (major == 2 and minor > 5) or (major == 1 and minor > 6) or (major == 0 and minor > 7))  and rewardConsumable['Minor/Major'] == 'Minor':
                                     if not resume:
                                         await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal so far: {dmChar[4][1]} Major / {dmChar[4][2]} Minor Items")
                                     return start
-                                elif ((minor == 8 and major > 0) or (minor == 7 and major > 1) or (minor == 6 and major > 2) or (minor == 5 and major > 3) or (minor <= 4 and major > 4)) and rewardConsumable['Minor/Major'] == 'Major':
+                                elif ((minor == 7 and major > 0) or (minor == 6 and major > 1) or (minor == 5 and major > 2) or (minor <= 4 and major > 3)) and rewardConsumable['Minor/Major'] == 'Major':
                                     if not resume:
                                         await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal so far: {dmChar[4][1]} Major / {dmChar[4][2]} Minor Items")
                                     return start
-                            elif dmChar[4][0] == 'True Noodle':
-                                if ((major == 3 and minor > 3) or (major == 2 and minor > 4) or (major == 1 and minor > 5) or (major == 0 and minor > 6)) and rewardConsumable['Minor/Major'] == 'Minor':
+                            elif dmChar[4][0] == 'Ramen Noodle':
+                                if ((major == 3 and minor > 3) or (major == 2 and minor > 4) or (major == 1 and minor > 5) or (major == 0 and minor > 6))  and rewardConsumable['Minor/Major'] == 'Minor':
                                     if not resume:
                                         await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal so far: {dmChar[4][1]} Major / {dmChar[4][2]} Minor Items")
                                     return start
                                 elif ((minor == 6 and major > 0) or (minor == 5 and major > 1) or (minor == 4 and major > 2) or (minor <= 3 and major > 3)) and rewardConsumable['Minor/Major'] == 'Major':
+                                    if not resume:
+                                        await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal so far: {dmChar[4][1]} Major / {dmChar[4][2]} Minor Items")
+                                    return start
+                            elif dmChar[4][0] == 'True Noodle':
+                                if ((major == 2 and minor > 3) or (major == 1 and minor > 4) or (major == 0 and minor > 5)) and rewardConsumable['Minor/Major'] == 'Minor':
+                                    if not resume:
+                                        await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal so far: {dmChar[4][1]} Major / {dmChar[4][2]} Minor Items")
+                                    return start
+                                elif ((minor == 5 and major > 0) or (minor == 4 and major > 1) or (minor == 3 and major > 2) or (minor <= 3 and major > 2)) and rewardConsumable['Minor/Major'] == 'Major':
                                     if not resume:
                                         await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal so far: {dmChar[4][1]} Major / {dmChar[4][2]} Minor Items")
                                     return start
@@ -1071,25 +1097,30 @@ class Timer(commands.Cog):
 
                 noodleString = "Current Noodles: " + str(noodles)
                 dmRoleNames = [r.name for r in dmChar[0].roles]
-                #TODO: Adjust nooodles
-                if noodles >= 100 and 'True Noodle' in dmRoleNames:
-                    if 'Mega Noodle' not in dmRoleNames:
-                        noodleRole = get(guild.roles, name = 'Mega Noodle')
+                if noodles >= 150 and 'Ramen Noodle' in dmRoleNames:
+                    if 'Spicy Noodle' not in dmRoleNames:
+                        noodleRole = get(guild.roles, name = 'Spicy Noodle')
+                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 150 games. This user has 150+ noodles")
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Ramen Noodle'))
+                        noodleString += "\nSpicy Noodle Role recieved! :tada:"
+                elif noodles >= 100 and 'True Noodle' in dmRoleNames:
+                    if 'Ramen Noodle' not in dmRoleNames:
+                        noodleRole = get(guild.roles, name = 'Ramen Noodle')
                         await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ noodles")
                         await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
-                        noodleString += "\nMega Noodle Role recieved! :tada:"
+                        noodleString += "\nRamen Noodle Role recieved! :tada:"
 
-                elif noodles >= 50 and 'Elite Noodle' in dmRoleNames:
+                elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
                     if 'True Noodle' not in dmRoleNames:
                         noodleRole = get(guild.roles, name = 'True Noodle')
-                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 50 games. This user has 50+ noodles")
+                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 60 games. This user has 60+ noodles")
                         await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
                         noodleString += "\nTrue Noodle Role recieved! :tada:"
                 
-                elif noodles >= 20 and 'Good Noodle' in dmRoleNames:
+                elif noodles >= 30 and 'Good Noodle' in dmRoleNames:
                     if 'Elite Noodle' not in dmRoleNames:
                         noodleRole = get(guild.roles, name = 'Elite Noodle')
-                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 20 games. This user has 20+ noodles")
+                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 30 games. This user has 30+ noodles")
                         await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
                         noodleString += "\nElite Noodle Role recieved! :tada:"
 
@@ -1171,8 +1202,8 @@ class Timer(commands.Cog):
                     print('Success')
 
                 # Session Log Channel
-                # logChannel = self.bot.get_channel(663454980140695553) 
-                logChannel = self.bot.get_channel(663451042889072660) 
+                logChannel = self.bot.get_channel(663454980140695553) 
+                # logChannel = self.bot.get_channel(663451042889072660) 
                 await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
 
                 sessionMessage = await logChannel.send(embed=stopEmbed)
@@ -1272,7 +1303,7 @@ class Timer(commands.Cog):
                                     resumeString.append(f"{f['name']}={f['value']}")
                             commandMessage.content = ', '.join(resumeString)
 
-                        if m.content == f'{commandPrefix}timer start':
+                        if m.content == f'{commandPrefix}timer start' or m.content == f'{commandPrefix}t start':
                             playerResumeList = [m.author.id] + commandMessage.raw_mentions
                             author = m.author
                             break
@@ -1317,20 +1348,20 @@ class Timer(commands.Cog):
                         resumeTimes = {f"No Rewards:{startTime}":start}
 
                     async for message in ctx.channel.history(after=timerMessage):
-                        if "$timer add " in message.content and not message.author.bot:
+                        if (f"{commandPrefix}timer add " in message.content or f"{commandPrefix}t add " in message.content) and not message.author.bot:
                             resumeTimes = await ctx.invoke(self.timer.get_command('add'), start=resumeTimes, role=startRole, msg=message, resume=True)
-                        elif  "$timer addme" in message.content and not message.author.bot and message.content != f'{commandPrefix}timer addme':
+                        elif  (f"{commandPrefix}timer addme" in message.content or f"{commandPrefix}t addme" in message.content) and not message.author.bot and (message.content != f'{commandPrefix}timer addme' or message.content != f'{commandPrefix}t addme'):
                             resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, role=startRole, dmChar=dmChar, msg=message, user=message.author, resume=True) 
-                        elif ("$timer removeme" in message.content or "$timer remove " in message.content) and not message.author.bot: 
-                            if "$timer removeme" in message.content:
+                        elif ((f"{commandPrefix}timer removeme" in message.content or f"{commandPrefix}timer remove " in message.content) or (f"{commandPrefix}t removeme" in message.content or f"{commandPrefix}t remove " in message.content)) and not message.author.bot: 
+                            if f"{commandPrefix}timer removeme" in message.content or f"{commandPrefix}t removeme" in message.content:
                                 resumeTimes = await ctx.invoke(self.timer.get_command('removeme'), msg=message, start=resumeTimes, role=startRole, user=message.author, resume=True)
-                            elif "$timer remove " in message.content:
+                            elif f"{commandPrefix}timer remove " in message.content or f"{commandPrefix}t remove " in message.content:
                                 resumeTimes = await ctx.invoke(self.timer.get_command('remove'), msg=message, start=resumeTimes, role=startRole, resume=True)
-                        elif "$timer death" in message.content:
+                        elif f"{commandPrefix}timer death" in message.content or f"{commandPrefix}t death" in message.content:
                             resumeTimes = await ctx.invoke(self.timer.get_command('death'), msg=message, start=resumeTimes, role=startRole, resume=True) 
                         elif message.content.startswith('-') and message.author != dmChar[0]: 
                             resumeTimes = await ctx.invoke(self.timer.get_command('deductConsumables'), msg=message, start=resumeTimes, resume=True)
-                        elif f"{commandPrefix}timer reward" in message.content and (message.author == author):
+                        elif (f"{commandPrefix}timer reward" in message.content or f"{commandPrefix}t reward" in message.content) and (message.author == author):
                             resumeTimes = await ctx.invoke(self.timer.get_command('reward'), msg=message, start=resumeTimes, dmChar=dmChar, resume=True)
                         elif ("Timer has been stopped!" in message.content) and message.author.bot:
                             await channel.send("There doesn't seem to be a timer to resume here... Please start a new timer!")
@@ -1371,38 +1402,50 @@ class Timer(commands.Cog):
         timerStopped = False
         channel = ctx.channel
         user = author.display_name
+
+        timerAlias = ["timer", "t"]
+        timerCommands = ['transfer', 'stop', 'end', 'add', 'remove', 'death', 'reward']
+      
+        timerCombined = []
+
+        for x in product(timerAlias,timerCommands):
+            timerCombined.append(f"{commandPrefix}{x[0]} {x[1]}")
+
         while not timerStopped:
             try:
-                # TODO add alias [$t]
-                msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (m.content == f"{commandPrefix}timer stop" or m.content == f"{commandPrefix}timer end" or f"{commandPrefix}timer add" in m.content or m.content == f"{commandPrefix}timer removeme" or f"{commandPrefix}timer transfer " in m.content or f"{commandPrefix}timer remove " in m.content or f"{commandPrefix}timer death " in m.content or m.content.startswith('-') or f"{commandPrefix}timer reward" in m.content) and m.channel == channel)
-                if f"{commandPrefix}timer transfer " in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
-                    newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
+                msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined) or m.content.startswith('-')) and m.channel == channel)
+                if (f"{commandPrefix}timer transfer " in msg.content or f"{commandPrefix}t transfer " in msg.content) and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                    if f'{commandPrefix}timer transfer ' in msg.content:
+                      newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
+                    elif f'{commandPrefix}t transfer ' in msg.content:
+                      newUser = msg.content.split(f'{commandPrefix}t transfer ')[1] 
+
                     newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
                     if newAuthor is not None:
                         author = newAuthor
                         await channel.send(f'{author.mention}, the current timer has been transferred to you. Use `{commandPrefix}timer stop` whenever you would like to stop the timer.')
                     else:
                         await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer')
-                elif (msg.content == f"{commandPrefix}timer stop" or msg.content == f"{commandPrefix}timer end") and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                elif (msg.content == f"{commandPrefix}timer stop" or msg.content == f"{commandPrefix}timer end" or msg.content == f"{commandPrefix}t stop" or msg.content == f"{commandPrefix}t end") and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     timerStopped = True
                     await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart, dmChar=dmChar, guildsList=guildsList)
                     return
-                elif f"{commandPrefix}timer add " in msg.content and '@player' not in msg.content:
+                elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and '@player' not in msg.content:
                     startTimes = await ctx.invoke(self.timer.get_command('add'), start=startTimes, role=role, msg=msg)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif f"{commandPrefix}timer addme" in msg.content and '@player' not in msg.content and msg.content != f'{commandPrefix}timer addme':
+                elif (f"{commandPrefix}timer addme" in msg.content or f"{commandPrefix}t addme" in msg.content) and '@player' not in msg.content and (msg.content != f'{commandPrefix}timer addme' or msg.content != f'{commandPrefix}t addme'):
                     startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, role=role, msg=msg, user=msg.author, dmChar=dmChar)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif msg.content == f"{commandPrefix}timer removeme":
+                elif msg.content == f"{commandPrefix}timer removeme" or msg.content == f"{commandPrefix}t removeme":
                     startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=msg.author)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif f"{commandPrefix}timer remove" in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]): 
+                elif (f"{commandPrefix}timer remove" in msg.content or f"{commandPrefix}t remove" in msg.content) and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]): 
                     startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=startTimes, role=role)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif f"{commandPrefix}timer reward" in msg.content and (msg.author == author):
+                elif (f"{commandPrefix}timer reward" in msg.content or f"{commandPrefix}t reward" in msg.content) and (msg.author == author):
                     startTimes = await ctx.invoke(self.timer.get_command('reward'), msg=msg, start=startTimes,dmChar=dmChar)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif f"{commandPrefix}timer death" in msg.content and (msg.author == author):
+                elif (f"{commandPrefix}timer death" in msg.content or f"{commandPrefix}t death" in msg.content) and (msg.author == author):
                     startTimes = await ctx.invoke(self.timer.get_command('death'), msg=msg, start=startTimes, role=role)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif msg.content.startswith('-') and msg.author != dmChar[0]:
