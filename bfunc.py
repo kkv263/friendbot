@@ -90,7 +90,7 @@ def callAPI(table, query=None):
         return False
     else:
         if (len(records) > 1):
-            if table == 'races' or table == "backgrounds":
+            if table == 'races' or table == "backgrounds" or table == "rit" or table == "mit":
                 for x in records:
                     print(x['Name'])
                     print(query)
@@ -265,8 +265,8 @@ db = connection.dnd
 
 
 
-# API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'MIT')
-# API_URL += '?offset=' + 'itrszVrUNck2e2t67/recvH1L3ah7alp3Uy' 
+# API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'RIT')
+# API_URL += '?offset=' + 'itrFa4G1JIHIIO8e3/recxzr2lRcXk8PeMh' 
 # r = requests.get(API_URL, headers=headers)
 # r = r.json()['records']
 # addList = []
@@ -275,5 +275,17 @@ db = connection.dnd
 #     addList.append(i['fields'])
 
 
-# playersCollection = db.mit
+# playersCollection = db.rit
 # playersCollection.insert_many(addList)
+
+
+# collection = db['mit']
+
+# records = list(collection.find({"Name": {"$regex": '', '$options': 'i' }}))
+
+# i = 0
+# for r in sorted(records, key = lambda i: i['Name']) :
+#     print(r['Name'])
+#     i+=1
+
+# print (i)

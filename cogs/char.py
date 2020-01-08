@@ -78,7 +78,7 @@ class Character(commands.Cog):
             'Good Noodle':[4],
             'Elite Noodle':[4,5],
             'True Noodle':[4,5,6],
-            'Mega Noodle':[4,5,6,7],
+            'Ramen Noodle':[4,5,6,7],
             'Super Noodle':[4,5,6,7,8],
             'Friend Fanatic': [11,10,9],
             'Guild Fanatic':[11,10,9]
@@ -260,30 +260,32 @@ class Character(commands.Cog):
             tier2Count = 0
             rewardConsumables = []
             rewardMagics = []
-            tier2Rewards = []
+            tier1Rewards = []
 
             print(allRewardItemsString)
 
             if lvl == 4:
-                tier1Count = 1
+                tier1CountMNC = 1
             elif lvl == 5:
-                tier2Count = 1
+                tier1Count = 1
                 tier1CountMNC = 1
             elif lvl == 6:
+                tier1CountMNC = 1
+                tier2Count = 1
+            elif lvl == 7:
                 tier1CountMNC = 1
                 tier1Count = 1
                 tier2Count = 1
             elif lvl == 8:
                 tier1CountMNC = 1
                 tier1Count = 2
-                tier2Count = 2
-            elif lvl == 11:
+                tier2Count = 1
+            elif lvl == 11 or lvl == 9:
                 if 'Good Noodle' in roles:
                     tier1Count = 1
                 elif 'Elite Noodle' in roles:
                     tier1Count = 1
                     tier1CountMNC = 1
-                # TODO relook here
                 elif 'True Noodle' in roles:
                     tier1CountMNC = 1
                     tier2Count = 1
@@ -299,6 +301,10 @@ class Character(commands.Cog):
             if 'Nitro Booster' in roles:
                 tier1CountMNC += 1
 
+            startt1MNC = tier1CountMNC
+            startt1 = tier1Count
+            startt2 = tier2Count
+
             for item in allRewardItemsString:
                 if int(item['Tier']) > 2:
                     msg += "- One or more of these reward items cannot be purchased at Level " + str(lvl) + "\n"
@@ -306,10 +312,10 @@ class Character(commands.Cog):
 
                 if lvl > 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
                     tier1CountMNC -= 1
-                elif int(item['Tier']) == 1:
-                    tier1Count -= 1
                 elif int(item['Tier']) == 2:
-                    tier2Rewards.append(item)
+                    tier2Count -= 1
+                elif int(item['Tier']) == 1:
+                    tier1Rewards.append(item)
     
                 if int(item['Tier']) == 1:
                     if 'Consumable' in item:
@@ -317,8 +323,8 @@ class Character(commands.Cog):
                     else:
                         rewardMagics.append(item)
 
-            print(tier2Rewards)
-            for item in tier2Rewards:
+            print(tier1Rewards)
+            for item in tier1Rewards:
                 if tier1Count > 0 and tier2Count <= 0:
                     tier1Count -= 1
                 else:
@@ -327,7 +333,7 @@ class Character(commands.Cog):
 
 
             if tier1CountMNC < 0 or tier1Count < 0 or tier2Count < 0:
-                msg += "- You do not have the right roles for these reward items\n"
+                msg += f"- You do not have the right roles for these reward items. You can only choose {startt1MNC} Tier 1 (Non Consumable) Item, {startt1} Tier 1 Item, and {startt2} Tier 2 Items\n"
             else:
                 for r in rewardConsumables:
                     if charDict['Consumables'] != "None":
@@ -890,7 +896,6 @@ class Character(commands.Cog):
                   
         # check bg and gp
         bRecord = callAPI('backgrounds',bg)
-        # TODO: deduct old bg gp?
         if not bRecord:
             msg += f'- {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -1331,7 +1336,7 @@ class Character(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command()
-    async def stats(self,ctx):
+    async def user(self,ctx):
         channel = ctx.channel
         author = ctx.author
         guild = ctx.guild
@@ -1432,7 +1437,6 @@ class Character(commands.Cog):
                 charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\n:sparkles: ({charDict['Reputation']})", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
             if 'Attuned' in charDict:
-                # TODO: '-' Magic items? 
                 charEmbed.add_field(name='Attuned', value='• ' + charDict['Attuned'].replace(', ', '\n• '), inline=False)
                 statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
                 for a in charDict['Attuned'].split(', '):
@@ -1880,6 +1884,7 @@ class Character(commands.Cog):
                 await channel.send(f"You cannot attune to anymore items.")
                 return
 
+            # TODO: get attuned items from RIT.
             mRecord = callAPI('mit', m)
             if m.lower() not in [x.lower() for x in charRecordMagicItems] or not mRecord:
                 await channel.send(f"You don't have the item `{m}` in your inventory or it does not exist on the magic item table.")
