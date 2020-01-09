@@ -1555,10 +1555,12 @@ class Character(commands.Cog):
 
             if 'Death' in infoRecords.keys():
                 await channel.send(f'You cannot level a dead character, please use `{commandPrefix}char death`')
+                self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
 
             elif float(cpSplit[0]) < float(cpSplit[1]):
                 await channel.send(f'{charName} is not ready to level up. They currently have {cpSplit[0]}/{cpSplit[1]} CP')
+                self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
             else:
                 cRecords = callAPI('classes')
