@@ -1730,19 +1730,15 @@ class Character(commands.Cog):
                                     lvlClass = s['Name']
                                     s['Level'] += 1
                                     break
+
                             charClass = charClass.replace(f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level'] - 1}", f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level']}")
                             levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
 
                 # Choosing a subclass
+                subclassCheckClass = subclasses[[s['Name'] for s in subclasses].index(lvlClass)]
+
                 for s in classRecords:
-                    canSubclass = False
-                    for x in range(len(subclasses)):
-                        if s['Name'] in subclasses[x]['Name'] and int(s['Subclass Level']) == subclasses[x]['Level']:
-                            canSubclass = True
-                            classIndex = x
-                            break
-                        
-                    if canSubclass:
+                    if s['Name'] == subclassCheckClass['Name'] and int(s['Subclass Level']) == subclassCheckClass['Level']:
                         subclassesList = s['Subclasses'].split(', ')
                         subclassChoice, levelUpEmbedmsg = await characterCog.chooseSubclass(ctx, subclassesList, s['Name'], levelUpEmbed, levelUpEmbedmsg) 
                         if not subclassChoice:
