@@ -5,7 +5,7 @@ import os
 import time
 import traceback
 # import json
-# import requests
+import requests
 from discord.ext import commands
 import asyncio
 from oauth2client.service_account import ServiceAccountCredentials
@@ -90,6 +90,7 @@ def callAPI(table, query=None):
         return False
     else:
         if (len(records) > 1):
+          # TODO: Prompt for multiple :) max of 9?
             if table == 'races' or table == "backgrounds" or table == "rit" or table == "mit":
                 for x in records:
                     print(x['Name'])
@@ -265,23 +266,24 @@ db = connection.dnd
 
 
 
-# API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'RIT')
-# API_URL += '?offset=' + 'itrFa4G1JIHIIO8e3/recxzr2lRcXk8PeMh' 
+# API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'MIT')
+# # API_URL += '?offset=' + 'itrcCL1NnHnrTCHI6/recrXASepkh0uPB6G' 
 # r = requests.get(API_URL, headers=headers)
 # r = r.json()['records']
+# playersCollection = db.mit
 # addList = []
 # for i in r:
 #     print(i['fields'])
 #     addList.append(i['fields'])
 
 
-# playersCollection = db.rit
 # playersCollection.insert_many(addList)
 
 
 # collection = db['mit']
 
-# records = list(collection.find({"Name": {"$regex": '', '$options': 'i' }}))
+# records = list(collection.find({"Name": {"$regex": '\\+2', '$options': 'i' }}))
+
 
 # i = 0
 # for r in sorted(records, key = lambda i: i['Name']) :
@@ -289,3 +291,6 @@ db = connection.dnd
 #     i+=1
 
 # print (i)
+
+# delete
+# collection.remove(({"Name": {"$regex": '\\+2', '$options': 'i' }}))

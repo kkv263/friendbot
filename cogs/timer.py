@@ -72,11 +72,6 @@ class Timer(commands.Cog):
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
 
-        if '"' not in ctx.message.content and userList != "norewards":
-            await channel.send(f"Please make sure you put quotes `\"` around your list of players and retry the command")
-            self.timer.get_command('prep').reset_cooldown(ctx)
-            return
-
         prepEmbed = discord.Embed()
 
         if author in ctx.message.mentions:
@@ -139,6 +134,7 @@ class Timer(commands.Cog):
         for x in product(timerAlias,timerCommands):
             timerCombined.append(f"{commandPrefix}{x[0]} {x[1]}")
 
+        #TODO: Levelup case handle here
         while not timerStarted:
             msg = await self.bot.wait_for('message', check=lambda m: any(x in m.content for x in timerCombined) and m.channel == channel)
             if f"{commandPrefix}timer signup" in msg.content or f"{commandPrefix}t signup" in msg.content:
@@ -309,7 +305,7 @@ class Timer(commands.Cog):
                 return False 
 
 
-            if float(cpSplit[0]) > float(cpSplit[1]):
+            if float(cpSplit[0]) >= float(cpSplit[1]):
                 if ctx.invoked_with != "resume":
                     await channel.send(content=f'You need to `{commandPrefix}levelup` your character before you can join the game!')
                 return False 
@@ -526,6 +522,13 @@ class Timer(commands.Cog):
                         else:
                             minor = dmChar[4][2]
                             major = dmChar[4][1]
+
+                            # TODO DM Noodle rewards 3 hours +
+
+                            #TODO: • If you host a quest which has less than three players and is under three hours in length, 
+                            # you may only award half of the Reward Items that you can normally reward (rounded up for @Good Noodle, @True Noodle, and @Spicy Noodle) and the items 
+                            # that you reward can only be Tier 1 Minor items.
+                            #• If you host a quest which is under one hour in length, you cannot award any Reward Items.
                               
                             if rewardConsumable['Minor/Major'] == 'Minor':
                                 minor += 1
@@ -1097,7 +1100,6 @@ class Timer(commands.Cog):
                 noodles = 0
                 hoursPlayed = int(totalDuration.split(' Hours')[0])
                 noodlesGained = hoursPlayed // 3
-                # TODO DM Noodle rewards 3 hours +
 
                 if uRecord:
                     noodles += uRecord['Noodles'] + noodlesGained
@@ -1264,9 +1266,12 @@ class Timer(commands.Cog):
                     print(bwe.details)
                     return
 
+
                 try:
                     statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
                     usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
+                    usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
+                    usersCollection.bulk_write(usersData)
                     if guildsRecordsList != list():
                         guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games'], 'Reputation': gRecord['Reputation']}}, upsert=True), guildsRecordsList))
                         guildsCollection.bulk_write(guildsData)
@@ -1275,6 +1280,7 @@ class Timer(commands.Cog):
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 else:
                     print('Success')
+                return
                 # Session Log Channel
                 logChannel = self.bot.get_channel(663454980140695553) 
                 # logChannel = self.bot.get_channel(663451042889072660) 

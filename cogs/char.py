@@ -1894,6 +1894,7 @@ class Character(commands.Cog):
                 return
 
             # TODO: get attuned items from RIT.
+            # Test multiclass with attuned item ex. barbarian and str magic item 
             mRecord = callAPI('mit', m)
             if m.lower() not in [x.lower() for x in charRecordMagicItems] or not mRecord:
                 await channel.send(f"You don't have the item `{m}` in your inventory or it does not exist on the magic item table.")

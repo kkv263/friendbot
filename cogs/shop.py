@@ -198,6 +198,8 @@ class Shop(commands.Cog):
         shopEmbed = discord.Embed()
         shopCog = self.bot.get_cog('Shop')
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
+        #TODO: At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. 
+        # Your spellbook is the repository of the wizard spells you know, except your cantrips, which are fixed in your mind.
 
         if charRecords:
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
