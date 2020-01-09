@@ -165,6 +165,7 @@ class Timer(commands.Cog):
                             if playerChar[0] == signedPlayers[s][0]:
                                 signedPlayers[s] = playerChar
                                 foundSignedPlayer = True
+                                break
                         if not foundSignedPlayer:
                             signedPlayers.append(playerChar)
                         
@@ -451,9 +452,14 @@ class Timer(commands.Cog):
             stampEmbed.set_footer(text=f'#{ctx.channel}\n{commandPrefix}timer help 2 for help with the timer.')
             stampEmbed.set_author(name=f'DM: {userName}', icon_url=author.avatar_url)
 
+            print('USERLIST')
+            print(userList)
+
             if userList != "norewards":
                 playerList = []
                 for u in userList:
+                    print('USER')
+                    print(u)
                     consumablesString = ""
                     if u[2] != ['None']:
                         consumablesString = "\nConsumables: " + ', '.join(u[2])
@@ -610,6 +616,7 @@ class Timer(commands.Cog):
                 else:
                     if not resume:
                         await ctx.channel.send(content=f"{rewardUser} is not on the timer to recieve rewards.")
+            print(start)
             return start
 
     @timer.command()
@@ -644,7 +651,7 @@ class Timer(commands.Cog):
                     if not resume and dmChar :
                         addEmbed = discord.Embed()
                         addEmbed.title = f"Add {userInfo[1]['Name']} to timer?"
-                        addEmbed.description = f"{addUser.mention} character would to be added to the timer.\n{userInfo[1]['Name']} - Level {userInfo[1]['Level']}: {userInfo[1]['Race']} {userInfo[1]['Class']}\nConsumables: {', '.join(userInfo[2])}\n\n✅ : Add to timer\n\n❌: Deny"
+                        addEmbed.description = f"{addUser.mention} is requesting their character to be added to the timer.\n{userInfo[1]['Name']} - Level {userInfo[1]['Level']}: {userInfo[1]['Race']} {userInfo[1]['Class']}\nConsumables: {', '.join(userInfo[2])}\n\n✅ : Add to timer\n\n❌: Deny"
                         addEmbedmsg = await channel.send(embed=addEmbed, content=dmChar[0].mention)
                         await addEmbedmsg.add_reaction('✅')
                         await addEmbedmsg.add_reaction('❌')
@@ -680,7 +687,7 @@ class Timer(commands.Cog):
             else:
                 if not resume:
                     await ctx.channel.send(content=f"I cannot find any mention of the user you are trying to add. Please check your format and spelling")
-
+            print(start)
             return start
 
     @timer.command()
@@ -695,6 +702,7 @@ class Timer(commands.Cog):
                     return addUser
                 else:
                     await ctx.invoke(self.timer.get_command('addme'), role=role, start=start, msg=msg, user=addUser, resume=resume) 
+            print(start)
             return start
 
     @timer.command()
@@ -831,7 +839,6 @@ class Timer(commands.Cog):
                     await embedMsg.delete()
                 embedMsg = await ctx.channel.send(embed=embed)
 
-            print(start)
             return embedMsg
 
     @timer.command(aliases=['end'])
@@ -1139,6 +1146,7 @@ class Timer(commands.Cog):
                     doubleItemsString += '- ' + ', '.join(dmChar[2])
 
                 guildsCollection = db.guilds
+                guildMember = False
                 guildsListStr = ""
                 guildsRecordsList = list()
                 if guildsList != list():
@@ -1147,6 +1155,10 @@ class Timer(commands.Cog):
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
                         # if gRecord and hoursPlayed >= 3:
                         if gRecord:
+                            for p in playerList:
+                                if 'Guild' in p[1]:
+                                    if gRecord['Name'] in p[1]['Guild']:
+                                        guildMember = True
                             gRecord['Reputation'] += noodlesGained
                             if 'Games' not in gRecord:
                                 gRecord['Games'] = 1
@@ -1183,7 +1195,69 @@ class Timer(commands.Cog):
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
                 stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
                 sessionLogString = f"\n**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}\nGame ID:"
+
+                # Grab stats
+                dateyear = datestart.split('-')
+                dateyear = dateyear[0] + '-' + dateyear[2][:2]
+                statsCollection = db.stats
+
+                statsRecord  = statsCollection.find_one({'Date': dateyear})
+                if not statsRecord:
+                    statsRecord = {'Date': dateyear, 'DM': {}}
+                
+
+                # If greater than 15 mins.
+                if float(dmtreasureArray[0]) >= .5:
+                    if str(dmChar[0].id) in statsRecord['DM']:
+                        if f'T{tierNum}' in statsRecord['DM'][str(dmChar[0].id)]:
+                            statsRecord['DM'][str(dmChar[0].id)][f'T{tierNum}'] += 1
+                        else:
+                            statsRecord['DM'][str(dmChar[0].id)][f'T{tierNum}'] = 1
+                    else:
+                        statsRecord['DM'][str(dmChar[0].id)] = {f'T{tierNum}':1}
                     
+
+                    if f'T{tierNum}' in statsRecord:
+                        statsRecord[f'T{tierNum}'] += 1
+                    else:
+                        statsRecord[f'T{tierNum}'] = 1
+
+                    if guildsRecordsList != list():
+                        if 'GQ' in statsRecord:
+                            statsRecord['GQ'] += 1
+                        else:
+                            statsRecord['GQ'] = 1
+
+                        if guildMember: 
+                            if 'GQM' in statsRecord:
+                                statsRecord['GQM'] += 1
+                            else:
+                                statsRecord['GQM'] = 1
+                        elif not guildMember:
+                            if 'GQNM' in statsRecord:
+                                statsRecord['GQNM'] += 1
+                            else:
+                                statsRecord['GQNM'] = 1
+
+                    if 'Unique Players' not in statsRecord:
+                        statsRecord['Unique Players'] = set()
+
+                    statsRecord['Unique Players'] = set(statsRecord['Unique Players'])
+                    statsRecord['Unique Players'].update([p[0].id for p in playerList])
+                    statsRecord['Unique Players'].add(dmChar[0].id)
+                    statsRecord['Unique Players'] = list(statsRecord['Unique Players'])
+
+                    if 'Playtime' in statsRecord:
+                        statsRecord['Playtime'].append(totalDurationTime)
+                    else:
+                        statsRecord['Playtime'] = [totalDurationTime]
+
+                    if 'Players' in statsRecord:
+                        statsRecord['Players'].append(len(playerList) + 1)
+                    else:
+                        statsRecord['Players'] = [len(playerList) + 1] 
+
+
                 try:
                     playersCollection.bulk_write(timerData)
                 except BulkWriteError as bwe:
@@ -1191,6 +1265,7 @@ class Timer(commands.Cog):
                     return
 
                 try:
+                    statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
                     usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
                     if guildsRecordsList != list():
                         guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games'], 'Reputation': gRecord['Reputation']}}, upsert=True), guildsRecordsList))
@@ -1200,7 +1275,6 @@ class Timer(commands.Cog):
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 else:
                     print('Success')
-
                 # Session Log Channel
                 logChannel = self.bot.get_channel(663454980140695553) 
                 # logChannel = self.bot.get_channel(663451042889072660) 

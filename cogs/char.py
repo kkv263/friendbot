@@ -7,7 +7,7 @@ import collections
 from discord.utils import get        
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
-from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db, callAPI, checkForChar 
+from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db, callAPI, checkForChar, timeConversion
 
 class Character(commands.Cog):
     def __init__ (self, bot):
@@ -1963,6 +1963,82 @@ class Character(commands.Cog):
                     else:
                         await channel.send(f"You succesfully unattuned to `{mRecord['Name']}`")
                     
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    async def stats(self,ctx):                
+        statsCollection = db.stats
+        currentDate = datetime.now().strftime("%b-%y")
+        statRecords = statsCollection.find_one({"Date": currentDate})
+        guild=ctx.guild
+
+        statsEmbed = discord.Embed()
+
+        statsEmbed.title = f'Stats for {currentDate}' 
+
+        statsTotalString = ""
+        guildsString = ""
+        superTotal = 0
+        avgString = ""
+        statsString = ""
+
+        for k,v in statRecords['DM'].items():
+            statsString += guild.get_member(int(k)).display_name + " - "
+            for i in range (1,5):
+                if f'T{i}' not in v:
+                    statsString += f"T{i}:0 / "
+                else:
+                    statsString += f"T{i}:{v[f'T{i}']} / " 
+            for vk, vv in v.items():
+                totalGames = 0
+                totalGames += vv
+                statsString += f"Total:{totalGames}\n"
+                superTotal += totalGames
+
+        if 'GQ' in statRecords:
+            print(statRecords["GQ"])
+            guildsString += f'Guild quests out of total quests: {round((statRecords["GQ"] / superTotal),2) * 100}%\n'
+            guildsString += f"Guild Quests: {statRecords['GQ']}\n"
+        else:
+            guildsString += f"Guild Quests: 0\n"
+
+        if 'GQM' in statRecords:
+            guildsString += f"Guild Quests with Members: {statRecords['GQM']}\n"
+
+        else:
+            guildsString += f"Guild Quests with Members: 0\n"
+
+
+        if 'GQNM' in statRecords:
+            guildsString += f"Guild Quests with no Members: {statRecords['GQNM']}\n"
+        else:
+            guildsString += f"Guild Quests with no Members: 0\n"
+            
+        statsEmbed.add_field(name="Guild Games", value=guildsString, inline=False) 
+
+        avgString += f"Average Number of Player per Game: {sum(statRecords['Players']) / len(statRecords['Players'])}\n" 
+        avgString += f"Avergae Game Time: {timeConversion(sum(statRecords['Playtime']) / len(statRecords['Playtime']))}\n"
+
+        statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
+        statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
+
+        statsTotalString += f"Total Games for the Month: {superTotal}\n"
+        for i in range (1,5):
+            if f'T{i}' not in statRecords:
+                statsTotalString += f"Tier {i} Games for the Month: 0\n"
+            else: 
+                statsTotalString += f"Tier {i} Games for the Month: {statRecords[f'T{i}']}\n"
+
+        statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
+        statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
+        statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
+
+        statsEmbed.description = statsTotalString
+
+        await ctx.channel.send(embed=statsEmbed)
+
+
+
 
     async def pointBuy(self,ctx, statsArray, rRecord, charEmbed, charEmbedmsg):
         author = ctx.author
