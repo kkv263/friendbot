@@ -798,40 +798,39 @@ class Timer(commands.Cog):
             embed.clear_fields()
 
             for key, value in startcopy.items():
-                print('VALUE')
-                print(value)
-                if value:
-                    consumablesString = ""
-                    rewardsString = ""
-                    if value[0][2] != ['None'] and value[0][2] != list():
-                        cList = []
-                        rList = []
+                for v in value:
+                    if value:
+                        consumablesString = ""
+                        rewardsString = ""
+                        if v[2] != ['None'] and v[2] != list():
+                            cList = []
+                            rList = []
 
-                        for i in value[0][2]:
-                            if '+' in i:
-                                rList.append(i)
-                            else:
-                                cList.append(i)
+                            for i in v[2]:
+                                if '+' in i:
+                                    rList.append(i)
+                                else:
+                                    cList.append(i)
 
-                        if cList != list():
-                            consumablesString = "\nConsumables: " + ', '.join(cList)
-                        if rList != list():
-                            rewardsString = "\nRewards: " + ', '.join(rList)
+                            if cList != list():
+                                consumablesString = "\nConsumables: " + ', '.join(cList)
+                            if rList != list():
+                                rewardsString = "\nRewards: " + ', '.join(rList)
 
-                    if "Full Rewards" in key and "-" not in key and '%' not in key:
-                        embed.add_field(name= f"**{value[0][0].display_name}**", value=f"**{value[0][1]['Name']}**{consumablesString}{rewardsString}", inline=False)
-                    elif "-" in key or 'No Rewards' in key:
-                        pass
-                    elif '%' in key:
-                        embed.add_field(name= f"~~{value[0][0].display_name}~~", value=f"**{value[0][1]['Name']}** - **DEATH**{consumablesString}{rewardsString}", inline=False) 
-                    else:
-                        durationEach = 0
-                        timeSplit = (key + f'?{end}').split(':')
-                        for t in range(1, len(timeSplit)):
-                            ttemp = timeSplit[t].split('?')
-                            durationEach += (float(ttemp[1]) - float(ttemp[0]))
+                        if "Full Rewards" in key and "-" not in key and '%' not in key:
+                            embed.add_field(name= f"**{v[0].display_name}**", value=f"**{v[1]['Name']}**{consumablesString}{rewardsString}", inline=False)
+                        elif "-" in key or 'No Rewards' in key:
+                            pass
+                        elif '%' in key:
+                            embed.add_field(name= f"~~{v[0].display_name}~~", value=f"**{v[1]['Name']}** - **DEATH**{consumablesString}{rewardsString}", inline=False) 
+                        else:
+                            durationEach = 0
+                            timeSplit = (key + f'?{end}').split(':')
+                            for t in range(1, len(timeSplit)):
+                                ttemp = timeSplit[t].split('?')
+                                durationEach += (float(ttemp[1]) - float(ttemp[0]))
 
-                        embed.add_field(name= f"**{value[0][0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=f"**{value[0][1]['Name']}**{consumablesString}{rewardsString}", inline=False)
+                            embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=f"**{v[1]['Name']}**{consumablesString}{rewardsString}", inline=False)
                   
             embed.title = f'**{game}**: {durationString}'
             msgAfter = False
