@@ -798,6 +798,8 @@ class Timer(commands.Cog):
             embed.clear_fields()
 
             for key, value in startcopy.items():
+                print('VALUE')
+                print(value)
                 if value:
                     consumablesString = ""
                     rewardsString = ""
@@ -818,7 +820,7 @@ class Timer(commands.Cog):
 
                     if "Full Rewards" in key and "-" not in key and '%' not in key:
                         embed.add_field(name= f"**{value[0][0].display_name}**", value=f"**{value[0][1]['Name']}**{consumablesString}{rewardsString}", inline=False)
-                    elif "-" in key and 'No Rewards' in key:
+                    elif "-" in key or 'No Rewards' in key:
                         pass
                     elif '%' in key:
                         embed.add_field(name= f"~~{value[0][0].display_name}~~", value=f"**{value[0][1]['Name']}** - **DEATH**{consumablesString}{rewardsString}", inline=False) 
