@@ -150,6 +150,7 @@ class Character(commands.Cog):
         charDict['CP'] = f"0/{maxCP}"
         
         # check magic items and TP
+        # TODO: bank tp if use less than required  lvl 4, 4/6
         magicItems = mItems.split(',')
         allMagicItemsString = []
         if lvl > 1 and magicItems != ['']:
@@ -511,6 +512,7 @@ class Character(commands.Cog):
                 await charEmbedmsg.clear_reactions()
 
             # Subclass
+            classStat = []
             for m in cRecord:
                 m['Subclass'] = 'None'
                 if int(m['Level']) < lvl:
@@ -525,16 +527,20 @@ class Character(commands.Cog):
                         return
 
                     m['Subclass'] = f'{className} ({subclass})' 
+                    classStat.append(f'{className}-{subclass}')
+
 
                     if charDict['Class'] == "": 
                         charDict['Class'] = f'{className} ({subclass})'
                     else:
                         charDict['Class'] += f' / {className} ({subclass})'
                 else:
+                    classStat.append(className)
                     if charDict['Class'] == "": 
                         charDict['Class'] = className
                     else:
                         charDict['Class'] += f' / {className}'
+
         # check bg and gp
         bRecord = callAPI('backgrounds',bg)
         if not bRecord:
@@ -568,6 +574,7 @@ class Character(commands.Cog):
                     msg += f"- Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
             print (statsArray)
 
+        # TODO: Page breaks on 3 when choosing out of bounds letter.
         #feats
         if msg == "":
             featLevels = []
@@ -673,6 +680,8 @@ class Character(commands.Cog):
         charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
 
+        print(classStat)
+
         def charCreateCheck(r, u):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
@@ -702,9 +711,40 @@ class Character(commands.Cog):
                 self.bot.get_command('create').reset_cooldown(ctx)
                 return
 
+        statsCollection = db.stats
+        statsRecord  = statsCollection.find_one({'Life': 1})
+
+        for c in classStat:
+            char = c.split('-')
+            if char[0] in statsRecord['Class']:
+                statsRecord['Class'][char[0]]['Count'] += 1
+            else:
+                statsRecord['Class'][char[0]] = {'Count': 1}
+
+            if len(char) > 1:
+                if char[1] in statsRecord['Class'][char[0]]:
+                    statsRecord['Class'][char[0]][char[1]] += 1
+                else:
+                    statsRecord['Class'][char[0]][char[1]] = 1
+
+            if charDict['Race'] in statsRecord['Race']:
+                statsRecord['Race'][charDict['Race']] += 1
+            else:
+                statsRecord['Race'][charDict['Race']] = 1
+
+            if charDict['Background'] in statsRecord['Background']:
+                statsRecord['Background'][charDict['Background']] += 1
+            else:
+                statsRecord['Background'][charDict['Background']] = 1
+
+            if charDict['Background'] in statsRecord['Background']:
+                statsRecord['Background'][charDict['Race']] += 1
+            else:
+                statsRecord['Background'][charDict['Background']] = 1
 
         try:
             playersCollection.insert_one(charDict)
+            statsCollection.update_one({'Life':1}, {"$set": statsRecord}, upsert=True)
         except Exception as e:
             print ('MONGO ERROR: ' + str(e))
             charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
@@ -720,6 +760,7 @@ class Character(commands.Cog):
 
 
     #TODO: Starting Equipment for repsec
+    # TODO: stats for respec
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @commands.command(aliases=['rs'])
     async def respec(self,ctx, name, newname, race, cclass, bg, sStr, sDex, sCon, sInt, sWis, sCha, mItems="", consumes=""):
@@ -893,7 +934,6 @@ class Character(commands.Cog):
                     else:
                         charDict['Class'] += f' / {className}'
 
-                  
         # check bg and gp
         bRecord = callAPI('backgrounds',bg)
         if not bRecord:
@@ -1745,12 +1785,14 @@ class Character(commands.Cog):
                             return
                         levelUpEmbed.description = levelUpEmbed.description.replace(s['Name'], f"{s['Name']} ({subclassChoice})") 
                         charClass = charClass.replace(s['Name'], f"{s['Name']} ({subclassChoice})" )
-                        subclasses[classIndex]['Subclass'] = subclassChoice
-
+                        for sub in subclasses:
+                            if sub['Name'] == subclassCheckClass['Name']:
+                                sub['Subclass'] = subclassChoice
+                
                 # Feat 
                 featLevels = []
                 for c in subclasses:
-                    if int(c['Level']) in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) in (10)):
+                    if int(c['Level']) in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) == 10):
                         featLevels.append(int(c['Level']))
 
                 charFeatsGained = ""
@@ -1815,9 +1857,24 @@ class Character(commands.Cog):
                 print('')
                 print(data)
 
+                statsCollection = db.stats
+                statsRecord  = statsCollection.find_one({'Life': 1})
+                
+                if subclassCheckClass['Subclass'] != "" :
+                    if subclassCheckClass['Subclass']  in statsRecord['Class'][subclassCheckClass['Name']]:
+                        statsRecord['Class'][subclassCheckClass['Name']][subclassCheckClass['Subclass']] += 1
+                    else:
+                        statsRecord['Class'][subclassCheckClass['Name']][subclassCheckClass['Subclass']] = 1
+                else:
+                    if subclassCheckClass['Name'] in statsRecord['Class']:
+                        statsRecord['Class'][subclassCheckClass['Name']]['Count'] += 1
+                    else:
+                        statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
+
                 try:
                     playersCollection = db.players
                     playersCollection.update_one({'_id': charID}, {"$set": data})
+                    statsCollection.update_one({'Life':1}, {"$set": statsRecord}, upsert=True)
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
                     charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
@@ -1971,6 +2028,7 @@ class Character(commands.Cog):
         statsCollection = db.stats
         currentDate = datetime.now().strftime("%b-%y")
         statRecords = statsCollection.find_one({"Date": currentDate})
+        statRecordsLife = statsCollection.find_one({"Life": 1})
         guild=ctx.guild
 
         statsEmbed = discord.Embed()
@@ -1982,8 +2040,10 @@ class Character(commands.Cog):
         superTotal = 0
         avgString = ""
         statsString = ""
+        charString = ""
 
         for k,v in statRecords['DM'].items():
+            print(k)
             statsString += guild.get_member(int(k)).display_name + " - "
             for i in range (1,5):
                 if f'T{i}' not in v:
@@ -2023,6 +2083,17 @@ class Character(commands.Cog):
         statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
         statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
 
+        # for k, v in statRecordsLife['Class']:
+        #     charString = f"{k}:{v['Count']}\n"
+        #     for vk, vv in v:
+        #         if vk != 'Count':
+        #             charString += f"• {vk}:{vv}\n"
+        #     charString += f"━━━━━\n"
+            
+
+        # statsEmbed.add_field(name="DM Games", value=charString, inline=False)  
+
+
         statsTotalString += f"Total Games for the Month: {superTotal}\n"
         for i in range (1,5):
             if f'T{i}' not in statRecords:
@@ -2037,9 +2108,6 @@ class Character(commands.Cog):
         statsEmbed.description = statsTotalString
 
         await ctx.channel.send(embed=statsEmbed)
-
-
-
 
     async def pointBuy(self,ctx, statsArray, rRecord, charEmbed, charEmbedmsg):
         author = ctx.author
@@ -2351,7 +2419,7 @@ class Character(commands.Cog):
                         if f == 'Human (Variant)':
                             charEmbed.add_field(name=f"Your race **Human (Variant)** allows you to choose a feat. Please choose your feat from the list below.", value=f"-", inline=False)
                         else:
-                            charEmbed.add_field(name=f"Please choose your feat from the list below", value=f"-", inline=False)
+                            charEmbed.add_field(name=f"Please choose your feat from the list below", value=f"━━━━━━━━━━", inline=False)
 
                         pageStart = perPage*page
                         pageEnd = perPage * (page + 1)

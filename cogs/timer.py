@@ -221,7 +221,7 @@ class Timer(commands.Cog):
         await ctx.invoke(self.timer.get_command('start'), userList = signedPlayers, game=game, role=role, guildsList = guildsList)
 
     @timer.command()
-    async def signup(self,ctx, char="", author="", role=""):
+    async def signup(self,ctx, char="", author="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
             channel = ctx.channel
             guild = ctx.guild
@@ -244,6 +244,10 @@ class Timer(commands.Cog):
                         charList = shlex.split(char.content.split(f'{commandPrefix}timer add ')[1].strip())
                     elif 't add' in char.content:
                         charList = shlex.split(char.content.split(f'{commandPrefix}t add ')[1].strip())
+                    if len(charList) == 1:
+                        if not resume:
+                            await ctx.channel.send("You're missing a character name for the player you're trying to add. Please try again")
+                        return
                     charName = charList[1]
                 elif ('timer addme' in char.content or 't addme' in char.content) and (char.content != f'{commandPrefix}timer addme' or char.content != f'{commandPrefix}t addme'):
                     if 'timer addme' in char.content:
@@ -254,7 +258,8 @@ class Timer(commands.Cog):
                         
 
                 else:
-                    await ctx.channel.send("I wasn't able to add this character. Please check your format")
+                    if not resume:
+                        await ctx.channel.send("I wasn't able to add this character. Please check your format")
                     return
 
             if charList[len(charList) - 1] != charName:
@@ -487,7 +492,7 @@ class Timer(commands.Cog):
             if rewardList == list():
                 if not resume:
                     await ctx.channel.send(content=f"I could not find any mention of a user to hand out a reward") 
-                    return start
+                return start
             else:
                 rewardUser = guild.get_member(rewardList[0])
                 startcopy = start.copy()
@@ -510,7 +515,7 @@ class Timer(commands.Cog):
                     else:
                         if not resume:
                             await ctx.channel.send(content=f"You need to reward the user an item from the RIT")
-                            return start
+                        return start
 
 
                     for query in consumablesList:
@@ -649,7 +654,7 @@ class Timer(commands.Cog):
                         timeKey = u
                         
             if not userFound:
-                userInfo =  await ctx.invoke(self.timer.get_command('signup'), role=role, char=msg, author=addUser) 
+                userInfo =  await ctx.invoke(self.timer.get_command('signup'), role=role, char=msg, author=addUser, resume=resume) 
                 if userInfo:
                     if not resume and dmChar :
                         addEmbed = discord.Embed()
@@ -1281,7 +1286,6 @@ class Timer(commands.Cog):
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 else:
                     print('Success')
-                return
                 # Session Log Channel
                 logChannel = self.bot.get_channel(663454980140695553) 
                 # logChannel = self.bot.get_channel(663451042889072660) 
