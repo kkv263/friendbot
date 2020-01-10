@@ -2083,15 +2083,16 @@ class Character(commands.Cog):
         statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
         statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
 
-        # for k, v in statRecordsLife['Class']:
-        #     charString = f"{k}:{v['Count']}\n"
-        #     for vk, vv in v:
-        #         if vk != 'Count':
-        #             charString += f"• {vk}:{vv}\n"
-        #     charString += f"━━━━━\n"
+        print(statRecordsLife['Class'])
+        for k, v in statRecordsLife['Class'].items():
+            charString += f"{k}:{v['Count']}\n"
+            for vk, vv in v.items():
+                if vk != 'Count':
+                    charString += f"• {vk}:{vv}\n"
+            charString += f"━━━━━\n"
             
 
-        # statsEmbed.add_field(name="DM Games", value=charString, inline=False)  
+        statsEmbed.add_field(name="Character Selection Stats (Lifetime)", value=charString, inline=False)  
 
 
         statsTotalString += f"Total Games for the Month: {superTotal}\n"

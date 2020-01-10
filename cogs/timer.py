@@ -1199,6 +1199,10 @@ class Timer(commands.Cog):
 
                 timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
 
+
+                print(timerData)
+                return
+
                 stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
                 stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
