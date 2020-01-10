@@ -238,7 +238,7 @@ currentTimers = []
 
 gameCategory = ["🎲 game rooms", "🐉 campaigns", "mod friends"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True', '']
-noodleRoleArray = ['Good Noodle', 'Elite Noodle', 'True Noodle', 'Mega Noodle']
+noodleRoleArray = ['Good Noodle', 'Elite Noodle', 'True Noodle', 'Ramen Noodle', 'Spicy Noodle']
 tierArray = getTiers(sheet.row_values(2))
 tpArray = sheet.row_values(3)
 commandPrefix = '$'

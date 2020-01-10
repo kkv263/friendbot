@@ -155,7 +155,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedTp.add_field(name=commandPrefix + 'tp abandon "character name" tier', value="Abandon excess TP in the tier of your choosing.", inline=False)
 
     helpEmbedGuild.title = 'Available Guild Commands'
-    helpEmbedGuild.add_field(name=commandPrefix + 'guild create "guild name" @role #channel', value="After a role and channel are designated, a guild will be created. It will require funding before it is officially open.", inline=False)
+    helpEmbedGuild.add_field(name=commandPrefix + 'guild create "character name" "guild name" @role #channel', value="After a role and channel are designated, a guild will be created. It will require funding before it is officially open.", inline=False)
     helpEmbedGuild.add_field(name=commandPrefix + 'guild fund "character name" gp "guild name"', value="Fund the establishment of the guild. Upon funding the minimum required amount, your character will be added the the guild's roster.", inline=False)
     helpEmbedGuild.add_field(name=commandPrefix + 'guild info "guild name"', value="Provides a guild roster and the amount of reputation inside a guild bank. If your guild has yet to be funded, it will show the amount GP before the guild will open.", inline=False)
     helpEmbedGuild.add_field(name=commandPrefix + 'guild leave "character name"', value="Your character leaves the guild leaving all reputation behind.", inline=False)

@@ -297,6 +297,10 @@ class Guild(commands.Cog):
                     await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
                     return
 
+                if gpNeeded > gpFund:
+                    await channel.send(f"{charRecords['Name']} needs to donate at least the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
+                    return
+
                         
                 guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
                 guildEmbed.description = f"Are you sure you want to fund **{guildRecords['Name']}**?\n❕**{charRecords['Name']} will automatically join {guildRecords['Name']} upon funding.**\n\n✅ : Yes\n\n❌: Cancel"
@@ -341,6 +345,8 @@ class Guild(commands.Cog):
                 else:
                     guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
                     guildEmbed.description = f"{charRecords['Name']} has funded **{guildRecords['Name']}** with {gpFund}gp.\nIf the amount puts the guild's funds over 6000, the leftover is refunded\n\n**Current Guild Funds:** {guildRecords['Funds']}gp / 6000gp\n\n**Current gp**: {newGP}\n"
+                    if guildRecords['Funds'] > 6000:
+                        guildEmbed.description += f"Congratulations! :tada: **{guildRecords['Name']}**  is officially open!"
                     if guildEmbedmsg:
                         await guildEmbedmsg.edit(embed=guildEmbed)
                     else:
