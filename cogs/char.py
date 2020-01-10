@@ -150,7 +150,6 @@ class Character(commands.Cog):
         charDict['CP'] = f"0/{maxCP}"
         
         # check magic items and TP
-        # TODO: bank tp if use less than required  lvl 4, 4/6
         magicItems = mItems.split(',')
         allMagicItemsString = []
         if lvl > 1 and magicItems != ['']:
@@ -225,11 +224,10 @@ class Character(commands.Cog):
                         else:
                           bankTP2 = abs(bankTP2)
                           magicItemsBought.append(item)
+                return magicItemsBought, bankTP1, bankTP2
 
-                return magicItemsBought
 
-            magicItemsBought = calculateMagicItems(lvl)
-            print(magicItemsBought)
+            magicItemsBought, bankTP1, bankTP2 = calculateMagicItems(lvl)
             if isinstance(magicItemsBought, str):
                 msg += magicItemsBought
             elif magicItemsBought == list():
@@ -241,8 +239,6 @@ class Character(commands.Cog):
         elif lvl == 1 and magicItems != ['']:
             msg += 'You cannot purchase magic items at Level 1\n'
 
-          
-        print(allMagicItemsString)
 
         #check reward items
         rewardItems = consumes.split(',')
@@ -262,8 +258,6 @@ class Character(commands.Cog):
             rewardConsumables = []
             rewardMagics = []
             tier1Rewards = []
-
-            print(allRewardItemsString)
 
             if lvl == 4:
                 tier1CountMNC = 1
@@ -396,7 +390,7 @@ class Character(commands.Cog):
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
 
-            # starting equipment
+            #starting equipment
             def alphaEmbedCheck(r, u):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
@@ -574,7 +568,6 @@ class Character(commands.Cog):
                     msg += f"- Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
             print (statsArray)
 
-        # TODO: Page breaks on 3 when choosing out of bounds letter.
         #feats
         if msg == "":
             featLevels = []
@@ -666,6 +659,12 @@ class Character(commands.Cog):
         charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
         charEmbed.description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
+        if  bankTP1 > 0:
+            charDict['T1 TP'] = bankTP1
+            charEmbed.add_field(name='Unused T1 TP', value=charDict['T1 TP'], inline=True)
+        if  bankTP2 > 0:
+            charDict['T2 TP'] = bankTP2
+            charEmbed.add_field(name='Unused T2 TP', value=charDict['T2 TP'], inline=True)
         if charDict['Magic Items'] != 'None':
             charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
         if charDict['Consumables'] != 'None':
@@ -734,11 +733,6 @@ class Character(commands.Cog):
 
             if charDict['Background'] in statsRecord['Background']:
                 statsRecord['Background'][charDict['Background']] += 1
-            else:
-                statsRecord['Background'][charDict['Background']] = 1
-
-            if charDict['Background'] in statsRecord['Background']:
-                statsRecord['Background'][charDict['Race']] += 1
             else:
                 statsRecord['Background'][charDict['Background']] = 1
 
@@ -2041,6 +2035,8 @@ class Character(commands.Cog):
         avgString = ""
         statsString = ""
         charString = ""
+        raceString = ""
+        bgString = ""
 
         for k,v in statRecords['DM'].items():
             print(k)
@@ -2090,9 +2086,17 @@ class Character(commands.Cog):
                 if vk != 'Count':
                     charString += f"• {vk}:{vv}\n"
             charString += f"━━━━━\n"
+
+        for k, v in statRecordsLife['Race'].items():
+            raceString += f"{k}:{v}\n"
+
+        for k, v in statRecordsLife['Background'].items():
+            bgString += f"{k}:{v}\n"
             
 
-        statsEmbed.add_field(name="Character Selection Stats (Lifetime)", value=charString, inline=False)  
+        statsEmbed.add_field(name="Character Class Stats (Lifetime)", value=charString, inline=False)  
+        statsEmbed.add_field(name="Character Race Stats (Lifetime)", value=raceString, inline=False)  
+        statsEmbed.add_field(name="Character Background Stats (Lifetime)", value=bgString, inline=False)  
 
 
         statsTotalString += f"Total Games for the Month: {superTotal}\n"
@@ -2409,7 +2413,7 @@ class Character(commands.Cog):
                         sameMessage = False
                         if charEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return sameMessage and u == author and (r.emoji == left or r.emoji == right or r.emoji == '❌' or r.emoji == back or r.emoji in alphaEmojis[:perPage])
+                        return sameMessage and u == author and (r.emoji == left or r.emoji == right or r.emoji == '❌' or r.emoji == back or r.emoji in alphaEmojis[:alphaIndex])
 
                     page = 0;
                     perPage = 24
@@ -2420,7 +2424,7 @@ class Character(commands.Cog):
                         if f == 'Human (Variant)':
                             charEmbed.add_field(name=f"Your race **Human (Variant)** allows you to choose a feat. Please choose your feat from the list below.", value=f"-", inline=False)
                         else:
-                            charEmbed.add_field(name=f"Please choose your feat from the list below", value=f"━━━━━━━━━━", inline=False)
+                            charEmbed.add_field(name=f"Please choose your feat from the list below", value=f"━━━━━━━━━━━━━━━━━━━━", inline=False)
 
                         pageStart = perPage*page
                         pageEnd = perPage * (page + 1)
