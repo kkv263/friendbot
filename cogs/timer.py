@@ -1098,7 +1098,7 @@ class Timer(commands.Cog):
                             dmChar[2].append("(DI)+" + randomItem['Name'])
                       
 
-                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, treasureArray[0], treasureArray[1], treasureArray[2]))
+                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, dmtreasureArray[0], dmtreasureArray[1], dmtreasureArray[2]))
 
                 playersCollection = db.players
                 usersCollection = db.users
@@ -1198,10 +1198,6 @@ class Timer(commands.Cog):
                             guildsRecordsList.append(gRecord)
 
                 timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
-
-
-                print(timerData)
-                return
 
                 stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
