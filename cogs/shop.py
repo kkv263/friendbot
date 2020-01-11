@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callShopAPI, checkForChar, noodleRoleArray,traceBack
+from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack
 
 class Shop(commands.Cog):
     def __init__ (self, bot):
@@ -64,7 +64,7 @@ class Shop(commands.Cog):
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
         
-            bRecord = callShopAPI('shop',buyItem) 
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop',buyItem) 
         
             if bRecord:
                 gpNeeded = bRecord['GP'] * amount
@@ -136,7 +136,7 @@ class Shop(commands.Cog):
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
         
-            bRecord = callShopAPI('shop',buyItem) 
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'shop',buyItem) 
         
             if bRecord:
                 if f"{bRecord['Name']}" not in charRecords['Inventory']:
@@ -209,7 +209,7 @@ class Shop(commands.Cog):
 
             consumes = charRecords['Consumables'].split(', ')
 
-            bRecord = callShopAPI('spells',spellName)
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'spells',spellName)
 
             if bRecord:
                 if 'Spellbook' in charRecords:

@@ -154,7 +154,7 @@ class Character(commands.Cog):
         allMagicItemsString = []
         if lvl > 1 and magicItems != ['']:
             for m in magicItems:
-                mRecord = callAPI('mit',m) 
+                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'mit',m) 
                 if mRecord in allMagicItemsString:
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
@@ -245,7 +245,7 @@ class Character(commands.Cog):
         allRewardItemsString = []
         if lvl > 3 and rewardItems != ['']:
             for r in rewardItems:
-                reRecord = callAPI('rit',r) 
+                reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
                 if not reRecord:
                     msg += f'- {r} doesn\'t exist! Check to see if it\'s on the RIT and check your spelling.\n'
                     break
@@ -347,11 +347,12 @@ class Character(commands.Cog):
 
             
         # check race
-        rRecord = callAPI('races',race)
+        rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'races',race)
         if not rRecord:
             msg += f'- {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
+
         
         # check class
         cRecord = []
@@ -366,7 +367,7 @@ class Character(commands.Cog):
                 mLevel = mLevel.group()
                 print(m)
                 print(m[:len(m) - len(mLevel)])
-                mClass = callAPI('classes',m[:len(m) - len(mLevel)])
+                mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
                 if not mClass:
                     cRecord = None
                     break
@@ -374,7 +375,7 @@ class Character(commands.Cog):
                 totalLevel += int(mLevel)
 
         else:
-            singleClass = callAPI('classes',cclass)
+            singleClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'classes',cclass)
             if singleClass:
                 cRecord.append({'Class':singleClass, 'Level':lvl, 'Subclass': 'None'})
             else:
@@ -536,7 +537,7 @@ class Character(commands.Cog):
                         charDict['Class'] += f' / {className}'
 
         # check bg and gp
-        bRecord = callAPI('backgrounds',bg)
+        bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'backgrounds',bg)
         if not bRecord:
             msg += f'- That {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -804,7 +805,7 @@ class Character(commands.Cog):
         bankTP = 0
         if lvl > 1 and magicItems != ['']:
             for m in magicItems:
-                mRecord = callAPI('mit',m) 
+                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',m) 
                 if mRecord in allMagicItemsString:
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
@@ -816,7 +817,7 @@ class Character(commands.Cog):
 
             if prevMagicItems != ['None']:
                 for m in prevMagicItems:
-                    mRecord = callAPI('mit',m)
+                    mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',m)
                     if not mRecord:
                         pass
                     else:
@@ -862,7 +863,7 @@ class Character(commands.Cog):
         print(allMagicItemsString)
 
         # check race
-        rRecord = callAPI('races',race)
+        rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'races',race)
         if not rRecord:
             msg += f'- {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -881,7 +882,7 @@ class Character(commands.Cog):
                 mLevel = mLevel.group()
                 print(m)
                 print(m[:len(m) - len(mLevel)])
-                mClass = callAPI('classes',m[:len(m) - len(mLevel)])
+                mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
                 if not mClass:
                     cRecord = None
                     break
@@ -889,7 +890,7 @@ class Character(commands.Cog):
                 totalLevel += int(mLevel)
 
         else:
-            singleClass = callAPI('classes',cclass)
+            singleClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',cclass)
             if singleClass:
                 cRecord.append({'Class':singleClass, 'Level':lvl, 'Subclass': 'None'})
             else:
@@ -929,7 +930,7 @@ class Character(commands.Cog):
                         charDict['Class'] += f' / {className}'
 
         # check bg and gp
-        bRecord = callAPI('backgrounds',bg)
+        bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'backgrounds',bg)
         if not bRecord:
             msg += f'- {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -1597,9 +1598,8 @@ class Character(commands.Cog):
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
             else:
-                cRecords = callAPI('classes')
+                cRecords, levelUpEmbed, levelUpEmbedmsg = await callAPI(ctx, levelUpEmbed, levelUpEmbedmsg,'classes')
                 classRecords = sorted(cRecords, key=lambda k: k['Name']) 
-                print(classRecords)
                 leftCP = float(cpSplit[0]) - float(cpSplit[1])
                 newCharLevel = charLevel  + 1
                 totalCP = f'{leftCP}/{cpSplit[1]}'
@@ -1721,8 +1721,11 @@ class Character(commands.Cog):
                                 return
 
                             if '/' not in charClass:
-                                charClass += ' ' + str(lvl)
-
+                                if '(' in charClass and ')' in charClass:
+                                    charClass = charClass.replace('(', f"{lvl} (")
+                                else:
+                                    charClass += ' ' + str(lvl)
+                                
                             charClass += f' / {classes[alphaEmojis.index(tReaction.emoji)]} 1'
                             lvlClass = classes[alphaEmojis.index(tReaction.emoji)]
                             subclasses.append({'Name': classes[alphaEmojis.index(tReaction.emoji)], 'Subclass': '', 'Level': 1})
@@ -1777,8 +1780,14 @@ class Character(commands.Cog):
                         subclassChoice, levelUpEmbedmsg = await characterCog.chooseSubclass(ctx, subclassesList, s['Name'], levelUpEmbed, levelUpEmbedmsg) 
                         if not subclassChoice:
                             return
-                        levelUpEmbed.description = levelUpEmbed.description.replace(s['Name'], f"{s['Name']} ({subclassChoice})") 
-                        charClass = charClass.replace(s['Name'], f"{s['Name']} ({subclassChoice})" )
+                        
+                        if '/' not in charClass:
+                            levelUpEmbed.description = levelUpEmbed.description.replace(s['Name'], f"{s['Name']} ({subclassChoice})") 
+                            charClass = charClass.replace(s['Name'], f"{s['Name']} ({subclassChoice})" )
+                        else:
+                            levelUpEmbed.description = levelUpEmbed.description.replace(f"{s['Name']} {subclassCheckClass['Level']}", f"{s['Name']} {subclassCheckClass['Level']} ({subclassChoice})" ) 
+                            charClass = charClass.replace(f"{s['Name']} {subclassCheckClass['Level']}", f"{s['Name']} {subclassCheckClass['Level']} ({subclassChoice})" )
+
                         for sub in subclasses:
                             if sub['Name'] == subclassCheckClass['Name']:
                                 sub['Subclass'] = subclassChoice
@@ -1822,13 +1831,6 @@ class Character(commands.Cog):
                 if charFeatsGained != "":
                     charFeatsGainedStr = f"Feats Gained: {charFeatsGained}"
                 
-                levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: ({totalCP}) CP'
-                levelUpEmbed.description = levelUpEmbed.description + f"\nHP:{charHP}\n{charFeatsGainedStr}"
-                levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
-
-                levelUpEmbed.clear_fields()
-                await levelUpEmbedmsg.edit(embed=levelUpEmbed)
-                print(charID)
                 data = {
                       'Class': charClass,
                       'Level': int(newCharLevel),
@@ -1847,9 +1849,6 @@ class Character(commands.Cog):
                         data['Feats'] = charFeatsGained
                     elif infoRecords['Feats'] != None:
                         data['Feats'] = charFeats + ", " + charFeatsGained
-
-                print('')
-                print(data)
 
                 statsCollection = db.stats
                 statsRecord  = statsCollection.find_one({'Life': 1})
@@ -1877,30 +1876,43 @@ class Character(commands.Cog):
 
                 roles = [r.name for r in author.roles]
                 roleName = ""
-                if 'Journeyfriend' not in roles and 'Junior Friend' in roles and newCharLevel > 4 and 'Junior Friend in ':
+                if 'Journeyfriend' not in roles and 'Junior Friend' in roles and newCharLevel > 4:
                     roleName = 'Journeyfriend' 
-                    tierRole = 'Tier 2'
-                    roleRemove = 'Junior Friend'
+                    tierRoleStr = 'Tier 2'
+                    roleRemoveStr = 'Junior Friend'
                     levelRole = get(guild.roles, name = roleName)
+                    tierRole = get(guild.roles, name = tierRoleStr)
+                    roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"{author}'s character {charName} is the first character who has reached level 5!")
                     await author.add_roles(tierRole, reason=f"{author}'s character {charName} is the first character who has reached level 5!")
                     await author.remove_roles(roleRemove)
                 if 'Elite Friend' not in roles and 'Journeyfriend' in roles and newCharLevel > 10:
                     roleName = 'Elite Friend'
-                    tierRole = 'Tier 3'
-                    roleRemove = 'Journeyfriend'
+                    tierRoleStr = 'Tier 3'
+                    roleRemoveStr = 'Journeyfriend'
                     levelRole = get(guild.roles, name = roleName)
+                    tierRole = get(guild.roles, name = tierRoleStr)
+                    roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"{author}'s character {charName} is the first character who has reached level 11!")
                     await author.add_roles(tierRole, reason=f"{author}'s character {charName} is the first character who has reached level 11!")
                     await author.remove_roles(roleRemove)
                 if 'True Friend' not in roles and 'Elite Friend' in roles and newCharLevel > 16:
                     roleName = 'True Friend'
-                    tierRole = 'Tier 4'
-                    roleRemove = 'Elite Friend'
+                    tierRoleStr = 'Tier 4'
+                    roleRemoveStr = 'Elite Friend'
                     levelRole = get(guild.roles, name = roleName)
+                    tierRole = get(guild.roles, name = tierRoleStr)
+                    roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"{author}'s character {charName} is the first character who has reached level 17!")
                     await author.add_roles(tierRole, reason=f"{author}'s character {charName} is the first character who has reached level 17!")
                     await author.remove_roles(roleRemove)
+
+                levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: ({totalCP}) CP'
+                levelUpEmbed.description = levelUpEmbed.description + f"\nHP:{charHP}\n{charFeatsGainedStr}"
+                levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
+
+                levelUpEmbed.clear_fields()
+                await levelUpEmbedmsg.edit(embed=levelUpEmbed)
 
                 if roleName != "":
                     levelUpEmbed.title = f":tada: {roleName} role acquired! :tada:\n" + levelUpEmbed.title
@@ -1946,7 +1958,7 @@ class Character(commands.Cog):
 
             # TODO: get attuned items from RIT.
             # Test multiclass with attuned item ex. barbarian and str magic item 
-            mRecord = callAPI('mit', m)
+            mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
             if m.lower() not in [x.lower() for x in charRecordMagicItems] or not mRecord:
                 await channel.send(f"You don't have the item `{m}` in your inventory or it does not exist on the magic item table.")
                 return
@@ -1993,7 +2005,7 @@ class Character(commands.Cog):
                 attuned = charRecords['Attuned'].split(', ')
 
             charID = charRecords['_id']
-            mRecord = callAPI('mit', m)
+            mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
             if not mRecord:
                 await channel.send(f"`{m}` does not exist on the magic item table.")
                 return
@@ -2360,7 +2372,7 @@ class Character(commands.Cog):
 
                 elif choice == 2:
                     if featChoices == list():
-                        fRecords = callAPI('feats')
+                        fRecords, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'feats')
 
                         for feat in fRecords:
                             featList = []

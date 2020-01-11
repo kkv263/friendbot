@@ -82,7 +82,7 @@ class Mod(commands.Cog):
             charRecords, charEmbedmsg = await checkForChar(ctx, name, charEmbed)
             if charRecords:
                 if removeKey == "Magic Items":
-                    mRecord = callAPI('mit',removeValue) 
+                    mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',removeValue) 
                     if mRecord:
                         removeRecords = charRecords['Magic Items'].split(', ')
                         if mRecord['Name'] in removeRecords and charRecords['Magic Items'] != "None":
@@ -103,7 +103,7 @@ class Mod(commands.Cog):
                             return 
 
                     else:
-                        cRecord = callAPI('rit',removeValue)
+                        cRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit',removeValue)
                         if cRecord and 'Consumable' not in  cRecord:
                             removeRecords = charRecords['Magic Items'].split(', ')
                             if cRecord['Name'] in removeRecords and charRecords['Magic Items'] != "None": 
@@ -122,7 +122,7 @@ class Mod(commands.Cog):
                             return 
 
                 elif removeKey == "Inventory":
-                    iRecord = callAPI('shop', removeValue);
+                    iRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'shop', removeValue);
                     if iRecord:
                         removeRecords = charRecords['Inventory']
                         print(removeRecords)
@@ -140,7 +140,7 @@ class Mod(commands.Cog):
                         return 
                     
                 elif removeKey == "Consumables":
-                    cRecord = callAPI('rit',removeValue)
+                    cRecord = callAPI, charEmbed, charEmbedmsg('rit',removeValue)
                     if cRecord and 'Consumable' in  cRecord:
                         removeRecords = charRecords['Consumables'].split(', ')
                         if cRecord['Name'] in removeRecords and charRecords['Consumables'] != "None": 
@@ -186,7 +186,7 @@ class Mod(commands.Cog):
             charRecords, charEmbedmsg = await checkForChar(ctx, name, charEmbed)
             if charRecords:
                 if addKey == "Magic Items":
-                    mRecord = callAPI('mit',addValue) 
+                    mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',addValue) 
                     if mRecord:
                         addRecords = charRecords['Magic Items'].split(', ')
                         if mRecord['Name'] not in addRecords:
@@ -201,7 +201,7 @@ class Mod(commands.Cog):
                             return 
 
                     else:
-                        cRecord = callAPI('rit',addValue)
+                        cRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit',addValue)
                         if cRecord and 'Consumable' not in cRecord:
                             addRecords = charRecords['Magic Items'].split(', ')
                             if cRecord['Name'] not in addRecords: 
@@ -218,7 +218,7 @@ class Mod(commands.Cog):
                             await channel.send(f'The magic item `{addValue}` does not exist, or is not a magic item. Please try again')
                             return 
                 elif addKey == "Inventory":
-                    iRecord = callAPI('shop', addValue);
+                    iRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'shop', addValue);
                     if iRecord:
                         addRecords = charRecords['Inventory']
                         if addRecords == 'None':
@@ -233,7 +233,7 @@ class Mod(commands.Cog):
                         await channel.send(f"The item `{addValue}`does not exist or is not a valid shop inventory item")
                         return 
                 elif addKey == "Consumables":
-                    cRecord = callAPI('rit',addValue)
+                    cRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit',addValue)
                     if cRecord and 'Consumable' in cRecord:
                         addRecords = charRecords['Consumables'].split(', ')
                         if charRecords['Consumables'] == "None":

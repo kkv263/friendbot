@@ -70,14 +70,17 @@ def calculateTreasure(seconds, role):
 
     return [cp, tp, gp, dcp, dtp, dgp]
 
-def callAPI(table, query=None):
-    if query == "":
-        return False
+async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None):
+    channel = ctx.channel
+    author = ctx.author
+
+    if query == "" or table is None:
+        return None, apiEmbed, apiEmbedmsg
 
     collection = db[table]
     
     if query is None:
-        return list(collection.find())
+        return list(collection.find()), apiEmbed, apiEmbedmsg
 
     query = query.replace('(', '\\(')
     query = query.replace(')', '\\)')
@@ -87,45 +90,52 @@ def callAPI(table, query=None):
     print(records)
 
     if records == list():
-        return False
+        return None, apiEmbed, apiEmbedmsg
     else:
+        infoString = ""
         if (len(records) > 1):
           # TODO: Prompt for multiple :) max of 9?
-            if table == 'races' or table == "backgrounds" or table == "rit" or table == "mit":
-                for x in records:
-                    print(x['Name'])
-                    print(query)
-                    if len(x['Name'].replace(" ", "")) == len(query.replace(" ", "")):
-                        return x
+            for i in range(0, min(len(records), 9)):
+                if table == 'mit':
+                    infoString += f"{numberEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']})\n"
+                elif table == 'rit':
+                    infoString += f"{numberEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']} {records[i]['Minor/Major']})\n"
+                else:
+                    infoString += f"{numberEmojis[i]}: {records[i]['Name']}\n"
+            
+            def apiEmbedCheck(r, u):
+                sameMessage = False
+                if apiEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return (r.emoji in numberEmojis[:min(len(records), 9)]) or (str(r.emoji) == '❌') and u == author
 
-            if table == 'rit':
-                minimum = {'Tier': 0}
-                for x in records:
-                    if int(x['Tier']) > int(minimum['Tier']):
-                        min = x
-                
-                return min
+            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific", value=infoString, inline=False)
+            if not apiEmbedmsg:
+                apiEmbedmsg = await channel.send(embed=apiEmbed)
+            else:
+                await apiEmbedmsg.edit(embed=apiEmbed)
+
+            await apiEmbedmsg.add_reaction('❌')
+
+            try:
+                tReaction, tUser = await bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+            except asyncio.TimeoutError:
+                await apiEmbedmsg.delete()
+                await channel.send('Timed out! Try using the command again.')
+                ctx.command.reset_cooldown(ctx)
+                return None, apiEmbed, apiEmbedmsg
+            else:
+                if tReaction.emoji == '❌':
+                    await apiEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                    await apiEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
+                    return None, apiEmbed, apiEmbedmsg
+            apiEmbed.clear_fields()
+            await apiEmbedmsg.clear_reactions()
+            return records[int(tReaction.emoji[0]) - 1], apiEmbed, apiEmbedmsg
 
         else:
-            return records[0]
-
-def callShopAPI(table, query):
-    if query == "":
-        return False
-
-    shopCollection = db[table]
-    shopRecords = list(shopCollection.find({"Name": {"$regex": query, '$options': 'i' }}))
-
-    if shopRecords == list():
-        return False
-    else:
-        if (len(shopRecords) > 1):
-            for x in shopRecords:
-                if len(x['Name'].replace(" ", "")) == len(query.replace(" ", "")):
-                    return x
-
-        else:
-            return shopRecords[0]
+            return records[0], apiEmbed, apiEmbedmsg
 
 async def checkForChar(ctx, char, charEmbed="", mod=False):
     channel = ctx.channel

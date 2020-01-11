@@ -543,9 +543,8 @@ class Timer(commands.Cog):
                             await ctx.channel.send(content=f"You need to reward the user an item from the RIT")
                         return start, dmChar
 
-
                     for query in consumablesList:
-                        rewardConsumable = callAPI('rit',query) 
+                        rewardConsumable, charEmbed, charEmbedmsg = await callAPI(ctx, discord.Embed(),'rit',query) 
 
                         if not rewardConsumable:
                             if not resume:
@@ -556,7 +555,6 @@ class Timer(commands.Cog):
                             minor = dmChar[4][2]
                             dmMajor = dmChar[4][3]
                             dmMinor = dmChar[4][4]
-                            # TODO DM Noodle rewards 3 hours +
 
                             dmMnc = False
                             lowerTier = False
