@@ -7,6 +7,7 @@ import re
 import shlex
 import decimal
 import random
+from math import ceil
 from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
@@ -145,7 +146,6 @@ class Timer(commands.Cog):
         for x in product(timerAlias,timerCommands):
             timerCombined.append(f"{commandPrefix}{x[0]} {x[1]}")
 
-        #TODO: Levelup case handle here
         while not timerStarted:
             msg = await self.bot.wait_for('message', check=lambda m: any(x in m.content for x in timerCombined) and m.channel == channel)
             if f"{commandPrefix}timer signup" in msg.content or f"{commandPrefix}t signup" in msg.content:
@@ -507,6 +507,7 @@ class Timer(commands.Cog):
                 startcopy = start.copy()
                 userFound = False;
                 timeKey = ""
+                userCount = 0
                 
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
@@ -517,12 +518,12 @@ class Timer(commands.Cog):
                             return start
                     for item in v:
                         if item[0] == rewardUser:
+                            userCount += 1
                             userFound = True
                             timeKey = u
                             currentItem = oldItem = item
                             charConsumableList = currentItem[1]['Consumables'].split(', ')
                             charMagicList = currentItem[1]['Magic Items'].split(', ')
-                            break
 
                 if userFound:
                     if '"' in msg.content:
@@ -545,70 +546,102 @@ class Timer(commands.Cog):
                             major = dmChar[4][1]
 
                             # TODO DM Noodle rewards 3 hours +
-
-                            #TODO: • If you host a quest which has less than three players and is under three hours in length, 
-                            # you may only award half of the Reward Items that you can normally reward (rounded up for @Good Noodle, @True Noodle, and @Spicy Noodle) and the items 
-                            # that you reward can only be Tier 1 Minor items.
-                            #• If you host a quest which is under one hour in length, you cannot award any Reward Items.
                               
                             if rewardConsumable['Minor/Major'] == 'Minor':
                                 minor += 1
                             elif rewardConsumable['Minor/Major'] == 'Major':
                                 major += 1
+                               
+                            rewardMajorLimit = 1
+                            rewardMinorLimit = 2
+
+                            rewardMajorErrorString = f"You cannot award anymore **major** reward items\nTotal rewarded so far:\n**({dmChar[4][1]})** Major Rewards \n**({dmChar[4][2]})** Minor Rewards"
+                            rewardMinorErrorString = f"You cannot award anymore **minor** reward items\nTotal rewarded so far:\n**({dmChar[4][1]})** Major Rewards \n**({dmChar[4][2]})** Minor Rewards"
+
                             if dmChar[4][0] == 'Spicy Noodle':
-                                if ((major == 3 and minor > 4) or (major == 2 and minor > 5) or (major == 1 and minor > 6) or (major == 0 and minor > 7))  and rewardConsumable['Minor/Major'] == 'Minor':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
-                                elif ((minor == 7 and major > 0) or (minor == 6 and major > 1) or (minor == 5 and major > 2) or (minor <= 4 and major > 3)) and rewardConsumable['Minor/Major'] == 'Major':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
+                                rewardMajorLimit = 3
+                                rewardMinorLimit = 7
                             elif dmChar[4][0] == 'Ramen Noodle':
-                                if ((major == 3 and minor > 3) or (major == 2 and minor > 4) or (major == 1 and minor > 5) or (major == 0 and minor > 6))  and rewardConsumable['Minor/Major'] == 'Minor':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
-                                elif ((minor == 6 and major > 0) or (minor == 5 and major > 1) or (minor == 4 and major > 2) or (minor <= 3 and major > 3)) and rewardConsumable['Minor/Major'] == 'Major':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
+                                rewardMajorLimit = 3
+                                rewardMinorLimit =  6
                             elif dmChar[4][0] == 'True Noodle':
-                                if ((major == 2 and minor > 3) or (major == 1 and minor > 4) or (major == 0 and minor > 5)) and rewardConsumable['Minor/Major'] == 'Minor':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
-                                elif ((minor == 5 and major > 0) or (minor == 4 and major > 1) or (minor == 3 and major > 2) or (minor <= 3 and major > 2)) and rewardConsumable['Minor/Major'] == 'Major':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
+                                rewardMajorLimit = 2
+                                rewardMinorLimit = 5
                             elif dmChar[4][0] == 'Elite Noodle':
-                                if ((major == 2 and minor > 2) or (major == 1 and minor > 3) or (major == 0 and minor > 4)) and rewardConsumable['Minor/Major'] == 'Minor' :
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
-                                elif ((minor == 4 and major > 0) or (minor == 3 and major > 1) or (minor <= 2 and major > 2)) and rewardConsumable['Minor/Major'] == 'Major':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
+                                rewardMajorLimit = 2
+                                rewardMinorLimit = 4
                             elif dmChar [4][0] == 'Good Noodle':
-                                if ((major == 1 and minor > 2) or (major == 0 and minor > 3)) and rewardConsumable['Minor/Major'] == 'Minor':
+                                rewardMajorLimit = 1
+                                rewardMinorLimt = 3
+                            
+                            if totalDurationTime < 3 and userCount < 3:
+                                rewardMinorLimit = ceil(rewardMinorLimit / 2)
+                                rewardMajorLimit = 0
+
+                                await ctx.channel.send(content=f"\n**Because you have played less than 3 hours and have less than 3 hours. Your total rewards are halved**")
+                                if minor > rewardMinorLimit:
                                     if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
+                                        await ctx.channel.send(rewardMinorErrorString)
                                     return start
-                                elif ((minor == 3 and major > 0) or (minor <= 2 and major > 1)) and rewardConsumable['Minor/Major'] == 'Major':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
+
+                                print('rewardMinorLimit')
+                                print(rewardMinorLimit)
+
                             else:
-                                if ((major == 1 and minor > 1) or (major == 0 and minor > 2)) and rewardConsumable['Minor/Major'] == 'Minor':
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore minor reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
-                                elif ((minor == 2 and major > 0) or (minor <= 1 and major > 1)) and rewardConsumable['Minor/Major'] == 'Major' :
-                                    if not resume:
-                                        await ctx.channel.send(content=f"You cannot award anymore major reward items\nTotal rewarded so far: {dmChar[4][1]} Major \n{dmChar[4][2]} Minor Items")
-                                    return start
+                                if dmChar[4][0] == 'Spicy Noodle':
+                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-3) or (major == rewardMajorLimit-2 and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit))  and rewardConsumable['Minor/Major'] == 'Minor':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMinorErrorString)
+                                        return start
+                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-2) or (minor == rewardMinorLimit-2 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-3 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMajorErrorString)
+                                        return start
+                                elif dmChar[4][0] == 'Ramen Noodle':
+                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-3) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-2 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit))  and rewardConsumable['Minor/Major'] == 'Minor':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMinorErrorString)
+                                        return start
+                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-2) or (minor == rewardMinorLimit-2 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-3 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMajorErrorString)
+                                        return start
+                                elif dmChar[4][0] == 'True Noodle':
+                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-2) or (major == 1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMinorErrorString)
+                                        return start
+                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-1)  or (minor <= rewardMinorLimit-2 and major > rewardMajorLimit-2)) and rewardConsumable['Minor/Major'] == 'Major':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMajorErrorString)
+                                        return start
+                                elif dmChar[4][0] == 'Elite Noodle':
+                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor' :
+                                        if not resume:
+                                            await ctx.channel.send(rewardMinorErrorString)
+                                        return start
+                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-2 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMajorErrorString)
+                                        return start
+                                elif dmChar [4][0] == 'Good Noodle':
+                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMinorErrorString)
+                                        return start
+                                    elif ((minor == rewardMinorLimit and major > 0) or (minor <= rewardMinorLimit-1 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMajorErrorString)
+                                        return start
+                                else:
+                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit - 1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
+                                        if not resume:
+                                            await ctx.channel.send(rewardMinorErrorString)
+                                        return start
+                                    elif ((minor == rewardMinorLimit and major > 0) or (rewardMinorLimit-1 <= 1 and rewardMajorLimit > 1)) and rewardConsumable['Minor/Major'] == 'Major' :
+                                        if not resume:
+                                            await ctx.channel.send(content=rewardMajorErrorString)
+                                        return start
 
                             if 'Consumable' in rewardConsumable:
                                 if currentItem[1]['Consumables'] == "None":
@@ -635,7 +668,7 @@ class Timer(commands.Cog):
                     dmChar[4][1] = major
 
                     if not resume:
-                        await ctx.channel.send(content=f"I have rewarded {rewardUser.display_name} `{rewardConsumable['Name']}`.\nTotal rewarded so far: {major} Major \n {minor} Minor Items")
+                        await ctx.channel.send(content=f"I have rewarded {rewardUser.display_name} `{rewardConsumable['Name']}`.\nTotal rewarded so far:\n**({major})** Major Rewards\n**({minor})** Minor Rewards")
 
                 else:
                     if not resume:
