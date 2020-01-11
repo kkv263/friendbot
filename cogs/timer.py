@@ -416,12 +416,13 @@ class Timer(commands.Cog):
             userName = author.name
             guild = ctx.guild
             dmChar = userList.pop(0)
-            dmChar.append(['Junior Noodle',0,0])
+            # DM Rewards
+            dmChar.append(['Junior Noodle',0,0,0,0])
 
 
             for r in dmChar[0].roles:
                 if 'Noodle' in r.name:
-                    dmChar[4] = [r.name,0,0]
+                    dmChar[4] = [r.name,0,0,0,0]
                     break
 
             if str(channel.category).lower() not in gameCategory:
@@ -501,21 +502,28 @@ class Timer(commands.Cog):
             if rewardList == list():
                 if not resume:
                     await ctx.channel.send(content=f"```I could not find any mention of a user to hand out a reward```") 
-                return start
+                return start,dmChar
             else:
                 rewardUser = guild.get_member(rewardList[0])
                 startcopy = start.copy()
                 userFound = False;
                 timeKey = ""
                 userCount = 0
-                
+
+                if rewardUser == dmChar[0]:
+                    userFound = True
+                    currentItem = dmChar
+                    charConsumableList = currentItem[1]['Consumables'].split(', ')
+                    charMagicList = currentItem[1]['Magic Items'].split(', ')
+                    charLevel = int(currentItem[1]['Level'])
+
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
                         totalDurationTime = (time.time() - float(u.split(':')[1])) // 3600
                         if totalDurationTime < 1:
                             if not resume:
                               await ctx.channel.send(content=f"```You may not reward any items if a game's duration is under 1 hour.```") 
-                            return start
+                            return start, dmChar
                     for item in v:
                         if item[0] == rewardUser:
                             userCount += 1
@@ -524,6 +532,7 @@ class Timer(commands.Cog):
                             currentItem = oldItem = item
                             charConsumableList = currentItem[1]['Consumables'].split(', ')
                             charMagicList = currentItem[1]['Magic Items'].split(', ')
+                            charLevel = int(currentItem[1]['Level'])
 
                 if userFound:
                     if '"' in msg.content:
@@ -532,7 +541,7 @@ class Timer(commands.Cog):
                     else:
                         if not resume:
                             await ctx.channel.send(content=f"You need to reward the user an item from the RIT")
-                        return start
+                        return start, dmChar
 
 
                     for query in consumablesList:
@@ -541,48 +550,128 @@ class Timer(commands.Cog):
                         if not rewardConsumable:
                             if not resume:
                                 await channel.send('This does not seem to be a valid reward.')
+                            return start, dmChar
                         else:
-                            minor = dmChar[4][2]
                             major = dmChar[4][1]
-
+                            minor = dmChar[4][2]
+                            dmMajor = dmChar[4][3]
+                            dmMinor = dmChar[4][4]
                             # TODO DM Noodle rewards 3 hours +
-                              
-                            if rewardConsumable['Minor/Major'] == 'Minor':
-                                minor += 1
-                            elif rewardConsumable['Minor/Major'] == 'Major':
-                                major += 1
-                               
-                            rewardMajorLimit = 1
-                            rewardMinorLimit = 2
 
-                            rewardMajorErrorString = f"You cannot award anymore **major** reward items\nTotal rewarded so far:\n**({dmChar[4][1]})** Major Rewards \n**({dmChar[4][2]})** Minor Rewards"
-                            rewardMinorErrorString = f"You cannot award anymore **minor** reward items\nTotal rewarded so far:\n**({dmChar[4][1]})** Major Rewards \n**({dmChar[4][2]})** Minor Rewards"
+                            dmMnc = False
+                            lowerTier = False
+                            chooseOr = False
+
+                            totalDurationTimeMultiplier = totalDurationTime // 3
 
                             if dmChar[4][0] == 'Spicy Noodle':
                                 rewardMajorLimit = 3
                                 rewardMinorLimit = 7
+                                dmMajorLimit = 1 * totalDurationTimeMultiplier 
+                                dmMinorLimit = 2 * totalDurationTimeMultiplier 
                             elif dmChar[4][0] == 'Ramen Noodle':
                                 rewardMajorLimit = 3
                                 rewardMinorLimit =  6
+                                dmMajorLimit = 1 * totalDurationTimeMultiplier
+                                dmMinorLimit = 1 * totalDurationTimeMultiplier
                             elif dmChar[4][0] == 'True Noodle':
                                 rewardMajorLimit = 2
                                 rewardMinorLimit = 5
+                                dmMajorLimit = 1 * totalDurationTimeMultiplier
+                                dmMinorLimit = 1 * totalDurationTimeMultiplier
                             elif dmChar[4][0] == 'Elite Noodle':
                                 rewardMajorLimit = 2
                                 rewardMinorLimit = 4
+                                dmMajorLimit = 1 * totalDurationTimeMultiplier
+                                dmMinorLimit = 1 * totalDurationTimeMultiplier
+                                lowerTier = True
+                                chooseOr = True
                             elif dmChar [4][0] == 'Good Noodle':
                                 rewardMajorLimit = 1
                                 rewardMinorLimt = 3
+                                dmMajorLimit = 0 * totalDurationTimeMultiplier
+                                dmMinorLimit = 1 * totalDurationTimeMultiplier
+                                lowerTier = True
+                            else:
+                                dmMnc = True
+
+                            if charLevel < 5:
+                                tierNum = 1
+                            elif charLevel < 11:
+                                tierNum = 2
+                            elif charLevel < 17:
+                                tierNum = 3
+                            elif charLevel < 21:
+                                tierNum = 4
+
+                            if lowerTier and rewardUser == dmChar[0]:
+                                if tierNum < 2:
+                                    tierNum = 1
+                                else:
+                                    tierNum -= 1
+
+                            print('tierNum')
+                            print(tierNum)
+                            if int(rewardConsumable['Tier']) > tierNum:
+                                if not resume:
+                                    if rewardUser == dmChar[0]:
+                                        await ctx.channel.send(f"```You cannot award yourself this reward because it is outside of your reward tier.```")
+                                    else:
+                                        await ctx.channel.send(f"```You cannot award this reward because it is outside of your reward tier.```")
+                                return start, dmChar 
+
+                            if dmMnc and rewardUser == dmChar[0] and (rewardConsumable['Minor/Major'] != 'Minor' or not rewardConsumable['Consumable']):
+                                if not resume:
+                                    await ctx.channel.send(f"```You cannot award yourself this reward. Your reward has to be a minor non-consumable reward```")
+                                return start, dmChar 
+                                
+                            if rewardConsumable['Minor/Major'] == 'Minor':
+                                if rewardUser == dmChar[0]:
+                                    dmMinor += 1
+                                else:
+                                    minor += 1
+                            elif rewardConsumable['Minor/Major'] == 'Major':
+                                if rewardUser == dmChar[0]:
+                                    dmMajor += 1
+                                else:
+                                    major += 1
+                               
+                            rewardMajorLimit = 1
+                            rewardMinorLimit = 2
+
+                            rewardMajorErrorString = f"```You cannot award anymore **major** reward items\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards```"
+                            rewardMinorErrorString = f"```You cannot award anymore **minor** reward items\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards```"
+
+                            if rewardUser == dmChar[0]:
+                                if totalDurationTime > 3:
+                                    if chooseOr:
+                                        if dmMajor > dmMajorLimit or dmMinor > dmMinorLimit:
+                                            if not resume:
+                                                await ctx.channel.send(f"```You cannot award yourself anymore major or minor reward items {dmChar[4][3]}```")
+                                            return start, dmChar 
+                                    else:
+                                        if dmMajor > dmMajorLimit:
+                                            if not resume:
+                                                await ctx.channel.send(f"```You cannot award yourself anymore major reward items {dmChar[4][3]}```")
+                                            return start, dmChar 
+                                        elif dmMinor > dmMinorLimit:
+                                            if not resume:
+                                                await ctx.channel.send(f"```You cannot award yourself anymore minor reward items {dmChar[4][4]}```")
+                                            return start, dmChar 
+                                else:
+                                    if not resume:
+                                        await ctx.channel.send(f"```Because you have played less than 3 hours, you cannot reward yourself any rewards.```")
+                                    return start, dmChar 
                             
-                            if totalDurationTime < 3 and userCount < 3:
+                            elif totalDurationTime < 3 and userCount < 3:
                                 rewardMinorLimit = ceil(rewardMinorLimit / 2)
                                 rewardMajorLimit = 0
 
-                                await ctx.channel.send(content=f"\n**Because you have played less than 3 hours and have less than 3 hours. Your total rewards are halved**")
+                                await ctx.channel.send(content=f"\n**Because you have played less than 3 hours and have less than 3 players. Your total rewards are halved**")
                                 if minor > rewardMinorLimit:
                                     if not resume:
                                         await ctx.channel.send(rewardMinorErrorString)
-                                    return start
+                                    return start, dmChar
 
                                 print('rewardMinorLimit')
                                 print(rewardMinorLimit)
@@ -592,56 +681,56 @@ class Timer(commands.Cog):
                                     if ((major == rewardMajorLimit and minor > rewardMinorLimit-3) or (major == rewardMajorLimit-2 and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit))  and rewardConsumable['Minor/Major'] == 'Minor':
                                         if not resume:
                                             await ctx.channel.send(rewardMinorErrorString)
-                                        return start
+                                        return start, dmChar
                                     elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-2) or (minor == rewardMinorLimit-2 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-3 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
                                         if not resume:
                                             await ctx.channel.send(rewardMajorErrorString)
-                                        return start
+                                        return start, dmChar
                                 elif dmChar[4][0] == 'Ramen Noodle':
                                     if ((major == rewardMajorLimit and minor > rewardMinorLimit-3) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-2 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit))  and rewardConsumable['Minor/Major'] == 'Minor':
                                         if not resume:
                                             await ctx.channel.send(rewardMinorErrorString)
-                                        return start
+                                        return start, dmChar
                                     elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-2) or (minor == rewardMinorLimit-2 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-3 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
                                         if not resume:
                                             await ctx.channel.send(rewardMajorErrorString)
-                                        return start
+                                        return start, dmChar
                                 elif dmChar[4][0] == 'True Noodle':
                                     if ((major == rewardMajorLimit and minor > rewardMinorLimit-2) or (major == 1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
                                         if not resume:
                                             await ctx.channel.send(rewardMinorErrorString)
-                                        return start
+                                        return start, dmChar
                                     elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-1)  or (minor <= rewardMinorLimit-2 and major > rewardMajorLimit-2)) and rewardConsumable['Minor/Major'] == 'Major':
                                         if not resume:
                                             await ctx.channel.send(rewardMajorErrorString)
-                                        return start
+                                        return start, dmChar
                                 elif dmChar[4][0] == 'Elite Noodle':
                                     if ((major == rewardMajorLimit and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor' :
                                         if not resume:
                                             await ctx.channel.send(rewardMinorErrorString)
-                                        return start
+                                        return start, dmChar
                                     elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-2 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
                                         if not resume:
                                             await ctx.channel.send(rewardMajorErrorString)
-                                        return start
+                                        return start, dmChar
                                 elif dmChar [4][0] == 'Good Noodle':
                                     if ((major == rewardMajorLimit and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
                                         if not resume:
                                             await ctx.channel.send(rewardMinorErrorString)
-                                        return start
+                                        return start, dmChar
                                     elif ((minor == rewardMinorLimit and major > 0) or (minor <= rewardMinorLimit-1 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
                                         if not resume:
                                             await ctx.channel.send(rewardMajorErrorString)
-                                        return start
+                                        return start, dmChar
                                 else:
                                     if ((major == rewardMajorLimit and minor > rewardMinorLimit - 1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
                                         if not resume:
                                             await ctx.channel.send(rewardMinorErrorString)
-                                        return start
+                                        return start, dmChar
                                     elif ((minor == rewardMinorLimit and major > 0) or (rewardMinorLimit-1 <= 1 and rewardMajorLimit > 1)) and rewardConsumable['Minor/Major'] == 'Major' :
                                         if not resume:
                                             await ctx.channel.send(content=rewardMajorErrorString)
-                                        return start
+                                        return start, dmChar
 
                             if 'Consumable' in rewardConsumable:
                                 if currentItem[1]['Consumables'] == "None":
@@ -661,20 +750,25 @@ class Timer(commands.Cog):
                             else:
                                 currentItem[2].append('+' + rewardConsumable['Name'])
 
-
-                    start[timeKey].remove(oldItem)
-                    start[timeKey].append(currentItem)
-                    dmChar[4][2] = minor
-                    dmChar[4][1] = major
+                    if rewardUser != dmChar[0]:
+                        start[timeKey].remove(oldItem)
+                        start[timeKey].append(currentItem)
+                        dmChar[4][2] = minor
+                        dmChar[4][1] = major
+                    else:
+                        dmChar[4][3] = dmMinor
+                        dmChar[4][4] = dmMajor
 
                     if not resume:
-                        await ctx.channel.send(content=f"I have rewarded {rewardUser.display_name} `{rewardConsumable['Name']}`.\nTotal rewarded so far:\n**({major})** Major Rewards\n**({minor})** Minor Rewards")
+                        await ctx.channel.send(content=f"I have rewarded {rewardUser.display_name} `{rewardConsumable['Name']}`.\n```Total rewarded so far:\n({major})Major Rewards\n({minor}) Minor Rewards\n({dmMajor})DM Major Rewards\n({dmMinor})DM Minor Rewards```")
 
                 else:
                     if not resume:
                         await ctx.channel.send(content=f"{rewardUser} is not on the timer to recieve rewards.")
             print(start)
-            return start
+            print('dmChar')
+            print(dmChar)
+            return start, dmChar
 
     @timer.command()
     async def addme(self,ctx, *, role="", msg=None, start="" ,prep=None, user="", dmChar=None, resume=False, ):
@@ -1145,7 +1239,11 @@ class Timer(commands.Cog):
                             dmChar[2] = ["(DI)+" + randomItem['Name']]
                         else:
                             dmChar[2].append("(DI)+" + randomItem['Name'])
-                      
+
+                dmRewardsList = []
+                for d in dmChar[2]:
+                    if '+' in d:
+                        dmRewardsList.append(d)
 
                 data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, dmtreasureArray[0], dmtreasureArray[1], dmtreasureArray[2]))
 
@@ -1250,7 +1348,7 @@ class Timer(commands.Cog):
 
                 stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
-                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
+                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
                 sessionLogString = f"\n**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}\nGame ID:"
 
                 # Grab stats
@@ -1467,11 +1565,11 @@ class Timer(commands.Cog):
                             else:
                                 pTemp += [cRecord[0],pConsumables,cRecord[0]['_id']] 
                                 dmChar = pTemp
-                                dmChar.append(['Junior Noodle',0,0])
+                                dmChar.append(['Junior Noodle',0,0,0,0])
 
                                 for r in dmChar[0].roles:
                                     if 'Noodle' in r.name:
-                                        dmChar[4] = [r.name,0,0]
+                                        dmChar[4] = [r.name,0,0,0,0]
                                         break
 
                         print(start)
@@ -1496,7 +1594,7 @@ class Timer(commands.Cog):
                         elif message.content.startswith('-') and message.author != dmChar[0]: 
                             resumeTimes = await ctx.invoke(self.timer.get_command('deductConsumables'), msg=message, start=resumeTimes, resume=True)
                         elif (f"{commandPrefix}timer reward" in message.content or f"{commandPrefix}t reward" in message.content) and (message.author == author):
-                            resumeTimes = await ctx.invoke(self.timer.get_command('reward'), msg=message, start=resumeTimes, dmChar=dmChar, resume=True)
+                            resumeTimes,dmChar = await ctx.invoke(self.timer.get_command('reward'), msg=message, start=resumeTimes, dmChar=dmChar, resume=True)
                         elif ("Timer has been stopped!" in message.content) and message.author.bot:
                             await channel.send("There doesn't seem to be a timer to resume here... Please start a new timer!")
                             self.timer.get_command('resume').reset_cooldown(ctx)
@@ -1577,7 +1675,7 @@ class Timer(commands.Cog):
                     startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=startTimes, role=role)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif (f"{commandPrefix}timer reward" in msg.content or f"{commandPrefix}t reward" in msg.content) and (msg.author == author):
-                    startTimes = await ctx.invoke(self.timer.get_command('reward'), msg=msg, start=startTimes,dmChar=dmChar)
+                    startTimes,dmChar = await ctx.invoke(self.timer.get_command('reward'), msg=msg, start=startTimes,dmChar=dmChar)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif (f"{commandPrefix}timer death" in msg.content or f"{commandPrefix}t death" in msg.content) and (msg.author == author):
                     startTimes = await ctx.invoke(self.timer.get_command('death'), msg=msg, start=startTimes, role=role)
