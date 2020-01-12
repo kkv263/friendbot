@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar 
+from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, traceBack
 
 class Tp(commands.Cog):
     def __init__ (self, bot):
@@ -44,7 +44,7 @@ class Tp(commands.Cog):
             await ctx.channel.send(msg)
         else:
             ctx.command.reset_cooldown(ctx)
-            raise error
+            await traceBack(ctx,error)
 
       
     @tp.command()

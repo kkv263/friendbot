@@ -2,7 +2,7 @@ import discord
 import asyncio
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, checkForGuild, noodleRoleArray, db
+from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, checkForGuild, noodleRoleArray, db, traceBack
 
 class Guild(commands.Cog):
     def __init__ (self, bot):
@@ -121,7 +121,7 @@ class Guild(commands.Cog):
             await ctx.channel.send(msg)
         else:
             ctx.command.reset_cooldown(ctx)
-            raise error
+            await traceBack(ctx,error)
 
     # @commands.has_role('Guildmaster')
     # @commands.cooldown(1, 5, type=commands.BucketType.member)

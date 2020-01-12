@@ -12,7 +12,7 @@ from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, headers, db, callAPI
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, headers, db, callAPI, traceBack
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -50,7 +50,7 @@ class Timer(commands.Cog):
             await ctx.channel.send(msg)
         else:
             ctx.command.reset_cooldown(ctx)
-            raise error
+            await traceBack(ctx,error)
 
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 

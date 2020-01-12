@@ -7,7 +7,7 @@ import collections
 from discord.utils import get        
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
-from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db, callAPI, checkForChar, timeConversion
+from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db, callAPI, checkForChar, timeConversion, traceBack
 
 class Character(commands.Cog):
     def __init__ (self, bot):
@@ -63,7 +63,7 @@ class Character(commands.Cog):
             await ctx.channel.send(msg)
         else:
             ctx.command.reset_cooldown(ctx)
-            raise error
+            await traceBack(ctx,error)
 
 
 
@@ -92,6 +92,8 @@ class Character(commands.Cog):
         charEmbed.set_footer(text= "React with ❌ to cancel")
         charEmbedmsg = None
         statNames = ['STR','DEX','CON','INT','WIS','CHA']
+        bankTP1 = 0
+        bankTP2 = 0
 
         charDict = {
           'User ID': str(author.id),
@@ -183,7 +185,7 @@ class Character(commands.Cog):
 
                 for item in allMagicItemsString:
                     if int(item['Tier']) > highestTier:
-                        return "- One or more of these magic items cannot be purchased at Level " + str(lvl)
+                        return "- One or more of these magic items cannot be purchased at Level " + str(lvl), 0, 0
                         
                     else:
                         costTP = int(item['TP'])
@@ -402,7 +404,10 @@ class Character(commands.Cog):
                 if charDict['Inventory'] == "None":
                     charDict['Inventory'] = {}
                 startEquipmentLength = 0
-                charEmbedmsg = await channel.send(embed=charEmbed)
+                if not charEmbedmsg:
+                    charEmbedmsg = await channel.send(embed=charEmbed)
+                else:
+                    await charEmbedmsg.edit(embed=charEmbed)
                 for item in cRecord[0]['Class']['Starting Equipment']:
                     seTotalString = ""
                     alphaIndex = 0

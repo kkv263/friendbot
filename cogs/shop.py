@@ -46,7 +46,7 @@ class Shop(commands.Cog):
             await ctx.channel.send(msg)
         else:
             ctx.command.reset_cooldown(ctx)
-            raise error
+            await traceBack(ctx,error)
 
       
     @shop.command()
