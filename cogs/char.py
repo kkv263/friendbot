@@ -1471,24 +1471,38 @@ class Character(commands.Cog):
             if 'Guild' in charDict:
                 charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\n:sparkles: ({charDict['Reputation']})", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
+
+            maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
+
+            for m in charDict['Magic Items'].split(', '):
+                if "Tome" in m or "Manual" in m:
+                    mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
+                    if 'Stat Bonuses' in mRecord:
+                        if 'MAX' in mRecord['Stat Bonuses']:
+                            maxItemSplit = mRecord['Stat Bonuses'].split(' ')
+
+                            if maxStatDict[maxItemSplit[2]] < int(maxItemSplit[1]):
+                                maxStatDict[maxItemSplit[2]] = int(maxItemSplit[1])
+
+                                charDict[maxItemSplit[2]] += int(maxItemSplit[3])
+                        
             if 'Attuned' in charDict:
                 charEmbed.add_field(name='Attuned', value='• ' + charDict['Attuned'].replace(', ', '\n• '), inline=False)
                 statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
                 for a in charDict['Attuned'].split(', '):
-                    if '(' in a and ')' in a:
-                        statBonus = a[a.find("(")+1:a.find(")")] 
+                    if '[' in a and ']' in a:
+                        statBonus = a[a.find("[")+1:a.find("]")] 
                         if '+' not in statBonus and '-' not in statBonus:
                             statSplit = statBonus.split(' ')
                             modStat = str(charDict[statSplit[0]])
-                            if '(' in modStat and ')' in modStat:
-                                oldStat = modStat[modStat.find("(")+1:modStat.find(")")] 
-                                print(modStat)
+                            if '[' in modStat and ']' in modStat:
+                                oldStat = modStat[modStat.find("[")+1:modStat.find("]")] 
                                 if '+' not in modStat and '-' not in modStat:
-                                    modStat = modStat.split(' (')[0]
+                                    modStat = modStat.split(' [')[0]
                                     if int(oldStat) > int(statSplit[1]):
                                         charDict[statSplit[0]] = f"{modStat} ({oldStat})"
                                 else:
-                                    modStat = modStat.split(' (')[0]
+                                    modStat = modStat.split(' [')[0]
                                     if (int(modStat) + int(statBonusDict[statSplit[0]])) > int(statSplit[1]):
                                         charDict[statSplit[0]] = f"{modStat} (+{statBonusDict[statSplit[0]]})" 
                                     else:
@@ -1505,18 +1519,15 @@ class Character(commands.Cog):
                             statBonusDict[statSplit[0]] += int(statSplit[1])
                             statName = charDict[statSplit[0]]
                             maxStatBonus = []
-                                
-                            if 'MAX' in statBonus:
-                                maxStatBonus = statBonusSplit[1].split(' ')
-                                maxCalc = (int(modStat) + int(statBonusDict[statSplit[0]])) > int(maxStatBonus[3])
-                                if maxCalc:
-                                    statBonusDict[statSplit[0]] = int(maxStatBonus[3]) - int(charDict[statSplit[0]])
+                            maxCalc = int(modStat) + int(statBonusDict[statSplit[0]]) > maxStatDict[statSplit[0]]
+
+                            if maxCalc:
+                                statBonusDict[statSplit[0]] = maxStatDict[statSplit[0]] - int(modStat)
                             if statBonusDict[statSplit[0]] > 0: 
                                 charDict[statSplit[0]] = f"{modStat} (+{statBonusDict[statSplit[0]]})" 
                             else:
                                 charDict[statSplit[0]] = f"{modStat}" 
 
-                        print(statBonus)
                 
             charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
             if "Double Rewards Buff" in charDict:
@@ -1925,7 +1936,6 @@ class Character(commands.Cog):
 
         self.bot.get_command('levelup').reset_cooldown(ctx)
 
-
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @commands.command(aliases=['att'])
     async def attune(self,ctx, char, m):
@@ -1950,31 +1960,38 @@ class Character(commands.Cog):
             else:
                 attuned = charRecords['Attuned'].split(', ')
 
+
             charID = charRecords['_id']
             charRecordMagicItems = charRecords['Magic Items'].split(', ')
             if len(attuned) >= attuneLength:
                 await channel.send(f"You cannot attune to anymore items.")
                 return
 
-            # TODO: get attuned items from RIT.
-            # Test multiclass with attuned item ex. barbarian and str magic item 
             mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
-            if m.lower() not in [x.lower() for x in charRecordMagicItems] or not mRecord:
-                await channel.send(f"You don't have the item `{m}` in your inventory or it does not exist on the magic item table.")
+            if not mRecord:
+                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m)
+                if not mRecord:
+                    await channel.send(f"`{m}` does not exist on the magic item table or reward item table.")
+                    return
+                elif mRecord['Name'].lower() not in [x.lower() for x in charRecordMagicItems]:
+                    await channel.send(f"You don't have the item `{mRecord['Name']}` in your inventory to attune.")
+
+            if mRecord['Name'] in [a.split('[')[0].strip() for a in attuned]:
+                await channel.send(f"You are already attuned to `{mRecord['Name']}`")
                 return
-            else:
-                if mRecord['Name'] in attuned:
-                    await channel.send(f"You are already attuned to `{mRecord['Name']}`")
-                    return
-                elif 'Attunement' in mRecord:
-                    data = {}
-                    if 'Stat Bonuses' in mRecord:
-                        attuned.append(f"{mRecord['Name']} ({mRecord['Stat Bonuses']})")
-                    else:
-                        attuned.append(mRecord['Name'])
+            elif mRecord['Name'] == 'Hammer of Thunderbolts':
+                if 'Belt of' not in charRecords['Magic Items'] and 'Frost Giant Strength' not in charRecords['Magic Items'] and 'Gauntlets of Ogre Power' not in charRecords['Magic Items']:
+                    await channel.send(f"`Hammer of Thunderbolts` requrie a `Belt of Giant Strength` and `Gauntlet's of Ogre Power` on your character to attune.")
+                    return 
+            elif 'Attunement' in mRecord:
+                data = {}
+                if 'Stat Bonuses' in mRecord:
+                    attuned.append(f"{mRecord['Name']} [{mRecord['Stat Bonuses']}]")
                 else:
-                    await channel.send(f"`{m}` does not have an attunement property, so there is no need to attune this item.")
-                    return
+                    attuned.append(mRecord['Name'])
+            else:
+                await channel.send(f"`{m}` does not have an attunement property, so there is no need to attune this item.")
+                return
                         
             
             data['Attuned'] = ', '.join(attuned)
@@ -2007,25 +2024,34 @@ class Character(commands.Cog):
             charID = charRecords['_id']
             mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
             if not mRecord:
-                await channel.send(f"`{m}` does not exist on the magic item table.")
+                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m)
+                if not mRecord:
+                    await channel.send(f"`{m}` does not exist on the magic item table.")
+                    return
+
+            if mRecord['Name'] not in [a.split(' [')[0] for a in attuned]:
+                await channel.send(f"`{mRecord['Name']}` cannot be unattuned because it is currently not attuned to you")
                 return
             else:
-                if mRecord['Name'] not in [a.split(' (')[0] for a in attuned]:
-                    await channel.send(f"`{mRecord['Name']}` cannot be unattuned because it is currently not attuned to you")
-                    return
+                if 'Stat Bonuses' in mRecord:
+                    attuned.remove(f"{mRecord['Name']} ({mRecord['Stat Bonuses']})") 
                 else:
-                    if 'Stat Bonuses' in mRecord:
-                        attuned.remove(f"{mRecord['Name']} ({mRecord['Stat Bonuses']})") 
-                    else:
-                        attuned.remove(mRecord['Name'])
-                    try:
-                        playersCollection = db.players
+                    attuned.remove(mRecord['Name'])
+
+                    
+
+                try:
+                    playersCollection = db.players
+                    if attuned != list():
                         playersCollection.update_one({'_id': charID}, {"$set": {"Attuned": ', '.join(attuned)}})
-                    except Exception as e:
-                        print ('MONGO ERROR: ' + str(e))
-                        charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
                     else:
-                        await channel.send(f"You succesfully unattuned to `{mRecord['Name']}`")
+                        playersCollection.update_one({'_id': charID}, {"$unset": {"Attuned":1}})
+
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
+                else:
+                    await channel.send(f"You succesfully unattuned to `{mRecord['Name']}`")
                     
 
     @commands.command()

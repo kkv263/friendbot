@@ -86,8 +86,6 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None):
     query = query.replace(')', '\\)')
 
     records = list(collection.find({"Name": {"$regex": query.strip(), '$options': 'i' }}))
-    print(query)
-    print(records)
 
     if records == list():
         return None, apiEmbed, apiEmbedmsg
