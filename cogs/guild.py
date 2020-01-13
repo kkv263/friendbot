@@ -272,7 +272,7 @@ class Guild(commands.Cog):
             guildRecords = await checkForGuild(ctx,guildName) 
 
             if guildRecords:
-                if guildRecords['Funds'] > 6000:
+                if guildRecords['Funds'] >= 6000:
                     await channel.send(f"`{guildRecords['Name']}` is not expecting any funds. This guild has already been opened")
                     return
 
@@ -327,7 +327,7 @@ class Guild(commands.Cog):
 
                 guildRecords['Funds'] += float(gpFund) 
 
-                if  guildRecords['Funds'] > 6000:
+                if  guildRecords['Funds'] >= 6000:
                     refundGP = guildRecords['Funds'] - 6000
 
                 newGP = (charRecords['GP'] - float(gpFund)) + refundGP
@@ -345,7 +345,7 @@ class Guild(commands.Cog):
                 else:
                     guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
                     guildEmbed.description = f"{charRecords['Name']} has funded **{guildRecords['Name']}** with {gpFund}gp.\nIf the amount puts the guild's funds over 6000, the leftover is refunded\n\n**Current Guild Funds:** {guildRecords['Funds']}gp / 6000gp\n\n**Current gp**: {newGP}\n"
-                    if guildRecords['Funds'] > 6000:
+                    if guildRecords['Funds'] >= 6000:
                         guildEmbed.description += f"Congratulations! :tada: **{guildRecords['Name']}**  is officially open!"
                     if guildEmbedmsg:
                         await guildEmbedmsg.edit(embed=guildEmbed)
@@ -381,7 +381,7 @@ class Guild(commands.Cog):
             guildRecords = await checkForGuild(ctx,guildName) 
 
             if guildRecords:
-                if guildRecords['Funds'] > 6000:
+                if guildRecords['Funds'] >= 6000:
                     await channel.send(f"`{guildRecords['Name']}` is not open to join.")
                     return
 
@@ -534,7 +534,7 @@ class Guild(commands.Cog):
                 await channel.send(f"{charRecords['Name']} cannot buy any sparkles because they do not belong to a guild currently")
                 return
 
-            guildRecords = await checkForGuild(ctx,guildName) 
+            guildRecords = await checkForGuild(ctx, charRecords['Guild']) 
 
             if guildRecords['Funds'] < 6000: 
                 await channel.send(f"{charRecords['Name']} cannot buy any sparkles because `{charRecords['Guild']}` is not officially open and still needs funding")
