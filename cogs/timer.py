@@ -281,17 +281,17 @@ class Timer(commands.Cog):
             cRecord  = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": charName, '$options': 'i' }}))
 
             if cRecord == list():
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```I was not able to find the character `{charName}`. {signupFormat}```')
                 return False
             if charName == "" or charName is None:
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```You did not input a character,``` {signupFormat}')
                 return False
 
             cpSplit = cRecord[0]['CP'].split('/')
             if 'Death' in cRecord[0]:
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```You cannot signup with `{cRecord[0]["Name"]}`, a dying character, please use `{commandPrefix}char death`.```')
                 return False 
 
@@ -314,13 +314,13 @@ class Timer(commands.Cog):
                 validLevelEnd = 20
 
             if charLevel < validLevelStart or charLevel > validLevelEnd:
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(f"```{cRecord[0]['Name']} is not between levels {validLevelStart} - {validLevelEnd} to play in this game. Please choose a different character```")
                 return False 
 
 
             if float(cpSplit[0]) >= float(cpSplit[1]):
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```You need to `{commandPrefix}levelup` your character before you can join the game!```')
                 return False 
 
