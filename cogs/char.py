@@ -1219,7 +1219,6 @@ class Character(commands.Cog):
                     await charEmbedmsg.edit(embed=charEmbed)
                     await charEmbedmsg.add_reaction('✅')
                     await charEmbedmsg.add_reaction('❌')
-                    # TODO: make function for this
                     try:
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=retireEmbedCheck , timeout=60)
                     except asyncio.TimeoutError:
@@ -1869,6 +1868,7 @@ class Character(commands.Cog):
                 statsCollection = db.stats
                 statsRecord  = statsCollection.find_one({'Life': 1})
                 
+                # Levelup Regular Jo bug
                 if subclassCheckClass['Subclass'] != "" :
                     if subclassCheckClass['Subclass']  in statsRecord['Class'][subclassCheckClass['Name']]:
                         statsRecord['Class'][subclassCheckClass['Name']][subclassCheckClass['Subclass']] += 1

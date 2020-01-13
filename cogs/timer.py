@@ -1253,7 +1253,10 @@ class Timer(commands.Cog):
                 noodlesGained = hoursPlayed // 3
 
                 if uRecord:
-                    noodles += uRecord['Noodles'] + noodlesGained
+                    if 'Noodles' in uRecord:
+                        uRecord['Noodles'] = 0
+                    else:
+                        noodles += uRecord['Noodles'] + noodlesGained
 
                 noodleString = "Current Noodles: " + str(noodles)
                 dmRoleNames = [r.name for r in dmChar[0].roles]
