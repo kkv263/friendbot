@@ -830,7 +830,7 @@ class Character(commands.Cog):
 
             print(allMagicItemsString)
 
-            # Fix 'NoneType' object has no attribute 'group'
+            #TODO Fix 'NoneType' object has no attribute 'group'
             currentPrevTP = int(re.search('\(([^)]+)', charDict['Current Item']).group(1).split('/')[0])
             print(currentPrevTP)
 
@@ -1868,17 +1868,17 @@ class Character(commands.Cog):
                 statsCollection = db.stats
                 statsRecord  = statsCollection.find_one({'Life': 1})
                 
-                # Levelup Regular Jo bug
-                if subclassCheckClass['Subclass'] != "" :
-                    if subclassCheckClass['Subclass']  in statsRecord['Class'][subclassCheckClass['Name']]:
-                        statsRecord['Class'][subclassCheckClass['Name']][subclassCheckClass['Subclass']] += 1
-                    else:
-                        statsRecord['Class'][subclassCheckClass['Name']][subclassCheckClass['Subclass']] = 1
-                else:
-                    if subclassCheckClass['Name'] in statsRecord['Class']:
-                        statsRecord['Class'][subclassCheckClass['Name']]['Count'] += 1
-                    else:
-                        statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
+                #TODO: Levelup Regular Jo bug
+                # if subclassCheckClass['Subclass'] != "" :
+                #     if subclassCheckClass['Subclass']  in statsRecord['Class'][subclassCheckClass['Name']]:
+                #         statsRecord['Class'][subclassCheckClass['Name']][subclassCheckClass['Subclass']] += 1
+                #     else:
+                #         statsRecord['Class'][subclassCheckClass['Name']][subclassCheckClass['Subclass']] = 1
+                # else:
+                #     if subclassCheckClass['Name'] in statsRecord['Class']:
+                #         statsRecord['Class'][subclassCheckClass['Name']]['Count'] += 1
+                #     else:
+                #         statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
 
                 try:
                     playersCollection = db.players
