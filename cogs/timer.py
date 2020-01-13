@@ -281,17 +281,17 @@ class Timer(commands.Cog):
             cRecord  = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": charName, '$options': 'i' }}))
 
             if cRecord == list():
-                if not resume:
+                if noked_with != "resume":
                     await channel.send(content=f'```I was not able to find the character `{charName}`. {signupFormat}```')
                 return False
             if charName == "" or charName is None:
-                if not resume:
+                if ctx.invoked_with != "resume":
                     await channel.send(content=f'```You did not input a character,``` {signupFormat}')
                 return False
 
             cpSplit = cRecord[0]['CP'].split('/')
             if 'Death' in cRecord[0]:
-                if not resume:
+                if ctx.invoked_with != "resume":
                     await channel.send(content=f'```You cannot signup with `{cRecord[0]["Name"]}`, a dying character, please use `{commandPrefix}char death`.```')
                 return False 
 
@@ -314,13 +314,13 @@ class Timer(commands.Cog):
                 validLevelEnd = 20
 
             if charLevel < validLevelStart or charLevel > validLevelEnd:
-                if not resume:
+                if ctx.invoked_with != "resume":
                     await channel.send(f"```{cRecord[0]['Name']} is not between levels {validLevelStart} - {validLevelEnd} to play in this game. Please choose a different character```")
                 return False 
 
 
             if float(cpSplit[0]) >= float(cpSplit[1]):
-                if not resume:
+                if ctx.invoked_with != "resume":
                     await channel.send(content=f'```You need to `{commandPrefix}levelup` your character before you can join the game!```')
                 return False 
 
@@ -980,14 +980,15 @@ class Timer(commands.Cog):
                   
             embed.title = f'**{game}**: {durationString}'
             msgAfter = False
+            stampHelp = f'```{commandPrefix}timer add @player "charactername" "consumables" - **DM** Adds a player \n{comandPrefix}timer addme charactername "consumables" - Adds your character`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\n{commandPrefix}timer reward @player "rewards" - **DM** Rewards an item to yourself or a player.\n- Consumable - consumes a consumable.\n{commandPrefix}timer stop - stops the current timer.```'
             async for message in ctx.channel.history(after=embedMsg, limit=1):
                 msgAfter = True
             if not msgAfter:
-                await embedMsg.edit(embed=embed)
+                await embedMsg.edit(embed=embed, content=stampHelp)
             else:
                 if embedMsg:
                     await embedMsg.delete()
-                embedMsg = await ctx.channel.send(embed=embed)
+                embedMsg = await ctx.channel.send(embed=embed, content=stampHelp)
 
             return embedMsg
 
