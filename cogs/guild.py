@@ -381,7 +381,7 @@ class Guild(commands.Cog):
             guildRecords = await checkForGuild(ctx,guildName) 
 
             if guildRecords:
-                if guildRecords['Funds'] >= 6000:
+                if guildRecords['Funds'] < 6000:
                     await channel.send(f"`{guildRecords['Name']}` is not open to join.")
                     return
 
