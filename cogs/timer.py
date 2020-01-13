@@ -980,7 +980,7 @@ class Timer(commands.Cog):
                   
             embed.title = f'**{game}**: {durationString}'
             msgAfter = False
-            stampHelp = f'```{commandPrefix}timer add @player "charactername" "consumables" - **DM** Adds a player \n{comandPrefix}timer addme charactername "consumables" - Adds your character`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\n{commandPrefix}timer reward @player "rewards" - **DM** Rewards an item to yourself or a player.\n- Consumable - consumes a consumable.\n{commandPrefix}timer stop - stops the current timer.```'
+            stampHelp = f'```{commandPrefix}timer add @player "charactername" "consumables" - **DM** Adds a player \n{commandPrefix}timer addme charactername "consumables" - Adds your character`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\n{commandPrefix}timer reward @player "rewards" - **DM** Rewards an item to yourself or a player.\n- Consumable - consumes a consumable.\n{commandPrefix}timer stop - stops the current timer.```'
             async for message in ctx.channel.history(after=embedMsg, limit=1):
                 msgAfter = True
             if not msgAfter:
