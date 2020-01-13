@@ -40,7 +40,7 @@ class Timer(commands.Cog):
             if error.param.name == 'userList':
                 msg = "You're missing players to prep the timer."
         elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
-           msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
+           msg = ""
 
         if msg:
             if ctx.command.name == "prep":
@@ -233,7 +233,7 @@ class Timer(commands.Cog):
     @timer.command()
     async def signup(self,ctx, char="", author="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
-            signupFormat = f'Please follow this format:\n`{commandPrefix}timer signup "charactername" "consumable list"`'
+            signupFormat = f'Please follow this format:\n`{commandPrefix}timer signup "charactername" "consumable list"'
 
             channel = ctx.channel
             guild = ctx.guild
@@ -243,10 +243,10 @@ class Timer(commands.Cog):
                     await channel.send(content=f'```You did not input a character, please try again. {signupFormat}```')
                 return False
 
-            if 'signup' in char.content:
-                if f'{commandPrefix}timer' in char.content:
+            if 'timer signup ' in char.content or 't signup ' in char.content:
+                if f'{commandPrefix}timer signup ' in char.content:
                     charList = shlex.split(char.content.split(f'{commandPrefix}timer signup ')[1].strip())
-                elif f'{commandPrefix}t' in char.content:
+                elif f'{commandPrefix}t signup ' in char.content:
                     charList = shlex.split(char.content.split(f'{commandPrefix}t signup ')[1].strip())
                 charName = charList[0]
 
@@ -281,17 +281,17 @@ class Timer(commands.Cog):
             cRecord  = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": charName, '$options': 'i' }}))
 
             if cRecord == list():
-                if noked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```I was not able to find the character `{charName}`. {signupFormat}```')
                 return False
             if charName == "" or charName is None:
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```You did not input a character,``` {signupFormat}')
                 return False
 
             cpSplit = cRecord[0]['CP'].split('/')
             if 'Death' in cRecord[0]:
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```You cannot signup with `{cRecord[0]["Name"]}`, a dying character, please use `{commandPrefix}char death`.```')
                 return False 
 
@@ -314,13 +314,13 @@ class Timer(commands.Cog):
                 validLevelEnd = 20
 
             if charLevel < validLevelStart or charLevel > validLevelEnd:
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(f"```{cRecord[0]['Name']} is not between levels {validLevelStart} - {validLevelEnd} to play in this game. Please choose a different character```")
                 return False 
 
 
             if float(cpSplit[0]) >= float(cpSplit[1]):
-                if ctx.invoked_with != "resume":
+                if not resume:
                     await channel.send(content=f'```You need to `{commandPrefix}levelup` your character before you can join the game!```')
                 return False 
 
@@ -341,7 +341,7 @@ class Timer(commands.Cog):
                     consumableLength = 3
 
                 if len(consumablesList) > consumableLength or len(consumablesList) > len(charConsumables):
-                    if ctx.invoked_with != "resume":
+                    if not resume:
                         await channel.send(content=f'```You are trying to bring in too many consumables ({len(consumablesList)}/{consumableLength}). The limit for your character is {consumableLength}. ```')
                     return False
 
@@ -358,7 +358,7 @@ class Timer(commands.Cog):
                             break 
 
                 if notValidConsumables:
-                    if ctx.invoked_with != "resume":
+                    if not resume:
                         await channel.send(f"```These items were not found in your character's consumables:\n`{notValidConsumables}````")
                     return False
                 
@@ -520,6 +520,7 @@ class Timer(commands.Cog):
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
                         totalDurationTime = (time.time() - float(u.split(':')[1])) // 3600
+                        # TODO: roundup and do minutes instead
                         if totalDurationTime < 1:
                             if not resume:
                               await ctx.channel.send(content=f"```You may not reward any items if a game's duration is under 1 hour.```") 
@@ -540,15 +541,16 @@ class Timer(commands.Cog):
 
                     else:
                         if not resume:
+                            # TODO: should be a quote error
                             await ctx.channel.send(content=f"You need to reward the user an item from the RIT")
                         return start, dmChar
 
                     for query in consumablesList:
-                        rewardConsumable, charEmbed, charEmbedmsg = await callAPI(ctx, discord.Embed(),'rit',query) 
+                        rewardConsumable, charEmbed, charEmbedmsg = await callAPI(ctx, discord.Embed(), None ,'rit',query) 
 
                         if not rewardConsumable:
                             if not resume:
-                                await channel.send('This does not seem to be a valid reward.')
+                                await ctx.channel.send('This does not seem to be a valid reward.')
                             return start, dmChar
                         else:
                             major = dmChar[4][1]
@@ -758,7 +760,7 @@ class Timer(commands.Cog):
                         dmChar[4][4] = dmMajor
 
                     if not resume:
-                        await ctx.channel.send(content=f"I have rewarded {rewardUser.display_name} `{rewardConsumable['Name']}`.\n```Total rewarded so far:\n({major})Major Rewards\n({minor}) Minor Rewards\n({dmMajor})DM Major Rewards\n({dmMinor})DM Minor Rewards```")
+                        await ctx.channel.send(content=f"I have rewarded {rewardUser.display_name} `{rewardConsumable['Name']}`.\n```Total rewarded so far:\n({major}) Major Rewards\n({minor}) Minor Rewards\n({dmMajor}) DM Major Rewards\n({dmMinor}) DM Minor Rewards```")
 
                 else:
                     if not resume:
@@ -1250,6 +1252,7 @@ class Timer(commands.Cog):
                 usersCollection = db.users
                 uRecord  = usersCollection.find_one({"User ID": str(dmChar[0].id)})
                 noodles = 0
+                # add sparkles, and round up 2h45min -> 3h
                 hoursPlayed = int(totalDuration.split(' Hours')[0])
                 noodlesGained = hoursPlayed // 3
 

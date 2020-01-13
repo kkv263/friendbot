@@ -183,6 +183,8 @@ class Character(commands.Cog):
                 
                 magicItemsTier2 = []
 
+                # TODO: unussed tp off
+                # example $create "Koopa" 3 "Tortle" "Barbarian" "Sailor" 16 10 14 10 15 10 "Vicious Greataxe"
                 for item in allMagicItemsString:
                     if int(item['Tier']) > highestTier:
                         return "- One or more of these magic items cannot be purchased at Level " + str(lvl), 0, 0

@@ -135,8 +135,9 @@ async def help(ctx, *, pageString=''):
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer addme charactername \"consumables\"", value="If you join a game late, this command will add you to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer remove @player", value="**DM Only**: Remove the user mentioned from the running timer and display their individual rewards for the time they played.", inline=False)
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer removeme", value="If you leave a game early, this command will remove you from the running timer and display your individual rewards for the time you played.", inline=False)
+    helpEmbedTimerTwo.add_field(name=commandPrefix + "timer death", value="", inline=False)
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer reward @player \"rewards\"", value="**DM Only**: Rewards @player item(s) from the RIT. Reward limits depend on your Noodle Role.", inline=False)
-    helpEmbedTimerTwo.add_field(name=commandPrefix + "- Consumable", value="Consumes the consumable your character uses and deletes it from their inventory", inline=False)
+    helpEmbedTimerTwo.add_field(name="- Consumable", value="Consumes the consumable your character uses and deletes it from their inventory", inline=False)
     helpEmbedTimerTwo.add_field(name=commandPrefix + "timer stop", value="**DM Only**: Stops a timer that you have started and shows how much to CP, TP, and gp to reward the players who played have not removed themselves from the timer. If players added themselves, it will display their rewards separately. The timer can only be stopped by the person who started it or a Mod.", inline=False)
 
     helpEmbedItems.title = 'Available Item Table Commands'
