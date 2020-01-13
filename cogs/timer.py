@@ -1253,7 +1253,7 @@ class Timer(commands.Cog):
                 noodlesGained = hoursPlayed // 3
 
                 if uRecord:
-                    if 'Noodles' in uRecord:
+                    if 'Noodles' not in uRecord:
                         uRecord['Noodles'] = 0
                     else:
                         noodles += uRecord['Noodles'] + noodlesGained
