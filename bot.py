@@ -108,6 +108,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar.add_field(name=f'{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Creates your character with the following information.", inline=False)
     helpEmbedChar.add_field(name='MULTICLASS Creation -' + commandPrefix + 'create "character name" level "race" "class1 # / class2 #..." level " "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Creates your character just like `$create`. However please use this format if you would like to multiclass.", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'respec "character name" "new character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="TODO: Add description here", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}levelup "character name" [{commandPrefix}lvl, {commandPrefix}lv {commandPrefix}lvlup]', value="Levels your character to the next level. You may also", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'user', value="Shows your TOTAL games played with all characters, your noodles, and all your characters. You must play in at least one game before this command works for you.", inline=False)
     helpEmbedChar.add_field(name=f'{commandPrefix}info "character name" [{commandPrefix}i, {commandPrefix}char]', value="Looks up your character and shows their stats and character information", inline=False)
     helpEmbedChar.add_field(name=f'{commandPrefix}image "character name" url [{commandPrefix}img]', value="Adds an image to the `$info` command using a url. Please keep images SFW", inline=False)
@@ -158,6 +159,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedGuild.add_field(name=commandPrefix + 'guild create "character name" "guild name" @role #channel', value="After a role and channel are designated, a guild will be created. It will require funding before it is officially open.", inline=False)
     helpEmbedGuild.add_field(name=commandPrefix + 'guild fund "character name" gp "guild name"', value="Fund the establishment of the guild. Upon funding the minimum required amount, your character will be added the the guild's roster.", inline=False)
     helpEmbedGuild.add_field(name=commandPrefix + 'guild info "guild name"', value="Provides a guild roster and the amount of reputation inside a guild bank. If your guild has yet to be funded, it will show the amount GP before the guild will open.", inline=False)
+    helpEmbedGuild.add_field(name=commandPrefix + 'guild join "character name" "guild name"', value="Your character joins the specified guild.", inline=False)
     helpEmbedGuild.add_field(name=commandPrefix + 'guild leave "character name"', value="Your character leaves the guild leaving all reputation behind.", inline=False)
     helpEmbedGuild.add_field(name=commandPrefix + 'guild rep "character name" #', value="Purchase a number of sparkles through the guild. Any excess above the max will be donated to the guild instead.", inline=False)
 

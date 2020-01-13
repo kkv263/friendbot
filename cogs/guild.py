@@ -297,7 +297,7 @@ class Guild(commands.Cog):
                     await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
                     return
 
-                if gpNeeded > gpFund:
+                if gpNeeded > float(gpFund):
                     await channel.send(f"{charRecords['Name']} needs to donate at least the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
                     return
 

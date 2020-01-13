@@ -68,7 +68,7 @@ class Tp(commands.Cog):
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
-            mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed,'MIT',mItem) 
+            mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem) 
             if mRecord:
                 if mRecord['Name'] in charRecords['Magic Items']:
                     await channel.send(f"You already have `{mRecord['Name']}`, and cannot spend more TP/GP on another one.")
