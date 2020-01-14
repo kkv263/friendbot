@@ -1263,7 +1263,9 @@ class Timer(commands.Cog):
                     minutesPlayed += (30 - minutesRounded)
 
                 hoursPlayed = (minutesPlayed / 60)
-                noodlesGained = sparklesGained = hoursPlayed // 3
+                noodlesGained = sparklesGained = int(hoursPlayed) // 3
+
+                print(int(noodlesGained))
 
                 if uRecord:
                     if 'Noodles' not in uRecord:

@@ -388,13 +388,13 @@ class Guild(commands.Cog):
                 gpNeeded = 0
 
                 if charRecords['Level'] < 5:
-                    gpNeeded = 130
+                    gpNeeded = 200
                 elif charRecords['Level'] < 11:
                     gpNeeded = 400
                 elif charRecords['Level'] < 17:
                     gpNeeded = 800
                 elif charRecords['Level'] < 21:
-                    gpNeeded = 2000
+                    gpNeeded = 800
 
                 if gpNeeded > charRecords['GP']:
                     await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to join `{guildRecords['Name']}`")
@@ -540,7 +540,13 @@ class Guild(commands.Cog):
                 await channel.send(f"{charRecords['Name']} cannot buy any sparkles because `{charRecords['Guild']}` is not officially open and still needs funding")
                 return
 
-            gpNeeded = 800 * sparkleNum
+            gpNeeded = 0
+            for s in range (charRecords['Reputation'],sparkleNum + 1):
+                if s >= 10:
+                    gpNeeded += 500
+                else:
+                    gpNeeded += 100 * s
+          
 
             if gpNeeded > charRecords['GP']:
                 await channel.send(f"{charRecords['Name']} does not have `{gpNeeded}gp` to buy {sparkleNum} sparkle(s).")
@@ -550,10 +556,10 @@ class Guild(commands.Cog):
             sparkleTotal = charRecords['Reputation'] + sparkleNum
 
             sparkleToGuild = 0
-            guildEmbed.description = f"Are you sure you want to buy **{sparkleNum}** :sparkles:?\n{charRecords['Reputation']} :sparkles: => {sparkleTotal} :sparkles:\n\n✅ : Yes\n\n❌: Cancel"
-            if sparkleTotal > 7:
-                sparkleToGuild = sparkleTotal - 7
-                sparkleTotal = 7  
+            guildEmbed.description = f"Are you sure you want to buy **{sparkleNum}** :sparkles: for {gpNeeded}gp?\n{charRecords['Reputation']} :sparkles: => {sparkleTotal} :sparkles:\n\n✅ : Yes\n\n❌: Cancel"
+            if sparkleTotal > 10:
+                sparkleToGuild = sparkleTotal - 10
+                sparkleTotal = 10
                 guildEmbed.description = f"Are you sure you want to buy **{sparkleNum}** :sparkles:?\n\n{sparkleToGuild} :sparkles: will go to **{charRecords['Guild']}'s** bank\n\n{charRecords['Reputation']} :sparkles: => {sparkleTotal} :sparkles:\n\n✅ : Yes\n\n❌: Cancel"
 
             guildEmbed.title = f"Guild Rep: {charRecords['Guild']}"

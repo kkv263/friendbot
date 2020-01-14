@@ -185,6 +185,8 @@ class Character(commands.Cog):
 
                 # TODO: unussed tp off
                 # example $create "Koopa" 3 "Tortle" "Barbarian" "Sailor" 16 10 14 10 15 10 "Vicious Greataxe"
+                isLeftoverT1 = False
+                isLeftoverT2 = False
                 for item in allMagicItemsString:
                     if int(item['Tier']) > highestTier:
                         return "- One or more of these magic items cannot be purchased at Level " + str(lvl), 0, 0
@@ -200,9 +202,11 @@ class Character(commands.Cog):
                               magicItemsCurrent.append(item)                       
                               magicItemsCurrent.append(f'{costTP - bankTP1}/{costTP}')
                               charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
+                              isLeftoverT1= False
                             else:
                               bankTP1 = abs(bankTP1)
                               magicItemsBought.append(item)
+                              isLeftoverT1 = True
 
 
                 for item in magicItemsTier2:
@@ -212,11 +216,13 @@ class Character(commands.Cog):
                         if bankTP2 > 0:
                             magicItemsCurrent[1] = f'{int(magicItemsCurrentItem[1]) - bankTP2}/{magicItemsCurrentItem[1]}'
                             charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
+                            isLeftoverT2= False
                         else:
                             bankTP2 = abs(bankTP2)
                             magicItemsBought.append(magicItemsCurrent[0])
                             magicItemsCurrent = []
                             charDict['Current Item'] = ""
+                            isLeftoverT2= True
 
                     if bankTP2 > 0:
                         costTP = int(item['TP'])
