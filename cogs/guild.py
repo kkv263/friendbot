@@ -545,7 +545,7 @@ class Guild(commands.Cog):
                 if s >= 10:
                     gpNeeded += 500
                 else:
-                    gpNeeded += 100 * s
+                    gpNeeded += 100 * (s+1)
           
 
             if gpNeeded > charRecords['GP']:
@@ -575,12 +575,12 @@ class Guild(commands.Cog):
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
                 await guildEmbedmsg.delete()
-                await channel.send(f'Guild canceled. Use `{commandPrefix}guild leave` command and try again!')
+                await channel.send(f'Guild canceled. Use `{commandPrefix}guild rep` command and try again!')
                 return
             else:
                 await guildEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Use `{commandPrefix}guild leave` command and try again!")
+                    await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Use `{commandPrefix}guild rep` command and try again!")
                     await guildEmbedmsg.clear_reactions()
                     return
 
