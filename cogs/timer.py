@@ -519,9 +519,9 @@ class Timer(commands.Cog):
 
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
-                        totalDurationTime = (time.time() - float(u.split(':')[1])) // 3600
+                        totalDurationTime = (time.time() - float(u.split(':')[1])) // 60
                         # TODO: roundup and do minutes instead
-                        if totalDurationTime < 1:
+                        if totalDurationTime < 45:
                             if not resume:
                               await ctx.channel.send(content=f"```You may not reward any items if a game's duration is under 1 hour.```") 
                             return start, dmChar
@@ -562,7 +562,7 @@ class Timer(commands.Cog):
                             lowerTier = False
                             chooseOr = False
 
-                            totalDurationTimeMultiplier = totalDurationTime // 3
+                            totalDurationTimeMultiplier = totalDurationTime // 180
 
                             if dmChar[4][0] == 'Spicy Noodle':
                                 rewardMajorLimit = 3
@@ -643,7 +643,7 @@ class Timer(commands.Cog):
                             rewardMinorErrorString = f"```You cannot award anymore **minor** reward items\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards```"
 
                             if rewardUser == dmChar[0]:
-                                if totalDurationTime > 3:
+                                if totalDurationTime > 180:
                                     if chooseOr:
                                         if dmMajor > dmMajorLimit or dmMinor > dmMinorLimit:
                                             if not resume:
@@ -663,7 +663,7 @@ class Timer(commands.Cog):
                                         await ctx.channel.send(f"```Because you have played less than 3 hours, you cannot reward yourself any rewards.```")
                                     return start, dmChar 
                             
-                            elif totalDurationTime < 3 and userCount < 3:
+                            elif totalDurationTime < 180 and userCount < 3:
                                 rewardMinorLimit = ceil(rewardMinorLimit / 2)
                                 rewardMajorLimit = 0
 
@@ -1176,6 +1176,8 @@ class Timer(commands.Cog):
             stopEmbed.title = f"Timer: {game} [END] - {totalDuration}"
             stopEmbed.description = f"{datestart} to {dateend} CDT" 
 
+            sparkleGuildSet = dict()
+
             if role != "": 
                 stopEmbed.clear_fields() 
                 allRewardsTotalString = ""
@@ -1186,6 +1188,8 @@ class Timer(commands.Cog):
                         for r in v[2]:
                             if '+' in r:
                                 vRewardList.append(r)
+                                if 'Guild' in v[1]:
+                                    sparkleGuildSet[v[1]['Guild']] = 0
                         if v not in deathChars:
                             if 'Double Rewards Buff'  in v[1]:
                                 temp += f"{v[0].mention} | {v[1]['Name']} **DOUBLE REWARDS!** {', '.join(vRewardList).strip()}\n"
@@ -1252,9 +1256,14 @@ class Timer(commands.Cog):
                 usersCollection = db.users
                 uRecord  = usersCollection.find_one({"User ID": str(dmChar[0].id)})
                 noodles = 0
-                # add sparkles, and round up 2h45min -> 3h
-                hoursPlayed = int(totalDuration.split(' Hours')[0])
-                noodlesGained = hoursPlayed // 3
+                minutesPlayed = totalDurationTime // 60
+                minutesRounded = minutesPlayed % 30
+
+                if minutesRounded >= 15:
+                    minutesPlayed += (30 - minutesRounded)
+
+                hoursPlayed = (minutesPlayed / 60)
+                noodlesGained = sparklesGained = hoursPlayed // 3
 
                 if uRecord:
                     if 'Noodles' not in uRecord:
@@ -1309,12 +1318,16 @@ class Timer(commands.Cog):
                 guildMember = False
                 guildsListStr = ""
                 guildsRecordsList = list()
+
+                print(allRewardStrings)
+                print(sparkleGuildSet)
+
+                # TODO: Give sparkles to palyer if they recieve DM Rewards and in the guild
                 if guildsList != list():
                     guildsListStr = "Guilds: "
                     for g in guildsList:
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
-                        # if gRecord and hoursPlayed >= 3:
-                        if gRecord:
+                        if gRecord and hoursPlayed >= 3:
                             for p in playerList:
                                 if 'Guild' in p[1]:
                                     if gRecord['Name'] in p[1]['Guild']:
