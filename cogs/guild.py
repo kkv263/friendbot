@@ -541,7 +541,7 @@ class Guild(commands.Cog):
                 return
 
             gpNeeded = 0
-            for s in range (charRecords['Reputation'], charRecords['Reputation'] + sparkleNum - 1):
+            for s in range (charRecords['Reputation'], charRecords['Reputation'] + sparkleNum):
                 if s >= 10:
                     gpNeeded += 500
                 else:
