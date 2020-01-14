@@ -541,7 +541,7 @@ class Guild(commands.Cog):
                 return
 
             gpNeeded = 0
-            for s in range (charRecords['Reputation'],sparkleNum + 1):
+            for s in range (charRecords['Reputation'], charRecords['Reputation'] + sparkleNum + 1):
                 if s >= 10:
                     gpNeeded += 500
                 else:
@@ -586,12 +586,13 @@ class Guild(commands.Cog):
 
                 try:
                     playersCollection = db.players
+                    guildsCollection = db.guilds
                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'GP':newGP, 'Reputation': sparkleTotal}})
                     if sparkleToGuild > 0:
                         guildsCollection.update_one({'Name': charRecords['Guild']}, {"$set": {'Reputation': guildRecords['Reputation'] + sparkleToGuild}})
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
-                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try guild rep again.")
                 else:
                     guildEmbed.description = f"{charRecords['Name']} now has **{sparkleTotal}** :sparkles:\n\n**Current gp**: {newGP}\n"
                     if sparkleToGuild > 0:
