@@ -1328,6 +1328,7 @@ class Timer(commands.Cog):
                     guildsListStr = "Guilds: "
                     for g in guildsList:
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
+                        print(gRecord)
 
                         if gRecord:
                             if sparkleGuildSet != dict():
