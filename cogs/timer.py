@@ -1362,7 +1362,7 @@ class Timer(commands.Cog):
                                                         del d['fields']['$unset']['Double Items Buff']
                                                         if  d['fields']['$unset'] == dict():
                                                             del d['fields']['$unset']
-                        guildsRecordsList.append(gRecord)
+                            guildsRecordsList.append(gRecord)
                 print(guildsRecordsList)
 
                 timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
