@@ -1340,7 +1340,9 @@ class Timer(commands.Cog):
                                     if 'Guild' in p[1]:
                                         if gRecord['Name'] in p[1]['Guild']:
                                             guildMember = True
-                                gRecord['Reputation'] += sparklesGained
+                                if sparkleGuildSet != dict():
+                                    if gRecord['Name'] in sparkleGuildSet:
+                                        gRecord['Reputation'] += sparklesGained
                                 if 'Games' not in gRecord:
                                     gRecord['Games'] = 1
                                 else:
@@ -1454,6 +1456,7 @@ class Timer(commands.Cog):
                     usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
                     usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
                     usersCollection.bulk_write(usersData)
+                    # why is it giving one rep?
                     if guildsRecordsList != list():
                         guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games'], 'Reputation': item['Reputation']}}, upsert=True), guildsRecordsList))
                         guildsCollection.bulk_write(guildsData)
