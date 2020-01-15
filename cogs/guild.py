@@ -242,7 +242,7 @@ class Guild(commands.Cog):
             if guildRecords['Funds'] < 6000:
                 guildEmbed.add_field(name="Funds", value=f"{guildRecords['Funds']}gp / 6000gp.\n**{6000 - guildRecords['Funds']}gp** left to open the guild!", inline=False)
             else:
-                guildEmbed.add_field(name="Reputation Bank", value=f"{guildRecords['Reputation']}", inline=False)
+                guildEmbed.add_field(name="Reputation Bank", value=f"{guildRecords['Reputation']} :sparkles:", inline=False)
 
 
             await channel.send(embed=guildEmbed)
