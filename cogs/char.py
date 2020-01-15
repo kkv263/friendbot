@@ -523,6 +523,7 @@ class Character(commands.Cog):
                             charDict['Inventory'][k] = v
                     startEquipmentLength += 1
                 await charEmbedmsg.clear_reactions()
+                charEmbed.clear_fields()
 
             # Subclass
             classStat = []
@@ -690,6 +691,11 @@ class Character(commands.Cog):
             charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
         charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=True)
         charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+
+        if 'Wizard' in charDict['Class']:
+            charDict['Free Spells'] = 6
+            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. Please use the `{commandPrefix}shop copy` command", inline=False)
+
         
         charDictInvString = ""
         print(charDict['Inventory'])
@@ -2237,22 +2243,22 @@ class Character(commands.Cog):
                 elif 'CHA' in s:
                     statsArray[5] -= int(s[len(s)-1]) if s[len(s)-2] == "+" else int("-" + s[len(s)-1])
                     uniqueArray.remove('CHA')
-                elif 'ANY' in s:
-                  #TODO: ANY for changeling
-                    pass
-                    # charEmbed.add_field(name=f"Your race **{rRecord['Name']}** lets you choose {anyCheck} unique stats. React [1-6] below which with stats you allocated", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
-                elif 'AOU' in s:
+
+                elif 'AOU' in s or 'ANY' in s:
                     try:
                         anyCheck = int(s[len(s)-1])
                         anyList = set()
                         uniqueStatStr = ""
                         uniqueReacts = []
 
+                        if 'ANY' in s:
+                            uniqueArray = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
+
                         for u in range(0,len(uniqueArray)):
                             uniqueStatStr += f'{numberEmojis[u]}: {uniqueArray[u]}\n'
                             uniqueReacts.append(numberEmojis[u])
 
-                        charEmbed.add_field(name=f"Your race **{rRecord['Name']}** lets you choose {anyCheck} unique stats. React below which with stats you allocated", value=uniqueStatStr, inline=False)
+                        charEmbed.add_field(name=f"Your race **{rRecord['Name']}** lets you choose {anyCheck} extra stats. React below which with stats you allocated", value=uniqueStatStr, inline=False)
                         if charEmbedmsg:
                             await charEmbedmsg.edit(embed=charEmbed)
                         else: 

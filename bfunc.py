@@ -278,9 +278,8 @@ connection = MongoClient(mongoConnection, ssl=True)
 db = connection.dnd
 
 
-
 # API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'races')
-# # API_URL += '?offset=' + 'itrsyi0xUUYH4JyFj/reco1ScsaGrN0XQUj' 
+# # API_URL += '?offset=' + 'itr4Z54rnNABYW8jj/recr2ss2DkyF4Q84X' 
 # r = requests.get(API_URL, headers=headers)
 # r = r.json()['records']
 # playersCollection = db.races
@@ -292,9 +291,9 @@ db = connection.dnd
 # playersCollection.insert_many(addList)
 
 
-# collection = db['mit']
+# collection = db['races']
 
-# records = list(collection.find({"Name": {"$regex": '\\+2', '$options': 'i' }}))
+# records = list(collection.find({"Modifiers": {"$regex": '', '$options': 'i' }}))
 
 
 # i = 0
@@ -304,5 +303,5 @@ db = connection.dnd
 
 # print (i)
 
-# delete
-# collection.remove(({"Name": {"$regex": '\\+2', '$options': 'i' }}))
+# # delete
+# collection.remove(({"Modifiers": {"$regex": '', '$options': 'i' }}))

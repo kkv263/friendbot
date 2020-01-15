@@ -198,8 +198,6 @@ class Shop(commands.Cog):
         shopEmbed = discord.Embed()
         shopCog = self.bot.get_cog('Shop')
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
-        #TODO: At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. 
-        # Your spellbook is the repository of the wizard spells you know, except your cantrips, which are fixed in your mind.
 
         if charRecords:
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
@@ -217,26 +215,38 @@ class Shop(commands.Cog):
                         await channel.send(f"{charRecords['Name']} does already has the spell `{bRecord['Name']}` to copied in thier spellbook!")
                         return  
 
-                spellCopied = None
-                for c in consumes:
-                    print(c)
-                    if bRecord['Name'] in c and 'Spell Scroll' in c:
-                        spellCopied = True
-                        consumes.remove(c)
-                        break
+                if 'Free Spells' not in charRecords:
+                    spellCopied = None
+                    for c in consumes:
+                        print(c)
+                        if bRecord['Name'] in c and 'Spell Scroll' in c:
+                            spellCopied = True
+                            consumes.remove(c)
+                            break
 
-                if not spellCopied:
-                    await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into thier spellbook!")
-                    return  
+                    if not spellCopied:
+                        await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into thier spellbook!")
+                        return  
 
-                gpNeeded = bRecord['Level'] * 50
+                    gpNeeded = bRecord['Level'] * 50
+                    if charRecords['Level'] >= 2 and bRecord['School'] in charRecords['Class']:
+                        gpNeeded = gpNeeded / 2
 
-                if charRecords['Level'] >= 2 and bRecord['School'] in charRecords['Class']:
-                    gpNeeded = gpNeeded / 2
+                    if gpNeeded > charRecords['GP']:
+                        await channel.send(f"{charRecords['Name']} does not have enough GP to copy `{bRecord['Name']}`")
+                        return
 
-                if gpNeeded > charRecords['GP']:
-                    await channel.send(f"{charRecords['Name']} does not have enough GP to copy `{bRecord['Name']}`")
-                    return
+                else:
+                    gpNeeded = 0
+                    if bRecord['Level'] > 1:
+                        await channel.send(f"`{bRecord['Name']}` is not a level 1 spell that can be copied into your spellbook as a starting level 1 spell")
+                        return     
+
+                    if 'Wizard' not in bRecord['Classes']:
+                        await channel.send(f"`{bRecord['Name']}` is not a wizard spell that can be copied into your spellbook as a starting level 1 spell")
+                        return     
+                    charRecords['Free Spells'] -= 1
+
 
                 newGP = charRecords['GP'] - gpNeeded
 
@@ -247,17 +257,24 @@ class Shop(commands.Cog):
 
                 try:
                     playersCollection = db.players
-                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}})
+                    if 'Free Spells' in charRecords:
+                        if charRecords['Free Spells'] == 0:
+                            playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}, "$unset": {"Free Spells":1} })
+                        else:
+                            playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook'], 'Free Spells': charRecords['Free Spells']}}) 
+                    else:
+                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}})
+
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
                     shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nSpell Scroll {bRecord['Name']} has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
+                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell Scroll {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
                     await channel.send (embed=shopEmbed)
 
             else:
-                await channel.send(f'`{spellName}` doesn\'t exist! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'`{spellName}` doesn\'t exist! Check to see if it is a valid spell and check your spelling.')
                 return
 
     @commands.command(aliases=['prof'])
