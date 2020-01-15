@@ -560,7 +560,7 @@ class Guild(commands.Cog):
             if sparkleTotal > 10:
                 sparkleToGuild = sparkleTotal - 10
                 sparkleTotal = 10
-                guildEmbed.description = f"Are you sure you want to buy **{sparkleNum}** :sparkles:?\n\n{sparkleToGuild} :sparkles: will go to **{charRecords['Guild']}'s** bank\n\n{charRecords['Reputation']} :sparkles: => {sparkleTotal} :sparkles:\n\n✅ : Yes\n\n❌: Cancel"
+                guildEmbed.description = f"Are you sure you want to buy **{sparkleNum}** :sparkles: {gpNeeded}gp?\n\n{sparkleToGuild} :sparkles: will go to **{charRecords['Guild']}'s** bank\n\n{charRecords['Reputation']} :sparkles: => {sparkleTotal} :sparkles:\n\n✅ : Yes\n\n❌: Cancel"
 
             guildEmbed.title = f"Guild Rep: {charRecords['Guild']}"
 

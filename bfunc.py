@@ -279,16 +279,15 @@ db = connection.dnd
 
 
 
-# API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'MIT')
-# # API_URL += '?offset=' + 'itrcCL1NnHnrTCHI6/recrXASepkh0uPB6G' 
+# API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'races')
+# # API_URL += '?offset=' + 'itrsyi0xUUYH4JyFj/reco1ScsaGrN0XQUj' 
 # r = requests.get(API_URL, headers=headers)
 # r = r.json()['records']
-# playersCollection = db.mit
+# playersCollection = db.races
 # addList = []
 # for i in r:
 #     print(i['fields'])
 #     addList.append(i['fields'])
-
 
 # playersCollection.insert_many(addList)
 

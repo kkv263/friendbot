@@ -183,8 +183,6 @@ class Character(commands.Cog):
                 
                 magicItemsTier2 = []
 
-                # TODO: unussed tp off
-                # example $create "Koopa" 3 "Tortle" "Barbarian" "Sailor" 16 10 14 10 15 10 "Vicious Greataxe"
                 isLeftoverT1 = False
                 isLeftoverT2 = False
                 for item in allMagicItemsString:
@@ -234,6 +232,13 @@ class Character(commands.Cog):
                         else:
                           bankTP2 = abs(bankTP2)
                           magicItemsBought.append(item)
+
+                if not isLeftoverT1:
+                    bankTP1 = 0
+
+                if not isLeftoverT2:
+                    bankTP2 = 0
+
                 return magicItemsBought, bankTP1, bankTP2
 
 
@@ -2172,7 +2177,8 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            anyList.add(r.emoji)
+            if r.emoji in uniqueReacts or r.emoji == '❌' :
+                anyList.add(r.emoji)
             return sameMessage and ((len(anyList) == anyCheck+1) or str(r.emoji) == '❌') and u == author
 
         def slashCharEmbedcheck(r, u):
@@ -2183,6 +2189,7 @@ class Character(commands.Cog):
 
         if rRecord:
             statsBonus = rRecord['Modifiers'].replace(" ", "").split(',')
+            uniqueArray = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
             for s in statsBonus:
                 if '/' in s:
                     statSplit = s[:len(s)-2].replace(" ", "").split('/')
@@ -2214,26 +2221,43 @@ class Character(commands.Cog):
 
                 if 'STR' in s:
                     statsArray[0] -= int(s[len(s)-1]) if s[len(s)-2] == "+" else int("-" + s[len(s)-1])
+                    uniqueArray.remove('STR')
                 elif 'DEX' in s:
                     statsArray[1] -= int(s[len(s)-1]) if s[len(s)-2] == "+" else int("-" + s[len(s)-1])
+                    uniqueArray.remove('DEX')
                 elif 'CON' in s:
                     statsArray[2] -= int(s[len(s)-1]) if s[len(s)-2] == "+" else int("-" + s[len(s)-1])
+                    uniqueArray.remove('CON')
                 elif 'INT' in s:
                     statsArray[3] -= int(s[len(s)-1]) if s[len(s)-2] == "+" else int("-" + s[len(s)-1])
+                    uniqueArray.remove('INT')
                 elif 'WIS' in s:
                     statsArray[4] -= int(s[len(s)-1]) if s[len(s)-2] == "+" else int("-" + s[len(s)-1])
+                    uniqueArray.remove('WIS')
                 elif 'CHA' in s:
                     statsArray[5] -= int(s[len(s)-1]) if s[len(s)-2] == "+" else int("-" + s[len(s)-1])
+                    uniqueArray.remove('CHA')
                 elif 'ANY' in s:
+                  #TODO: ANY for changeling
+                    pass
+                    # charEmbed.add_field(name=f"Your race **{rRecord['Name']}** lets you choose {anyCheck} unique stats. React [1-6] below which with stats you allocated", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
+                elif 'AOU' in s:
                     try:
                         anyCheck = int(s[len(s)-1])
                         anyList = set()
-                        charEmbed.add_field(name=f"Your race **{rRecord['Name']}** lets you choose {anyCheck} unique stats. React [1-6] below which with stats you allocated", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
+                        uniqueStatStr = ""
+                        uniqueReacts = []
+
+                        for u in range(0,len(uniqueArray)):
+                            uniqueStatStr += f'{numberEmojis[u]}: {uniqueArray[u]}\n'
+                            uniqueReacts.append(numberEmojis[u])
+
+                        charEmbed.add_field(name=f"Your race **{rRecord['Name']}** lets you choose {anyCheck} unique stats. React below which with stats you allocated", value=uniqueStatStr, inline=False)
                         if charEmbedmsg:
                             await charEmbedmsg.edit(embed=charEmbed)
                         else: 
                             charEmbedmsg = await channel.send(embed=charEmbed)
-                        for num in range(0,6): await charEmbedmsg.add_reaction(numberEmojis[num])
+                        for num in range(0,len(uniqueArray)): await charEmbedmsg.add_reaction(numberEmojis[num])
                         await charEmbedmsg.add_reaction('❌')
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=anyCharEmbedcheck, timeout=60)
                     except asyncio.TimeoutError:
@@ -2255,7 +2279,6 @@ class Character(commands.Cog):
                         statsArray[(int(s[0]) - 1)] -= 1
                     
             print (statsArray)
-            print (statsBonus)
             return statsArray, charEmbedmsg
 
     async def chooseSubclass(self, ctx, subclassesList, charClass, charEmbed, charEmbedmsg):
@@ -2378,11 +2401,11 @@ class Character(commands.Cog):
                             return None, None, None
                     asi = int(tReaction.emoji[0]) - 1
                     charStats[statNames[asi]] = int(charStats[statNames[asi]]) + 1
+                    charEmbed.set_field_at(0,name=f"ASI First Stat", value=f"{numberEmojis[asi]}: {statNames[asi]}", inline=False)
                     if ctx.invoked_with == "levelup":
                          charEmbed.description = f"{race}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
 
                     try:
-                        charEmbed.clear_fields()    
                         charEmbed.add_field(name=f"Choose your second stat for your ASI. React [1-6]", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
                         charEmbedmsg2 = await channel.send(embed=charEmbed)
                         for num in range(0,6): await charEmbedmsg2.add_reaction(numberEmojis[num])

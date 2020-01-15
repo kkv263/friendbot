@@ -261,11 +261,11 @@ class Timer(commands.Cog):
                             await ctx.channel.send("```You're missing a character name for the player you're trying to add. Please try again```")
                         return
                     charName = charList[1]
-                elif ('timer addme' in char.content or 't addme' in char.content) and (char.content != f'{commandPrefix}timer addme' or char.content != f'{commandPrefix}t addme'):
-                    if 'timer addme' in char.content:
-                        charList = shlex.split(char.content.split(f'{commandPrefix}timer addme')[1].strip())
-                    elif 't addme' in char.content:
-                        charList = shlex.split(char.content.split(f'{commandPrefix}t addme')[1].strip())
+                elif ('timer addme ' in char.content or 't addme ' in char.content) and (char.content != f'{commandPrefix}timer addme ' or char.content != f'{commandPrefix}t addme '):
+                    if 'timer addme ' in char.content:
+                        charList = shlex.split(char.content.split(f'{commandPrefix}timer addme ')[1].strip())
+                    elif 't addme ' in char.content:
+                        charList = shlex.split(char.content.split(f'{commandPrefix}t addme ')[1].strip())
                     charName = charList[0]
                         
 
@@ -520,7 +520,6 @@ class Timer(commands.Cog):
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
                         totalDurationTime = (time.time() - float(u.split(':')[1])) // 60
-                        # TODO: roundup and do minutes instead
                         if totalDurationTime < 45:
                             if not resume:
                               await ctx.channel.send(content=f"```You may not reward any items if a game's duration is under 1 hour.```") 
@@ -541,11 +540,11 @@ class Timer(commands.Cog):
 
                     else:
                         if not resume:
-                            # TODO: should be a quote error
-                            await ctx.channel.send(content=f"You need to reward the user an item from the RIT")
+                            await ctx.channel.send(content=f'```You need to include quotes around your reward item in your command. Please follow this format: \n{commandPrefix}timer reward @player "reward"```')
                         return start, dmChar
 
                     for query in consumablesList:
+                        # TODO: Deal with this in resume
                         rewardConsumable, charEmbed, charEmbedmsg = await callAPI(ctx, discord.Embed(), None ,'rit',query) 
 
                         if not rewardConsumable:
@@ -1321,20 +1320,20 @@ class Timer(commands.Cog):
                 guildsListStr = ""
                 guildsRecordsList = list()
 
-                print(allRewardStrings)
-                print(sparkleGuildSet)
 
-                # TODO: Give sparkles to palyer if they recieve DM Rewards and in the guild
                 if guildsList != list():
                     guildsListStr = "Guilds: "
                     for g in guildsList:
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
+                        if gRecord['Name'] in sparkleGuildSet:
+                             gRecord['Reputation'] += 2
+
                         if gRecord and hoursPlayed >= 3:
                             for p in playerList:
                                 if 'Guild' in p[1]:
                                     if gRecord['Name'] in p[1]['Guild']:
                                         guildMember = True
-                            gRecord['Reputation'] += noodlesGained
+                            gRecord['Reputation'] += sparklesGained
                             if 'Games' not in gRecord:
                                 gRecord['Games'] = 1
                             else:
@@ -1362,7 +1361,7 @@ class Timer(commands.Cog):
                                                         del d['fields']['$unset']['Double Items Buff']
                                                         if  d['fields']['$unset'] == dict():
                                                             del d['fields']['$unset']
-                            guildsRecordsList.append(gRecord)
+                        guildsRecordsList.append(gRecord)
 
                 timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
 
@@ -1603,7 +1602,6 @@ class Timer(commands.Cog):
                         if (f"{commandPrefix}timer add " in message.content or f"{commandPrefix}t add " in message.content) and not message.author.bot:
                             resumeTimes = await ctx.invoke(self.timer.get_command('add'), start=resumeTimes, role=startRole, msg=message, resume=True)
                         elif  (f"{commandPrefix}timer addme" in message.content or f"{commandPrefix}t addme" in message.content) and not message.author.bot and (message.content != f'{commandPrefix}timer addme' or message.content != f'{commandPrefix}t addme'):
-                            #TODO: addme resume $timer addme (no argument)
                             resumeTimes = await ctx.invoke(self.timer.get_command('addme'), start=resumeTimes, role=startRole, dmChar=dmChar, msg=message, user=message.author, resume=True) 
                         elif ((f"{commandPrefix}timer removeme" in message.content or f"{commandPrefix}timer remove " in message.content) or (f"{commandPrefix}t removeme" in message.content or f"{commandPrefix}t remove " in message.content)) and not message.author.bot: 
                             if f"{commandPrefix}timer removeme" in message.content or f"{commandPrefix}t removeme" in message.content:
