@@ -1450,12 +1450,12 @@ class Timer(commands.Cog):
 
                 try:
 
-                    # statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
-                    # usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
-                    # usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
-                    # usersCollection.bulk_write(usersData)
+                    statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
+                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
+                    usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
+                    usersCollection.bulk_write(usersData)
                     if guildsRecordsList != list():
-                        guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games'], 'Reputation': gRecord['Reputation']}}, upsert=True), guildsRecordsList))
+                        guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games'], 'Reputation': item['Reputation']}}, upsert=True), guildsRecordsList))
                         guildsCollection.bulk_write(guildsData)
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
