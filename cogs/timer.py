@@ -1175,8 +1175,6 @@ class Timer(commands.Cog):
             stopEmbed.title = f"Timer: {game} [END] - {totalDuration}"
             stopEmbed.description = f"{datestart} to {dateend} CDT" 
 
-            sparkleGuildSet = dict()
-
             if role != "": 
                 stopEmbed.clear_fields() 
                 allRewardsTotalString = ""
@@ -1187,8 +1185,6 @@ class Timer(commands.Cog):
                         for r in v[2]:
                             if '+' in r:
                                 vRewardList.append(r)
-                                if 'Guild' in v[1]:
-                                    sparkleGuildSet[v[1]['Guild']] = 0
                         if v not in deathChars:
                             if 'Double Rewards Buff'  in v[1]:
                                 temp += f"{v[0].mention} | {v[1]['Name']} **DOUBLE REWARDS!** {', '.join(vRewardList).strip()}\n"
@@ -1320,29 +1316,26 @@ class Timer(commands.Cog):
                 guildsListStr = ""
                 guildsRecordsList = list()
 
-                print('guildsList')
-                print(guildsList)
+                print(playerList)
 
 
+                # TODO: Sparkles every three hours = 1, dm starts with 2 at 3 hours.
                 if guildsList != list():
                     guildsListStr = "Guilds: "
                     for g in guildsList:
-                        print(g.id)
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
-                        print(gRecord)
-
                         if gRecord:
-                            if sparkleGuildSet != dict():
-                                if gRecord['Name'] in sparkleGuildSet:
-                                    gRecord['Reputation'] += 2
                             if hoursPlayed >= 3:
                                 for p in playerList:
                                     if 'Guild' in p[1]:
                                         if gRecord['Name'] in p[1]['Guild']:
                                             guildMember = True
-                                if sparkleGuildSet != dict():
-                                    if gRecord['Name'] in sparkleGuildSet:
-                                        gRecord['Reputation'] += sparklesGained
+                                            gRecord['Reputation'] += sparklesGained
+                                if 'Guild' in dmChar[1]:
+                                        if gRecord['Name'] in dmChar[1]['Guild']:
+                                            guildMember = True
+                                            gRecord['Reputation'] += sparklesGained + 1
+
                                 if 'Games' not in gRecord:
                                     gRecord['Games'] = 1
                                 else:
