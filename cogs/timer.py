@@ -1327,6 +1327,7 @@ class Timer(commands.Cog):
                 if guildsList != list():
                     guildsListStr = "Guilds: "
                     for g in guildsList:
+                        print(g.id)
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
                         print(gRecord)
 

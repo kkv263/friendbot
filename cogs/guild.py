@@ -185,7 +185,7 @@ class Guild(commands.Cog):
                         await channel.send(f"There is already a guild by the name of `{guildName}`. Please try creating a guild with a different name")
                         return
                         
-                    guildsDict = {'Role ID': guildRole[0].id, 'Channel ID': guildChannel[0].id, 'Name': guildName, 'Funds': 0, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': 0}
+                    guildsDict = {'Role ID': str(guildRole[0].id), 'Channel ID': str(guildChannel[0].id), 'Name': guildName, 'Funds': 0, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': 0}
                     await author.add_roles(guildRole[0], reason=f"Created guild {guildName}")
 
                     try:
