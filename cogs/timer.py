@@ -1454,8 +1454,8 @@ class Timer(commands.Cog):
                 else:
                     print('Success')
                 # Session Log Channel
-                # logChannel = self.bot.get_channel(663454980140695553) 
-                logChannel = self.bot.get_channel(663451042889072660) 
+                logChannel = self.bot.get_channel(663454980140695553) 
+                # logChannel = self.bot.get_channel(663451042889072660) 
                 await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
 
                 sessionMessage = await logChannel.send(embed=stopEmbed)
