@@ -1325,8 +1325,9 @@ class Timer(commands.Cog):
                     guildsListStr = "Guilds: "
                     for g in guildsList:
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
-                        if gRecord['Name'] in sparkleGuildSet:
-                             gRecord['Reputation'] += 2
+                        if sparkleGuildSet != dict():
+                            if gRecord['Name'] in sparkleGuildSet:
+                                gRecord['Reputation'] += 2
 
                         if gRecord and hoursPlayed >= 3:
                             for p in playerList:
@@ -1366,6 +1367,7 @@ class Timer(commands.Cog):
 
                 timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
 
+                #TODO: Sparkles in Session Log
                 stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
                 stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
@@ -1457,6 +1459,7 @@ class Timer(commands.Cog):
                 logChannel = self.bot.get_channel(663454980140695553) 
                 # logChannel = self.bot.get_channel(663451042889072660) 
                 await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
+
 
                 sessionMessage = await logChannel.send(embed=stopEmbed)
                 stopEmbed.set_footer(text=f"Game ID: {sessionMessage.id}")
