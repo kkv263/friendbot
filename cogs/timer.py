@@ -1320,48 +1320,52 @@ class Timer(commands.Cog):
                 guildsListStr = ""
                 guildsRecordsList = list()
 
+                print('guildsList')
+                print(guildsList)
+
 
                 if guildsList != list():
                     guildsListStr = "Guilds: "
                     for g in guildsList:
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
-                        if sparkleGuildSet != dict():
-                            if gRecord['Name'] in sparkleGuildSet:
-                                gRecord['Reputation'] += 2
 
-                        if gRecord and hoursPlayed >= 3:
-                            for p in playerList:
-                                if 'Guild' in p[1]:
-                                    if gRecord['Name'] in p[1]['Guild']:
-                                        guildMember = True
-                            gRecord['Reputation'] += sparklesGained
-                            if 'Games' not in gRecord:
-                                gRecord['Games'] = 1
-                            else:
-                                gRecord['Games'] += 1
-                                if gRecord['Games'] % 10 == 0:
-                                    guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
-                                    if guildBuffList:
-                                        for d in data['records']:
-                                            if d['_id'] in [gb['_id'] for gb in guildBuffList]:
-                                                d['fields']['$set']['Double Rewards Buff'] = datetime.now()
-                                                if '$unset' in d['fields']:
-                                                    if 'Double Rewards Buff' in d['fields']['$unset']:
-                                                        del d['fields']['$unset']['Double Rewards Buff']
-                                                        if  d['fields']['$unset'] == dict():
-                                                            del d['fields']['$unset']
+                        if gRecord:
+                            if sparkleGuildSet != dict():
+                                if gRecord['Name'] in sparkleGuildSet:
+                                    gRecord['Reputation'] += 2
+                            if hoursPlayed >= 3:
+                                for p in playerList:
+                                    if 'Guild' in p[1]:
+                                        if gRecord['Name'] in p[1]['Guild']:
+                                            guildMember = True
+                                gRecord['Reputation'] += sparklesGained
+                                if 'Games' not in gRecord:
+                                    gRecord['Games'] = 1
+                                else:
+                                    gRecord['Games'] += 1
+                                    if gRecord['Games'] % 10 == 0:
+                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
+                                        if guildBuffList:
+                                            for d in data['records']:
+                                                if d['_id'] in [gb['_id'] for gb in guildBuffList]:
+                                                    d['fields']['$set']['Double Rewards Buff'] = datetime.now()
+                                                    if '$unset' in d['fields']:
+                                                        if 'Double Rewards Buff' in d['fields']['$unset']:
+                                                            del d['fields']['$unset']['Double Rewards Buff']
+                                                            if  d['fields']['$unset'] == dict():
+                                                                del d['fields']['$unset']
 
-                                elif gRecord['Games'] % 5 == 0:
-                                    guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
-                                    if guildBuffList:
-                                        for d in data['records']:
-                                            if d['_id'] in [gb['_id'] for gb in guildBuffList]:
-                                                d['fields']['$set']['Double Items Buff'] = datetime.now()
-                                                if '$unset' in d['fields']:
-                                                    if 'Double Items Buff' in d['fields']['$unset']:
-                                                        del d['fields']['$unset']['Double Items Buff']
-                                                        if  d['fields']['$unset'] == dict():
-                                                            del d['fields']['$unset']
+                                    elif gRecord['Games'] % 5 == 0:
+                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
+                                        if guildBuffList:
+                                            for d in data['records']:
+                                                if d['_id'] in [gb['_id'] for gb in guildBuffList]:
+                                                    d['fields']['$set']['Double Items Buff'] = datetime.now()
+                                                    if '$unset' in d['fields']:
+                                                        if 'Double Items Buff' in d['fields']['$unset']:
+                                                            del d['fields']['$unset']['Double Items Buff']
+                                                            if  d['fields']['$unset'] == dict():
+                                                                del d['fields']['$unset']
                             guildsRecordsList.append(gRecord)
                 print(guildsRecordsList)
 
@@ -1443,10 +1447,11 @@ class Timer(commands.Cog):
 
 
                 try:
-                    statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
-                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
-                    usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
-                    usersCollection.bulk_write(usersData)
+
+                    # statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
+                    # usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
+                    # usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
+                    # usersCollection.bulk_write(usersData)
                     if guildsRecordsList != list():
                         guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games'], 'Reputation': gRecord['Reputation']}}, upsert=True), guildsRecordsList))
                         guildsCollection.bulk_write(guildsData)
