@@ -1664,9 +1664,11 @@ class Character(commands.Cog):
                         tempSub = charClass[charClass.find("(")+1:charClass.find(")")]
                     subclasses.append({'Name':charClass, 'Subclass':tempSub, 'Level':charLevel})
 
+                print(subclasses)
+
                 for c in classRecords:
                     for s in subclasses:
-                        if s['Name'] == c['Name']:
+                        if c['Name'] in s['Name']:
                             s['Hit Die Max'] = c['Hit Die Max']
                             s['Hit Die Average'] = c['Hit Die Average']
 
@@ -1902,6 +1904,7 @@ class Character(commands.Cog):
                 levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: ({totalCP}) CP'
                 levelUpEmbed.description = levelUpEmbed.description + f"\nHP:{charHP}\n{charFeatsGainedStr}"
                 levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
+                levelUpEmbed.clear_fields()
 
                 def charCreateCheck(r, u):
                     sameMessage = False
@@ -2548,6 +2551,7 @@ class Character(commands.Cog):
                     page = 0;
                     perPage = 24
                     numPages =((len(featChoices)) // perPage) + 1
+                    featChoices = sorted(featChoices, key = lambda i: i['Name']) 
 
                     while True:
                         charEmbed.clear_fields()  
