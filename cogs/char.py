@@ -622,21 +622,7 @@ class Character(commands.Cog):
         #HP
         #TODO: HP maybe function
         if cRecord:
-            cRecord = sorted(cRecord, key = lambda i: i['Class']['Hit Die Max'],reverse=True) 
-
-            totalHP = 0
-            totalHP += cRecord[0]['Class']['Hit Die Max']
-            currentLevel = 1
-            
-            for c in cRecord:
-                classLevel = int(c['Level'])
-                while currentLevel < classLevel:
-                    totalHP += c['Class']['Hit Die Average']
-                    currentLevel += 1
-                currentLevel = 0
-
-            totalHP += ((charDict['CON'] - 10) // 2 ) * lvl
-            charDict['HP'] = totalHP
+            charDict['HP'] = await characterCog.calcHP(ctx,cRecord,charDict,lvl)
 
             # Multiclass Requirements
             if '/' in cclass:
@@ -1600,7 +1586,7 @@ class Character(commands.Cog):
                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
             else:
                 print('Success')
-                await ctx.channel.send(content=f'I have updated the image for the character {char}. Please check using the `{commandPrefix}char info` command')
+                await ctx.channel.send(content=f'I have updated the image for the character {char}. Please check using the `{commandPrefix}info` command')
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @commands.command(aliases=['lvl', 'lvlup', 'lv'])
@@ -1845,6 +1831,7 @@ class Character(commands.Cog):
 
                 # TODO: Tough Feat, Hill Dwarf, Draconic Sorcerer.
                 print(charHP)
+                print(classRecords)
                 for s in classRecords:
                     if s['Name'] in lvlClass:
                         charHP += s['Hit Die Average']
@@ -1858,9 +1845,7 @@ class Character(commands.Cog):
                             charHP += hpModDiff * newLevel 
                         else:
                             charHP += hpMod
-
                 print(charHP)
-
 
                 if charFeatsGained != "":
                     charFeatsGainedStr = f"Feats Gained: {charFeatsGained}"
@@ -1992,13 +1977,21 @@ class Character(commands.Cog):
                 return
 
             mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
+            print(mRecord)
+            print('mit')
             if not mRecord:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m)
+                print(mRecord)
+                print('rit')
                 if not mRecord:
                     await channel.send(f"`{m}` does not exist on the magic item table or reward item table.")
                     return
                 elif mRecord['Name'].lower() not in [x.lower() for x in charRecordMagicItems]:
                     await channel.send(f"You don't have the item `{mRecord['Name']}` in your inventory to attune.")
+                    return
+            elif mRecord['Name'].lower() not in [x.lower() for x in charRecordMagicItems]:
+                    await channel.send(f"You don't have the item `{mRecord['Name']}` in your inventory to attune.")
+                    return
 
             if mRecord['Name'] in [a.split('[')[0].strip() for a in attuned]:
                 await channel.send(f"You are already attuned to `{mRecord['Name']}`")
@@ -2175,6 +2168,25 @@ class Character(commands.Cog):
         statsEmbed.description = statsTotalString
 
         await ctx.channel.send(embed=statsEmbed)
+
+    async def calcHP (self, ctx, classes, charDict, lvl):
+        classes = sorted(classes, key = lambda i: i['Class']['Hit Die Max'],reverse=True) 
+
+        totalHP = 0
+        totalHP += classes[0]['Class']['Hit Die Max']
+        currentLevel = 1
+        
+        for c in classes:
+            classLevel = int(c['Level'])
+            while currentLevel < classLevel:
+                totalHP += c['Class']['Hit Die Average']
+                currentLevel += 1
+            currentLevel = 0
+
+        totalHP += ((charDict['CON'] - 10) // 2 ) * lvl
+        print(classes)
+        print('hello')
+        return totalHP
 
     async def pointBuy(self,ctx, statsArray, rRecord, charEmbed, charEmbedmsg):
         author = ctx.author

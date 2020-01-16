@@ -97,7 +97,6 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None):
     else:
         infoString = ""
         if (len(records) > 1):
-          # TODO: Prompt for multiple :) max of 9?
             for i in range(0, min(len(records), 9)):
                 if table == 'mit':
                     infoString += f"{numberEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']})\n"
