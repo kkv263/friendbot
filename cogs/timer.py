@@ -544,7 +544,7 @@ class Timer(commands.Cog):
                         return start, dmChar
 
                     for query in consumablesList:
-                        # TODO: Deal with this in resume
+                        # TODO: Deal with this in resume, should not show embed
                         rewardConsumable, charEmbed, charEmbedmsg = await callAPI(ctx, discord.Embed(), None ,'rit',query) 
 
                         if not rewardConsumable:
@@ -1317,15 +1317,12 @@ class Timer(commands.Cog):
                 guildsListStr = ""
                 guildsRecordsList = list()
 
-                print(playerList)
-
-
-                # TODO: Sparkles every three hours = 1, dm starts with 2 at 3 hours.
                 if guildsList != list():
                     guildsListStr = "Guilds: "
                     for g in guildsList:
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
                         if gRecord:
+                            gRecord['Old Reputation'] = gRecord['Reputation']
                             if hoursPlayed >= 3:
                                 for p in playerList:
                                     if 'Guild' in p[1]:
@@ -1365,14 +1362,19 @@ class Timer(commands.Cog):
                                                             if  d['fields']['$unset'] == dict():
                                                                 del d['fields']['$unset']
                             guildsRecordsList.append(gRecord)
-                print(guildsRecordsList)
 
                 timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
 
-                #TODO: Sparkles in Session Log
+                guildRewardsStr = ""
+
+                for g in guildsRecordsList:
+                    guildRewardsStr += f"{g['Name']}: +{g['Reputation'] - gRecord['Old Reputation']} :sparkles:"
+
                 stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
                 stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
+                if guildRewardsStr != "":
+                    stopEmbed.add_field(value=guildRewardsStr, name=f"Guild Rewards", inline=False)
                 sessionLogString = f"\n**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}\nGame ID:"
 
                 # Grab stats

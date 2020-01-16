@@ -406,7 +406,7 @@ class Character(commands.Cog):
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
 
-            #starting equipment
+            # starting equipment
             def alphaEmbedCheck(r, u):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
@@ -620,9 +620,13 @@ class Character(commands.Cog):
                 charDict[key] = value
 
         #HP
-        #TODO: HP maybe function
-        if cRecord:
-            charDict['HP'] = await characterCog.calcHP(ctx,cRecord,charDict,lvl)
+        hpRecords = []
+        for cc in cRecord:
+            hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
+
+        if hpRecords:
+            print(cRecord)
+            charDict['HP'] = await characterCog.calcHP(ctx,hpRecords,charDict,lvl)
 
             # Multiclass Requirements
             if '/' in cclass:
@@ -1537,7 +1541,28 @@ class Character(commands.Cog):
                             else:
                                 charDict[statSplit[0]] = f"{modStat}" 
 
+                # recalc CON
+                conValue = charDict['CON'].replace(')', '').split('(')            
+
+                if '+' in conValue[1]:
+                    conValue[1] = int(conValue[1].replace('+', '')) + int(conValue[0])
+
+                charDict['HP'] -= ((int(conValue[0]) - 10) // 2) * charLevel
+                charDict['HP'] += ((int(conValue[1]) - 10) // 2) * charLevel
+
+            
+            # TODO: Max HP increases
+            specialCollection = db.special
+            specialRecords = list(specialCollection.find())
+            totalHPAdd = 0
+            for s in specialRecords:
+                if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items" or s['Type'] == "Attuned":
+                    if s['Name'] in charDict[s['Type']]:
+                        if 'HP' in s:
+                            totalHPAdd += s['HP']
                 
+            charDict['HP'] += totalHPAdd * charLevel
+
             charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
             if "Double Rewards Buff" in charDict:
                 drRemain = charDict['Double Rewards Buff'] + timedelta(days=3) - datetime.now()
@@ -1638,6 +1663,12 @@ class Character(commands.Cog):
                     if '(' and ')' in charClass:
                         tempSub = charClass[charClass.find("(")+1:charClass.find(")")]
                     subclasses.append({'Name':charClass, 'Subclass':tempSub, 'Level':charLevel})
+
+                for c in classRecords:
+                    for s in subclasses:
+                        if s['Name'] == c['Name']:
+                            s['Hit Die Max'] = c['Hit Die Max']
+                            s['Hit Die Average'] = c['Hit Die Average']
 
                 subclasses = sorted(subclasses, key = lambda i: i['Level'], reverse=True)
 
@@ -1829,23 +1860,7 @@ class Character(commands.Cog):
                     if featsChosen != list():
                         charFeatsGained = featsChosen
 
-                # TODO: Tough Feat, Hill Dwarf, Draconic Sorcerer.
-                print(charHP)
-                print(classRecords)
-                for s in classRecords:
-                    if s['Name'] in lvlClass:
-                        charHP += s['Hit Die Average']
-                        # CON
-                        print('hpMod')
-                        hpMod = (charStats['CON'] - 10) // 2 
-                        print(hpMod)
-                        hpModDiff = ((charStats['CON'] - 10) // 2 ) - ((int(infoRecords['CON']) - 10) // 2)
-                        print(hpModDiff)
-                        if hpModDiff != 0:
-                            charHP += hpModDiff * newLevel 
-                        else:
-                            charHP += hpMod
-                print(charHP)
+                charHP = await characterCog.calcHP(ctx, subclasses, charStats, int(newCharLevel))
 
                 if charFeatsGained != "":
                     charFeatsGainedStr = f"Feats Gained: {charFeatsGained}"
@@ -1883,6 +1898,39 @@ class Character(commands.Cog):
                         statsRecord['Class'][subclassCheckClass['Name']]['Count'] += 1
                     else:
                         statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
+
+                levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: ({totalCP}) CP'
+                levelUpEmbed.description = levelUpEmbed.description + f"\nHP:{charHP}\n{charFeatsGainedStr}"
+                levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
+
+                def charCreateCheck(r, u):
+                    sameMessage = False
+                    if levelUpEmbedmsg.id == r.message.id:
+                        sameMessage = True
+                    return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+
+
+                if not levelUpEmbedmsg:
+                   levelUpEmbedmsg = await channel.send(embed=levelUpEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish creating your character or \n❌ to cancel ")
+                else:
+                    await levelUpEmbedmsg.edit(embed=levelUpEmbed, content="**Double check** your character information.\nIf this is correct please react:\n✅ to finish creating your character or \n❌ to cancel ")
+
+                await levelUpEmbedmsg.add_reaction('✅')
+                await levelUpEmbedmsg.add_reaction('❌')
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=charCreateCheck , timeout=60)
+                except asyncio.TimeoutError:
+                    await levelUpEmbedmsg.delete()
+                    await channel.send(f'Level up canceled. Use `{commandPrefix}levelup` command and try again!')
+                    self.bot.get_command('levelup').reset_cooldown(ctx)
+                    return
+                else:
+                    await levelUpEmbedmsg.clear_reactions()
+                    if tReaction.emoji == '❌':
+                        await levelUpEmbedmsg.edit(embed=None, content=f"Level up canceled. Use `{commandPrefix}levelup` command and try again!")
+                        await levelUpEmbedmsg.clear_reactions()
+                        self.bot.get_command('levelup').reset_cooldown(ctx)
+                        return
 
                 try:
                     playersCollection = db.players
@@ -1927,12 +1975,8 @@ class Character(commands.Cog):
                     await author.add_roles(tierRole, reason=f"{author}'s character {charName} is the first character who has reached level 17!")
                     await author.remove_roles(roleRemove)
 
-                levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: ({totalCP}) CP'
-                levelUpEmbed.description = levelUpEmbed.description + f"\nHP:{charHP}\n{charFeatsGainedStr}"
-                levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
-
                 levelUpEmbed.clear_fields()
-                await levelUpEmbedmsg.edit(embed=levelUpEmbed)
+                await levelUpEmbedmsg.edit(content="LEVEL UP! :arrow_up:", embed=levelUpEmbed)
 
                 if roleName != "":
                     levelUpEmbed.title = f":tada: {roleName} role acquired! :tada:\n" + levelUpEmbed.title
@@ -1977,12 +2021,8 @@ class Character(commands.Cog):
                 return
 
             mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
-            print(mRecord)
-            print('mit')
             if not mRecord:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m)
-                print(mRecord)
-                print('rit')
                 if not mRecord:
                     await channel.send(f"`{m}` does not exist on the magic item table or reward item table.")
                     return
@@ -2170,22 +2210,20 @@ class Character(commands.Cog):
         await ctx.channel.send(embed=statsEmbed)
 
     async def calcHP (self, ctx, classes, charDict, lvl):
-        classes = sorted(classes, key = lambda i: i['Class']['Hit Die Max'],reverse=True) 
+        classes = sorted(classes, key = lambda i: i['Hit Die Max'],reverse=True) 
 
         totalHP = 0
-        totalHP += classes[0]['Class']['Hit Die Max']
+        totalHP += classes[0]['Hit Die Max']
         currentLevel = 1
-        
+
         for c in classes:
             classLevel = int(c['Level'])
             while currentLevel < classLevel:
-                totalHP += c['Class']['Hit Die Average']
+                totalHP += c['Hit Die Average']
                 currentLevel += 1
             currentLevel = 0
 
         totalHP += ((charDict['CON'] - 10) // 2 ) * lvl
-        print(classes)
-        print('hello')
         return totalHP
 
     async def pointBuy(self,ctx, statsArray, rRecord, charEmbed, charEmbedmsg):
