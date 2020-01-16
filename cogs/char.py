@@ -1556,10 +1556,16 @@ class Character(commands.Cog):
             specialRecords = list(specialCollection.find())
             totalHPAdd = 0
             for s in specialRecords:
-                if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items" or s['Type'] == "Attuned":
+                if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items":
                     if s['Name'] in charDict[s['Type']]:
                         if 'HP' in s:
                             totalHPAdd += s['HP']
+                if 'Attuned' in charDict:
+                    if s['Type'] == "Attuned":
+                        if s['Name'] in charDict[s['Type']]:
+                            if 'HP' in s:
+                                totalHPAdd += s['HP']
+
                 
             charDict['HP'] += totalHPAdd * charLevel
 
