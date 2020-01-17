@@ -1908,7 +1908,7 @@ class Character(commands.Cog):
                         statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
 
                 levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: ({totalCP}) CP'
-                levelUpEmbed.description = levelUpEmbed.description + f"\nHP:{charHP}\n{charFeatsGainedStr}"
+                levelUpEmbed.description = levelUpEmbed.description + f"\n{charFeatsGainedStr}"
                 levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
                 levelUpEmbed.clear_fields()
 
@@ -2510,12 +2510,14 @@ class Character(commands.Cog):
 
                             else:
                                 if 'Race Restriction' in feat:
-                                    featsList = [x.strip() for x in feat['Race Restriction'].split(',')]
-                                    if race in featsList:
-                                        meetsRestriction = True
+                                    featsList = [x.strip() for x in feat['Race Restriction'].split(', ')]
+
+                                    for f in featsList:
+                                        if f in race:
+                                            meetsRestriction = True
 
                                 if 'Class Restriction' in feat:
-                                    featsList = [x.strip() for x in feat['Class Restriction'].split(',')]
+                                    featsList = [x.strip() for x in feat['Class Restriction'].split(', ')]
                                     print(cRecord)
                                     print('cRecord')
                                     for c in cRecord:
