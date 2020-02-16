@@ -330,8 +330,11 @@ class Guild(commands.Cog):
                 if  guildRecords['Funds'] >= 6000:
                     refundGP = guildRecords['Funds'] - 6000
 
+                print(guild)
+                print(guildRecords)
+
                 newGP = (charRecords['GP'] - float(gpFund)) + refundGP
-                await author.add_roles(guild.get_role(guildRecords['Role ID']), reason=f"Funded guild {guildRecords['Name']}")
+                await author.add_roles(guild.get_role(int(guildRecords['Role ID'])), reason=f"Funded guild {guildRecords['Name']}")
 
 
                 try:

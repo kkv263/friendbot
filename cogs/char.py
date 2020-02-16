@@ -1498,6 +1498,37 @@ class Character(commands.Cog):
                                 maxStatDict[maxItemSplit[2]] = int(maxItemSplit[1])
 
                                 charDict[maxItemSplit[2]] += int(maxItemSplit[3])
+                                if charDict[maxItemSplit[2]] > maxStatDict[maxItemSplit[2]]:
+                                    charDict[maxItemSplit[2]] = maxStatDict[maxItemSplit[2]]
+
+            specialCollection = db.special
+            specialRecords = list(specialCollection.find())
+
+            totalHPAdd = 0
+            for s in specialRecords:
+                if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items":
+                    if s['Name'] in charDict[s['Type']]:
+                        if 'HP' in s:
+                            totalHPAdd += s['HP']
+                          
+                        if 'Stat Bonuses' in s:
+                            if 'Bonus Level' in s:
+                                if s['Bonus Level'] >= charLevel and s['Name'] in charDict['Class'] and '/' not in charDict['Class']:
+                                    if 'MAX' in s['Stat Bonuses']:
+                                        maxItemSplit = s['Stat Bonuses'].split(' ')
+                                        if maxStatDict[maxItemSplit[2]] < int(maxItemSplit[1]):
+                                            maxStatDict[maxItemSplit[2]] += int(maxItemSplit[3])
+                                            charDict[maxItemSplit[2]] += int(maxItemSplit[3])
+
+                                            if charDict[maxItemSplit[2]] > maxStatDict[maxItemSplit[2]]:
+                                                charDict[maxItemSplit[2]] = maxStatDict[maxItemSplit[2]]
+                                            
+                                    
+                if 'Attuned' in charDict:
+                    if s['Type'] == "Attuned":
+                        if s['Name'] in charDict[s['Type']]:
+                            if 'HP' in s:
+                                totalHPAdd += s['HP']
                         
             if 'Attuned' in charDict:
                 charEmbed.add_field(name='Attuned', value='• ' + charDict['Attuned'].replace(', ', '\n• '), inline=False)
@@ -1551,22 +1582,6 @@ class Character(commands.Cog):
                 charDict['HP'] += ((int(conValue[1]) - 10) // 2) * charLevel
 
             
-            # TODO: Max HP increases
-            specialCollection = db.special
-            specialRecords = list(specialCollection.find())
-            totalHPAdd = 0
-            for s in specialRecords:
-                if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items":
-                    if s['Name'] in charDict[s['Type']]:
-                        if 'HP' in s:
-                            totalHPAdd += s['HP']
-                if 'Attuned' in charDict:
-                    if s['Type'] == "Attuned":
-                        if s['Name'] in charDict[s['Type']]:
-                            if 'HP' in s:
-                                totalHPAdd += s['HP']
-
-                
             charDict['HP'] += totalHPAdd * charLevel
 
             charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
@@ -1785,9 +1800,12 @@ class Character(commands.Cog):
                                 else:
                                     charClass += ' ' + str(lvl)
                                 
-                            charClass += f' / {classes[alphaEmojis.index(tReaction.emoji)]} 1'
-                            lvlClass = classes[alphaEmojis.index(tReaction.emoji)]
-                            subclasses.append({'Name': classes[alphaEmojis.index(tReaction.emoji)], 'Subclass': '', 'Level': 1})
+                            charClassChoice = classes[alphaEmojis.index(tReaction.emoji)]
+                            charClass += f' / {charClassChoice} 1'
+                            lvlClass = charClassChoice
+                            for c in classRecords:
+                                if c['Name'] in charClassChoice:
+                                    subclasses.append({'Name': charClassChoice, 'Subclass': '', 'Level': 1, 'Hit Die Max': c['Hit Die Max'], 'Hit Die Average': c['Hit Die Average']})
                             levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
                             levelUpEmbed.clear_fields()
                     elif tReaction.emoji == '🚫':
@@ -1853,8 +1871,9 @@ class Character(commands.Cog):
                 
                 # Feat 
                 featLevels = []
+                print(lvlClass)
                 for c in subclasses:
-                    if int(c['Level']) in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) == 10):
+                    if (int(c['Level']) in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) == 10)) and lvlClass in c['Name']:
                         featLevels.append(int(c['Level']))
 
                 charFeatsGained = ""
