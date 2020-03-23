@@ -23,7 +23,8 @@ def getTiers (tiers):
     return getTierArray
 
 def calculateTreasure(seconds, role):
-    cp = ((seconds + 900) // 1800) / 2
+    print(seconds)
+    cp = ((seconds) // 1800) / 2
     tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
     gp = cp * 60
     role = role.lower()
