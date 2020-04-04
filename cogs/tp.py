@@ -61,7 +61,7 @@ class Tp(commands.Cog):
                 sameMessage = False
                 if tpEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '1️⃣' and f'T{tierNum} TP' in charRecords) or (charRecords['GP'] >= gpNeeded and str(r.emoji) == '2️⃣') or (str(r.emoji) == '❌')) and u == author
+                return ((str(r.emoji) == '1️⃣' and haveTP) or (charRecords['GP'] >= gpNeeded and str(r.emoji) == '2️⃣') or (str(r.emoji) == '❌')) and u == author
             def tpEmbedCheck(r, u):
                 sameMessage = False
                 if tpEmbedmsg.id == r.message.id:
@@ -77,33 +77,46 @@ class Tp(commands.Cog):
                 tierNum = mRecord['Tier']
                 gpNeeded = mRecord['GP']
                 currentMagicItems = charRecords['Current Item'].split(', ')
-            
-                if f'T{tierNum} TP' in charRecords:
-                    tpBank = charRecords[f'T{tierNum} TP']
-                else:
-                    tpBank = 0
+
+                tpBank = [0,0,0,0]
+                tpBankString = ""
+
+                for x in range(0,5):
+                    if f'T{x} TP' in charRecords:
+                      tpBank[x-1] = (charRecords[f'T{x} TP'])
+                      tpBankString += f"{tpBank[x-1]} T{x} TP, " 
+
+                haveTP = False
+                lowestTp = 0
+
+                for tp in range (int(tierNum) - 1, 4):
+                    if tpBank[tp] != 0:
+                        haveTP = True
+                        lowestTP = tp + 1 
+                        break
+
 
                 tpEmbed.title = f"{mRecord['Name']} - Tier {mRecord['Tier']} {mRecord['TP']}TP / {mRecord['GP']}gp"
 
-                if f"T{tierNum} TP" not in charRecords and float(charRecords['GP']) < gpNeeded:
-                    await channel.send(f"You do not have Tier {tierNum} TP to spend TP or enough GP  to purchase `{mRecord['Name']}`")
+                if not haveTP and float(charRecords['GP']) < gpNeeded:
+                    await channel.send(f"You do not have Tier {tierNum} TP to spend or enough GP  to purchase `{mRecord['Name']}`")
                     return
                   
-                elif f"T{tierNum} TP" not in charRecords:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBank} T{tierNum} TP** and **{charRecords[f'GP']}gp**\n\n~~1️⃣: {mRecord['TP']}TP (Treasure Points)~~ You do not have TP\n2️⃣: {mRecord['GP']}GP (Gold)\n\n❌: Cancel"                 
+                elif not haveTP:
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n~~1️⃣: {mRecord['TP']}TP (Treasure Points)~~ You do not have TP\n2️⃣: {mRecord['GP']}GP (Gold)\n\n❌: Cancel"                 
 
                 elif float(charRecords['GP']) < gpNeeded:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBank} T{tierNum} TP** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n~~2️⃣: {mRecord['GP']}GP (Gold)~~ You do not have enough GP\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n~~2️⃣: {mRecord['GP']}GP (Gold)~~ You do not have enough GP\n\n❌: Cancel"                 
 
                 else:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBank} T{tierNum} TP** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n2️⃣: {mRecord['GP']}GP (Gold)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n2️⃣: {mRecord['GP']}GP (Gold)\n\n❌: Cancel"                 
                 
                 if tpEmbedmsg:
                     await tpEmbedmsg.edit(embed=tpEmbed)
                 else:
                     tpEmbedmsg = await channel.send(embed=tpEmbed)
 
-                if f"T{tierNum} TP" in charRecords:
+                if haveTP:
                     await tpEmbedmsg.add_reaction('1️⃣')
                 if float(charRecords['GP']) >= gpNeeded:
                     await tpEmbedmsg.add_reaction('2️⃣')
@@ -136,6 +149,7 @@ class Tp(commands.Cog):
 
                             
                     elif tReaction.emoji == '1️⃣':
+                        tierNum = lowestTP
                         if mRecord['Name'] in charRecords['Current Item'] or charRecords['Current Item'] == 'None':
                             if charRecords['Current Item'] == 'None':
                                 tpNeeded = float(mRecord['TP'])
