@@ -73,7 +73,7 @@ def calculateTreasure(seconds, role):
 
     return [cp, tp, gp, dcp, dtp, dgp]
 
-async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None):
+async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False):
     channel = ctx.channel
     author = ctx.author
 
@@ -88,7 +88,10 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None):
     query = query.replace('(', '\\(')
     query = query.replace(')', '\\)')
 
-    records = list(collection.find({"Name": {"$regex": query.strip(), '$options': 'i' }}))
+    if singleItem:
+        records = list(collection.find({"Name": query.strip()}))
+    else:
+        records = list(collection.find({"Name": {"$regex": query.strip(), '$options': 'i' }}))
 
     print(records)
 

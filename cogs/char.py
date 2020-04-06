@@ -769,7 +769,7 @@ class Character(commands.Cog):
 
 
     #TODO: Starting Equipment for repsec
-    # TODO: stats for respec
+    #TODO: stats for respec
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @commands.command(aliases=['rs'])
     async def respec(self,ctx, name, newname, race, cclass, bg, sStr, sDex, sCon, sInt, sWis, sCha, mItems="", consumes=""):
@@ -1172,6 +1172,7 @@ class Character(commands.Cog):
         if charDict:
             if 'Death' not in charDict:
                 await channel.send("Your character is not dying to use this command.")
+                self.bot.get_command('death').reset_cooldown(ctx)
                 return
             
             charID = charDict['_id']
@@ -1241,7 +1242,6 @@ class Character(commands.Cog):
                             await charEmbedmsg.edit(embed=None, content=f"Death canceled. Use `{commandPrefix}death` command and try again!")
                             await charEmbedmsg.clear_reactions()
                             self.bot.get_command('death').reset_cooldown(ctx)
-
                             return
                         elif tReaction.emoji == '✅':
                             charEmbed.clear_fields()
@@ -1573,13 +1573,14 @@ class Character(commands.Cog):
                                 charDict[statSplit[0]] = f"{modStat}" 
 
                 # recalc CON
-                conValue = charDict['CON'].replace(')', '').split('(')            
+                if statBonusDict['CON'] != 0:
+                    conValue = charDict['CON'].replace(')', '').split('(')            
 
-                if '+' in conValue[1]:
-                    conValue[1] = int(conValue[1].replace('+', '')) + int(conValue[0])
+                    if '+' in conValue[1]:
+                        conValue[1] = int(conValue[1].replace('+', '')) + int(conValue[0])
 
-                charDict['HP'] -= ((int(conValue[0]) - 10) // 2) * charLevel
-                charDict['HP'] += ((int(conValue[1]) - 10) // 2) * charLevel
+                    charDict['HP'] -= ((int(conValue[0]) - 10) // 2) * charLevel
+                    charDict['HP'] += ((int(conValue[1]) - 10) // 2) * charLevel
 
             
             charDict['HP'] += totalHPAdd * charLevel
@@ -2027,6 +2028,10 @@ class Character(commands.Cog):
         charRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if charRecords:
+            if 'Death' in charRecords:
+                await channel.send(f"You cannot attune items with a dying character. Please use `$death {charRecords['Name']}` for your character.")
+                return
+
             attuneLength = 3
             if charRecords['Class'] == 'Artificer':
                 if charRecords['Level'] >= 16:
@@ -2048,9 +2053,57 @@ class Character(commands.Cog):
                 await channel.send(f"You cannot attune to anymore items.")
                 return
 
-            mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
+            def apiEmbedCheck(r, u):
+                sameMessage = False
+                if charEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return (r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌') and u == author
+
+            mList = []
+            mString = ""
+            numI = 0
+
+            for k in charRecordMagicItems:
+                if m in k.lower():
+                    mList.append(k)
+                    mString += f"{numberEmojis[numI]} {k} \n"
+                    numI += 1
+
+            if (len(mList) > 1):
+                charEmbed.add_field(name=f"There seems to be multiple results for `{m}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific", value=mString, inline=False)
+                if not charEmbedmsg:
+                    charEmbedmsg = await channel.send(embed=charEmbed)
+                else:
+                    await charEmbedmsg.edit(embed=charEmbed)
+
+                await charEmbedmsg.add_reaction('❌')
+
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+                except asyncio.TimeoutError:
+                    await charEmbedmsg.delete()
+                    await channel.send('Timed out! Try using the command again.')
+                    ctx.command.reset_cooldown(ctx)
+                    return None, charEmbed, charEmbedmsg
+                else:
+                    if tReaction.emoji == '❌':
+                        await charEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                        await charEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
+                        return None,charEmbed, charEmbedmsg
+                charEmbed.clear_fields()
+                await charEmbedmsg.clear_reactions()
+                m = mList[int(tReaction.emoji[0]) - 1]
+
+            elif len(mList) == 1:
+                m = mList[0]
+            else:
+                await channel.send(f'`{m}` doesn\'t exist on the magic item table! Check to see if it is a valid item and check your spelling.')
+                return
+
+            mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m, True)
             if not mRecord:
-                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m)
+                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m, True)
                 if not mRecord:
                     await channel.send(f"`{m}` does not exist on the magic item table or reward item table.")
                     return
@@ -2091,7 +2144,7 @@ class Character(commands.Cog):
                 await channel.send(f"You succesfully attuned to `{mRecord['Name']}`")
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
-    @commands.command(aliases=['uatt'])
+    @commands.command(aliases=['uatt', 'unatt'])
     async def unattune(self,ctx, char, m):
         channel = ctx.channel
         author = ctx.author
@@ -2100,6 +2153,10 @@ class Character(commands.Cog):
         charRecords, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         if charRecords:
+            if 'Death' in charRecords:
+                await channel.send(f"You cannot unattune items with a dying character. Please use `$death {charRecords['Name']}` for your character.")
+                return
+
             if "Attuned" not in charRecords:
                 await channel.send(f"You have no attuned items to unattune")
                 return
@@ -2107,9 +2164,58 @@ class Character(commands.Cog):
                 attuned = charRecords['Attuned'].split(', ')
 
             charID = charRecords['_id']
-            mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
+
+            def apiEmbedCheck(r, u):
+                sameMessage = False
+                if charEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return (r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌') and u == author
+
+            mList = []
+            mString = ""
+            numI = 0
+
+            for k in charRecords['Magic Items'].split(', '):
+                if m in k.lower():
+                    mList.append(k)
+                    mString += f"{numberEmojis[numI]} {k} \n"
+                    numI += 1
+
+            if (len(mList) > 1):
+                charEmbed.add_field(name=f"There seems to be multiple results for `{m}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific", value=mString, inline=False)
+                if not charEmbedmsg:
+                    charEmbedmsg = await channel.send(embed=charEmbed)
+                else:
+                    await charEmbedmsg.edit(embed=charEmbed)
+
+                await charEmbedmsg.add_reaction('❌')
+
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+                except asyncio.TimeoutError:
+                    await charEmbedmsg.delete()
+                    await channel.send('Timed out! Try using the command again.')
+                    ctx.command.reset_cooldown(ctx)
+                    return None, charEmbed, charEmbedmsg
+                else:
+                    if tReaction.emoji == '❌':
+                        await charEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                        await charEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
+                        return None,charEmbed, charEmbedmsg
+                charEmbed.clear_fields()
+                await charEmbedmsg.clear_reactions()
+                m = mList[int(tReaction.emoji[0]) - 1]
+
+            elif len(mList) == 1:
+                m = mList[0]
+            else:
+                await channel.send(f'`{m}` doesn\'t exist on the magic item table! Check to see if it is a valid item and check your spelling.')
+                return
+
+            mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m, True)
             if not mRecord:
-                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m)
+                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m, True)
                 if not mRecord:
                     await channel.send(f"`{m}` does not exist on the magic item table.")
                     return
@@ -2119,11 +2225,9 @@ class Character(commands.Cog):
                 return
             else:
                 if 'Stat Bonuses' in mRecord:
-                    attuned.remove(f"{mRecord['Name']} ({mRecord['Stat Bonuses']})") 
+                    attuned.remove(f"{mRecord['Name']} [{mRecord['Stat Bonuses']}]") 
                 else:
                     attuned.remove(mRecord['Name'])
-
-                    
 
                 try:
                     playersCollection = db.players

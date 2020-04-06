@@ -115,7 +115,8 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar.add_field(name=f'{commandPrefix}inventory "character name" [{commandPrefix}inv, {commandPrefix}bag]', value="Show's your character's inventory. Inventories can consist of magic items, mundane items, and consuambles.", inline=False)
     helpEmbedChar.add_field(name=commandPrefix + 'retire "character name"', value="Retires your character. Your character will no longer be accessible", inline=False)
     helpEmbedChar.add_field(name=f'{commandPrefix}attune "character name" "magic item" [{commandPrefix}att]', value="Attunes a magic item to your character. Stats bonuses from magic items are applied when attuned", inline=False)
-    helpEmbedChar.add_field(name=f'{commandPrefix}unattune "character name" "magic item" [{commandPrefix}uatt]', value="Unattunes a magic item from your character. Stat bonuses are removed from magic items with stat bonuses.", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}unattune "character name" "magic item" [{commandPrefix}uatt, {commandPrefix}unatt]', value="Unattunes a magic item from your character. Stat bonuses are removed from magic items with stat bonuses.", inline=False)
+    helpEmbedChar.add_field(name=f'{commandPrefix}death "character name"', value="If your character has died during your game, this command is available. You can choose to retire or revive your character.", inline=False)
     
     helpEmbedTimerOne.title = f"Available Timer Commands: Before/After a timer.\n(Only available in **Game Rooms** and **Campaigns**) - {commandPrefix}timer (aliases={commandPrefix}t)"
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep "@player1, @player2, @player3,..." gamename(*) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards. (*) You can choose optionally to name your game.", inline=False)
@@ -149,7 +150,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedShop.add_field(name=commandPrefix + 'shop buy "character name" "item" #', value="Purchase a number of a single mundane item from the shop", inline=False)
     helpEmbedShop.add_field(name=commandPrefix + 'shop sell "character name" "item" #', value="Sell a number of a single mundane item to the shop", inline=False)
     helpEmbedShop.add_field(name=commandPrefix + 'shop copy "character name" "spell" #', value="Limited to classes that have access to a spellbook. This copies a spell scroll into your character's spellbook. Some subclasses offer discounts and are applied.", inline=False)
-    helpEmbedShop.add_field(name=commandPrefix + 'shop proficiency "character name"', value="For noodle roles to purchase proficiencies for your character.", inline=False)
+    helpEmbedShop.add_field(name=commandPrefix + 'proficiency "character name"', value="For noodle roles to purchase proficiencies for your character.", inline=False)
 
     helpEmbedTp.title = 'Available TP Commands'
     helpEmbedTp.add_field(name=commandPrefix + 'tp buy "character name" "MIT Item" #', value="Purchase a magic item with gold or spend TP into a magic item.", inline=False)

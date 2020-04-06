@@ -63,11 +63,14 @@ class Shop(commands.Cog):
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
-        
+
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop',buyItem) 
         
             if bRecord:
-                gpNeeded = bRecord['GP'] * amount
+                gpNeeded = (bRecord['GP'] * amount)
+
+                if "Pack" in bRecord:
+                    amount *= bRecord['Pack']
 
                 if float(charRecords['GP']) < gpNeeded:
                     await channel.send(f"You do not have enough GP to purchase `{bRecord['Name']}` - Quantity ({amount})")
@@ -118,7 +121,7 @@ class Shop(commands.Cog):
                     
 
             else:
-                await channel.send(f'`{buyItem}` doesn\'t exist! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
                 return
 
     @shop.command()
@@ -135,8 +138,56 @@ class Shop(commands.Cog):
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
-        
-            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'shop',buyItem) 
+            
+            def apiEmbedCheck(r, u):
+                sameMessage = False
+                if shopEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return (r.emoji in numberEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
+
+            buyList = []
+            buyString = ""
+            numI = 0
+
+            for k in charRecords['Inventory'].keys():
+                if buyItem in k.lower():
+                    buyList.append(k)
+                    buyString += f"{numberEmojis[numI]} {k} \n"
+                    numI += 1
+
+            if (len(buyList) > 1):
+                shopEmbed.add_field(name=f"There seems to be multiple results for `{buyItem}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific", value=buyString, inline=False)
+                if not shopEmbedmsg:
+                    shopEmbedmsg = await channel.send(embed=shopEmbed)
+                else:
+                    await shopEmbedmsg.edit(embed=shopEmbed)
+
+                await shopEmbedmsg.add_reaction('❌')
+
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+                except asyncio.TimeoutError:
+                    await shopEmbedmsg.delete()
+                    await channel.send('Timed out! Try using the command again.')
+                    ctx.command.reset_cooldown(ctx)
+                    return None, shopEmbed, shopEmbedmsg
+                else:
+                    if tReaction.emoji == '❌':
+                        await shopEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                        await shopEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
+                        return None, shopEmbed, shopEmbedmsg
+                shopEmbed.clear_fields()
+                await shopEmbedmsg.clear_reactions()
+                buyItem = buyList[int(tReaction.emoji[0]) - 1]
+
+            elif len(buyList) == 1:
+                buyItem = buyList[0]
+            else:
+                await channel.send(f'`{buyItem}` doesn\'t exist or is a unsellable magic item! Check to see if it is a valid item and check your spelling.')
+                return
+
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'shop', buyItem, True) 
         
             if bRecord:
                 if f"{bRecord['Name']}" not in charRecords['Inventory']:
@@ -147,7 +198,10 @@ class Shop(commands.Cog):
                     await channel.send(f"You do not have {amount} {bRecord['Name']} to sell!")
                     return 
 
-                gpRefund = (bRecord['GP'] // 2) * amount
+                if "Pack" in bRecord:
+                    bRecord['GP'] /= bRecord['Pack']
+
+                gpRefund = round((bRecord['GP'] / 2) * amount, 2)
                 newGP = charRecords['GP'] + gpRefund 
                     
                 shopEmbed.title = f"Selling: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
@@ -187,7 +241,7 @@ class Shop(commands.Cog):
                             await shopEmbedmsg.edit(embed=shopEmbed)
 
             else:
-                await channel.send(f'`{buyItem}` doesn\'t exist! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'`{buyItem}` doesn\'t exist or is a unsellable magic item! Check to see if it is a valid item and check your spelling.')
                 return
 
 
