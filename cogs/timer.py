@@ -242,6 +242,7 @@ class Timer(commands.Cog):
 
         await ctx.invoke(self.timer.get_command('start'), userList = signedPlayers, game=game, role=role, guildsList = guildsList)
 
+    # TODO: cannot signup unless session log is checked.
     @timer.command()
     async def signup(self,ctx, char="", author="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
@@ -1072,6 +1073,9 @@ class Timer(commands.Cog):
             tierNum = 0
             guild = ctx.guild
 
+            stopEmbed = discord.Embed()
+
+
             if role == "True":
                 tierNum = 4
             elif role == "Elite":
@@ -1084,7 +1088,7 @@ class Timer(commands.Cog):
                 tierNum = 1
 
 
-            def updateCharDB(char, tier, cp, tp, gp, death=False):
+            def updateCharDB(char, tier, cp, tp, gp, death=False, gameID=""):
                 tierTP = f"T{tier} TP"
                 cpSplit= char[1]['CP'].split('/')
                 leftCP = (float(cp) + float(cpSplit[0])) 
@@ -1147,7 +1151,7 @@ class Timer(commands.Cog):
                 if float(cp) >= .5:
                     char[1]['Games'] += 1
 
-                returnData = {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp,'Consumables': charEndConsumables, 'Magic Items': charEndMagicList, 'CP': totalCP, 'Games':char[1]['Games']}}}
+                returnData = {'_id': char[3],  "fields": {"$set": {f"GID{str(gameID)}" : f'{{"GP": {char[1]["GP"] + gp}, "{tierTP}": {tpAdd + tp},"Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": "{totalCP}", "Games":{char[1]["Games"]}}}'}}}
 
                 if death:
                     returnData =  {'_id': char[3], "fields": {"$set": {'Death': f'{{"GP": {gp}, "{tierTP}": {tp}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {cp}}}'}}}
@@ -1163,6 +1167,13 @@ class Timer(commands.Cog):
             deathChars = []
             data = {"records":[]}
 
+            await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
+            # Session Log Channel
+            # logChannel = self.bot.get_channel(663454980140695553) 
+            # logChannel = self.bot.get_channel(663451042889072660) 
+            logChannel = self.bot.get_channel(577227687962214406)
+            sessionMessage = await logChannel.send(embed=stopEmbed)
+            stopEmbed.set_footer(text=f"Game ID: {sessionMessage.id}")
 
             for startItemKey, startItemValue in start.items():
                 duration = 0
@@ -1221,7 +1232,7 @@ class Timer(commands.Cog):
                             else:
                                 value[2] = ['(DI)+'+ randomItem['Name']]
                           
-                    charRewards = updateCharDB(value, tierNum, treasureArray[0], treasureArray[1], treasureArray[2], (value in deathChars))
+                    charRewards = updateCharDB(value, tierNum, treasureArray[0], treasureArray[1], treasureArray[2], (value in deathChars), sessionMessage.id)
                     data["records"].append(charRewards)
                     playerList.append(value)
 
@@ -1238,7 +1249,6 @@ class Timer(commands.Cog):
                     else:
                         allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '').replace('%', '')} - {treasureString}"] += playerList
 
-            stopEmbed = discord.Embed()
             stopEmbed.title = f"Timer: {game} [END] - {totalDuration}"
             stopEmbed.description = f"{datestart} to {dateend} CDT" 
 
@@ -1312,7 +1322,8 @@ class Timer(commands.Cog):
                     if '+' in d:
                         dmRewardsList.append(d)
 
-                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, dmtreasureArray[0], dmtreasureArray[1], dmtreasureArray[2]))
+
+                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, dmtreasureArray[0], dmtreasureArray[1], dmtreasureArray[2], False, sessionMessage.id ))
 
                 playersCollection = db.players
                 usersCollection = db.users
@@ -1511,11 +1522,12 @@ class Timer(commands.Cog):
                     print(bwe.details)
                     return
 
+                await sessionMessage.edit(embed=stopEmbed)
 
                 try:
-
                     statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
-                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
+                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodles}}, upsert=True)
+                    # TODO: bring over guild and user data to log edit
                     usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
                     usersCollection.bulk_write(usersData)
                     # why is it giving one rep?
@@ -1527,15 +1539,6 @@ class Timer(commands.Cog):
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 else:
                     print('Success')
-                # Session Log Channel
-                logChannel = self.bot.get_channel(663454980140695553) 
-                # logChannel = self.bot.get_channel(663451042889072660) 
-                await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
-
-
-                sessionMessage = await logChannel.send(embed=stopEmbed)
-                stopEmbed.set_footer(text=f"Game ID: {sessionMessage.id}")
-                await sessionMessage.edit(embed=stopEmbed)
 
             else:
                 stopEmbed.clear_fields()
