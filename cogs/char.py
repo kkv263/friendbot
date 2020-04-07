@@ -7,6 +7,7 @@ import collections
 from discord.utils import get        
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
+from urllib.parse import urlparse 
 from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db, callAPI, checkForChar, timeConversion, traceBack
 
 class Character(commands.Cog):
@@ -1625,6 +1626,15 @@ class Character(commands.Cog):
                 'Image': url
             }
 
+            try:
+                r = requests.head(url)
+                if r.status_code != requests.codes.ok:
+                    await ctx.channel.send(content=f'It looks like the url is either a broken image or invalid url. Please follow this format:\n`{commandPrefix}image "character name" url`.\n') 
+                    return
+            except:
+                await ctx.channel.send(content=f'It looks like the url is either a broken image or invalid url. Please follow this format:\n`{commandPrefix}image "character name" url`.\n') 
+                return
+              
             try:
                 playersCollection = db.players
                 playersCollection.update_one({'_id': charID}, {"$set": data})

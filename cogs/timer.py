@@ -122,7 +122,7 @@ class Timer(commands.Cog):
 
         prepEmbed.clear_fields()
         prepEmbed.title = f"{game} (Tier {roleArray.index(role) + 1})"
-        prepEmbed.description = f"**Signup:** {commandPrefix}timer signup charactername \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
+        prepEmbed.description = f"**Signup:** {commandPrefix}timer signup \"charactername\" \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
         rosterString = ""
         for p in playerRoster:
             if p == author:
@@ -246,7 +246,8 @@ class Timer(commands.Cog):
     async def signup(self,ctx, char="", author="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
             signupFormat = f'Please follow this format:\n`{commandPrefix}timer signup "charactername" "consumable list"'
-
+            charEmbed = discord.Embed()
+            charEmbedmsg = None
             channel = ctx.channel
             guild = ctx.guild
             consumablesList = ""
@@ -296,6 +297,59 @@ class Timer(commands.Cog):
                 if not resume:
                     await channel.send(content=f'```I was not able to find the character `{charName}`. {signupFormat}```')
                 return False
+
+            def apiEmbedCheck(r, u):
+                sameMessage = False
+                if charEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return (r.emoji in numberEmojis[:min(len(cRecord), 9)]) or (str(r.emoji) == '❌') and u == author
+
+            charString = ""
+            numI = 0
+
+            print(charList)
+
+            for k in cRecord:
+                print(k)
+                charString += f"{numberEmojis[numI]} {k['Name']} \n"
+                numI += 1
+
+            if (len(cRecord) > 1):
+                charEmbed.add_field(name=f"There seems to be multiple results for `{charName}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific", value=charString, inline=False)
+                if not charEmbedmsg:
+                    charEmbedmsg = await channel.send(embed=charEmbed)
+                else:
+                    await charEmbedmsg.edit(embed=charEmbed)
+
+                await charEmbedmsg.add_reaction('❌')
+
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+                except asyncio.TimeoutError:
+                    await charEmbedmsg.delete()
+                    await channel.send('Timed out! Try using the command again.')
+                    ctx.command.reset_cooldown(ctx)
+                    return None, charEmbed, charEmbedmsg
+                else:
+                    if tReaction.emoji == '❌':
+                        await charEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                        await charEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
+                        return None, charEmbed, charEmbedmsg
+                charEmbed.clear_fields()
+                await charEmbedmsg.clear_reactions()
+                cRecord[0] = cRecord[int(tReaction.emoji[0]) - 1]
+
+            elif len(cRecord) == 1:
+                pass
+            else:
+                if not resume:
+                    await channel.send(content=f'```I could not find the character "{charName},``` {signupFormat}')
+                return False
+
+            if charEmbedmsg:
+                await charEmbedmsg.delete()
+
             if charName == "" or charName is None:
                 if not resume:
                     await channel.send(content=f'```You did not input a character,``` {signupFormat}')
@@ -333,7 +387,7 @@ class Timer(commands.Cog):
 
             if float(cpSplit[0]) >= float(cpSplit[1]):
                 if not resume:
-                    await channel.send(content=f'```You need to `{commandPrefix}levelup` your character before you can join the game!```')
+                    await channel.send(content=f'```You need to `{commandPrefix}levelup` your character {cRecord[0]["Name"]} before you can join the game!```')
                 return False 
 
 
