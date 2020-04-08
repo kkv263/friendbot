@@ -242,7 +242,6 @@ class Timer(commands.Cog):
 
         await ctx.invoke(self.timer.get_command('start'), userList = signedPlayers, game=game, role=role, guildsList = guildsList)
 
-    # TODO: cannot signup unless session log is checked.
     @timer.command()
     async def signup(self,ctx, char="", author="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
@@ -361,6 +360,11 @@ class Timer(commands.Cog):
                 if not resume:
                     await channel.send(content=f'```You cannot signup with `{cRecord[0]["Name"]}`, a dying character, please use `{commandPrefix}char death`.```')
                 return False 
+
+            if next((s for s in cRecord[0].keys() if 'GID' in s), None):
+                if not resume:
+                    await channel.send(content=f'```You cannot signup with `{cRecord[0]["Name"]}`. This character has still not recieved thier rewards from their last game, please wait until the session log has been checked off.```')
+                return False    
 
             validLevelStart = 1
             validLevelEnd = 1
@@ -1169,9 +1173,8 @@ class Timer(commands.Cog):
 
             await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
             # Session Log Channel
-            # logChannel = self.bot.get_channel(663454980140695553) 
-            # logChannel = self.bot.get_channel(663451042889072660) 
-            logChannel = self.bot.get_channel(577227687962214406)
+            logChannel = self.bot.get_channel(663454980140695553) 
+            # logChannel = self.bot.get_channel(577227687962214406)
             sessionMessage = await logChannel.send(embed=stopEmbed)
             stopEmbed.set_footer(text=f"Game ID: {sessionMessage.id}")
 
@@ -1527,12 +1530,11 @@ class Timer(commands.Cog):
                 try:
                     statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
                     usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodles}}, upsert=True)
-                    # TODO: bring over guild and user data to log edit
                     usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
                     usersCollection.bulk_write(usersData)
-                    # why is it giving one rep?
+                    #TODO: why is it giving one rep?
                     if guildsRecordsList != list():
-                        guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['Games'], 'Reputation': item['Reputation']}}, upsert=True), guildsRecordsList))
+                        guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'P-Games':item['Games'], 'P-Reputation': item['Reputation']}}, upsert=True), guildsRecordsList))
                         guildsCollection.bulk_write(guildsData)
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))

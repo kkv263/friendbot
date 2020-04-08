@@ -5,6 +5,7 @@ from discord.utils import get
 from discord.ext import commands
 from bfunc import sheet, refreshKey, refreshTime, callAPI, db
 from pymongo import UpdateOne
+from pymongo.errors import BulkWriteError
 
 class Log(commands.Cog):
     def __init__ (self, bot):
@@ -17,11 +18,12 @@ class Log(commands.Cog):
     @log.command()
     async def edit(self, ctx, num, *, editString=""):
         # The real Bot
-        # botUser = self.bot.get_user(502967681956446209)
-        botUser = self.bot.get_user(650734548077772831)
+        botUser = self.bot.get_user(502967681956446209)
+        # botUser = self.bot.get_user(650734548077772831)
 
         # Logs channel 
-        channel = self.bot.get_channel(577227687962214406) 
+        # channel = self.bot.get_channel(577227687962214406) 
+        channel = self.bot.get_channel(663454980140695553) 
 
 
         limit = 100
@@ -42,20 +44,22 @@ class Log(commands.Cog):
 
 
         sessionLogEmbed = editMessage.embeds[0]
+
         charData = []
 
         for log in sessionLogEmbed.fields:
-            for i in "\<>@#&!:":
-                log.value = log.value.replace(i, "")
+            if 'Guild Rewards' not in log.name:
+                for i in "\<>@#&!:":
+                    log.value = log.value.replace(i, "")
 
-            logItems = log.value.split(' | ')
+                logItems = log.value.split(' | ')
 
-            if "DM" in logItems[0]:
-                for i in "*DM":
-                    logItems[0] = logItems[0].replace(i, "")
-                    dmID = logItems[0].strip()
-            
-            charData.append({"User ID" : logItems[0].strip() , "Name": logItems[1].split('\n')[0].strip()})
+                if "DM" in logItems[0]:
+                    for i in "*DM":
+                        logItems[0] = logItems[0].replace(i, "")
+                        dmID = logItems[0].strip()
+                
+                charData.append({"User ID" : logItems[0].strip() , "Name": logItems[1].split('\n')[0].strip()})
 
         if int(dmID) != ctx.author.id:
             delMessage = await ctx.channel.send(content=f"It doesn't look your you were the DM of this game. You won't be able to edit this session log. I will delete your message and this message in 10 seconds")
@@ -65,16 +69,33 @@ class Log(commands.Cog):
             return
 
 
-        sessionLogEmbed.description = editString+"\n"
+        if "✅" in sessionLogEmbed.footer.text:
+            summaryIndex = sessionLogEmbed.description.find('Summary:')
+            sessionLogEmbed.description = sessionLogEmbed.description[:summaryIndex] + "Summary: " + editString+"\n"
+        else:
+            sessionLogEmbed.description += "\nSummary: " + editString+"\n"
 
         await editMessage.edit(embed=sessionLogEmbed)
         delMessage = await ctx.channel.send(content=f"I've edited the summary for Game #{num}.\n```{editString}```\nPlease double check that the edit is correct. I will now delete your message and this message in 30 seconds")
 
         if "✅" not in sessionLogEmbed.footer.text:
+
+            for s in sessionLogEmbed.description.split('\n'):
+                if 'Guilds' in s:
+                    s.replace('Guilds: ', "")
+                    guildsList = s.split(', ')
+                    break
+            guildsData = []
+            for g in guildsList:
+                guildsData.append({"Channel ID" : re.sub('\D', '', g)})
+
+            guildsCollection = db.guilds
             usersCollection = db.users
             playersCollection = db.players
             uRecord = usersCollection.find_one({"User ID": dmID}, {'P-Noodles': 1})
+            guildsRecordsList = list(guildsCollection.find({"$or": guildsData}, {'P-Games':1, 'P-Reputation': 1}))
             charRecordsList = list(playersCollection.find({"$or": charData }))
+
 
             data = []
 
@@ -98,10 +119,12 @@ class Log(commands.Cog):
 
             playersData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data))
 
+            guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['P-Games'], 'Reputation': item['P-Reputation']}, "$unset": {"P-Games":1, 'P-Reputation':1} }, upsert=True), guildsRecordsList))
+
             try:
                 if len(data) > 0:
                     playersCollection.bulk_write(playersData)
-
+                guildsCollection.bulk_write(guildsData)
                 usersCollection.update_one({'User ID': dmID}, {"$set": {'Noodles': uRecord['P-Noodles']}, "$unset": {"P-Noodles":1}}, upsert=True)        
 
             except Exception as e:
