@@ -1101,7 +1101,6 @@ class Timer(commands.Cog):
                 unset = None
                 crossTier = None
 
-                #TODO: Cross Tier for alot of CP
                 if char[1]['Level'] in (4,10,16) and leftCP > float(cpSplit[1]):
                     crossCP = leftCP - float(cpSplit[1])
                     if char[1]['Level'] == 4:

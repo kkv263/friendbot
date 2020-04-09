@@ -769,7 +769,6 @@ class Character(commands.Cog):
         self.bot.get_command('create').reset_cooldown(ctx)
 
 
-    #TODO: Starting Equipment for repsec
     #TODO: stats for respec
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @commands.command(aliases=['rs'])
@@ -814,68 +813,68 @@ class Character(commands.Cog):
         charDict['Name'] = newname
 
         # check magic items and TP
-        prevMagicItems = charDict['Magic Items'].split(',')
-        magicItems = mItems.split(',')
-        allMagicItemsString = []
-        bankTP = 0
-        if lvl > 1 and magicItems != ['']:
-            for m in magicItems:
-                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',m) 
-                if mRecord in allMagicItemsString:
-                    msg += '- You cannot spend TP on two of the same magic item.\n'
-                    break 
-                if not mRecord:
-                    msg += f'- {m} doesn\'t exist! Check to see if it\'s on the MIT and check your spelling.\n'
-                    break
-                else:
-                    allMagicItemsString.append(mRecord)
+        # prevMagicItems = charDict['Magic Items'].split(',')
+        # magicItems = mItems.split(',')
+        # allMagicItemsString = []
+        # bankTP = 0
+        # if lvl > 1 and magicItems != ['']:
+        #     for m in magicItems:
+        #         mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',m) 
+        #         if mRecord in allMagicItemsString:
+        #             msg += '- You cannot spend TP on two of the same magic item.\n'
+        #             break 
+        #         if not mRecord:
+        #             msg += f'- {m} doesn\'t exist! Check to see if it\'s on the MIT and check your spelling.\n'
+        #             break
+        #         else:
+        #             allMagicItemsString.append(mRecord)
 
-            if prevMagicItems != ['None']:
-                for m in prevMagicItems:
-                    mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',m)
-                    if not mRecord:
-                        pass
-                    else:
-                        bankTP += int(mRecord['TP'])
+        #     if prevMagicItems != ['None']:
+        #         for m in prevMagicItems:
+        #             mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit',m)
+        #             if not mRecord:
+        #                 pass
+        #             else:
+        #                 bankTP += int(mRecord['TP'])
 
-            print(allMagicItemsString)
+        #     print(allMagicItemsString)
 
-            #TODO Fix 'NoneType' object has no attribute 'group'
-            currentPrevTP = int(re.search('\(([^)]+)', charDict['Current Item']).group(1).split('/')[0])
-            print(currentPrevTP)
+        #     #TODO Fix 'NoneType' object has no attribute 'group'
+        #     currentPrevTP = int(re.search('\(([^)]+)', charDict['Current Item']).group(1).split('/')[0])
+        #     print(currentPrevTP)
 
-            bankTP += currentPrevTP 
-            highestTier = 1
-            magicItemsCurrent = []
-            magicItemsBought = []
+        #     bankTP += currentPrevTP 
+        #     highestTier = 1
+        #     magicItemsCurrent = []
+        #     magicItemsBought = []
 
-            for item in allMagicItemsString:
-                if int(item['Tier']) > highestTier:
-                    return "- One or more of these magic items cannot be purchased at Level " + str(lvl)
-                else:
-                    costTP = int(item['TP'])
-                    bankTP = costTP - bankTP
-                    if bankTP > 0:
-                      magicItemsCurrent.append(item)                       
-                      magicItemsCurrent.append(f'{costTP - bankTP}/{costTP}')
-                      charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
-                    else:
-                      bankTP = abs(bankTP)
-                      magicItemsBought.append(item)
+        #     for item in allMagicItemsString:
+        #         if int(item['Tier']) > highestTier:
+        #             return "- One or more of these magic items cannot be purchased at Level " + str(lvl)
+        #         else:
+        #             costTP = int(item['TP'])
+        #             bankTP = costTP - bankTP
+        #             if bankTP > 0:
+        #               magicItemsCurrent.append(item)                       
+        #               magicItemsCurrent.append(f'{costTP - bankTP}/{costTP}')
+        #               charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
+        #             else:
+        #               bankTP = abs(bankTP)
+        #               magicItemsBought.append(item)
 
-                print(magicItemsBought)
-                if isinstance(magicItemsBought, str):
-                    msg += magicItemsBought
-                elif magicItemsBought == list():
-                  charDict['Current Item'] = 'None' 
-                else:
-                    charDict['Magic Items'] = ', '.join([str(string['Name']) for string in magicItemsBought])
-        elif lvl > 1 and magicItems == ['']:
-            msg += 'In order to create your character at this level, you must respec magic item(s) with your TP\n' 
-        elif lvl == 1 and magicItems != ['']:
-            msg += 'You cannot purchase magic items at Level 1\n'
+        #         print(magicItemsBought)
+        #         if isinstance(magicItemsBought, str):
+        #             msg += magicItemsBought
+        #         elif magicItemsBought == list():
+        #           charDict['Current Item'] = 'None' 
+        #         else:
+        #             charDict['Magic Items'] = ', '.join([str(string['Name']) for string in magicItemsBought])
+        # elif lvl > 1 and magicItems == ['']:
+        #     msg += 'In order to create your character at this level, you must respec magic item(s) with your TP\n' 
+        # elif lvl == 1 and magicItems != ['']:
+        #     msg += 'You cannot purchase magic items at Level 1\n'
 
-        print(allMagicItemsString)
+        # print(allMagicItemsString)
 
         # check race
         rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'races',race)
@@ -920,6 +919,124 @@ class Character(commands.Cog):
             msg += 'Your classes do not add up to the total level. Please recheck your multiclasses\n'
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
+            # starting equipment
+            def alphaEmbedCheck(r, u):
+                sameMessage = False
+                if charEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+
+            if 'Starting Equipment' in cRecord[0]['Class'] and msg == "":
+                if charDict['Inventory'] == "None":
+                    charDict['Inventory'] = {}
+                startEquipmentLength = 0
+                if not charEmbedmsg:
+                    charEmbedmsg = await channel.send(embed=charEmbed)
+                else:
+                    await charEmbedmsg.edit(embed=charEmbed)
+                for item in cRecord[0]['Class']['Starting Equipment']:
+                    seTotalString = ""
+                    alphaIndex = 0
+                    for seList in item:
+                        seString = []
+                        for elk, elv in seList.items():
+                            if 'Pack' in elk:
+                                seString.append(f"{elk} x1")
+                            else:
+                                seString.append(f"{elk} x{elv}")
+                                
+                        seTotalString += f"{alphaEmojis[alphaIndex]}: {', '.join(seString)}\n"
+                        alphaIndex += 1
+
+                    await charEmbedmsg.clear_reactions()
+                    charEmbed.add_field(name=f"Starting Equipment: {startEquipmentLength+ 1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seTotalString, inline=False)
+                    await charEmbedmsg.edit(embed=charEmbed)
+                    if len(item) > 1:
+                        for num in range(0,alphaIndex): await charEmbedmsg.add_reaction(alphaEmojis[num])
+                        await charEmbedmsg.add_reaction('❌')
+                        try:
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
+                        except asyncio.TimeoutError:
+                            await charEmbedmsg.delete()
+                            await channel.send('Character creation timed out! Try using the command again')
+                            self.bot.get_command('create').reset_cooldown(ctx)
+                            return 
+                        else:
+                            if tReaction.emoji == '❌':
+                                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
+                                await charEmbedmsg.clear_reactions()
+                                self.bot.get_command('create').reset_cooldown(ctx)
+                                return 
+                                
+                        startEquipmentItem = item[alphaEmojis.index(tReaction.emoji)]
+                    else:
+                        startEquipmentItem = item[0]
+
+                    await charEmbedmsg.clear_reactions()
+
+                    seiString = ""
+                    for seik, seiv in startEquipmentItem.items():
+                        seiString += f"{seik} x{seiv}\n"
+                        if "Pack" in seik:
+                            seiString = f"{seik}:\n"
+                            for pk, pv in seiv.items():
+                                charDict['Inventory'][pk] = pv
+                                seiString += f"+ {pk} x{pv}\n"
+
+                    charEmbed.set_field_at(startEquipmentLength, name=f"Starting Equipment: {startEquipmentLength + 1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString, inline=False)
+
+                    for k,v in startEquipmentItem.items():
+                        if '[' in k and ']' in k:
+                            type = k.split('[')
+                            print(type)
+                            invCollection = db.shop
+                            if 'Spellcasting Focus' in type[1]:
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[1].replace(']','')}.*")]}}))
+                            else:
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(']','')}.*")]}}))
+
+                            charInv = sorted(charInv, key = lambda i: i['Name']) 
+
+                            typeEquipmentList = []
+                            for i in range (0,v):
+                                charInvString = f"Please choose from the choices below for {type[0]} {i+1}:\n"
+                                alphaIndex = 0
+                                for c in charInv:
+                                    charInvString += f"{alphaEmojis[alphaIndex]}: {c['Name']}\n"
+                                    alphaIndex += 1
+
+                                charEmbed.set_field_at(startEquipmentLength, name=f"Starting Equipment: {startEquipmentLength+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=charInvString, inline=False)
+                                await charEmbedmsg.clear_reactions()
+                                await charEmbedmsg.add_reaction('❌')
+                                await charEmbedmsg.edit(embed=charEmbed)
+
+                                try:
+                                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
+                                except asyncio.TimeoutError:
+                                    await charEmbedmsg.delete()
+                                    await channel.send('Character creation timed out! Try using the command again')
+                                    self.bot.get_command('create').reset_cooldown(ctx)
+                                    return 
+                                else:
+                                    if tReaction.emoji == '❌':
+                                        await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Type `{commandPrefix}create` to try again!")
+                                        await charEmbedmsg.clear_reactions()
+                                        self.bot.get_command('create').reset_cooldown(ctx)
+                                        return 
+                                typeEquipmentList.append(charInv[alphaEmojis.index(tReaction.emoji)]['Name'])
+                                typeCount = collections.Counter(typeEquipmentList)
+                                typeString = ""
+                                for tk, tv in typeCount.items():
+                                    typeString += f"{tk} x{tv}\n"
+                                    charDict['Inventory'][tk] = tv
+
+                            charEmbed.set_field_at(startEquipmentLength, name=f"Starting Equipment: {startEquipmentLength+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=seiString.replace(f"{k} x{v}\n", typeString), inline=False)
+
+                        elif 'Pack' not in k:
+                            charDict['Inventory'][k] = v
+                    startEquipmentLength += 1
+                await charEmbedmsg.clear_reactions()
+                charEmbed.clear_fields()
 
             # Subclass
             for m in cRecord:
@@ -945,14 +1062,18 @@ class Character(commands.Cog):
                         charDict['Class'] += f' / {className}'
 
         # check bg and gp
+        cpSplit= charDict['CP'].split('/')
+        totalCP = (float(cpSplit[0]) + (float(cpSplit[1]) * (charDict['Level'] - 1) )) 
         bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'backgrounds',bg)
         if not bRecord:
             msg += f'- {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
-            totalGP = 0
-
+            #60gp per CP
+            totalGP = totalCP * 60
             charDict['GP'] = int(bRecord['GP'] + totalGP)
+
+        charDict['T1 TP'] = ftotalCP * .5
         
         #check stats - point buy
         charStats = {'STR':int(sStr), 'DEX':int(sDex), 'CON':int(sCon), 'INT':int(sInt), 'WIS':int(sWis), 'CHA':int(sCha)}
@@ -1034,9 +1155,8 @@ class Character(commands.Cog):
         charEmbed.clear_fields()    
         charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
         charEmbed.description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
-        charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
-        charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
-        charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
+        charEmbed.add_field(name='CP, TP, GP', value=f"({charDict['CP']}) CP, {charDict['T1 TP']} TP, {charDict['GP']}gp", inline=True)
+        charEmbed.add_field(name='Consumables', value="None", inline=False)
         charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
         charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
@@ -2308,13 +2428,17 @@ class Character(commands.Cog):
         else:
             guildsString += f"Guild Quests with no Members: 0\n"
             
-        statsEmbed.add_field(name="Guild Games", value=guildsString, inline=False) 
 
-        avgString += f"Average Number of Player per Game: {sum(statRecords['Players']) / len(statRecords['Players'])}\n" 
-        avgString += f"Avergae Game Time: {timeConversion(sum(statRecords['Playtime']) / len(statRecords['Playtime']))}\n"
+        if guildsString:
+            statsEmbed.add_field(name="Guild Games", value=guildsString, inline=False) 
 
-        statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
-        statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
+        if 'Players' in statRecords and 'Playtime' in statRecords:
+            avgString += f"Average Number of Player per Game: {sum(statRecords['Players']) / len(statRecords['Players'])}\n" 
+            avgString += f"Average Game Time: {timeConversion(sum(statRecords['Playtime']) / len(statRecords['Playtime']))}\n"
+            statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
+
+        if statsString:
+            statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
 
         print(statRecordsLife['Class'])
         for k, v in statRecordsLife['Class'].items():
@@ -2343,9 +2467,12 @@ class Character(commands.Cog):
             else: 
                 statsTotalString += f"Tier {i} Games for the Month: {statRecords[f'T{i}']}\n"
 
-        statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
-        statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
-        statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
+
+        if 'Players' in statRecords and 'Playtime' in statRecords:
+            statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
+            statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
+        if 'Unique Players' in statRecords and 'Playtime' in statRecords:
+            statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
 
         statsEmbed.description = statsTotalString
 

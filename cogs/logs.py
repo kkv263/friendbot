@@ -12,11 +12,11 @@ class Log(commands.Cog):
         self.bot = bot
     
     @commands.group()
-    async def log(self, ctx):	
+    async def session(self, ctx):	
         pass
       
-    @log.command()
-    async def edit(self, ctx, num, *, editString=""):
+    @session.command()
+    async def log(self, ctx, num, *, editString=""):
         # The real Bot
         botUser = self.bot.get_user(502967681956446209)
         # botUser = self.bot.get_user(650734548077772831)
