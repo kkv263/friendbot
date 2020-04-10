@@ -80,20 +80,27 @@ class Log(commands.Cog):
 
         if "✅" not in sessionLogEmbed.footer.text:
 
+            guildsList = []
+
             for s in sessionLogEmbed.description.split('\n'):
                 if 'Guilds' in s:
                     s.replace('Guilds: ', "")
                     guildsList = s.split(', ')
                     break
-            guildsData = []
-            for g in guildsList:
-                guildsData.append({"Channel ID" : re.sub('\D', '', g)})
 
-            guildsCollection = db.guilds
+            if guildsList != list():
+                guildsData = []
+                for g in guildsList:
+                    guildsData.append({"Channel ID" : re.sub('\D', '', g)})
+
+                guildsCollection = db.guilds
+                guildsRecordsList = list(guildsCollection.find({"$or": guildsData}, {'P-Games':1, 'P-Reputation': 1}))
+                guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['P-Games'], 'Reputation': item['P-Reputation']}, "$unset": {"P-Games":1, 'P-Reputation':1} }, upsert=True), guildsRecordsList))
+
+
             usersCollection = db.users
             playersCollection = db.players
             uRecord = usersCollection.find_one({"User ID": dmID}, {'P-Noodles': 1})
-            guildsRecordsList = list(guildsCollection.find({"$or": guildsData}, {'P-Games':1, 'P-Reputation': 1}))
             charRecordsList = list(playersCollection.find({"$or": charData }))
 
 
@@ -119,12 +126,13 @@ class Log(commands.Cog):
 
             playersData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data))
 
-            guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'Games':item['P-Games'], 'Reputation': item['P-Reputation']}, "$unset": {"P-Games":1, 'P-Reputation':1} }, upsert=True), guildsRecordsList))
 
             try:
                 if len(data) > 0:
                     playersCollection.bulk_write(playersData)
-                guildsCollection.bulk_write(guildsData)
+
+                if guildsList != list():
+                    guildsCollection.bulk_write(guildsData)
                 usersCollection.update_one({'User ID': dmID}, {"$set": {'Noodles': uRecord['P-Noodles']}, "$unset": {"P-Noodles":1}}, upsert=True)        
 
             except Exception as e:

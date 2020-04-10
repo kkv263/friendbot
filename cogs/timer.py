@@ -591,9 +591,9 @@ class Timer(commands.Cog):
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
                         totalDurationTime = (time.time() - float(u.split(':')[1])) // 60
-                        if totalDurationTime < 45:
+                        if totalDurationTime < 180:
                             if not resume:
-                              await ctx.channel.send(content=f"```You may not reward any items if a game's duration is under 1 hour.```") 
+                              await ctx.channel.send(content=f"```You may not reward any items if a game's duration is under 3 hours.```") 
                             return start, dmChar
                     for item in v:
                         if item[0] == rewardUser:
@@ -682,6 +682,13 @@ class Timer(commands.Cog):
 
                             print('tierNum')
                             print(tierNum)
+
+                            if '+' + rewardConsumable['Name'] in currentItem[2]:
+                                if not resume:
+                                    await ctx.channel.send(f"```You cannot award the same reward to player. Please choose a different reward```")
+                                return start, dmChar 
+                                
+
                             if int(rewardConsumable['Tier']) > tierNum:
                                 if not resume:
                                     if rewardUser == dmChar[0]:
@@ -1079,6 +1086,8 @@ class Timer(commands.Cog):
 
             stopEmbed = discord.Embed()
 
+            settings = db.settings
+            settingsRecord = list(settings.find())
 
             if role == "True":
                 tierNum = 4
@@ -1100,6 +1109,26 @@ class Timer(commands.Cog):
                 gp = float(gp)
                 unset = None
                 crossTier = None
+
+                if settingsRecord['ddmrw'] and char == dmChar:
+                    leftCP *= 2
+                    gp *= 2
+                    tp *= 2
+              
+                if 'Double Rewards Buff' in char[1]:
+                    if char[1]['Double Rewards Buff'] < (datetime.now() + timedelta(days=3)):
+                        if settingsRecord['ddmrw'] and char == dmChar:
+                            leftCP *= 3
+                            gp *= 3
+                            tp *= 3
+                        else:
+                            leftCP *= 2
+                            gp *= 2
+                            tp *= 2
+                    unset = {'Double Rewards Buff':1}
+
+                if 'Double Items Buff' in char[1]:
+                    unset = {'Double Items Buff':1}
 
                 if char[1]['Level'] in (4,10,16) and leftCP > float(cpSplit[1]):
                     crossCP = leftCP - float(cpSplit[1])
@@ -1124,15 +1153,7 @@ class Timer(commands.Cog):
                     print(tp)
                     print(crossTP)
 
-                if 'Double Rewards Buff' in char[1]:
-                    if char[1]['Double Rewards Buff'] < (datetime.now() + timedelta(days=3)):
-                        leftCP *= 2
-                        gp *= 2
-                        tp *= 2
-                    unset = {'Double Rewards Buff':1}
 
-                if 'Double Items Buff' in char[1]:
-                    unset = {'Double Items Buff':1}
 
 
                 totalCP = f'{leftCP}/{float(cpSplit[1])}'
