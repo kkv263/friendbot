@@ -740,19 +740,6 @@ class Timer(commands.Cog):
                                         await ctx.channel.send(f"```Because you have played less than 3 hours, you cannot reward yourself any rewards.```")
                                     return start, dmChar 
                             
-                            elif totalDurationTime < 180 and userCount < 3:
-                                rewardMinorLimit = ceil(rewardMinorLimit / 2)
-                                rewardMajorLimit = 0
-
-                                await ctx.channel.send(content=f"\n**Because you have played less than 3 hours and have less than 3 players. Your total rewards are halved**")
-                                if minor > rewardMinorLimit:
-                                    if not resume:
-                                        await ctx.channel.send(rewardMinorErrorString)
-                                    return start, dmChar
-
-                                print('rewardMinorLimit')
-                                print(rewardMinorLimit)
-
                             else:
                                 if dmChar[4][0] == 'Spicy Noodle':
                                     if ((major == rewardMajorLimit and minor > rewardMinorLimit-3) or (major == rewardMajorLimit-2 and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit))  and rewardConsumable['Minor/Major'] == 'Minor':
@@ -1103,6 +1090,8 @@ class Timer(commands.Cog):
 
             def updateCharDB(char, tier, cp, tp, gp, death=False, gameID=""):
                 tierTP = f"T{tier} TP"
+                if char[1]['Level'] >= 20:
+                    tierTP = "T5 TP"
                 cpSplit= char[1]['CP'].split('/')
                 leftCP = (float(cp) + float(cpSplit[0])) 
                 tp = float(tp)

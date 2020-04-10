@@ -89,7 +89,7 @@ class Tp(commands.Cog):
                 haveTP = False
                 lowestTp = 0
 
-                for tp in range (int(tierNum) - 1, 4):
+                for tp in range (int(tierNum) - 1, 5):
                     if tpBank[tp] != 0:
                         haveTP = True
                         lowestTP = tp + 1 

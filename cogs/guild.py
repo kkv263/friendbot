@@ -97,7 +97,7 @@ class Guild(commands.Cog):
             elif error.param.name == "roleName":
                 msg = "You're missing the @role for the guild you want to create"
             elif error.param.name == "channelName":
-                msg = "You're missing the #channel for the guild you want to create"
+                msg = "You're missing the #channel for the guild you want to create. "
             elif error.param.name == "gpName":
                 msg = "You're missing the amount of gp you want to fund a guild." 
         elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
@@ -147,6 +147,13 @@ class Guild(commands.Cog):
 
         guildRole = ctx.message.role_mentions
         guildChannel = ctx.message.channel_mentions
+
+        roles = [r.name for r in ctx.author.roles]
+
+        if 'Guild Master' not in roles:
+            await channel.send(f"You do not have the Guild Master role to use this command.")
+            return 
+
         if guildRole == list() or guildChannel == list():
             await channel.send(f"A guild role or guild channel must be supplied")
             return 

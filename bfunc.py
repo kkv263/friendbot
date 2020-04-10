@@ -11,6 +11,8 @@ import asyncio
 from oauth2client.service_account import ServiceAccountCredentials
 from pymongo import MongoClient
 
+from pymongo import UpdateOne
+
 from secret import *
 
 def timeConversion (time):
@@ -292,8 +294,10 @@ db = connection.dnd
 
 # playersCollection.insert_many(addList)
 
-
-# collection = db['races']
+# collection = db['mit']
+# cl = list(collection.find({"Name": {"$regex": 'Vicious.*\+1$', '$options': 'i' }}))
+# cData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'TP':12, 'GP':5280 } }, upsert=True), cl))
+# collection.bulk_write(cData)
 
 # records = list(collection.find({"Modifiers": {"$regex": '', '$options': 'i' }}))
 
