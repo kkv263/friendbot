@@ -1530,6 +1530,13 @@ class Character(commands.Cog):
                     if 'Guild' in charDict:
                         charString += f"\a\a+ Guild: {charDict['Guild']}\n"
 
+                if "Campaigns" in userRecords:
+                    campaignString = ""
+                    for u in userRecords['Campaigns'].split(', '):
+                        campaignString += f"• {u}\n"
+
+                    charEmbed.add_field(name='Campaigns', value=campaignString, inline=False)
+                
 
                 if 'Noodles' in userRecords:
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"

@@ -72,12 +72,11 @@ class Camapign(commands.Cog):
         userRecords = usersCollection.find_one({"User ID": str(author.id)})
 
         if userRecords: 
-            if 'Campaign' not in userRecords:
+            if 'Campaigns' not in userRecords:
                 userRecords['Campaigns'] = campaignRole[0].name
             else:
                 userRecords['Campaigns'] += ', ' + campaignRole[0].name
 
-            print(userRecords)
 
             campaignDict = {'Name': campaignName, 'Campaign Master ID': str(author.id), 'Role ID': str(campaignRole[0].id), 'Channel ID': str(campaignChannel[0].id)}
             await author.add_roles(campaignRole[0], reason=f"Added campaign {campaignName}")
@@ -97,10 +96,68 @@ class Camapign(commands.Cog):
                     await campaignEmbedmsg.edit(embed=campaignEmbed)
                 else: 
                     campaignEmbedmsg = await channel.send(embed=campaignEmbed)
+
         return
 
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @campaign.command()
+    async def add(self,ctx, user, campaignName):
+        channel = ctx.channel
+        author = ctx.author
+        campaignEmbed = discord.Embed()
+        campaignEmbedmsg = None
+        campaignCog = self.bot.get_cog('Campaign')
+        guild = ctx.message.guild
 
+        user = ctx.message.mentions
 
+        roles = [r.name for r in ctx.author.roles]
+
+        if 'Campaign Master' not in roles:
+            await channel.send(f"You do not have the Campaign Master role to use this command.")
+            return  
+
+        if user == list() or len(user) > 1:
+            await channel.send(f"I could not find the user you were trying to add to the campaign. Please try again.")
+            return  
+
+        campaignCollection = db.campaigns
+        campaignRecords = campaignCollection.find_one({"Name": {"$regex": campaignName, '$options': 'i' }})
+
+        if not campaignRecords:
+            await channel.send(f"`{campaignName}` doesn\'t exist! Check to see if it is a valid campaign and check your spelling.")
+            return
+
+        if campaignRecords['Campaign Master ID'] != str(author.id):
+            await channel.send(f"You cannot add users to this campaign because you are not the campaign master of {campaignRecords['Name']}")
+            return
+
+        usersCollection = db.users
+        userRecords = usersCollection.find_one({"User ID": str(user[0].id)})  
+
+        if 'Campaigns' not in userRecords:
+            userRecords['Campaigns'] = campaignRecords['Name']
+        else:
+            userRecords['Campaigns'] += ', ' + campaignRecords['Name']
+
+        await user[0].add_roles(guild.get_role(int(campaignRecords['Role ID'])), reason=f"{author.name} add campaign member to {campaignRecords['Name']}")
+
+        try:
+            usersCollection.update_one({'_id': userRecords['_id']}, {"$set": {"Campaigns": userRecords['Campaigns']}}, upsert=True)
+        except Exception as e:
+            print ('MONGO ERROR: ' + str(e))
+            campaignEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try adding to your campaign again.")
+        else:
+            print('Success')
+            campaignEmbed.title = f"Campaign: {campaignRecords['Name']}"
+            campaignEmbed.description = f"{author.name} has added {user[0].mention} to **{campaignRecords['Name']}**!"
+            if campaignEmbedmsg:
+                await campaignEmbedmsg.clear_reactions()
+                await campaignEmbedmsg.edit(embed=campaignEmbed)
+            else: 
+                campaignEmbedmsg = await channel.send(embed=campaignEmbed)
+
+        return
             
 def setup(bot):
     bot.add_cog(Camapign(bot))
