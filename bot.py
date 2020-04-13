@@ -24,10 +24,6 @@ async def on_ready():
     bot.loop.create_task(change_status())
 
     # print(bot.get_guild(575505442109784067).categories)
-
-    #secret area channel
-    channel = bot.get_channel(577611798442803205) 
-    await channel.send('Hello I have restarted uwu')
   
 bot.remove_command('help')
 
