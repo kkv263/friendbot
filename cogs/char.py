@@ -1532,8 +1532,8 @@ class Character(commands.Cog):
 
                 if "Campaigns" in userRecords:
                     campaignString = ""
-                    for u in userRecords['Campaigns'].split(', '):
-                        campaignString += f"• {u}\n"
+                    for u, v in userRecords['Campaigns'].items():
+                        campaignString += f"• {u} : {v} Hour(s)\n"
 
                     charEmbed.add_field(name='Campaigns', value=campaignString, inline=False)
                 
@@ -2142,7 +2142,7 @@ class Character(commands.Cog):
                     await author.remove_roles(roleRemove)
 
                 levelUpEmbed.clear_fields()
-                await levelUpEmbedmsg.edit(content="LEVEL UP! :arrow_up:", embed=levelUpEmbed)
+                await levelUpEmbedmsg.edit(content=f"LEVEL UP! :arrow_up:\n:warning: **Don't forget to spend your TP!** Try the `$tp buy {charName} \"magicitem\"` command", embed=levelUpEmbed)
 
                 if roleName != "":
                     levelUpEmbed.title = f":tada: {roleName} role acquired! :tada:\n" + levelUpEmbed.title

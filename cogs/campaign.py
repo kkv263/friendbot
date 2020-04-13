@@ -73,9 +73,9 @@ class Camapign(commands.Cog):
 
         if userRecords: 
             if 'Campaigns' not in userRecords:
-                userRecords['Campaigns'] = campaignRole[0].name
+                userRecords['Campaigns'] = {campaignRole[0].name : 0 }
             else:
-                userRecords['Campaigns'] += ', ' + campaignRole[0].name
+                userRecords['Campaigns'][campaignRole[0].name] = 0
 
 
             campaignDict = {'Name': campaignName, 'Campaign Master ID': str(author.id), 'Role ID': str(campaignRole[0].id), 'Channel ID': str(campaignChannel[0].id)}
@@ -136,9 +136,9 @@ class Camapign(commands.Cog):
         userRecords = usersCollection.find_one({"User ID": str(user[0].id)})  
 
         if 'Campaigns' not in userRecords:
-            userRecords['Campaigns'] = campaignRecords['Name']
+            userRecords['Campaigns'] = {campaignRecords['Name'] : 0 }
         else:
-            userRecords['Campaigns'] += ', ' + campaignRecords['Name']
+            userRecords['Campaigns'][campaignRecords['Name']] = 0
 
         await user[0].add_roles(guild.get_role(int(campaignRecords['Role ID'])), reason=f"{author.name} add campaign member to {campaignRecords['Name']}")
 
