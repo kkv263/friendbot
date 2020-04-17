@@ -281,6 +281,8 @@ bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 connection = MongoClient(mongoConnection, ssl=True) 
 db = connection.dnd
 
+settings = db.settings
+settingsRecord = list(settings.find())[0]
 
 # API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'races')
 # # API_URL += '?offset=' + 'itr4Z54rnNABYW8jj/recr2ss2DkyF4Q84X' 

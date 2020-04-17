@@ -158,6 +158,46 @@ class Camapign(commands.Cog):
                 campaignEmbedmsg = await channel.send(embed=campaignEmbed)
 
         return
+
+    @commands.cooldown(1, 5, type=commands.BucketType.member)
+    @campaign.command()
+    async def remove(self,ctx, user, campaignName):
+        channel = ctx.channel
+        author = ctx.author
+        campaignEmbed = discord.Embed()
+        campaignEmbedmsg = None
+        campaignCog = self.bot.get_cog('Campaign')
+        guild = ctx.message.guild
+
+        user = ctx.message.mentions
+
+        roles = [r.name for r in ctx.author.roles]
+
+        if 'Campaign Master' not in roles:
+            await channel.send(f"You do not have the Campaign Master role to use this command.")
+            return  
+
+        if 'Campaign Master' not in roles:
+            await channel.send(f"You do not have the Campaign Master role to use this command.")
+            return  
+
+        if user == list() or len(user) > 1:
+            await channel.send(f"I could not find the user you were trying to remove from the campaign. Please try again.")
+            return  
+
+        campaignCollection = db.campaigns
+        campaignRecords = campaignCollection.find_one({"Name": {"$regex": campaignName, '$options': 'i' }})
+
+        if not campaignRecords:
+            await channel.send(f"`{campaignName}` doesn\'t exist! Check to see if it is a valid campaign and check your spelling.")
+            return
+
+        if campaignRecords['Campaign Master ID'] != str(author.id):
+            await channel.send(f"You cannot remove users from this campaign because you are not the campaign master of {campaignRecords['Name']}")
+            return
+
+        await user[0].remove_roles(guild.get_role(int(campaignRecords['Role ID'])), reason=f"{author.name} remove campaign member from {campaignRecords['Name']}")
+        return
             
 def setup(bot):
     bot.add_cog(Camapign(bot))

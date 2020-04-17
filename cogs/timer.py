@@ -12,7 +12,7 @@ from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, headers, db, callAPI, traceBack
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, headers, db, callAPI, traceBack, settingsRecord
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -58,16 +58,17 @@ class Timer(commands.Cog):
     async def prep(self, ctx, userList, *, game="D&D Game"):
         def startEmbedcheck(r, u):
             return (r.emoji in numberEmojis[:5] or str(r.emoji) == '❌') and u == author
-
         channel = ctx.channel
         author = ctx.author
         user = author.display_name
         userName = author.name
         guild = ctx.guild
         prepFormat =  f'Please follow this format:\n`{commandPrefix}timer prep "@player1, @player2, @player3,..." gamename(*optional)`.'
+        isCampaign = str(channel.category.id) == settingsRecord['Campaign Category ID']
+        # isCampaign = True
 
-        if str(channel.category).lower() not in gameCategory:
-            if "no-context" in channel.name or "secret-testing-area" or "bot2-testing" in channel.name:
+        if str(channel.category.id) != settingsRecord['Game Category ID'] and str(channel.category.id) != settingsRecord['Campaign Category ID']:
+            if str(channel.id) in settingsRecord['Test Channel IDs']:
                 pass
             else: 
                 await channel.send('Try this command in a game channel! ' + prepFormat)
@@ -92,16 +93,17 @@ class Timer(commands.Cog):
             return 
 
         playerRoster = [author] + ctx.message.mentions
-
-        prepEmbed.add_field(name=f"React with [1-5] for your type of game: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journeyfriend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]\n{numberEmojis[4]} Timer Only [No Rewards]", inline=False)
+        prepEmbed.add_field(name=f"React with [1-4] for your type of game: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journeyfriend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]", inline=False)
         prepEmbed.set_author(name=userName, icon_url=author.avatar_url)
         prepEmbed.set_footer(text= "React with ❌ to cancel")
+        prepEmbedMsg = None
 
         try:
-            prepEmbedMsg = await channel.send(embed=prepEmbed)
-            for num in range(0,5): await prepEmbedMsg.add_reaction(numberEmojis[num])
-            await prepEmbedMsg.add_reaction('❌')
-            tReaction, tUser = await self.bot.wait_for("reaction_add", check=startEmbedcheck, timeout=60)
+            if not isCampaign:
+                prepEmbedMsg = await channel.send(embed=prepEmbed)
+                for num in range(0,4): await prepEmbedMsg.add_reaction(numberEmojis[num])
+                await prepEmbedMsg.add_reaction('❌')
+                tReaction, tUser = await self.bot.wait_for("reaction_add", check=startEmbedcheck, timeout=60)
         except asyncio.TimeoutError:
             await prepEmbedMsg.delete()
             await channel.send('Timer timed out! Try starting the timer again.')
@@ -110,28 +112,46 @@ class Timer(commands.Cog):
 
         else:
             role = ""
-            await asyncio.sleep(1) 
-            await prepEmbedMsg.clear_reactions()
 
-            if tReaction.emoji == '❌':
-                await prepEmbedMsg.edit(embed=None, content=f"Timer canceled. Type `{commandPrefix}timer prep` to prep another timer!")
-                self.timer.get_command('prep').reset_cooldown(ctx)
-                return
+            if not isCampaign:
+                await asyncio.sleep(1) 
+                await prepEmbedMsg.clear_reactions()
 
-            role = roleArray[int(tReaction.emoji[0]) - 1]
+                if tReaction.emoji == '❌':
+                    await prepEmbedMsg.edit(embed=None, content=f"Timer canceled. Type `{commandPrefix}timer prep` to prep another timer!")
+                    self.timer.get_command('prep').reset_cooldown(ctx)
+                    return
+
+                role = roleArray[int(tReaction.emoji[0]) - 1]
+
+            
 
         prepEmbed.clear_fields()
-        prepEmbed.title = f"{game} (Tier {roleArray.index(role) + 1})"
-        prepEmbed.description = f"**Signup:** {commandPrefix}timer signup \"charactername\" \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
+        if not isCampaign:
+            prepEmbed.title = f"{game} (Tier {roleArray.index(role) + 1})"
+            prepEmbed.description = f"**Signup:** {commandPrefix}timer signup \"charactername\" \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
+
+        else:
+            prepEmbed.title = f"{game} (Campaign)"
+            prepEmbed.description = f"**DM Signup:** {commandPrefix}timer signup \"charactername\"\n**Player Signup:** {commandPrefix}timer signup\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player"
+
         rosterString = ""
         for p in playerRoster:
             if p == author:
                 prepEmbed.add_field(name = f"{author.display_name} **(DM)**", value = "The DM has not yet signed up a character for DM rewards")
             else:
-                prepEmbed.add_field(name=p.display_name, value='Has not yet signed up a character to play.', inline=False)
+                if not isCampaign:
+                    prepEmbed.add_field(name=p.display_name, value='Has not yet signed up a character to play.', inline=False)
+                else:
+                    prepEmbed.add_field(name=p.display_name, value='Has not yet signed up for the campaign.', inline=False)
 
         prepEmbed.set_footer(text= f"If enough players are signed up, use {commandPrefix}timer start to start the timer.\n`{commandPrefix}timer help` for a list of timer commands")
-        await prepEmbedMsg.edit(embed=prepEmbed)
+
+
+        if not prepEmbedMsg:
+            prepEmbedMsg = await channel.send(embed=prepEmbed)
+        else:
+            await prepEmbedMsg.edit(embed=prepEmbed)
 
         guildsList = []
         signedPlayers = []
@@ -152,7 +172,10 @@ class Timer(commands.Cog):
                 if msg.author in playerRoster and msg.author == author:
                     playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role='DM') 
                 elif msg.author in playerRoster:
-                    playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role=role) 
+                    if not isCampaign:
+                        playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role=role) 
+                    else:
+                        playerChar = await ctx.invoke(self.timer.get_command('signup'), char=None, author=msg.author, role=role) 
 
                 else:
                     await channel.send(f"```{msg.author.display_name}, you are not on the roster to play in this game.```")
@@ -165,7 +188,10 @@ class Timer(commands.Cog):
                         else:
                             signedPlayers.insert(0,playerChar)
                     else:
-                        prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{playerChar[1]['Name']}", value= f"{playerChar[0].mention}\nLevel {playerChar[1]['Level']}: {playerChar[1]['Race']} {playerChar[1]['Class']}\nConsumables: {', '.join(playerChar[2]).strip()}\n", inline=False)
+                        if not isCampaign:
+                            prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{playerChar[1]['Name']}", value= f"{playerChar[0].mention}\nLevel {playerChar[1]['Level']}: {playerChar[1]['Race']} {playerChar[1]['Class']}\nConsumables: {', '.join(playerChar[2]).strip()}\n", inline=False)
+                        else:
+                            prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=playerChar[0].name, value= f"{playerChar[0].mention}", inline=False)
                         
                         foundSignedPlayer = False
                         for s in range(len(signedPlayers)):
@@ -182,7 +208,11 @@ class Timer(commands.Cog):
             elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and msg.author == author:
                 addUser = await ctx.invoke(self.timer.get_command('add'), msg=msg, prep=True)
                 if addUser not in playerRoster:
-                    prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up a character to play.', inline=False)
+                    if not isCampaign:
+                        prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up a character to play.', inline=False)
+                    else:
+                        prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up for the campaign.', inline=False)
+
                     playerRoster.append(addUser)
                 else:
                     await channel.send(f'```{addUser.display_name} is already on the timer.```')
@@ -251,6 +281,10 @@ class Timer(commands.Cog):
             channel = ctx.channel
             guild = ctx.guild
             consumablesList = ""
+
+            if char is None:
+                return [author]
+
             if f'{commandPrefix}timer signup' == char.content.strip() or f'{commandPrefix}t signup' == char.content.strip():
                 if ctx.invoked_with != "resume":
                     await channel.send(content=f'```You did not input a character, please try again. {signupFormat}```')
@@ -1072,9 +1106,6 @@ class Timer(commands.Cog):
             guild = ctx.guild
 
             stopEmbed = discord.Embed()
-
-            settings = db.settings
-            settingsRecord = list(settings.find())
 
             if role == "True":
                 tierNum = 4
