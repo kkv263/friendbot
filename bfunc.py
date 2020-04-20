@@ -241,8 +241,8 @@ refreshTime = time.time()
 
 # Find a workbook by name and open the first sheet
 # Make sure you use the right name here.
-sheet = gClient.open("Magic Item Tables").sheet1
-ritSheet = gClient.open("Magic Item Tables").get_worksheet(1)
+sheet = gClient.open("Magic Items Document").sheet1
+ritSheet = gClient.open("Magic Items Document").get_worksheet(1)
 # charDatabase = gClient.open("Character Database").worksheet("Character Database")
 # refListSheet = gClient.open("Character Database").worksheet("Reference Lists")
 

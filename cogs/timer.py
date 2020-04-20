@@ -530,14 +530,6 @@ class Timer(commands.Cog):
                     dmChar[4] = [r.name,0,0,0,0]
                     break
 
-            if str(channel.category).lower() not in gameCategory:
-                if "no-context" in channel.name or "secret-testing-area" or  "bot2-testing" in channel.name:
-                    pass
-                else: 
-                    await channel.send('Try this command in a game channel!')
-                    self.timer.get_command('start').reset_cooldown(ctx)
-                    return
-
             if self.timer.get_command('resume').is_on_cooldown(ctx):
                 await channel.send(f"There is already a timer that has started in this channel! If you started the timer, type `{commandPrefix}timer stop` to stop the current timer")
                 self.timer.get_command('prep').reset_cooldown(ctx)
@@ -546,7 +538,7 @@ class Timer(commands.Cog):
             startTime = time.time()
             datestart = datetime.now(pytz.timezone(timezoneVar)).strftime("%b-%-d-%y %I:%M %p")
             start = []
-            if userList != "norewards" and role:
+            if role != "":
                 for u in userList:
                     start.append(u)
                 startTimes = {f"{role} Friend Full Rewards:{startTime}":start} 
@@ -557,8 +549,10 @@ class Timer(commands.Cog):
                 await channel.send(content=f"Timer: Starting the timer for - **{game}** {roleString}." )
 
             else:
+                for u in userList:
+                    start.append(u)
                 startTimes = {f"No Rewards:{startTime}":start}
-                roleString = ""
+                roleString = "(Campaign)"
                 await ctx.channel.send(content=f"Timer: Starting the timer for - **{game}** {roleString}.\n" )
 
             currentTimers.append('#'+channel.name)
@@ -571,7 +565,7 @@ class Timer(commands.Cog):
             print('USERLIST')
             print(userList)
 
-            if userList != "norewards":
+            if role != "":
                 playerList = []
                 for u in userList:
                     print('USER')
@@ -580,6 +574,13 @@ class Timer(commands.Cog):
                     if u[2] != ['None']:
                         consumablesString = "\nConsumables: " + ', '.join(u[2])
                     stampEmbed.add_field(name=f"**{u[0].display_name}**", value=f"**{u[1]['Name']}**{consumablesString}\n", inline=False)
+            else:
+                playerList = []
+                for u in userList:
+                    print('USER')
+                    print(u)
+                    stampEmbed.add_field(name=f"**{u[0].display_name}**", value=u[0].mention, inline=False)
+            
 
             stampEmbedmsg = await channel.send(embed=stampEmbed)
 
@@ -895,12 +896,20 @@ class Timer(commands.Cog):
                         timeKey = u
                         
             if not userFound:
-                userInfo =  await ctx.invoke(self.timer.get_command('signup'), role=role, char=msg, author=addUser, resume=resume) 
+                if role != "":
+                    userInfo =  await ctx.invoke(self.timer.get_command('signup'), role=role, char=msg, author=addUser, resume=resume) 
+                else:
+                    userInfo =  await ctx.invoke(self.timer.get_command('signup'), role=role, char=None, author=addUser, resume=resume) 
+
                 if userInfo:
                     if not resume and dmChar :
                         addEmbed = discord.Embed()
-                        addEmbed.title = f"Add {userInfo[1]['Name']} to timer?"
-                        addEmbed.description = f"{addUser.mention} is requesting their character to be added to the timer.\n{userInfo[1]['Name']} - Level {userInfo[1]['Level']}: {userInfo[1]['Race']} {userInfo[1]['Class']}\nConsumables: {', '.join(userInfo[2])}\n\n✅ : Add to timer\n\n❌: Deny"
+                        if role != "":
+                            addEmbed.title = f"Add {userInfo[1]['Name']} to timer?"
+                            addEmbed.description = f"{addUser.mention} is requesting their character to be added to the timer.\n{userInfo[1]['Name']} - Level {userInfo[1]['Level']}: {userInfo[1]['Race']} {userInfo[1]['Class']}\nConsumables: {', '.join(userInfo[2])}\n\n✅ : Add to timer\n\n❌: Deny"
+                        else:
+                            addEmbed.title = f"Add {userInfo[0].display_name} to timer?"
+                            addEmbed.description = f"{addUser.mention} is requesting to be added to the timer.\n\n✅ : Add to timer\n\n❌: Deny"
                         addEmbedmsg = await channel.send(embed=addEmbed, content=dmChar[0].mention)
                         await addEmbedmsg.add_reaction('✅')
                         await addEmbedmsg.add_reaction('❌')
@@ -924,7 +933,7 @@ class Timer(commands.Cog):
             elif '%' in timeKey:
                 if not resume:
                     await channel.send(content='Your character is dead, you cannot be re-added to the timer.')
-            elif '+' in timeKey or 'Full Rewards' in timeKey:
+            elif '+' in timeKey or 'Full Rewards' in timeKey or 'No Rewards':
                 if not resume:
                     await channel.send(content='You have already been added to the timer')
             elif '-' in timeKey:
@@ -975,19 +984,11 @@ class Timer(commands.Cog):
 
             timeSplit = (userFound + f'?{endTime}').split(':')
 
-            # duration = 0
-            # for t in range(1, len(timeSplit)):
-            #     ttemp = timeSplit[t].split('?')
-            #     duration += (float(ttemp[1]) - float(ttemp[0]))
-
-            # treasureArray = calculateTreasure(duration,role)
-            # treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-
             if '-' in userFound or '%' in userFound: 
                 if not resume:
                     await ctx.channel.send(content=f"You have already been removed from the timer.")  
             
-            elif 'Full Rewards' in userFound:
+            elif 'Full Rewards' in userFound or 'No Rewards':
                 start[userFound].remove(userInfo)
                 if death:
                     start[f"%Partial Rewards:{userFound.split(':')[1]}?{endTime}"] = [userInfo]
@@ -1043,29 +1044,34 @@ class Timer(commands.Cog):
             durationString = timeConversion(duration)
             embed.clear_fields()
 
+            print(start)
+
             for key, value in startcopy.items():
                 for v in value:
                     if value:
                         consumablesString = ""
                         rewardsString = ""
-                        if v[2] != ['None'] and v[2] != list():
-                            cList = []
-                            rList = []
+                        if role != "":
+                            if v[2] != ['None'] and v[2] != list():
+                                cList = []
+                                rList = []
 
-                            for i in v[2]:
-                                if '+' in i:
-                                    rList.append(i)
-                                else:
-                                    cList.append(i)
+                                for i in v[2]:
+                                    if '+' in i:
+                                        rList.append(i)
+                                    else:
+                                        cList.append(i)
 
-                            if cList != list():
-                                consumablesString = "\nConsumables: " + ', '.join(cList)
-                            if rList != list():
-                                rewardsString = "\nRewards: " + ', '.join(rList)
+                                if cList != list():
+                                    consumablesString = "\nConsumables: " + ', '.join(cList)
+                                if rList != list():
+                                    rewardsString = "\nRewards: " + ', '.join(rList)
 
                         if "Full Rewards" in key and "-" not in key and '%' not in key:
                             embed.add_field(name= f"**{v[0].display_name}**", value=f"**{v[1]['Name']}**{consumablesString}{rewardsString}", inline=False)
-                        elif "-" in key or 'No Rewards' in key:
+                        elif 'No Rewards' in key:
+                            embed.add_field(name= f"**{v[0].display_name}**", value=f"{v[0].mention}", inline=False)
+                        elif "-" in key:
                             pass
                         elif '%' in key:
                             embed.add_field(name= f"~~{v[0].display_name}~~", value=f"**{v[1]['Name']}** - **DEATH**{consumablesString}{rewardsString}", inline=False) 
@@ -1076,11 +1082,19 @@ class Timer(commands.Cog):
                                 ttemp = timeSplit[t].split('?')
                                 durationEach += (float(ttemp[1]) - float(ttemp[0]))
 
-                            embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=f"**{v[1]['Name']}**{consumablesString}{rewardsString}", inline=False)
+                            if role != "":
+                                embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=f"**{v[1]['Name']}**{consumablesString}{rewardsString}", inline=False)
+                            else:
+                                embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=v[0].mention, inline=False)
                   
             embed.title = f'**{game}**: {durationString}'
             msgAfter = False
-            stampHelp = f'```{commandPrefix}timer add @player "charactername" "consumables" - **DM** Adds a player \n{commandPrefix}timer addme charactername "consumables" - Adds your character`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\n{commandPrefix}timer reward @player "rewards" - **DM** Rewards an item to yourself or a player.\n- Consumable - consumes a consumable.\n{commandPrefix}timer stop - stops the current timer.```'
+
+            if role != "":
+                stampHelp = f'```{commandPrefix}timer add @player "charactername" "consumables" - **DM** Adds a player \n{commandPrefix}timer addme charactername "consumables" - Adds your character`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\n{commandPrefix}timer reward @player "rewards" - **DM** Rewards an item to yourself or a player.\n- Consumable - consumes a consumable.\n{commandPrefix}timer stop - stops the current timer.```'
+            else:
+                stampHelp = f'```{commandPrefix}timer add @player - **DM** Adds a player \n{commandPrefix}timer addme - Adds yourself to the timer`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\ntimer stop - stops the current timer.```'
+
             async for message in ctx.channel.history(after=embedMsg, limit=1):
                 msgAfter = True
             if not msgAfter:
@@ -1776,7 +1790,12 @@ class Timer(commands.Cog):
         user = author.display_name
 
         timerAlias = ["timer", "t"]
-        timerCommands = ['transfer', 'stop', 'end', 'add', 'remove', 'death', 'reward']
+
+        if role != "":
+            timerCommands = ['transfer', 'stop', 'end', 'add', 'remove', 'death', 'reward']
+        else:
+            timerCommands = ['transfer', 'stop', 'end', 'add', 'remove']
+
       
         timerCombined = []
 
@@ -1785,7 +1804,11 @@ class Timer(commands.Cog):
 
         while not timerStopped:
             try:
-                msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined) or m.content.startswith('-')) and m.channel == channel)
+                if role != "":
+                    msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined) or m.content.startswith('-')) and m.channel == channel)
+                else:
+                    msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined)) and m.channel == channel)
+
                 if (f"{commandPrefix}timer transfer " in msg.content or f"{commandPrefix}t transfer " in msg.content) and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     if f'{commandPrefix}timer transfer ' in msg.content:
                       newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
