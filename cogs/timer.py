@@ -65,7 +65,6 @@ class Timer(commands.Cog):
         guild = ctx.guild
         prepFormat =  f'Please follow this format:\n`{commandPrefix}timer prep "@player1, @player2, @player3,..." gamename(*optional)`.'
         isCampaign = str(channel.category.id) == settingsRecord['Campaign Category ID']
-        # isCampaign = True
 
         if str(channel.category.id) != settingsRecord['Game Category ID'] and str(channel.category.id) != settingsRecord['Campaign Category ID']:
             if str(channel.id) in settingsRecord['Test Channel IDs']:
@@ -283,7 +282,9 @@ class Timer(commands.Cog):
             consumablesList = ""
 
             if char is None:
-                return [author]
+                usersCollection = db.users
+                userRecord = list(usersCollection.find({"User ID": str(author.id)}))[0]
+                return [author, userRecord]
 
             if f'{commandPrefix}timer signup' == char.content.strip() or f'{commandPrefix}t signup' == char.content.strip():
                 if ctx.invoked_with != "resume":
@@ -1188,8 +1189,6 @@ class Timer(commands.Cog):
                     print(crossTP)
 
 
-
-
                 totalCP = f'{leftCP}/{float(cpSplit[1])}'
                 charEndConsumables = char[1]['Consumables']
                 charEndMagicList = char[1]['Magic Items']
@@ -1209,7 +1208,10 @@ class Timer(commands.Cog):
                 if float(cp) >= .5:
                     char[1]['Games'] += 1
 
-                returnData = {'_id': char[3],  "fields": {"$set": {f"GID{str(gameID)}" : f'{{"GP": {char[1]["GP"] + gp}, "{tierTP}": {tpAdd + tp},"Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": "{totalCP}", "Games":{char[1]["Games"]}}}'}}}
+                if gameID is None:
+                    returnData = {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp, 'CP': totalCP, 'Games':char[1]['Games']}}}
+                else:
+                    returnData = {'_id': char[3],  "fields": {"$set": {f"GID{str(gameID)}" : f'{{"GP": {char[1]["GP"] + gp}, "{tierTP}": {tpAdd + tp},"Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": "{totalCP}", "Games":{char[1]["Games"]}}}'}}}
 
                 if death:
                     returnData =  {'_id': char[3], "fields": {"$set": {'Death': f'{{"GP": {gp}, "{tierTP}": {tp}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {cp}}}'}}}
@@ -1224,13 +1226,13 @@ class Timer(commands.Cog):
 
             deathChars = []
             data = {"records":[]}
-
-            await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
             # Session Log Channel
             logChannel = self.bot.get_channel(663454980140695553) 
             # logChannel = self.bot.get_channel(577227687962214406)
-            sessionMessage = await logChannel.send(embed=stopEmbed)
-            stopEmbed.set_footer(text=f"Game ID: {sessionMessage.id}")
+            if role != "":
+                await ctx.channel.send("Timer has been stopped! Your session has been posted in the #session-logs channel")
+                sessionMessage = await logChannel.send(embed=stopEmbed)
+                stopEmbed.set_footer(text=f"Game ID: {sessionMessage.id}")
 
             for startItemKey, startItemValue in start.items():
                 duration = 0
@@ -1251,47 +1253,51 @@ class Timer(commands.Cog):
                     ttemp = startItemsList[1].split('?')
                     duration = (float(ttemp[1]) - float(ttemp[0]))
 
+                treasureArray = calculateTreasure(duration,role)
                 if role != "":
-                    treasureArray = calculateTreasure(duration,role)
                     treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
                 else:
                     treasureString = timeConversion(duration)
 
 
                 for value in startItemValue:
-                    if 'Double Items Buff' in value[1]: 
-                        if value[1]['Double Items Buff'] < (datetime.now() + timedelta(days=3)):
-                            rewardsCollection = db.rit
-                            rewardList = list(rewardsCollection.find({"Tier": str(tierNum)}))
-                            randomItem = random.choice(rewardList)
+                    if role != "":
+                        if 'Double Items Buff' in value[1]: 
+                            if value[1]['Double Items Buff'] < (datetime.now() + timedelta(days=3)):
+                                rewardsCollection = db.rit
+                                rewardList = list(rewardsCollection.find({"Tier": str(tierNum)}))
+                                randomItem = random.choice(rewardList)
 
-                            charConsumableList = value[1]['Consumables'].split(', ')
-                            charMagicList = value[1]['Magic Items'].split(', ')
+                                charConsumableList = value[1]['Consumables'].split(', ')
+                                charMagicList = value[1]['Magic Items'].split(', ')
 
-                            if 'Consumable' in randomItem:
-                                if value[1]['Consumables'] == "None":
-                                    charConsumableList = [randomItem['Name']]
+                                if 'Consumable' in randomItem:
+                                    if value[1]['Consumables'] == "None":
+                                        charConsumableList = [randomItem['Name']]
+                                    else:
+                                        charConsumableList.append(randomItem['Name'])
+                                        charConsumableList.sort()
+                                    value[1]['Consumables'] = ', '.join(charConsumableList).strip()
                                 else:
-                                    charConsumableList.append(randomItem['Name'])
-                                    charConsumableList.sort()
-                                value[1]['Consumables'] = ', '.join(charConsumableList).strip()
-                            else:
-                                if value[1]['Magic Items'] == "None":
-                                    charMagicList = [randomItem['Name']]
+                                    if value[1]['Magic Items'] == "None":
+                                        charMagicList = [randomItem['Name']]
+                                    else:
+                                        charMagicList.append(randomItem['Name'])
+                                        charMagicList.sort()
+                                    value[1]['Magic Items'] = ', '.join(charMagicList).strip()
+
+
+                                if value[2] != ["None"]:
+                                    value[2].append('(DI)+'+ randomItem['Name'])
                                 else:
-                                    charMagicList.append(randomItem['Name'])
-                                    charMagicList.sort()
-                                value[1]['Magic Items'] = ', '.join(charMagicList).strip()
-
-
-                            if value[2] != ["None"]:
-                                value[2].append('(DI)+'+ randomItem['Name'])
-                            else:
-                                value[2] = ['(DI)+'+ randomItem['Name']]
-                          
-                    charRewards = updateCharDB(value, tierNum, treasureArray[0], treasureArray[1], treasureArray[2], (value in deathChars), sessionMessage.id)
-                    data["records"].append(charRewards)
+                                    value[2] = ['(DI)+'+ randomItem['Name']]
+                              
+                        charRewards = updateCharDB(value, tierNum, treasureArray[0], treasureArray[1], treasureArray[2], (value in deathChars), sessionMessage.id)
+                        data["records"].append(charRewards)
                     playerList.append(value)
+
+                print('playerList')
+                print(playerList)
 
                 if "Partial Rewards" in startItemKey and role == "":
                     if treasureString not in allRewardStrings:
@@ -1308,6 +1314,117 @@ class Timer(commands.Cog):
 
             stopEmbed.title = f"Timer: {game} [END] - {totalDuration}"
             stopEmbed.description = f"{datestart} to {dateend} CDT" 
+
+            charLevel = int(dmChar[1]['Level'])
+
+            if charLevel < 5:
+                dmRole = 'Junior'
+            elif charLevel < 11:
+                dmRole = 'Journey'
+            elif charLevel < 17:
+                dmRole = 'Elite'
+            elif charLevel < 21:
+                dmRole = 'True'
+
+            dmtreasureArray = calculateTreasure(totalDurationTime,dmRole)    
+            # DM update
+            if 'Double Items Buff' in dmChar[1]: 
+                if dmChar[1]['Double Items Buff'] < (datetime.now() + timedelta(days=3)):
+                    rewardsCollection = db.rit
+                    rewardList = list(rewardsCollection.find({"Tier": str(tierNum)}))
+                    randomItem = random.choice(rewardList)
+
+                    charConsumableList = dmChar[1]['Consumables'].split(', ')
+                    charMagicList = dmChar[1]['Magic Items'].split(', ')
+
+                    if 'Consumable' in randomItem:
+                        if dmChar[1]['Consumables'] == "None":
+                            charConsumableList = [randomItem['Name']]
+                        else:
+                            charConsumableList.append(randomItem['Name'])
+                            charConsumableList.sort()
+                        dmChar[1]['Consumables'] = ', '.join(charConsumableList).strip()
+                    else:
+                        if dmChar[1]['Magic Items'] == "None":
+                            charMagicList = [randomItem['Name']]
+                        else:
+                            charMagicList.append(randomItem['Name'])
+                            charMagicList.sort()
+                        dmChar[1]['Magic Items'] = ', '.join(charMagicList).strip()
+
+
+                    if dmChar[2] == ["None"]:
+                        dmChar[2] = ["(DI)+" + randomItem['Name']]
+                    else:
+                        dmChar[2].append("(DI)+" + randomItem['Name'])
+
+            dmRewardsList = []
+            for d in dmChar[2]:
+                if '+' in d:
+                    dmRewardsList.append(d)
+
+            if role != "":
+                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, dmtreasureArray[0], dmtreasureArray[1], dmtreasureArray[2], False, sessionMessage.id ))
+            else:
+                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, dmtreasureArray[0], dmtreasureArray[1], dmtreasureArray[2], False, None))
+
+            playersCollection = db.players
+            usersCollection = db.users
+
+            # Noodles Math
+            uRecord  = usersCollection.find_one({"User ID": str(dmChar[0].id)})
+            noodles = 0
+            minutesPlayed = totalDurationTime // 60
+            minutesRounded = minutesPlayed % 30
+
+            if minutesRounded >= 15:
+                minutesPlayed += (30 - minutesRounded)
+
+            hoursPlayed = (minutesPlayed / 60)
+            noodlesGained = sparklesGained = int(hoursPlayed) // 3
+
+            print(int(noodlesGained))
+
+            if uRecord:
+                if 'Noodles' not in uRecord:
+                    uRecord['Noodles'] = 0
+                else:
+                    noodles += uRecord['Noodles'] + noodlesGained
+
+            noodleString = "Current Noodles: " + str(noodles)
+            dmRoleNames = [r.name for r in dmChar[0].roles]
+            if noodles >= 150 and 'Ramen Noodle' in dmRoleNames:
+                if 'Spicy Noodle' not in dmRoleNames:
+                    noodleRole = get(guild.roles, name = 'Spicy Noodle')
+                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 150 games. This user has 150+ noodles")
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'Ramen Noodle'))
+                    noodleString += "\nSpicy Noodle Role recieved! :tada:"
+            elif noodles >= 100 and 'True Noodle' in dmRoleNames:
+                if 'Ramen Noodle' not in dmRoleNames:
+                    noodleRole = get(guild.roles, name = 'Ramen Noodle')
+                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ noodles")
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
+                    noodleString += "\nRamen Noodle Role recieved! :tada:"
+
+            elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
+                if 'True Noodle' not in dmRoleNames:
+                    noodleRole = get(guild.roles, name = 'True Noodle')
+                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 60 games. This user has 60+ noodles")
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
+                    noodleString += "\nTrue Noodle Role recieved! :tada:"
+            
+            elif noodles >= 30 and 'Good Noodle' in dmRoleNames:
+                if 'Elite Noodle' not in dmRoleNames:
+                    noodleRole = get(guild.roles, name = 'Elite Noodle')
+                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 30 games. This user has 30+ noodles")
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
+                    noodleString += "\nElite Noodle Role recieved! :tada:"
+
+            elif noodles >= 10:
+                if 'Good Noodle' not in dmRoleNames:
+                    noodleRole = get(guild.roles, name = 'Good Noodle')
+                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 10 games. This user has 10+ noodles")
+                    noodleString += "\nGood Noodle Role recieved! :tada:"
 
             if role != "": 
                 stopEmbed.clear_fields() 
@@ -1330,113 +1447,6 @@ class Timer(commands.Cog):
                         temp = 'None'
                     stopEmbed.add_field(name=f"**{key}**\n", value=temp, inline=False)
                     allRewardsTotalString += temp + "\n"
-
-                charLevel = int(dmChar[1]['Level'])
-
-                if charLevel < 5:
-                    dmRole = 'Junior'
-                elif charLevel < 11:
-                    dmRole = 'Journey'
-                elif charLevel < 17:
-                    dmRole = 'Elite'
-                elif charLevel < 21:
-                    dmRole = 'True'
-
-                dmtreasureArray = calculateTreasure(totalDurationTime,dmRole)    
-                # DM update
-                if 'Double Items Buff' in dmChar[1]: 
-                    if dmChar[1]['Double Items Buff'] < (datetime.now() + timedelta(days=3)):
-                        rewardsCollection = db.rit
-                        rewardList = list(rewardsCollection.find({"Tier": str(tierNum)}))
-                        randomItem = random.choice(rewardList)
-
-                        charConsumableList = dmChar[1]['Consumables'].split(', ')
-                        charMagicList = dmChar[1]['Magic Items'].split(', ')
-
-                        if 'Consumable' in randomItem:
-                            if dmChar[1]['Consumables'] == "None":
-                                charConsumableList = [randomItem['Name']]
-                            else:
-                                charConsumableList.append(randomItem['Name'])
-                                charConsumableList.sort()
-                            dmChar[1]['Consumables'] = ', '.join(charConsumableList).strip()
-                        else:
-                            if dmChar[1]['Magic Items'] == "None":
-                                charMagicList = [randomItem['Name']]
-                            else:
-                                charMagicList.append(randomItem['Name'])
-                                charMagicList.sort()
-                            dmChar[1]['Magic Items'] = ', '.join(charMagicList).strip()
-
-
-                        if dmChar[2] == ["None"]:
-                            dmChar[2] = ["(DI)+" + randomItem['Name']]
-                        else:
-                            dmChar[2].append("(DI)+" + randomItem['Name'])
-
-                dmRewardsList = []
-                for d in dmChar[2]:
-                    if '+' in d:
-                        dmRewardsList.append(d)
-
-
-                data["records"].append(updateCharDB(dmChar, roleArray.index(dmRole) + 1, dmtreasureArray[0], dmtreasureArray[1], dmtreasureArray[2], False, sessionMessage.id ))
-
-                playersCollection = db.players
-                usersCollection = db.users
-                uRecord  = usersCollection.find_one({"User ID": str(dmChar[0].id)})
-                noodles = 0
-                minutesPlayed = totalDurationTime // 60
-                minutesRounded = minutesPlayed % 30
-
-                if minutesRounded >= 15:
-                    minutesPlayed += (30 - minutesRounded)
-
-                hoursPlayed = (minutesPlayed / 60)
-                noodlesGained = sparklesGained = int(hoursPlayed) // 3
-
-                print(int(noodlesGained))
-
-                if uRecord:
-                    if 'Noodles' not in uRecord:
-                        uRecord['Noodles'] = 0
-                    else:
-                        noodles += uRecord['Noodles'] + noodlesGained
-
-                noodleString = "Current Noodles: " + str(noodles)
-                dmRoleNames = [r.name for r in dmChar[0].roles]
-                if noodles >= 150 and 'Ramen Noodle' in dmRoleNames:
-                    if 'Spicy Noodle' not in dmRoleNames:
-                        noodleRole = get(guild.roles, name = 'Spicy Noodle')
-                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 150 games. This user has 150+ noodles")
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'Ramen Noodle'))
-                        noodleString += "\nSpicy Noodle Role recieved! :tada:"
-                elif noodles >= 100 and 'True Noodle' in dmRoleNames:
-                    if 'Ramen Noodle' not in dmRoleNames:
-                        noodleRole = get(guild.roles, name = 'Ramen Noodle')
-                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ noodles")
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
-                        noodleString += "\nRamen Noodle Role recieved! :tada:"
-
-                elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
-                    if 'True Noodle' not in dmRoleNames:
-                        noodleRole = get(guild.roles, name = 'True Noodle')
-                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 60 games. This user has 60+ noodles")
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
-                        noodleString += "\nTrue Noodle Role recieved! :tada:"
-                
-                elif noodles >= 30 and 'Good Noodle' in dmRoleNames:
-                    if 'Elite Noodle' not in dmRoleNames:
-                        noodleRole = get(guild.roles, name = 'Elite Noodle')
-                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 30 games. This user has 30+ noodles")
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
-                        noodleString += "\nElite Noodle Role recieved! :tada:"
-
-                elif noodles >= 10:
-                    if 'Good Noodle' not in dmRoleNames:
-                        noodleRole = get(guild.roles, name = 'Good Noodle')
-                        await dmChar[0].add_roles(noodleRole, reason=f"DMed 10 games. This user has 10+ noodles")
-                        noodleString += "\nGood Noodle Role recieved! :tada:"
 
                 doubleRewardsString = ""
                 doubleItemsString = ""        
@@ -1599,12 +1609,33 @@ class Timer(commands.Cog):
             else:
                 stopEmbed.clear_fields()
                 stopEmbed.set_footer(text=stopEmbed.Empty)
+                dmRecords = data['records'][0]
+
+                playerData = []
+                campaignCollection = db.campaigns
+                campaignRecord = list(campaignCollection.find({"Channel ID": str(ctx.channel.id)}))[0]
 
                 for key, value in allRewardStrings.items():
-                  temp = ""
-                  for v in value:
-                    temp += f"@{v}\n"
-                    stopEmbed.add_field(name=key, value=temp, inline=False)
+                    temp = ""
+                    numbers = [int(word) for word in key.split() if word.isdigit()]
+                    tempTime = (numbers[0] * 3600) + (numbers[1] * 60) 
+                    for v in value:
+                        temp += f"{v[0].mention}\n"
+                        v[1]['Campaigns'][campaignRecord['Name']] += tempTime
+                        playerData.append(v[1])
+                        stopEmbed.add_field(name=key, value=temp, inline=False)
+
+                try:
+                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
+                    usersData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': item}, upsert=True), playerData))
+                    usersCollection.bulk_write(usersData)
+                    playersCollection.update_one({'_id': dmRecords['_id']},  dmRecords['fields'] , upsert=True)
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
+                else:
+                    print('Success')  
+
                 await ctx.channel.send(embed=stopEmbed)
 
 
@@ -1633,6 +1664,7 @@ class Timer(commands.Cog):
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
     @timer.command()
+    #TODO: cmapaign resume timer
     async def resume(self,ctx):
         if not self.timer.get_command('start').is_on_cooldown(ctx):
             def predicate(message):
