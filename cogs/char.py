@@ -361,6 +361,8 @@ class Character(commands.Cog):
             print(tier1Count)
             print(tier2Count)
 
+        elif lvl <= 3 and rewardItems != ['']:
+            msg += f"- Your character's level does not allow reward items. Please try again."
             
         # check race
         rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'races',race)
@@ -412,7 +414,7 @@ class Character(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+                return sameMessage and ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
 
             if 'Starting Equipment' in cRecord[0]['Class'] and msg == "":
                 if charDict['Inventory'] == "None":
@@ -762,9 +764,9 @@ class Character(commands.Cog):
             print('Success')
             if charEmbedmsg:
                 await charEmbedmsg.clear_reactions()
-                await charEmbedmsg.edit(embed=charEmbed, content ="Congratulations! :tada: You have created your character.")
+                await charEmbedmsg.edit(embed=charEmbed, content =f"Congratulations! :tada: You have created {charDict['Name']}.")
             else: 
-                charEmbedmsg = await channel.send(embed=charEmbed, content="Congratulations! You have created your character.")
+                charEmbedmsg = await channel.send(embed=charEmbed, content=f"Congratulations! You have created your {charDict['Name']}.")
 
         self.bot.get_command('create').reset_cooldown(ctx)
 
@@ -924,7 +926,7 @@ class Character(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+                return sameMessage and ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
 
             if 'Starting Equipment' in cRecord[0]['Class'] and msg == "":
                 if charDict['Inventory'] == "None":
@@ -1199,9 +1201,9 @@ class Character(commands.Cog):
             print('Success')
             if charEmbedmsg:
                 await charEmbedmsg.clear_reactions()
-                await charEmbedmsg.edit(embed=charEmbed, content ="Congratulations! You have respecced your character.")
+                await charEmbedmsg.edit(embed=charEmbed, content =f"Congratulations! You have respecced your character.")
             else: 
-                charEmbedmsg = await channel.send(embed=charEmbed, content="Congratulations! You have respecced your character.")
+                charEmbedmsg = await channel.send(embed=charEmbed, content=f"Congratulations! You have respecced your character.")
 
         self.bot.get_command('respec').reset_cooldown(ctx)
 
@@ -1261,9 +1263,9 @@ class Character(commands.Cog):
                         print('Success')
                         if charEmbedmsg:
                             await charEmbedmsg.clear_reactions()
-                            await charEmbedmsg.edit(embed=None, content ="Congratulations! You have retired your character.")
+                            await charEmbedmsg.edit(embed=None, content =f"Congratulations! You have retired {charDict['Name']}. ")
                         else: 
-                            charEmbedmsg = await channel.send(embed=None, content="Congratulations! You have retired your character.")
+                            charEmbedmsg = await channel.send(embed=None, content=f"Congratulations! You have retired {charDict['Name']}.")
 
         self.bot.get_command('retire').reset_cooldown(ctx)
 
@@ -1845,7 +1847,7 @@ class Character(commands.Cog):
                         sameMessage = False
                         if levelUpEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+                        return sameMessage and ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
 
 
                 levelUpEmbed.clear_fields()
@@ -2194,7 +2196,7 @@ class Character(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌') and u == author
+                return ((r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌')) and u == author
 
             mList = []
             mString = ""
@@ -2306,7 +2308,7 @@ class Character(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌') and u == author
+                return ((r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌')) and u == author
 
             mList = []
             mString = ""
@@ -2517,7 +2519,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and (r.emoji in numberEmojis[:len(statSplit)]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and ((r.emoji in numberEmojis[:len(statSplit)]) or (str(r.emoji) == '❌')) and u == author
 
         if rRecord:
             statsBonus = rRecord['Modifiers'].replace(" ", "").split(',')
@@ -2620,7 +2622,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and (r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
 
         try:
             subclassString = ""
@@ -2663,19 +2665,19 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and (r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and ((r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌')) and u == author
         
         def asiCharEmbedCheck(r, u):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and (r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and ((r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌')) and u == author
 
         def asiCharEmbedCheck2(r, u):
             sameMessage = False
             if charEmbedmsg2.id == r.message.id:
                 sameMessage = True
-            return sameMessage and (r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌') and u == author
+            return sameMessage and ((r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌')) and u == author
 
 
         featChoices = []
@@ -2885,7 +2887,7 @@ class Character(commands.Cog):
                         sameMessage = False
                         if charEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return sameMessage and (r.emoji in numberEmojis[:len(featBonusList)]) or (str(r.emoji) == '❌') and u == author
+                        return sameMessage and ((r.emoji in numberEmojis[:len(featBonusList)]) or (str(r.emoji) == '❌')) and u == author
 
                     if 'Stat Bonuses' in featPicked:
                         featBonus = featPicked['Stat Bonuses']
