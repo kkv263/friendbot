@@ -79,8 +79,8 @@ class Character(commands.Cog):
             'Good Noodle':[4],
             'Elite Noodle':[4,5],
             'True Noodle':[4,5,6],
-            'Ramen Noodle':[4,5,6,7],
-            'Super Noodle':[4,5,6,7,8],
+            'Ascended Noodle':[4,5,6,7],
+            'Immortal Noodle':[4,5,6,7,8],
             'Friend Fanatic': [11,10,9],
             'Guild Fanatic':[11,10,9]
         }
@@ -90,7 +90,7 @@ class Character(commands.Cog):
         channel = ctx.channel
         charEmbed = discord.Embed ()
         charEmbed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-        charEmbed.set_footer(text= "React with ❌ to cancel")
+        charEmbed.set_footer(text= "React with ❌ to cancel\nPlease react with a choice even if no reactions appear.")
         charEmbedmsg = None
         statNames = ['STR','DEX','CON','INT','WIS','CHA']
         bankTP1 = 0
@@ -300,11 +300,11 @@ class Character(commands.Cog):
                 elif 'True Noodle' in roles:
                     tier1CountMNC = 1
                     tier2Count = 1
-                elif 'Ramen Noodle' in roles:
+                elif 'Ascended Noodle' in roles:
                     tier1CountMNC = 1
                     tier1Count = 1
                     tier2Count = 1
-                elif 'Spicy Noodle' in roles:
+                elif 'Immortal Noodle' in roles:
                     tier1CountMNC = 1
                     tier1Count = 2
                     tier2Count = 1
@@ -492,8 +492,9 @@ class Character(commands.Cog):
                                 charInvString = f"Please choose from the choices below for {type[0]} {i+1}:\n"
                                 alphaIndex = 0
                                 for c in charInv:
-                                    charInvString += f"{alphaEmojis[alphaIndex]}: {c['Name']}\n"
-                                    alphaIndex += 1
+                                    if 'Yklwa' not in c['Name'] and 'Light Repeating Crossbow' not in c['Name'] and 'Double-Bladed Scimitar' not in c['Name']:
+                                        charInvString += f"{alphaEmojis[alphaIndex]}: {c['Name']}\n"
+                                        alphaIndex += 1
 
                                 charEmbed.set_field_at(startEquipmentLength, name=f"Starting Equipment: {startEquipmentLength+1} of {len(cRecord[0]['Class']['Starting Equipment'])}", value=charInvString, inline=False)
                                 await charEmbedmsg.clear_reactions()
@@ -566,9 +567,9 @@ class Character(commands.Cog):
             charDict['Background'] = bRecord['Name']
             totalGP = 0
             if lvl > 1 and lvl < 6: 
-                totalGP = (lvl-1) * 160
+                totalGP = (lvl-1) * 240
             if lvl > 5:
-                totalGP = (lvl-6) * 960 + 1600
+                totalGP = (lvl-6) * 960 + 1920
 
             charDict['GP'] = int(bRecord['GP'] + totalGP)
         
@@ -781,7 +782,8 @@ class Character(commands.Cog):
         channel = ctx.channel
         charEmbed = discord.Embed ()
         charEmbed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-        charEmbed.set_footer(text= "React with ❌ to cancel")
+        charEmbed.set_footer(text= "React with ❌ to cancel\nPlease react with a choice even if no reactions appear.")
+
         statNames = ['STR','DEX','CON','INT','WIS','CHA']
 
         charDict, charEmbedmsg = await checkForChar(ctx, name, charEmbed)
@@ -1301,20 +1303,21 @@ class Character(commands.Cog):
             charID = charDict['_id']
             charLevel = charDict['Level']
             if charLevel < 5:
-                gpNeeded = 350
+                gpNeeded = 250
                 tierNum = 1
             elif charLevel < 11:
-                gpNeeded = 1000
+                gpNeeded = 500
                 tierNum = 2
             elif charLevel < 17:
-                gpNeeded = 2000
+                gpNeeded = 750
                 tierNum = 3
             elif charLevel < 21:
-                gpNeeded = 5000
+                gpNeeded = 1000
                 tierNum = 4
 
             charEmbed.title = f"Character Death - {charDict['Name']}"
-            charEmbed.set_footer(text= f"React with ❌ to cancel")
+            charEmbed.set_footer(text= "React with ❌ to cancel\nPlease react with a choice even if no reactions appear.")
+
             if charDict['GP'] < gpNeeded:
                 charEmbed.description = f"Please choose between these 3 options for your character {charDict['Name']}\n\n1️⃣: Death - Retires your character. \n2️⃣: Survival - Forfeit rewards and survive. \n~~3️⃣: Revival~~ - You currently have {charDict['GP']}gp but need {gpNeeded}gp to revive."
             else:
@@ -2694,7 +2697,8 @@ class Character(commands.Cog):
                             charEmbedmsg = await channel.send(embed=charEmbed)
                         for num in range(0,2): await charEmbedmsg.add_reaction(numberEmojis[num])
                         await charEmbedmsg.add_reaction('❌')
-                        charEmbed.set_footer(text= f"React with ❌ to cancel")
+                        charEmbed.set_footer(text= "React with ❌ to cancel\nPlease react with a choice even if no reactions appear.")
+
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=featCharEmbedCheck, timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg.delete()

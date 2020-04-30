@@ -35,25 +35,30 @@ class Timer(commands.Cog):
 
     async def cog_command_error(self, ctx, error):
         msg = None
-            
-        if isinstance(error, commands.MissingRequiredArgument):
-            if error.param.name == 'userList':
-                msg = "You're missing players to prep the timer."
-        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
-           msg = ""
 
-        if msg:
-            if ctx.command.name == "prep":
-                msg += f'Please follow this format:\n`{commandPrefix}timer prep "@player1 player2 @player3..." gamename*`.\n***** - These items are optional'
-
-            ctx.command.reset_cooldown(ctx)
+        if isinstance(error, commands.CommandOnCooldown):
+            msg = f"You're are already prepping a timer in this channel. Please cancel the current timer and try again.\n" 
             await ctx.channel.send(msg)
+
         else:
-            ctx.command.reset_cooldown(ctx)
-            await traceBack(ctx,error)
+            if isinstance(error, commands.MissingRequiredArgument):
+                if error.param.name == 'userList':
+                    msg = "You're missing players to prep the timer."
+            elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+              msg = ""
+
+            if msg:
+                if ctx.command.name == "prep":
+                    msg += f'Please follow this format:\n`{commandPrefix}timer prep "@player1 player2 @player3..." gamename*`.\n***** - These items are optional'
+
+                ctx.command.reset_cooldown(ctx)
+                await ctx.channel.send(msg)
+            else:
+                ctx.command.reset_cooldown(ctx)
+                await traceBack(ctx,error)
 
 
-    @commands.cooldown(1, float('inf'), type=commands.BucketType.user) 
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
     @timer.command()
     async def prep(self, ctx, userList, *, game="D&D Game"):
         def startEmbedcheck(r, u):
@@ -465,7 +470,7 @@ class Timer(commands.Cog):
 
                 if notValidConsumables:
                     if not resume:
-                        await channel.send(f"```These items were not found in your character's consumables:\n`{notValidConsumables}````")
+                        await channel.send(f"```These items were not found in your character's consumables:\n{notValidConsumables}```")
                     return False
                 
                 if not gameConsumables:
