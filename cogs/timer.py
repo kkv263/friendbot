@@ -279,7 +279,7 @@ class Timer(commands.Cog):
     @timer.command()
     async def signup(self,ctx, char="", author="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
-            signupFormat = f'Please follow this format:\n`{commandPrefix}timer signup "charactername" "consumable list"'
+            signupFormat = f'Please follow this format:\n{commandPrefix}timer signup "charactername" "consumable list"'
             charEmbed = discord.Embed()
             charEmbedmsg = None
             channel = ctx.channel
@@ -293,7 +293,11 @@ class Timer(commands.Cog):
 
             if f'{commandPrefix}timer signup' == char.content.strip() or f'{commandPrefix}t signup' == char.content.strip():
                 if ctx.invoked_with != "resume":
-                    await channel.send(content=f'```You did not input a character, please try again. {signupFormat}```')
+                    if role != "DM":
+                        await channel.send(content=f'```You did not input a character, please try again. {signupFormat}```')
+                    else:
+                        await channel.send(content=f'```You did not input a character, please try again. Please follow this format:\n{commandPrefix}timer signup "charactername"```') 
+
                 return False
 
             if 'timer signup ' in char.content or 't signup ' in char.content:
@@ -436,7 +440,7 @@ class Timer(commands.Cog):
                 return False 
 
 
-            if consumablesList:
+            if consumablesList and role != "DM":
                 charConsumables = cRecord[0]['Consumables'].split(', ')
                 gameConsumables = []
                 checkedIndices = []
