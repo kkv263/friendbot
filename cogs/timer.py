@@ -1174,19 +1174,30 @@ class Timer(commands.Cog):
                 if 'Double Items Buff' in char[1]:
                     unset = {'Double Items Buff':1}
 
-                if char[1]['Level'] in (4,10,16) and leftCP > float(cpSplit[1]):
-                    crossCP = leftCP - float(cpSplit[1])
-                    if char[1]['Level'] == 4:
+                cpThreshHold = 0
+                charLevel = char[1]['Level'] - 1
+                crossTP = 0
+                crossCP = leftCP
+
+                if charLevel <= 4:
+                    cpThreshHold = 16
+                    if (charLevel * 4) + cp > cpThreshHold:
+                        crossCP += ((charLevel * 4) + cp) - cpThreshHold
                         crossTP = int(decimal.Decimal((crossCP / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
                         crossTier = 'T2 TP'
-                    else:
-                        crossTP = crossCP
-
-                    if char[1]['Level'] == 10:
+                else:
+                    if charLevel <= 10:
+                        cpThreshHold = 64
                         crossTier = 'T3 TP'
-                    elif char[1]['Level'] == 16:
+                    elif charLevel <= 16:
+                        cpThreshHold = 112
                         crossTier = 'T4 TP'
 
+                    if (((charLevel-4) * 8) + cp + 16) > cpThreshHold:
+                        crossCP += (((charLevel-4) * 8) + cp + 16) - cpThreshHold
+                        crossTP = crossCP
+
+                if crossTP > 0:
                     print(tp)
                     tp -= crossTP
 
