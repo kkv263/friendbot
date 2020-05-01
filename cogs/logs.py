@@ -17,19 +17,23 @@ class Log(commands.Cog):
     @commands.has_any_role('Mod Friend', 'Admins', 'Trial Mod Friend')
     async def check(self, ctx, numLogs=1):
         # PLayer log channel
+        # This is the channel where the bot will check the logs. If you're using a test channel grab the id and put it here
         channel = self.bot.get_channel(551994782814044170) 
 
-        # Test
-        # channel = self.bot.get_channel(577227687962214406) 
         numLogs = int(numLogs)
 
+        # Number of logs to check, from most recent. You can also set a limit. If it's greater than 10... stop.
         if numLogs > 10:
             return
 
+
+        # Here it will check the logs with old log and new log.
+        # This is actually STEP 2 so check STEP 1 first
         def checkLog(oldMsgSplit,msgSplit, gpMsgSplit):
             oldCpString=oldTpString=newTpString=newCpString=newGpString=oldGpString = ""
             print(gpMsgSplit)
 
+            # Check if CP and TP in the old log
             for o in oldMsgSplit:
                 if "CP" in o:
                     oldCpString = o
@@ -40,6 +44,8 @@ class Log(commands.Cog):
                 if oldCpString and oldTpString:
                     break
 
+
+            # Check for CP TP GP in new log.
             for m in msgSplit:
                 if "CP" in m:
                     newCpString = m
@@ -59,6 +65,8 @@ class Log(commands.Cog):
                        oldGpString = g
                        break
 
+            # Uses regex here. Because.... people like to format logs differently. I believe what I'm looking for is CP and "Level" here to get the CP. 
+            # TP and GP the same way
             patternCP = re.compile(r'([\d.]{0,})(?=CP)\S+(?<=Level)(\d+)[\S?]{0,}\((.*?)\)', re.I)
             oldlistCP = patternCP.search(oldCpString.replace(" ",""))
             newlistCP = patternCP.search(newCpString.replace(" ",""))
@@ -80,6 +88,7 @@ class Log(commands.Cog):
             oldlistGP = patternGP.findall(oldGpString.replace(" ","").replace(',', ""))
             newlistGP = patternGP.findall(newGpString.replace(" ","").replace(',', ""))
 
+            # I print stuff to make sure math is right.
             # [1] = CP added, [2] = Current Level, [3] = Current CP / Total CP
             print(oldlistCP.groups())
             print(newlistCP.groups())
@@ -88,6 +97,7 @@ class Log(commands.Cog):
             print(oldlistGP)
             print(newlistGP)
 
+            # Here I check if TP Is correct
             addTP = float(newlistTP.group(1))
             if oldlistTP.group(5) != " ":
                 oldCurrentTP = oldlistTP.group(5).split('/')
@@ -103,6 +113,7 @@ class Log(commands.Cog):
             cpCheck = False
             gpCheck = False
 
+            # This checks the MIT sheet to make sure its the correct TP.
             tpItem = newlistTP.group(2).strip()
             queryTP = sheet.findall(re.compile(tpItem, re.IGNORECASE))[0]
             itemMaxTP = int(sheet.cell(3,queryTP.col).value[0:2])
@@ -117,6 +128,7 @@ class Log(commands.Cog):
                 secondCurrentTP[0] = float(secondCurrentTP[0].replace("TP",""))
                 secondCurrentTP[1] = float(secondCurrentTP[1].replace("TP",""))
 
+            # A bunch of math with CP and TP and GP to make sure they all link up. This is the final check before they get the check mark.
             if (float(oldCurrentTP[0]) == float(oldCurrentTP[1])):
                 if newlistTP.group(5) != " ": 
                     if abs(addTP - float(currentTP[1])) > 0 and float(currentTP[1]) == itemMaxTP:
@@ -156,6 +168,8 @@ class Log(commands.Cog):
             return cpCheck and float(currentCP[1]) == levelCP and tpCheck and gpCheck
 
         # TODO check multiple logs
+        # STEP 1:
+        # Check the channel where logs are located, and basically find keywords. Like CP / TP. Split up those messages.
         msgFound = False
         async with channel.typing():
             async for message in channel.history(limit=numLogs, oldest_first=False):
