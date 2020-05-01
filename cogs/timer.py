@@ -1392,7 +1392,7 @@ class Timer(commands.Cog):
 
             if uRecord:
                 if 'Noodles' not in uRecord:
-                    uRecord['Noodles'] = 0
+                    uRecord['Noodles'] = 0 + noodlesGained
                 else:
                     noodles += uRecord['Noodles'] + noodlesGained
 
