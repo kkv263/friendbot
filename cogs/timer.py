@@ -912,7 +912,11 @@ class Timer(commands.Cog):
                     userInfo =  await ctx.invoke(self.timer.get_command('signup'), role=role, char=None, author=addUser, resume=resume) 
 
                 if userInfo:
-                    if not resume and dmChar :
+                    if not resume and dmChar:
+                        if dmChar[0] is addUser:
+                            await channel.send("As the DM you cannot add any characters to your game.") 
+                            return start
+
                         addEmbed = discord.Embed()
                         if role != "":
                             addEmbed.title = f"Add {userInfo[1]['Name']} to timer?"
@@ -1407,24 +1411,24 @@ class Timer(commands.Cog):
 
             if uRecord:
                 if 'Noodles' not in uRecord:
-                    uRecord['Noodles'] = 0 + noodlesGained
+                    uRecord['Noodles'] = 0
                 else:
                     noodles += uRecord['Noodles'] + noodlesGained
 
             noodleString = "Current Noodles: " + str(noodles)
             dmRoleNames = [r.name for r in dmChar[0].roles]
-            if noodles >= 150 and 'Ramen Noodle' in dmRoleNames:
-                if 'Spicy Noodle' not in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'Spicy Noodle')
+            if noodles >= 150 and 'Ascended Noodle' in dmRoleNames:
+                if 'Immortal Noodle' not in dmRoleNames:
+                    noodleRole = get(guild.roles, name = 'Immortal Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 150 games. This user has 150+ noodles")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'Ramen Noodle'))
-                    noodleString += "\nSpicy Noodle Role recieved! :tada:"
+                    noodleString += "\nImmortal Noodle Role recieved! :tada:"
             elif noodles >= 100 and 'True Noodle' in dmRoleNames:
-                if 'Ramen Noodle' not in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'Ramen Noodle')
+                if 'Ascended Noodle' not in dmRoleNames:
+                    noodleRole = get(guild.roles, name = 'Ascended Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ noodles")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
-                    noodleString += "\nRamen Noodle Role recieved! :tada:"
+                    noodleString += "\nAscended Noodle Role recieved! :tada:"
 
             elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
                 if 'True Noodle' not in dmRoleNames:
@@ -1613,7 +1617,7 @@ class Timer(commands.Cog):
 
                 try:
                     statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
-                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodles}}, upsert=True)
+                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodlesGained}}, upsert=True)
                     usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
                     usersCollection.bulk_write(usersData)
                     #TODO: why is it giving one rep?
