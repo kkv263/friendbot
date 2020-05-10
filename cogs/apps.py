@@ -55,7 +55,7 @@ class Apps(commands.Cog):
             if appNum in m.content:
                 sameMessage = True
 
-            return ('approve #' in m.content.lower() or 'deny #' in m.content.lower() or 'under15 #' in m.content.lower()) and sameMessage
+            return ('approve #' in m.content.lower() or 'deny #' in m.content.lower() or 'under17 #' in m.content.lower()) and sameMessage
 
         # appchannel
         channelID = 388591318814949376
