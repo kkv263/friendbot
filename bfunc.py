@@ -87,13 +87,17 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     if query is None:
         return list(collection.find()), apiEmbed, apiEmbedmsg
 
+    query = query.strip()
     query = query.replace('(', '\\(')
     query = query.replace(')', '\\)')
+    query = query.replace('+', '\\+')
 
     if singleItem:
-        records = list(collection.find({"Name": query.strip()}))
+        records = list(collection.find({"Name": query}))
     else:
-        records = list(collection.find({"Name": {"$regex": query.strip(), '$options': 'i' }}))
+        records = list(collection.find({"Name": {"$regex": query, '$options': 'i' }}))
+
+    query = query.replace("\\", "")
 
     print(records)
 
@@ -114,9 +118,9 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                 sameMessage = False
                 if apiEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in numberEmojis[:min(len(records), 9)]) or (str(r.emoji) == '❌') and u == author
+                return ((r.emoji in numberEmojis[:min(len(records), 9)]) or (str(r.emoji) == '❌')) and u == author
 
-            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific", value=infoString, inline=False)
+            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nIf the result you are looking for is not here please proceed the command with ❌ and be more specific", value=infoString, inline=False)
             if not apiEmbedmsg:
                 apiEmbedmsg = await channel.send(embed=apiEmbed)
             else:
@@ -172,9 +176,9 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌') and u == author
+                return ((r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌')) and u == author
 
-            charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character.", value=infoString, inline=False)
+            charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character. If you do not see your character here please proceed with ❌ and be more specific with your query.", value=infoString, inline=False)
             charEmbedmsg = await channel.send(embed=charEmbed)
             for num in range(0,min(len(charRecords), 9)): await charEmbedmsg.add_reaction(numberEmojis[num])
             await charEmbedmsg.add_reaction('❌')

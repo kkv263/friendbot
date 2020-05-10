@@ -1256,7 +1256,16 @@ class Character(commands.Cog):
                     try:
                         playersCollection = db.players
                         deadCollection = db.dead
+                        usersCollection = db.users
                         deadCollection.insert_one(charDict)
+
+                        usersRecord = list(usersCollection.find({"User ID": charDict['User ID']}))[0]
+                        if 'Games' not in usersRecord:
+                            usersRecord['Games'] = charDict['Games']
+                        else:
+                            usersRecord['Games'] += charDict['Games']
+
+                        usersCollection.update_one({'User ID': charDict['User ID']}, {"$set": {'Games': usersRecord['Games']}}, upsert=True)
                         playersCollection.delete_one({'_id': charID})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
@@ -1376,6 +1385,14 @@ class Character(commands.Cog):
                                 deadCollection = db.dead
                                 deadCollection.insert_one(charDict)
                                 playersCollection.delete_one({'_id': charID})
+                                usersRecord = list(collection.find({"User ID": charDict['User ID']}))[0]
+
+                                if 'Games' not in usersRecord:
+                                    usersRecord['Games'] = charDict['Games']
+                                else:
+                                    usersRecord['Games'] += charDict['Games']
+
+                                usersCollection.update_one({'User ID': charDict['User ID']}, {"$set": {'Games': usersRecord['Games']}}, upsert=True)
                                 pass
                             except Exception as e:
                                 print ('MONGO ERROR: ' + str(e))
@@ -1530,10 +1547,14 @@ class Character(commands.Cog):
                 totalGamesPlayed = 0
                 charString = ""
                 for charDict in charRecords:
-                    totalGamesPlayed += charDict['Games']
+                    totalGamesPlayed += charDict['Games'] 
+                    
                     charString += f"• **{charDict['Name']}** (Lv.{charDict['Level']}): {charDict['Race']}, {charDict['Class']}\n"
                     if 'Guild' in charDict:
                         charString += f"\a\a+ Guild: {charDict['Guild']}\n"
+
+                if 'Games' in userRecords:
+                    totalGamesPlayed += userRecords['Games']
 
                 if "Campaigns" in userRecords:
                     campaignString = ""

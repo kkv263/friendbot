@@ -946,10 +946,10 @@ class Timer(commands.Cog):
                     pass
             elif '%' in timeKey:
                 if not resume:
-                    await channel.send(content='Your character is dead, you cannot be re-added to the timer.')
-            elif '+' in timeKey or 'Full Rewards' in timeKey or 'No Rewards':
+                    await channel.send(content='Your character is dead, they cannot be re-added to the timer.')
+            elif '+' in timeKey or 'Full Rewards' in timeKey or 'No Rewards' in timeKey:
                 if not resume:
-                    await channel.send(content='You have already been added to the timer')
+                    await channel.send(content='Your character has already been added to the timer.')
             elif '-' in timeKey:
                 if not resume:
                     await channel.send(content='You have been re-added to the timer')
@@ -1002,7 +1002,7 @@ class Timer(commands.Cog):
                 if not resume:
                     await ctx.channel.send(content=f"You have already been removed from the timer.")  
             
-            elif 'Full Rewards' in userFound or 'No Rewards':
+            elif 'Full Rewards' in userFound or 'No Rewards' in userFound:
                 start[userFound].remove(userInfo)
                 if death:
                     start[f"%Partial Rewards:{userFound.split(':')[1]}?{endTime}"] = [userInfo]
