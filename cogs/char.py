@@ -488,7 +488,7 @@ class Character(commands.Cog):
                             charInv = sorted(charInv, key = lambda i: i['Name']) 
 
                             typeEquipmentList = []
-                            for i in range (0,v):
+                            for i in range (0,int(v)):
                                 charInvString = f"Please choose from the choices below for {type[0]} {i+1}:\n"
                                 alphaIndex = 0
                                 for c in charInv:
