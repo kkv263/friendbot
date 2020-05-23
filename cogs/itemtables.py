@@ -4,7 +4,7 @@ import re
 from random import randint
 from discord.ext import commands
 
-from bfunc import tierArray, tpArray, ritTierArray, ritSubArray, ritSheet, sheet, numberEmojis, numberEmojisMobile, alphaEmojis,left,right,back, refreshTime, refreshKey, commandPrefix
+from bfunc import numberEmojis, numberEmojisMobile, alphaEmojis,left,right,back,  commandPrefix
 
 
 class ItemTables(commands.Cog):

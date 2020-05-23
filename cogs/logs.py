@@ -3,7 +3,7 @@ import asyncio
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import sheet, refreshKey, refreshTime, callAPI, db
+from bfunc import callAPI, db
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 

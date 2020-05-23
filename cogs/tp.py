@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, traceBack
+from bfunc import db, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, traceBack
 
 class Tp(commands.Cog):
     def __init__ (self, bot):

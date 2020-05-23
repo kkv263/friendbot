@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, headers, commandPrefix, numberEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack
+from bfunc import db, commandPrefix, numberEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack
 
 class Shop(commands.Cog):
     def __init__ (self, bot):

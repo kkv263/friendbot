@@ -8,7 +8,7 @@ from discord.utils import get
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
 from urllib.parse import urlparse 
-from bfunc import refreshKey, refreshTime, numberEmojis, alphaEmojis, commandPrefix, left,right,back, headers, db, callAPI, checkForChar, timeConversion, traceBack
+from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack
 
 class Character(commands.Cog):
     def __init__ (self, bot):

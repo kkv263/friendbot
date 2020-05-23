@@ -21,14 +21,14 @@ def timeConversion (time):
 		minutes = time//60
 		return ('%d Hours %d Minutes' %(hours,minutes))
 		
-def getTiers (tiers):
-    getTierArray = []
-    for i in range(len(tiers)):
-        if tiers[i] != "":
-            getTierArray.append(i)
-    getTierArray.append(len(sheet.row_values(3)) + 1)
+# def getTiers (tiers):
+#     getTierArray = []
+#     for i in range(len(tiers)):
+#         if tiers[i] != "":
+#             getTierArray.append(i)
+#     getTierArray.append(len(sheet.row_values(3)) + 1)
 
-    return getTierArray
+#     return getTierArray
 
 async def traceBack (ctx,error):
     ctx.command.reset_cooldown(ctx)
@@ -237,16 +237,16 @@ def refreshKey (timeStarted):
 #   "client_x509_cert_url": os.environ['C_CERT']
 # }
 
-scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
+# scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+# creds = ServiceAccountCredentials.from_json_keyfile_dict(gSecret, scope)
 
-gClient = gspread.authorize(creds)
-refreshTime = time.time()
+# gClient = gspread.authorize(creds)
+# refreshTime = time.time()
 
 # Find a workbook by name and open the first sheet
 # Make sure you use the right name here.
-sheet = gClient.open("Magic Items Document").sheet1
-ritSheet = gClient.open("Magic Items Document").get_worksheet(1)
+# sheet = gClient.open("Magic Items Document").sheet1
+# ritSheet = gClient.open("Magic Items Document").get_worksheet(1)
 # charDatabase = gClient.open("Character Database").worksheet("Character Database")
 # refListSheet = gClient.open("Character Database").worksheet("Reference Lists")
 
@@ -260,13 +260,13 @@ currentTimers = []
 gameCategory = ["🎲 game rooms", "🐉 campaigns", "mod friends"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True', '']
 noodleRoleArray = ['Good Noodle', 'Elite Noodle', 'True Noodle', 'Ramen Noodle', 'Spicy Noodle']
-tierArray = getTiers(sheet.row_values(2))
-tpArray = sheet.row_values(3)
+# tierArray = getTiers(sheet.row_values(2))
+# tpArray = sheet.row_values(3)
 commandPrefix = '$'
 timezoneVar = 'US/Central'
 
-ritTierArray = getTiers(ritSheet.row_values(2))
-ritSubArray = ritSheet.row_values(3)
+# ritTierArray = getTiers(ritSheet.row_values(2))
+# ritSubArray = ritSheet.row_values(3)
 
 left = '\N{BLACK LEFT-POINTING TRIANGLE}'
 right = '\N{BLACK RIGHT-POINTING TRIANGLE}'
