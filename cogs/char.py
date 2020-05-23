@@ -119,6 +119,32 @@ class Character(commands.Cog):
           'Games': 0
         }
 
+        if not name:
+            await channel.send(content="````The name of your character cannot be blank! Please try again.```")
+            self.bot.get_command('create').reset_cooldown(ctx)
+            return
+
+        if not level:
+            await channel.send(content="```The level of your character cannot be blank! Please try again.```")
+            self.bot.get_command('create').reset_cooldown(ctx)
+            return
+
+        if not race:
+            await channel.send(content="```The race of your character cannot be blank! Please try again.```")
+            self.bot.get_command('create').reset_cooldown(ctx)
+            return
+
+        if not cclass:
+            await channel.send(content="```The class of your character cannot be blank! Please try again.```")
+            self.bot.get_command('create').reset_cooldown(ctx)
+            return
+        
+        if not bg:
+            await channel.send(content="```The background of your character cannot be blank! Please try again.```")
+            self.bot.get_command('create').reset_cooldown(ctx)
+            return
+
+
         lvl = int(level)
         msg = ""
         # name should be less then 50 chars
@@ -321,7 +347,7 @@ class Character(commands.Cog):
                     msg += "- One or more of these reward items cannot be purchased at Level " + str(lvl) + "\n"
                     break
 
-                if lvl > 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
+                if lvl >= 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
                     tier1CountMNC -= 1
                 elif int(item['Tier']) == 2:
                     tier2Count -= 1
@@ -334,6 +360,8 @@ class Character(commands.Cog):
                     else:
                         rewardMagics.append(item)
 
+
+            print("tier1rewards")
             print(tier1Rewards)
             for item in tier1Rewards:
                 if tier1Count > 0 and tier2Count <= 0:
@@ -480,7 +508,7 @@ class Character(commands.Cog):
                             type = k.split('[')
                             print(type)
                             invCollection = db.shop
-                            if 'Spellcasting Focus' in type[1]:
+                            if 'Instrument' in type[1]:
                                 charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[1].replace(']','')}.*")]}}))
                             else:
                                 charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(']','')}.*")]}}))
