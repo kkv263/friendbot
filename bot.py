@@ -119,7 +119,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar.add_field(name=f'{commandPrefix}death "character name"', value="If your character has died during your game, this command is available. You can choose to retire or revive your character.", inline=False)
     
     helpEmbedTimerOne.title = f"Available Timer Commands: Before/After a timer.\n(Only available in **Game Rooms** and **Campaigns**) - {commandPrefix}timer (aliases={commandPrefix}t)"
-    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep "@player1, @player2, @player3,..." gamename(*) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to recieve rewards. (*) You can choose optionally to name your game.", inline=False)
+    helpEmbedTimerOne.add_field(name=commandPrefix + 'timer prep "@player1, @player2, @player3,..." gamename(*) ', value="Preps a game for @player's and #guilds. This allows the DM and players to signup characters to receive rewards. (*) You can choose optionally to name your game.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer cancel', value="Cancels the current timer prep.", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer guild #guild1, #guild2...', value="**DM Only**: Adds a guild to the game. Guild rewards will apply if appropriate", inline=False)
     helpEmbedTimerOne.add_field(name=commandPrefix + 'timer signup "charactername" "consumable list"', value="Signs up your character to participate and be eligible for rewards", inline=False)

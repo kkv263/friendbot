@@ -304,7 +304,8 @@ class Character(commands.Cog):
             if lvl == 4:
                 tier1CountMNC = 1
             elif lvl == 5:
-                tier1Count = 1
+                if 'Elite Noodle' in roles:
+                    tier1Count = 1
                 tier1CountMNC = 1
             elif lvl == 6:
                 tier1CountMNC = 1
@@ -349,17 +350,13 @@ class Character(commands.Cog):
 
                 if lvl >= 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
                     tier1CountMNC -= 1
-                elif int(item['Tier']) == 2:
+                    rewardMagics.append(item)
+                elif int(item['Tier']) == 2: 
                     tier2Count -= 1
+                    rewardMagics.append(item)
                 elif int(item['Tier']) == 1:
                     tier1Rewards.append(item)
     
-                if int(item['Tier']) == 1:
-                    if 'Consumable' in item:
-                        rewardConsumables.append(item) 
-                    else:
-                        rewardMagics.append(item)
-
 
             print("tier1rewards")
             print(tier1Rewards)
@@ -368,7 +365,11 @@ class Character(commands.Cog):
                     tier1Count -= 1
                 else:
                     tier2Count -= 1
-                rewardConsumables.append(item)
+
+                if 'Consumable' not in item:
+                    rewardMagics.append(item)
+                else:
+                    rewardConsumables.append(item)
 
 
             if tier1CountMNC < 0 or tier1Count < 0 or tier2Count < 0:
@@ -624,7 +625,7 @@ class Character(commands.Cog):
         if msg == "":
             featLevels = []
             featChoices = []
-            featsPickedList = []
+            featsChosen = []
             if rRecord['Name'] == 'Human (Variant)':
                 featLevels.append('Human (Variant)')
 
@@ -643,7 +644,7 @@ class Character(commands.Cog):
             if not featsChosen and not statsFeats and not charEmbedmsg:
                 return
 
-            if featsChosen != list():
+            if featsChosen:
                 charDict['Feats'] = featsChosen 
             else: 
                 charDict['Feats'] = "None" 
@@ -1595,7 +1596,7 @@ class Character(commands.Cog):
                 if 'Noodles' in userRecords:
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"
                 else:
-                    charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to recieve Noodles!)"
+                    charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to receive Noodles!)"
                 charEmbed.add_field(name='Characters', value=charString, inline=False)
 
                 if not charEmbedmsg:
@@ -1644,7 +1645,7 @@ class Character(commands.Cog):
                 footer += f'\n❕ You need to level up! Use {commandPrefix}levelup before playing in your next game.'
 
             if charLevel == 4 or charLevel == 10 or charLevel == 16:
-                footer += f'\n❕ You will no longer recieve Tier {role} TP the next time you level. Please plan accordingly'
+                footer += f'\n❕ You will no longer receive Tier {role} TP the next time you level. Please plan accordingly'
 
             if 'Death' in charDict:
                 statusEmoji = "⚰️"
@@ -2734,6 +2735,7 @@ class Character(commands.Cog):
 
         featChoices = []
         featsPickedList = []
+        featsChosen = ""
 
         for f in featLevels:
                 charEmbed.clear_fields()
@@ -2935,7 +2937,7 @@ class Character(commands.Cog):
                     
                     featPicked = featChoices[(page * perPage) + alphaEmojis.index(react.emoji)]
                     featsPickedList.append(featPicked)
-                    print(featPicked)
+                    
                     def slashFeatEmbedcheck(r, u):
                         sameMessage = False
                         if charEmbedmsg.id == r.message.id:
@@ -2981,14 +2983,12 @@ class Character(commands.Cog):
                                 charStats[fb[:3]] =  int(charStats[fb[:3]]) + int(fb[-1:])
 
                     if featsPickedList != list():
-                        featsPickedList = ', '.join(str(string['Name']) for string in featsPickedList)            
-                    
-                    print(featsPickedList)
+                        featsChosen = ', '.join(str(string['Name']) for string in featsPickedList)            
 
         if ctx.invoked_with == "levelup":
               charEmbed.description = f"{race}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
 
-        return featsPickedList, charStats, charEmbedmsg        
+        return featsChosen, charStats, charEmbedmsg        
 
 
 def setup(bot):

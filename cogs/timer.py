@@ -186,7 +186,7 @@ class Timer(commands.Cog):
                     
                 if playerChar:
                     if playerRoster.index(playerChar[0]) == 0:
-                        prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{author.display_name} **(DM)**", value= f"{playerChar[1]['Name']} will recieve DM rewards", inline=False)
+                        prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{author.display_name} **(DM)**", value= f"{playerChar[1]['Name']} will receive DM rewards", inline=False)
                         if playerChar[0] in [s[0] for s in signedPlayers]:
                             signedPlayers[0] = playerChar
                         else:
@@ -407,7 +407,7 @@ class Timer(commands.Cog):
 
             if next((s for s in cRecord[0].keys() if 'GID' in s), None):
                 if not resume:
-                    await channel.send(content=f'```You cannot signup with `{cRecord[0]["Name"]}`. This character has still not recieved thier rewards from their last game, please wait until the session log has been checked off.```')
+                    await channel.send(content=f'```You cannot signup with `{cRecord[0]["Name"]}`. This character has still not received thier rewards from their last game, please wait until the session log has been checked off.```')
                 return False    
 
             validLevelStart = 1
@@ -873,7 +873,7 @@ class Timer(commands.Cog):
 
                 else:
                     if not resume:
-                        await ctx.channel.send(content=f"{rewardUser} is not on the timer to recieve rewards.")
+                        await ctx.channel.send(content=f"{rewardUser} is not on the timer to receive rewards.")
             print(start)
             print('dmChar')
             print(dmChar)
@@ -1422,33 +1422,33 @@ class Timer(commands.Cog):
                     noodleRole = get(guild.roles, name = 'Immortal Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 150 games. This user has 150+ noodles")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'Ramen Noodle'))
-                    noodleString += "\nImmortal Noodle Role recieved! :tada:"
+                    noodleString += "\nImmortal Noodle Role received! :tada:"
             elif noodles >= 100 and 'True Noodle' in dmRoleNames:
                 if 'Ascended Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Ascended Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ noodles")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
-                    noodleString += "\nAscended Noodle Role recieved! :tada:"
+                    noodleString += "\nAscended Noodle Role received! :tada:"
 
             elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
                 if 'True Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'True Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 60 games. This user has 60+ noodles")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
-                    noodleString += "\nTrue Noodle Role recieved! :tada:"
+                    noodleString += "\nTrue Noodle Role received! :tada:"
             
             elif noodles >= 30 and 'Good Noodle' in dmRoleNames:
                 if 'Elite Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Elite Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 30 games. This user has 30+ noodles")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
-                    noodleString += "\nElite Noodle Role recieved! :tada:"
+                    noodleString += "\nElite Noodle Role received! :tada:"
 
             elif noodles >= 10:
                 if 'Good Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Good Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"DMed 10 games. This user has 10+ noodles")
-                    noodleString += "\nGood Noodle Role recieved! :tada:"
+                    noodleString += "\nGood Noodle Role received! :tada:"
 
             if role != "": 
                 stopEmbed.clear_fields() 
@@ -1761,7 +1761,7 @@ class Timer(commands.Cog):
                             pConsumables = ['None']
                             pTemp.append(guild.get_member(int(playerResumeList[p])))
                             if p == 0:
-                                pName = playerInfoList[p].split(' will recieve DM rewards')[0].split('=')[1]
+                                pName = playerInfoList[p].split(' will receive DM rewards')[0].split('=')[1]
                                
                             else:
                                 pName = playerInfoList[p].split('=')[0]
