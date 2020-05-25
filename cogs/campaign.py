@@ -177,10 +177,6 @@ class Camapign(commands.Cog):
             await channel.send(f"You do not have the Campaign Master role to use this command.")
             return  
 
-        if 'Campaign Master' not in roles:
-            await channel.send(f"You do not have the Campaign Master role to use this command.")
-            return  
-
         if user == list() or len(user) > 1:
             await channel.send(f"I could not find the user you were trying to remove from the campaign. Please try again.")
             return  
