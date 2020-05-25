@@ -15,7 +15,7 @@ class Mod(commands.Cog):
         pass
 
     
-    # Lookup a users stats and thier characters or a character if there's no "mention"
+    # Lookup a users stats and their characters or a character if there's no "mention"
     @mod.command()
     async def lookup(self, ctx, dbName, *, name):
         channel = ctx.channel
