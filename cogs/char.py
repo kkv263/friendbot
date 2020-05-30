@@ -207,11 +207,13 @@ class Character(commands.Cog):
                     bankTP1 = 8;
                     bankTP2 = (lvl-5) * 4
                     highestTier = 2
-                
-                magicItemsTier2 = []
 
+                magicItemsTier2 = []
                 isLeftoverT1 = False
                 isLeftoverT2 = False
+                buyT2 = False
+                buyT1 = False
+
                 for item in allMagicItemsString:
                     if int(item['Tier']) > highestTier:
                         return "- One or more of these magic items cannot be purchased at Level " + str(lvl), 0, 0
@@ -222,6 +224,7 @@ class Character(commands.Cog):
                             magicItemsTier2.append(item)
                             continue
                         else:
+                            buyT1 = True
                             bankTP1 = costTP - bankTP1
                             if bankTP1 > 0:
                               magicItemsCurrent.append(item)                       
@@ -239,31 +242,36 @@ class Character(commands.Cog):
                         magicItemsCurrentItem = magicItemsCurrent[1].split('/')
                         bankTP2 = int(magicItemsCurrentItem[1]) - int(magicItemsCurrentItem[0]) - bankTP2
                         if bankTP2 > 0:
+                            buyT2 = True
                             magicItemsCurrent[1] = f'{int(magicItemsCurrentItem[1]) - bankTP2}/{magicItemsCurrentItem[1]}'
                             charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
-                            isLeftoverT2= False
+                            isLeftoverT2 = False
                         else:
                             bankTP2 = abs(bankTP2)
                             magicItemsBought.append(magicItemsCurrent[0])
                             magicItemsCurrent = []
                             charDict['Current Item'] = ""
-                            isLeftoverT2= True
+                            isLeftoverT2 = True
 
                     if bankTP2 > 0:
                         costTP = int(item['TP'])
                         bankTP2 = costTP - bankTP2
                         if bankTP2 > 0:
+                          buyT2 = True
                           magicItemsCurrent.append(item)                       
                           magicItemsCurrent.append(f'{costTP - bankTP2}/{costTP}')
                           charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
+                          isLeftoverT2 = False
                         else:
                           bankTP2 = abs(bankTP2)
                           magicItemsBought.append(item)
+                          isLeftoverT2 = True
 
-                if not isLeftoverT1:
+                
+                if not isLeftoverT1 and buyT1:
                     bankTP1 = 0
 
-                if not isLeftoverT2:
+                if not isLeftoverT2 and buyT2:
                     bankTP2 = 0
 
                 return magicItemsBought, bankTP1, bankTP2
@@ -316,7 +324,7 @@ class Character(commands.Cog):
                 tier2Count = 1
             elif lvl == 8:
                 tier1CountMNC = 1
-                tier1Count = 2
+                tier1Count = 1
                 tier2Count = 1
             elif lvl == 11 or lvl == 9:
                 if 'Good Noodle' in roles:
@@ -373,7 +381,7 @@ class Character(commands.Cog):
 
 
             if tier1CountMNC < 0 or tier1Count < 0 or tier2Count < 0:
-                msg += f"- You do not have the right roles for these reward items. You can only choose {startt1MNC} Tier 1 (Non Consumable) Item, {startt1} Tier 1 Item, and {startt2} Tier 2 Items\n"
+                msg += f"- You do not have the right roles for these reward items. You can only choose {startt1MNC} [Tier 1 (Non Consumable) Item], {startt1} [Tier 1 Item], and {startt2} [Tier 2 Item]\n"
             else:
                 for r in rewardConsumables:
                     if charDict['Consumables'] != "None":
@@ -600,7 +608,7 @@ class Character(commands.Cog):
             if lvl > 5:
                 totalGP = (lvl-6) * 960 + 1920
 
-            charDict['GP'] = int(bRecord['GP'] + totalGP)
+            charDict['GP'] = int(bRecord['GP']) + totalGP
         
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
             msg += '- One or more of your stats are not numbers. Please check your spelling\n'
@@ -692,22 +700,25 @@ class Character(commands.Cog):
 
 
         if msg:
-            if charEmbedmsg:
+            if charEmbedmsg and charEmbedmsg != "Fail":
                 await charEmbedmsg.delete()
+            elif charEmbedmsg == "Fail":
+                msg = "- You have either canceled the command or a value was not found."
             await ctx.channel.send(f'{author.display_name}, There were error(s) in creating your character:\n```{msg}```')
             self.bot.get_command('create').reset_cooldown(ctx)
             return 
 
         charEmbed.clear_fields()    
         charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
-        charEmbed.description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
+        charEmbed.description = f"**Race:** {charDict['Race']}\n**Class:** {charDict['Class']}\n**Background:** {charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
+
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
         if  bankTP1 > 0:
             charDict['T1 TP'] = bankTP1
-            charEmbed.add_field(name='Unused T1 TP', value=charDict['T1 TP'], inline=True)
+            charEmbed.add_field(name=':warning: Unused T1 TP', value=charDict['T1 TP'], inline=True)
         if  bankTP2 > 0:
             charDict['T2 TP'] = bankTP2
-            charEmbed.add_field(name='Unused T2 TP', value=charDict['T2 TP'], inline=True)
+            charEmbed.add_field(name=':warning: Unused T2 TP', value=charDict['T2 TP'], inline=True)
         if charDict['Magic Items'] != 'None':
             charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
         if charDict['Consumables'] != 'None':
@@ -1187,7 +1198,7 @@ class Character(commands.Cog):
 
         charEmbed.clear_fields()    
         charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
-        charEmbed.description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
+        charEmbed.description = f"**Race:** {charDict['Race']}\n**Class:** {charDict['Class']}\n**Background:** {charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
         charEmbed.add_field(name='CP, TP, GP', value=f"({charDict['CP']}) CP, {charDict['T1 TP']} TP, {charDict['GP']}gp", inline=True)
         charEmbed.add_field(name='Consumables', value="None", inline=False)
         charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)

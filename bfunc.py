@@ -99,7 +99,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
 
     query = query.replace("\\", "")
 
-    print(records)
+    records = sorted(records, key = lambda i : i ['Name'])
 
     if records == list():
         return None, apiEmbed, apiEmbedmsg
@@ -134,13 +134,13 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                 await apiEmbedmsg.delete()
                 await channel.send('Timed out! Try using the command again.')
                 ctx.command.reset_cooldown(ctx)
-                return None, apiEmbed, apiEmbedmsg
+                return None, apiEmbed, "Fail"
             else:
                 if tReaction.emoji == '❌':
                     await apiEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
                     await apiEmbedmsg.clear_reactions()
                     ctx.command.reset_cooldown(ctx)
-                    return None, apiEmbed, apiEmbedmsg
+                    return None, apiEmbed, "Fail"
             apiEmbed.clear_fields()
             await apiEmbedmsg.clear_reactions()
             return records[int(tReaction.emoji[0]) - 1], apiEmbed, apiEmbedmsg
@@ -168,7 +168,7 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
     else:
         if len(charRecords) > 1:
             infoString = ""
-            charRecords = list(charRecords)
+            charRecords = sorted(list(charRecords), key = lambda i : i ['Name'])
             for i in range(0, min(len(charRecords), 9)):
                 infoString += f"{numberEmojis[i]}: {charRecords[i]['Name']} ({guild.get_member(int(charRecords[i]['User ID']))})\n"
             
