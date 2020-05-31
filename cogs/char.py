@@ -364,10 +364,6 @@ class Character(commands.Cog):
                     rewardMagics.append(item)
                 elif int(item['Tier']) == 1:
                     tier1Rewards.append(item)
-    
-
-            print("tier1rewards")
-            print(tier1Rewards)
             for item in tier1Rewards:
                 if tier1Count > 0 and tier2Count <= 0:
                     tier1Count -= 1
@@ -394,9 +390,6 @@ class Character(commands.Cog):
                     else:
                         charDict['Magic Items'] = r['Name']
 
-            print(tier1CountMNC)
-            print(tier1Count)
-            print(tier2Count)
 
         elif lvl <= 3 and rewardItems != ['']:
             msg += f"- Your character's level does not allow reward items. Please try again."
@@ -420,8 +413,6 @@ class Character(commands.Cog):
                     msg += "- You are missing the level for your multiclass class. Please check your format.\n"
                     break
                 mLevel = mLevel.group()
-                print(m)
-                print(m[:len(m) - len(mLevel)])
                 mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
                 if not mClass:
                     cRecord = None
@@ -515,7 +506,6 @@ class Character(commands.Cog):
                     for k,v in startEquipmentItem.items():
                         if '[' in k and ']' in k:
                             type = k.split('[')
-                            print(type)
                             invCollection = db.shop
                             if 'Instrument' in type[1]:
                                 charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[1].replace(']','')}.*")]}}))
@@ -627,7 +617,6 @@ class Character(commands.Cog):
 
                 if totalPoints != 27:
                     msg += f"- Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
-            print (statsArray)
 
         #feats
         if msg == "":
@@ -666,7 +655,6 @@ class Character(commands.Cog):
             hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
 
         if hpRecords:
-            print(cRecord)
             charDict['HP'] = await characterCog.calcHP(ctx,hpRecords,charDict,lvl)
 
             # Multiclass Requirements
@@ -732,13 +720,11 @@ class Character(commands.Cog):
 
         
         charDictInvString = ""
-        print(charDict['Inventory'])
         for k,v in charDict['Inventory'].items():
             charDictInvString += f"• {k} x{v}\n"
         charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
 
-        print(classStat)
 
         def charCreateCheck(r, u):
             sameMessage = False
@@ -828,8 +814,6 @@ class Character(commands.Cog):
 
         charDict, charEmbedmsg = await checkForChar(ctx, name, charEmbed)
         charID = charDict['_id']
-
-        print(charDict)
 
         lvl = charDict['Level']
         msg = ""
@@ -938,8 +922,6 @@ class Character(commands.Cog):
                     msg += "- You are missing the level for your multiclass class. Please check your format.\n"
                     break
                 mLevel = mLevel.group()
-                print(m)
-                print(m[:len(m) - len(mLevel)])
                 mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
                 if not mClass:
                     cRecord = None
@@ -1032,7 +1014,6 @@ class Character(commands.Cog):
                     for k,v in startEquipmentItem.items():
                         if '[' in k and ']' in k:
                             type = k.split('[')
-                            print(type)
                             invCollection = db.shop
                             if 'Spellcasting Focus' in type[1]:
                                 charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[1].replace(']','')}.*")]}}))
@@ -1586,12 +1567,24 @@ class Character(commands.Cog):
 
                 totalGamesPlayed = 0
                 charString = ""
+                charString2 = ""
+
+                pages = 1
+                pageStops = [0]
+
                 for charDict in charRecords:
                     totalGamesPlayed += charDict['Games'] 
-                    
+                    tempCharString = charString
                     charString += f"• **{charDict['Name']}** (Lv.{charDict['Level']}): {charDict['Race']}, {charDict['Class']}\n"
+
                     if 'Guild' in charDict:
                         charString += f"\a\a+ Guild: {charDict['Guild']}\n"
+
+                    if len(charString) > (1024 * pages):
+                        pageStops.append(len(tempCharString))
+                        pages += 1
+
+                pageStops.append(len(charString))
 
                 if 'Games' in userRecords:
                     totalGamesPlayed += userRecords['Games']
@@ -1608,7 +1601,9 @@ class Character(commands.Cog):
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"
                 else:
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to receive Noodles!)"
-                charEmbed.add_field(name='Characters', value=charString, inline=False)
+
+                for p in range(len(pageStops)-1):
+                    charEmbed.add_field(name=f'Characters pg.{p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
 
                 if not charEmbedmsg:
                     charEmbedmsg = await ctx.channel.send(embed=charEmbed)
@@ -1889,8 +1884,6 @@ class Character(commands.Cog):
                         tempSub = charClass[charClass.find("(")+1:charClass.find(")")]
                     subclasses.append({'Name':charClass, 'Subclass':tempSub, 'Level':charLevel})
 
-                print(subclasses)
-
                 for c in classRecords:
                     for s in subclasses:
                         if c['Name'] in s['Name']:
@@ -2075,7 +2068,6 @@ class Character(commands.Cog):
                 
                 # Feat 
                 featLevels = []
-                print(lvlClass)
                 for c in subclasses:
                     if (int(c['Level']) in (4,8,12,16,19) or ('Fighter' in c['Name'] and int(c['Level']) in (6,14)) or ('Rogue' in c['Name'] and int(c['Level']) == 10)) and lvlClass in c['Name']:
                         featLevels.append(int(c['Level']))
@@ -2469,7 +2461,6 @@ class Character(commands.Cog):
         bgString = ""
 
         for k,v in statRecords['DM'].items():
-            print(k)
             statsString += guild.get_member(int(k)).display_name + " - "
             for i in range (1,5):
                 if f'T{i}' not in v:
@@ -2483,7 +2474,6 @@ class Character(commands.Cog):
                 superTotal += totalGames
 
         if 'GQ' in statRecords:
-            print(statRecords["GQ"])
             guildsString += f'Guild quests out of total quests: {round((statRecords["GQ"] / superTotal),2) * 100}%\n'
             guildsString += f"Guild Quests: {statRecords['GQ']}\n"
         else:
@@ -2513,7 +2503,6 @@ class Character(commands.Cog):
         if statsString:
             statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
 
-        print(statRecordsLife['Class'])
         for k, v in statRecordsLife['Class'].items():
             charString += f"{k}:{v['Count']}\n"
             for vk, vv in v.items():
@@ -2829,8 +2818,6 @@ class Character(commands.Cog):
                          charEmbed.description = f"{race}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
                     await charEmbedmsg2.delete()
                     await charEmbedmsg.clear_reactions()
-                    print(asi)
-                    print(charStats)
 
                 elif choice == 2:
                     if featChoices == list():
@@ -2853,27 +2840,21 @@ class Character(commands.Cog):
 
                                 if 'Class Restriction' in feat:
                                     featsList = [x.strip() for x in feat['Class Restriction'].split(', ')]
-                                    print(cRecord)
-                                    print('cRecord')
                                     for c in cRecord:
                                         if ctx.invoked_with == "create" or ctx.invoked_with == "respec":
-                                            if c['Class']['Name'] in featList or c['Subclass'] in featsList:
+                                            if c['Class']['Name'] in featsList or c['Subclass'] in featsList:
                                                 meetsRestriction = True
                                         else:
-                                            if c['Name'] in featList or c['Subclass'] in featsList:
+                                            if c['Name'] in featsList or c['Subclass'] in featsList:
                                                 meetsRestriction = True
-
                                 if 'Stat Restriction' in feat:
                                     s = feat['Stat Restriction']
                                     statNumber = int(s[-2:])
-                                    print(feat)
                                     if '/' in s:
                                         checkStat = s[:len(s)-2].replace(" ", "").split('/')
                                         statSplitString = ""
                                     else:
                                         checkStat = [s[:len(s)-2].strip()]
-
-                                    print(checkStat)
 
                                     for stat in checkStat:
                                         if int(charStats[stat]) >= statNumber:
@@ -2881,7 +2862,6 @@ class Character(commands.Cog):
 
                                 if meetsRestriction:
                                     featChoices.append(feat)
-
                     else:
                         featChoices.remove(featPicked)
 

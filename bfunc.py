@@ -79,13 +79,16 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     channel = ctx.channel
     author = ctx.author
 
-    if query == "" or table is None:
-        return None, apiEmbed, apiEmbedmsg
+    if table is None:
+       return None, apiEmbed, apiEmbedmsg
 
     collection = db[table]
     
     if query is None:
         return list(collection.find()), apiEmbed, apiEmbedmsg
+
+    if query.strip() == "":
+        return None, apiEmbed, apiEmbedmsg
 
     query = query.strip()
     query = query.replace('(', '\\(')
