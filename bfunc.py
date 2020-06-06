@@ -109,22 +109,25 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     else:
         infoString = ""
         if (len(records) > 1):
-            for i in range(0, min(len(records), 9)):
+            if table == 'mit' or table == 'rit':
+                records = sorted(records, key = lambda i : i ['Tier'])
+
+            for i in range(0, min(len(records), 20)):
                 if table == 'mit':
-                    infoString += f"{numberEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']})\n"
+                    infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']}): **{records[i]['TP']} TP**\n"
                 elif table == 'rit':
-                    infoString += f"{numberEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']} {records[i]['Minor/Major']})\n"
+                    infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']} {records[i]['Minor/Major']})\n"
                 else:
-                    infoString += f"{numberEmojis[i]}: {records[i]['Name']}\n"
+                    infoString += f"{alphaEmojis[i]}: {records[i]['Name']}\n"
             
             def apiEmbedCheck(r, u):
                 sameMessage = False
                 if apiEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((r.emoji in numberEmojis[:min(len(records), 9)]) or (str(r.emoji) == '❌')) and u == author
+                return ((r.emoji in alphaEmojis[:min(len(records), 20)]) or (str(r.emoji) == '❌')) and u == author
 
-            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nIf the result you are looking for is not here please proceed the command with ❌ and be more specific", value=infoString, inline=False)
-            if not apiEmbedmsg:
+            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nThe maximum results shown are 20. If the result you are looking for is not here please proceed the command with ❌ and be more specific", value=infoString, inline=False)
+            if not apiEmbedmsg or apiEmbedmsg == "Fail":
                 apiEmbedmsg = await channel.send(embed=apiEmbed)
             else:
                 await apiEmbedmsg.edit(embed=apiEmbed)
@@ -146,7 +149,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                     return None, apiEmbed, "Fail"
             apiEmbed.clear_fields()
             await apiEmbedmsg.clear_reactions()
-            return records[int(tReaction.emoji[0]) - 1], apiEmbed, apiEmbedmsg
+            return records[alphaEmojis.index(tReaction.emoji)], apiEmbed, apiEmbedmsg
 
         else:
             return records[0], apiEmbed, apiEmbedmsg

@@ -184,6 +184,9 @@ class Character(commands.Cog):
         if lvl > 1 and magicItems != ['']:
             for m in magicItems:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'mit',m) 
+                if charEmbedmsg == "Fail":
+                    return
+
                 if mRecord in allMagicItemsString:
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
@@ -296,6 +299,8 @@ class Character(commands.Cog):
         if lvl > 3 and rewardItems != ['']:
             for r in rewardItems:
                 reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
+                if charEmbedmsg == "Fail":
+                    return
                 if not reRecord:
                     msg += f'- {r} doesn\'t exist! Check to see if it\'s on the RIT and check your spelling.\n'
                     break
@@ -396,6 +401,8 @@ class Character(commands.Cog):
             
         # check race
         rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'races',race)
+        if charEmbedmsg == "Fail":
+            return
         if not rRecord:
             msg += f'- {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
@@ -450,8 +457,11 @@ class Character(commands.Cog):
                 startEquipmentLength = 0
                 if not charEmbedmsg:
                     charEmbedmsg = await channel.send(embed=charEmbed)
+                elif charEmbedmsg == "Fail":
+                    msg += "- You have either canceled the command or a value was not found."
                 else:
                     await charEmbedmsg.edit(embed=charEmbed)
+
                 for item in cRecord[0]['Class']['Starting Equipment']:
                     seTotalString = ""
                     alphaIndex = 0
@@ -588,6 +598,8 @@ class Character(commands.Cog):
 
         # check bg and gp
         bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'backgrounds',bg)
+        if charEmbedmsg == "Fail":
+            return
         if not bRecord:
             msg += f'- That {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
