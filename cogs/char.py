@@ -2685,8 +2685,13 @@ class Character(commands.Cog):
                     charEmbed.clear_fields()
                     await charEmbedmsg.clear_reactions()
                     anyList.remove('❌')
-                    for s in anyList:
-                        statsArray[allStatsArray.index(uniqueArray[int(s[0]) - 1])] -= 1
+                    if 'AOU' in s:
+                        for s in anyList:
+                            statsArray[allStatsArray.index(uniqueArray[int(s[0]) - 1])] -= 1
+                    else:
+
+                        for s in anyList:
+                            statsArray[(int(s[0]) - 1)] -= 1
                     
             return statsArray, charEmbedmsg
 
