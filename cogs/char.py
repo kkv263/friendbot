@@ -2271,7 +2271,7 @@ class Character(commands.Cog):
             numI = 0
 
             for k in charRecordMagicItems:
-                if m in k.lower():
+                if m.lower() in k.lower():
                     mList.append(k)
                     mString += f"{numberEmojis[numI]} {k} \n"
                     numI += 1
@@ -2383,7 +2383,7 @@ class Character(commands.Cog):
             numI = 0
 
             for k in charRecords['Magic Items'].split(', '):
-                if m in k.lower():
+                if m.lower() in k.lower():
                     mList.append(k)
                     mString += f"{numberEmojis[numI]} {k} \n"
                     numI += 1
@@ -2567,6 +2567,16 @@ class Character(commands.Cog):
             currentLevel = 0
 
         totalHP += ((charDict['CON'] - 10) // 2 ) * lvl
+
+        specialCollection = db.special
+        specialRecords = list(specialCollection.find())
+
+        for s in specialRecords:
+            if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items":
+                if s['Name'] in charDict[s['Type']]:
+                    if 'HP' in s:
+                        totalHP += s['HP'] * lvl
+
         return totalHP
 
     async def pointBuy(self,ctx, statsArray, rRecord, charEmbed, charEmbedmsg):
@@ -2589,6 +2599,7 @@ class Character(commands.Cog):
         if rRecord:
             statsBonus = rRecord['Modifiers'].replace(" ", "").split(',')
             uniqueArray = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
+            allStatsArray = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
             for s in statsBonus:
                 if '/' in s:
                     statSplit = s[:len(s)-2].replace(" ", "").split('/')
@@ -2675,9 +2686,8 @@ class Character(commands.Cog):
                     await charEmbedmsg.clear_reactions()
                     anyList.remove('❌')
                     for s in anyList:
-                        statsArray[(int(s[0]) - 1)] -= 1
+                        statsArray[allStatsArray.index(uniqueArray[int(s[0]) - 1])] -= 1
                     
-            print (statsArray)
             return statsArray, charEmbedmsg
 
     async def chooseSubclass(self, ctx, subclassesList, charClass, charEmbed, charEmbedmsg):
@@ -2784,7 +2794,10 @@ class Character(commands.Cog):
                 if choice == 1:
                     try:
                         charEmbed.clear_fields()    
-                        charEmbed.add_field(name=f"Choose your first stat for your ASI. React [1-6]", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
+                        statsString = ""
+                        for n in range(0,6):
+                            statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** "
+                        charEmbed.add_field(name=f"{statsString}\nChoose your first stat for your ASI. React [1-6]", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
                         await charEmbedmsg.edit(embed=charEmbed)
                         for num in range(0,6): await charEmbedmsg.add_reaction(numberEmojis[num])
                         await charEmbedmsg.add_reaction('❌')
@@ -2801,13 +2814,23 @@ class Character(commands.Cog):
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None, None
                     asi = int(tReaction.emoji[0]) - 1
+                    
+                    if (int(charStats[statNames[asi]]) + 1 > 20):
+                        await charEmbedmsg.delete()
+                        await channel.send("You cannot increase your characters stat above 20. Please try creating your character again.")
+                        self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                        return None, None, None
+
                     charStats[statNames[asi]] = int(charStats[statNames[asi]]) + 1
                     charEmbed.set_field_at(0,name=f"ASI First Stat", value=f"{numberEmojis[asi]}: {statNames[asi]}", inline=False)
                     if ctx.invoked_with == "levelup":
                          charEmbed.description = f"{race}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
 
                     try:
-                        charEmbed.add_field(name=f"Choose your second stat for your ASI. React [1-6]", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
+                        statsString = ""
+                        for n in range(0,6):
+                            statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** "
+                        charEmbed.add_field(name=f"{statsString}\nChoose your second stat for your ASI. React [1-6]", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
                         charEmbedmsg2 = await channel.send(embed=charEmbed)
                         for num in range(0,6): await charEmbedmsg2.add_reaction(numberEmojis[num])
                         await charEmbedmsg2.add_reaction('❌')
@@ -2825,6 +2848,12 @@ class Character(commands.Cog):
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None, None
                     asi = int(tReaction.emoji[0]) - 1
+
+                    if (int(charStats[statNames[asi]]) + 1 > 20):
+                        await channel.send("You cannot increase your characters stat above 20. Please try creating your character again.")
+                        self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                        return None, None, None
+
                     charStats[statNames[asi]] = int(charStats[statNames[asi]]) + 1
                     if ctx.invoked_with == "levelup":
                          charEmbed.description = f"{race}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
