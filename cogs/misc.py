@@ -158,7 +158,7 @@ class Misc(commands.Cog):
             await msg.add_reaction('❤️')
             await msg.channel.send("You're welcome friend!")
         #add wave emoji to join messages
-        if(msg.type.value == 0):
+        if(msg.type.value == 7):
             await msg.add_reaction('👋')
         # suggestions :)
         # sChannelID = 624410169396166656 
