@@ -68,6 +68,13 @@ class Misc(commands.Cog):
                 name = 'Tier 4' 
                 role = get(guild.roles, name = name)
                 validRoles = ['True Friend']
+            #this will allow everybody to readd their T0 role, but that should not hurt anyone
+            #by creating an additional check to limit to people that only have these roles that could be fixed
+            #but I don't quite see the reason to do so
+            elif payload.emoji.name == "0️⃣" or payload.emoji.name == '0⃣':
+                name = 'Tier 0' 
+                role = get(guild.roles, name = name)
+                validRoles = ['D&D Friend']
             else:
                 role = None
 
@@ -117,6 +124,13 @@ class Misc(commands.Cog):
                 name = 'Tier 4' 
                 role = get(guild.roles, name = name)
                 validRoles = ['True Friend']
+            #this will allow everybody to readd their T0 role, but that should not hurt anyone
+            #by creating an additional check to limit to people that only have these roles that could be fixed
+            #but I don't quite see the reason to do so
+            elif payload.emoji.name == "0️⃣" or payload.emoji.name == '0⃣':
+                name = 'Tier 0' 
+                role = get(guild.roles, name = name)
+                validRoles = ['D&D Friend']
             else:
                 role = None
 
@@ -143,7 +157,9 @@ class Misc(commands.Cog):
         if any(word in msg.content.lower() for word in ['thank', 'thank you', 'thx', 'gracias']) and 'bot friend' in msg.content.lower():
             await msg.add_reaction('❤️')
             await msg.channel.send("You're welcome friend!")
-        
+        #add wave emoji to join messages
+        if(msg.type.value == 7):
+            await msg.add_reaction('👋')
         # suggestions :)
         # sChannelID = 624410169396166656 
 
