@@ -4,7 +4,6 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from cogs.misc import Misc 
 
 def admin_or_owner():
     async def predicate(ctx):
