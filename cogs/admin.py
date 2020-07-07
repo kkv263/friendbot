@@ -13,9 +13,19 @@ def admin_or_owner():
         return  output
     return commands.check(predicate)
 
-class Admin(commands.Cog, name="Admin"):
+class Admin(commands.Cog, name="A d m i n"):
     def __init__ (self, bot):
         self.bot = bot
+    
+    #this function allows you to specify a channel and message and have the bot react with a given emote
+    #Not tested with emotes the bot might not have access to
+    @commands.group()
+    @admin_or_owner()
+    async def react(self, ctx, channel: int, msg: int, emote: str):
+        ch = ctx.guild.get_channel(channel)
+        message = await ch.fetch_message(msg)
+        await message.add_reaction(emote)
+        await ctx.message.delete()
     
     @commands.group()
     @admin_or_owner()
@@ -23,11 +33,11 @@ class Admin(commands.Cog, name="Admin"):
         
         try:
             self.bot.reload_extension('cogs.'+cog)
-            
+            print(f"{cog} has been reloaded")
         except commands.ExtensionNotLoaded as e:
             try:
                 self.bot.load_extension("cogs." + cog)
-                print("{cog} has been added")
+                print(f"{cog} has been added")
             except (discord.ClientException, ModuleNotFoundError):
                 print(f'Failed to load extension {extension}.')
                 traceback.print_exc()
