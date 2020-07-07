@@ -23,6 +23,14 @@ class Admin(commands.Cog, name="Admin"):
         
         try:
             self.bot.reload_extension('cogs.'+cog)
+            
+        except commands.ExtensionNotLoaded as e:
+            try:
+                self.bot.load_extension("cogs." + cog)
+                print("{cog} has been added")
+            except (discord.ClientException, ModuleNotFoundError):
+                print(f'Failed to load extension {extension}.')
+                traceback.print_exc()
         except Exception as e:
             print(e)
 

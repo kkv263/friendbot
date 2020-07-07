@@ -28,6 +28,10 @@ class Campaign(commands.Cog):
         if campaignMember is None:
             await ctx.channel.send(content=f"The user {member} is not valid. Make sure the user follows the 'User#1234' format (case-sensitive) and try the command again.")
             return
+        memberRoles = [x.name for x in campaignMember.roles]
+        if "D&D Friend" not in memberRoles and "Campaign Friend" not in memberRoles:
+            await ctx.channel.send(content=f"The user {member} is not valid. They need to have applied to the server.")
+            return
 
         for char in '@&<>':
             campaignMsg.content = campaignMsg.content.replace(char,"")
