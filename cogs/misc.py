@@ -106,7 +106,8 @@ class Misc(commands.Cog):
 
         guild = self.bot.get_guild(payload.guild_id)
         validRoles = []
-
+        if(payload.user_id == self.bot.user.id):
+            return
         if payload.message_id == tMessage:
             if payload.emoji.name == "1️⃣" or payload.emoji.name == '1⃣':
                 name = 'Tier 1' 

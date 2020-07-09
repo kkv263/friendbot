@@ -403,8 +403,15 @@ class Timer(commands.Cog):
                 tierNum = 1
 
             if role != "": 
+                #sort the elements of reward: player dictionary based on the reward
+                def rewardSort(elem):
+                    key, value = elem
+                    print(key)
+                    reg = re.search("(\d+.\d*) CP", key)
+                    cp = reg.group(1)
+                    return float(cp)
                 allRewardsTotalString = ""
-                for key, value in allRewardStrings.items():
+                for key, value in sorted(list(allRewardStrings.items()), key=rewardSort, reverse=True):
                     temp = f"**{key}**\n"
                     for v in value:
                       temp += f"@{v} | [Char Name]\n"
