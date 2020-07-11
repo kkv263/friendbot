@@ -1531,6 +1531,14 @@ class Character(commands.Cog):
                     v.sort()
                     charEmbed.add_field(name=k, value=''.join(v), inline=False)
 
+                spellString = ""
+                for i in charDict['Inventory'].keys():
+                    if "Spell Scroll" in i:
+                        spellString += f"• {i}\n"
+                         
+                if spellString != "":
+                    charEmbed.add_field(name="Spell Scrolls", value=spellString, inline=False)
+
             consumesCount = collections.Counter(charDict['Consumables'].split(', '))
 
             consumesString = ""

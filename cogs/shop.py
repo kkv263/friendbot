@@ -64,7 +64,35 @@ class Shop(commands.Cog):
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
-            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop',buyItem) 
+            if "spell scroll" in buyItem.lower():
+                spellItem = buyItem.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
+                sRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'spells', spellItem) 
+
+                if not sRecord:
+                    await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                    return
+
+                if sRecord['Level'] > 5:
+                    await channel.send(f"You cannot purchase spell scroll `{sRecord['Name']}`; Spell scrolls of levels higher than 5 cannot be purchased.")
+                    return
+                bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', 'spell scroll') 
+                bRecord['Name'] = f"Spell Scroll ({sRecord['Name']})"
+    
+                if sRecord['Level'] == 0:
+                    bRecord['GP'] = 25
+                elif sRecord['Level'] == 1:
+                    bRecord['GP'] = 75
+                elif sRecord['Level'] == 2:
+                    bRecord['GP'] = 150
+                elif sRecord['Level'] == 3:
+                    bRecord['GP'] = 300
+                elif sRecord['Level'] == 4:
+                    bRecord['GP'] = 500
+                elif sRecord['Level'] == 5:
+                    bRecord['GP'] = 1000
+
+            else:
+                bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop',buyItem) 
         
             if bRecord:
                 gpNeeded = (bRecord['GP'] * amount)
@@ -118,8 +146,6 @@ class Shop(commands.Cog):
                             shopEmbed.description = f"**{bRecord['Name']} purchased! (x{amount})**\n\n**Current gp**: {newGP}\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
 
-                    
-
             else:
                 await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
                 return
@@ -148,9 +174,14 @@ class Shop(commands.Cog):
             buyList = []
             buyString = ""
             numI = 0
+            if "spell scroll" in buyItem.lower():
+                await channel.send(f'You cannot sell spell scrolls to the shop. Please try again with a different item.')
+                return
+
+            print(charRecords['Inventory'].keys())
 
             for k in charRecords['Inventory'].keys():
-                if buyItem in k.lower():
+                if buyItem.lower() in k.lower():
                     buyList.append(k)
                     buyString += f"{numberEmojis[numI]} {k} \n"
                     numI += 1
@@ -190,6 +221,10 @@ class Shop(commands.Cog):
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'shop', buyItem, True) 
         
             if bRecord:
+                if 'Magic Item' in bRecord:
+                    await channel.send(f"{bRecord['Name']} is a magic item and is not sellable. Please try again with a different item")
+                    return
+                
                 if f"{bRecord['Name']}" not in charRecords['Inventory']:
                     await channel.send(f"You do not have any {bRecord['Name']} to sell!")
                     return
