@@ -1527,7 +1527,7 @@ class Timer(commands.Cog):
                                 else:
                                     gRecord['Games'] += 1
                                     if gRecord['Games'] % 10 == 0:
-                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
+                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Guild Rank": {'$gt':1}}))
                                         if guildBuffList:
                                             for d in data['records']:
                                                 if d['_id'] in [gb['_id'] for gb in guildBuffList]:
@@ -1539,7 +1539,7 @@ class Timer(commands.Cog):
                                                                 del d['fields']['$unset']
 
                                     elif gRecord['Games'] % 5 == 0:
-                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Reputation": {'$gt':1}}))
+                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Guild Rank": {'$gt':1}}))
                                         if guildBuffList:
                                             for d in data['records']:
                                                 if d['_id'] in [gb['_id'] for gb in guildBuffList]:

@@ -220,7 +220,6 @@ async def checkForGuild(ctx, name):
         return False
     else:
         return records
-      
 def refreshKey (timeStarted):
 		if (time.time() - timeStarted > 60 * 59):
 				gClient.login()
@@ -265,7 +264,7 @@ currentTimers = []
 
 gameCategory = ["🎲 game rooms", "🐉 campaigns", "mod friends"]
 roleArray = ['Junior', 'Journey', 'Elite', 'True', '']
-noodleRoleArray = ['Good Noodle', 'Elite Noodle', 'True Noodle', 'Ramen Noodle', 'Spicy Noodle']
+noodleRoleArray = ['Good Noodle', 'Elite Noodle', 'True Noodle', 'Ascended Noodle', 'Immortal Noodle']
 # tierArray = getTiers(sheet.row_values(2))
 # tpArray = sheet.row_values(3)
 commandPrefix = '$'
