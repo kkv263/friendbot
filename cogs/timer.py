@@ -7,7 +7,7 @@ import re
 import shlex
 import decimal
 import random
-from math import ceil
+from math import ceil, floor
 from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
@@ -614,6 +614,8 @@ class Timer(commands.Cog):
             guild = ctx.guild
             rewardList = msg.raw_mentions
             rewardUser = ""
+            charEmbed = discord.Embed()
+            charEmbedmsg = None
 
             if rewardList == list():
                 if not resume:
@@ -661,11 +663,26 @@ class Timer(commands.Cog):
 
                     for query in consumablesList:
                         # TODO: Deal with this in resume, should not show embed
-                        rewardConsumable, charEmbed, charEmbedmsg = await callAPI(ctx, discord.Embed(), None ,'rit',query) 
+                        if 'spell scroll' in query.lower():
+                            spellItem = query.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
+                            sRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'spells', spellItem)
+
+                            if not sRecord and not resume:
+                                await ctx.channel.send(f'`{query}` does not seem to be a valid reward.')
+                                return start, dmChar
+
+                            else:
+                                # Converts number to ordinal - 1:1st, 2:2nd, 3:3rd...
+                                ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(floor(n/10)%10!=1)*(n%10<4)*n%10::4])
+                                query = f"Spell Scroll ({ordinal(sRecord['Level'])} Level)"
+
+
+                            
+                        rewardConsumable, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg ,'rit',query) 
 
                         if not rewardConsumable:
                             if not resume:
-                                await ctx.channel.send('This does not seem to be a valid reward.')
+                                await ctx.channel.send(f'`{query}` does not seem to be a valid reward.')
                             return start, dmChar
                         else:
                             major = dmChar[4][1]
@@ -840,6 +857,9 @@ class Timer(commands.Cog):
                                         if not resume:
                                             await ctx.channel.send(content=rewardMajorErrorString)
                                         return start, dmChar
+
+                            if 'spell scroll' in query.lower():
+                                rewardConsumable['Name'] = f"Spell Scroll ({sRecord['Name']})"
 
                             if 'Consumable' in rewardConsumable:
                                 if currentItem[1]['Consumables'] == "None":

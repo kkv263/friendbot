@@ -128,17 +128,22 @@ class Shop(commands.Cog):
                         await shopEmbedmsg.clear_reactions()
                         return
                     elif tReaction.emoji == '✅':
-
-                        if charRecords['Inventory'] == "None":
-                            charRecords['Inventory'] = {f"{bRecord['Name']}" : amount}
-                        else:
-                            if bRecord['Name'] not in charRecords['Inventory']:
-                                charRecords['Inventory'][f"{bRecord['Name']}"] = amount 
+                        if "Consumable" in bRecord:
+                            if charRecords['Consumables'] != "None":
+                                charRecords['Consumables'] += ', ' + bRecord['Name']
                             else:
-                                charRecords['Inventory'][f"{bRecord['Name']}"] += amount 
+                                charRecords['Consumables'] = bRecord['Name']
+                        else:
+                            if charRecords['Inventory'] == "None":
+                                charRecords['Inventory'] = {f"{bRecord['Name']}" : amount}
+                            else:
+                                if bRecord['Name'] not in charRecords['Inventory']:
+                                    charRecords['Inventory'][f"{bRecord['Name']}"] = amount 
+                                else:
+                                    charRecords['Inventory'][f"{bRecord['Name']}"] += amount 
                         try:
                             playersCollection = db.players
-                            playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Inventory":charRecords['Inventory'], 'GP':newGP}})
+                            playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Inventory":charRecords['Inventory'], 'GP':newGP, "Consumables": charRecords['Consumables']}})
                         except Exception as e:
                             print ('MONGO ERROR: ' + str(e))
                             shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
@@ -150,6 +155,7 @@ class Shop(commands.Cog):
                 await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
                 return
 
+    # TODO: Sell consumables
     @shop.command()
     async def sell(self, ctx , charName, buyItem, amount=1):
         channel = ctx.channel
