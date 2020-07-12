@@ -288,7 +288,11 @@ class Character(commands.Cog):
             else:
                 charDict['Magic Items'] = ', '.join([str(string['Name']) for string in magicItemsBought])
         elif lvl > 1 and magicItems == ['']:
-            msg += f'In order to create your character at {lvl}, you must purchase magic item(s) with your TP\n' 
+            if lvl > 1 and lvl < 6: 
+                bankTP1 = (lvl-1) * 2 
+            elif lvl > 5:
+                bankTP1 = 8;
+                bankTP2 = (lvl-5) * 4
         elif lvl == 1 and magicItems != ['']:
             msg += 'You cannot purchase magic items at Level 1\n'
 
@@ -1570,6 +1574,12 @@ class Character(commands.Cog):
         usersCollection = db.users
         userRecords = usersCollection.find_one({"User ID": str(author.id)})
 
+        def userCheck(r,u):
+            sameMessage = False
+            if charEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and u == ctx.author and (r.emoji == left or r.emoji == right)
+
         if userRecords: 
             playersCollection = db.players
             charRecords = list(playersCollection.find({"User ID": str(author.id)}))
@@ -1614,13 +1624,42 @@ class Character(commands.Cog):
                 else:
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to receive Noodles!)"
 
+                userEmbedList = [charEmbed]
                 for p in range(len(pageStops)-1):
-                    charEmbed.add_field(name=f'Characters pg.{p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+                    if p != 0:
+                        userEmbedList.append(discord.Embed())
+                    userEmbedList[p].add_field(name=f'Characters pg.{p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
 
                 if not charEmbedmsg:
                     charEmbedmsg = await ctx.channel.send(embed=charEmbed)
                 else:
                     await charEmbedmsg.edit(embed=charEmbed)
+
+                page = 0
+                while pages > 1:
+                    await charEmbedmsg.add_reaction(left) 
+                    await charEmbedmsg.add_reaction(right)
+                    try:
+                        hReact, hUser = await self.bot.wait_for("reaction_add", check=userCheck, timeout=30.0)
+                    except asyncio.TimeoutError:
+                        await charEmbedmsg.edit(content=f"Your user menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use `{commandPrefix}user`!")
+                        await charEmbedmsg.clear_reactions()
+                        await charEmbedmsg.add_reaction('💤')
+                        return
+                    else:
+                        if hReact.emoji == left:
+                            page -= 1
+                            if page < 0:
+                                page = len(userEmbedList) - 1
+                        if hReact.emoji == right:
+                            page += 1
+                            if page > len(userEmbedList) - 1:
+                                page = 0
+
+                        await charEmbedmsg.edit(embed=userEmbedList[page]) 
+                        await charEmbedmsg.clear_reactions()
+
+
         else:
             await channel.send(f'{author.display_name} you will need to play at least one game with a character before you can view your user stats')
             return
