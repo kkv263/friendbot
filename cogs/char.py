@@ -1602,7 +1602,7 @@ class Character(commands.Cog):
                     if 'Guild' in charDict:
                         charString += f"\a\a+ Guild: {charDict['Guild']}\n"
 
-                    if len(charString) > (1024 * pages):
+                    if len(charString) > (768 * pages):
                         pageStops.append(len(tempCharString))
                         pages += 1
 
@@ -1625,7 +1625,10 @@ class Character(commands.Cog):
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to receive Noodles!)"
 
                 userEmbedList = [charEmbed]
+                print(pageStops)
                 for p in range(len(pageStops)-1):
+                    print(charString[pageStops[p]:pageStops[p+1]])
+                    print("====")
                     if p != 0:
                         userEmbedList.append(discord.Embed())
                     userEmbedList[p].add_field(name=f'Characters pg.{p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
