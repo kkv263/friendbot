@@ -228,7 +228,15 @@ class Misc(commands.Cog, name='Misc'):
             await self.find_message()
             new_text = await (self.generateMessageText)()
             if(self.current_message and self.past_message_check != 1):
-                await self.current_message.edit(content=new_text)
+                #in case a message is posted without a game channel which is then edited in we need to this extra check
+                msgAfter = False
+                async for message in ctx.channel.history(after=self.current_message, limit=1):
+                    msgAfter = True
+                if( not msgAfter):
+                    await self.current_message.edit(content=new_text)
+                else:
+                    await self.current_message.delete()
+                    self.current_message = await self.current_message.send(content=new_text)
             else:
                 if(self.current_message):
                     await self.current_message.delete()
@@ -303,6 +311,7 @@ class Misc(commands.Cog, name='Misc'):
                     new_text = await (self.generateMessageText)()
                     self.past_message_check = 2
                     self.current_message = await msg.channel.send(content=new_text)
+                    return
             return
             
             
