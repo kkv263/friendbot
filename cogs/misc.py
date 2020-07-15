@@ -1,12 +1,19 @@
 import discord
 import random
 import asyncio
+import re
 from discord.utils import get
 from discord.ext import commands
+from cogs.admin import admin_or_owner
 
-class Misc(commands.Cog):
+class Misc(commands.Cog, name='Misc'):
     def __init__ (self, bot):
         self.bot = bot
+        self.current_message= None
+        #0: No message search so far, 1: Message searched, but no new message made so far, 2: New message made
+        self.past_message_check= 0
+        self.quest_board_channel_id = 382027190633627649
+        self.category_channel_id = 382027737189056544
 
     @commands.cooldown(1, 60, type=commands.BucketType.member)
     @commands.command()
@@ -44,8 +51,18 @@ class Misc(commands.Cog):
 
         await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
+        
     
-    @commands.Cog.listener()
+
+    #searches for the last message sent by the bot in case a restart was made
+    #Allows it to use it to remove the last post
+    async def find_message(self):
+        #block any check but the first one
+        if(not self.past_message_check):
+            self.past_message_check= 1
+            self.current_message = await self.bot.get_channel(self.quest_board_channel_id).history().get(author__id = self.bot.user.id)
+         
+     @commands.Cog.listener()
     async def on_raw_reaction_add(self,payload):
         # Message for reaction
         tMessage = 658423423592169556
@@ -151,17 +168,79 @@ class Misc(commands.Cog):
                     print('member not found')
             else:
                 print('role not found')
-            
 
+    @commands.group()
+    @admin_or_owner()
+    async def version(self, ctx):
+        print(discord.__version__)
+    
+    #A function that grabs all messages in the quest board and compiles a list of availablities
+    async def generateMessageText(self):
+        tChannel = self.quest_board_channel_id
+        channel= self.bot.get_channel(tChannel)
+        #get all game channel ids
+        game_channel_category =self.bot.get_channel(self.category_channel_id)
+        game_channel_ids = set(map(lambda c: c.id, game_channel_category.text_channels))
+        build_message = "The current status of the game channels is:\n"
+        #create a dictonary to store the room/user pairs
+        channel_dm_dic = {}
+        for c in game_channel_category.text_channels:
+            channel_dm_dic[c.mention]= 'Clear'
+        #get all posts in the channel
+        all_posts = await channel.history(oldest_first=True).flatten()
+        for elem in all_posts:
+            #ignore self and Ghost example post
+            if(elem.author.id==self.bot.user.id or elem.id == 540049894598246420):
+                continue
+            #loop in order to avoid guild channels blocking the check
+            for mention in elem.channel_mentions:
+                if mention.id in game_channel_ids:
+                    channel_dm_dic[mention.mention] = elem.author.name
+        #build the message using the pairs built above
+        for c in game_channel_category.text_channels:
+            build_message+=c.mention+": "+channel_dm_dic[c.mention]+"\n"
+        return build_message
+    
+        
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload):
+        await self.find_message()
+        tChannel = self.quest_board_channel_id
+        #if in the correct channel and the message deleted was not the last QBAP
+        if(payload.channel_id==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
+            #Since we dont know whose post was deleted we need to cover all the posts to find availablities
+            #Also protects against people misposting
+            new_text = await (self.generateMessageText)()
+            #if we created the last message during current runtime we can just edit
+            if(self.current_message and self.past_message_check != 1):
+                await self.current_message.edit(content=new_text)
+            else:
+                #otherwise delete latest message if possible and resend to get back to the bottom
+                if(self.current_message):
+                    await self.current_message.delete()
+                self.past_message_check = 2
+                self.current_message = await self.bot.get_channel(self.quest_board_channel_id).send(content=new_text)
+            
+    @commands.Cog.listener()
+    async def on_raw_message_edit(self, payload):
+        await self.find_message()
+        tChannel = self.quest_board_channel_id
+        if(payload.channel_id==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
+            new_text = await (self.generateMessageText)()
+            if(self.current_message and self.past_message_check != 1):
+                await self.current_message.edit(content=new_text)
+            else:
+                if(self.current_message):
+                    await self.current_message.delete()
+                self.past_message_check = 2
+                self.current_message = await self.bot.get_channel(self.quest_board_channel_id).send(content=new_text)
+            
     @commands.Cog.listener()
     async def on_message(self,msg):
         if any(word in msg.content.lower() for word in ['thank', 'thank you', 'thx', 'gracias']) and 'bot friend' in msg.content.lower():
             await msg.add_reaction('❤️')
             await msg.channel.send("You're welcome friend!")
-        #add wave emoji to join messages
-        if(msg.type.value == 7):
-            await msg.add_reaction('👋')
-        # suggestions :)
+         # suggestions :)
         # sChannelID = 624410169396166656 
 
         # voting channel
@@ -193,60 +272,43 @@ class Misc(commands.Cog):
             sMessage = await sChannel.send(content='Thanks! Your suggestion has been submitted and will be reviewed by the Admin team.')
             await asyncio.sleep(30) 
             await sMessage.delete()
-
-
-    # @commands.command()
-    # async def roleremove(self,ctx):
-    #     guild = ctx.guild
-
-    #     print ('start')
-    #     i = 0
-    #     for m in guild.members:
-    #         print (str(i)+ " of " + str(len(guild.members)))
-    #         roles = m.roles
-
-    #         if 'True Friend' in[r.name for r in roles]:
-    #             addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'Tier 4', 'D&D Friend']
-    #             removeRoles = ["Elite Friend", 'Journeyfriend', 'Junior Friend', 'New Friend']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
-
-    #             for x in removeRoles:
-    #                 remove = get(guild.roles, name = x)
-    #                 if remove:
-    #                     await m.remove_roles(remove)
-
-    #         elif 'Elite Friend' in [r.name for r in roles]:
-    #             addRoles = ['Tier 1', 'Tier 2', 'Tier 3', 'D&D Friend']
-    #             removeRoles = ['Journeyfriend', 'Junior Friend', 'New Friend']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
-
-    #             for x in removeRoles:
-    #                 remove = get(guild.roles, name = x)
-    #                 if remove:
-    #                     await m.remove_roles(remove)
-    #         elif 'Journeyfriend' in [r.name for r in roles]:
-    #             addRoles = ['Tier 1', 'Tier 2', 'D&D Friend']
-    #             removeRoles = ['Junior Friend', 'New Friend']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
-
-    #             for x in removeRoles:
-    #                 remove = get(guild.roles, name = x)
-    #                 if remove:
-    #                     await m.remove_roles(remove)
-    #         if 'D&D Friend' in [r.name for r in roles] and len(roles) == 2:
-    #             addRoles = ['Tier 0']
-    #             for a in addRoles:
-    #                 add = get(guild.roles, name = a)
-    #                 await m.add_roles(add)
-    #         i+=1
-
-    #     print("done")
+        tChannel = self.quest_board_channel_id
+        if(msg.type.value == 7):
+            await msg.add_reaction('👋')
+        #check if any tier boost was done and react
+        elif(7 < msg.type.value and msg.type.value < 12):
+            await msg.add_reaction(':boost:')
+        elif any(word in msg.content.lower() for word in ['thank', 'thanks', 'thank you', 'thx', 'gracias', 'danke']) and 'bot friend' in msg.content.lower():
+            await msg.add_reaction('❤️')
+            await msg.channel.send("You're welcome friend!")
+        elif msg.channel.id == tChannel and msg.author.id != self.bot.user.id:
+            await self.find_message()
+            server = msg.guild
+            channel = msg.channel
+            game_channel_category = server.get_channel(self.category_channel_id)
+            cMentionArray = msg.channel_mentions
+            game_channel_ids = map(lambda c: c.id, game_channel_category.text_channels)
+            for mention in cMentionArray:
+                if mention.id in game_channel_ids:
+                    if(self.past_message_check == 2):
+                        #since we have the latest information and know who asked for the channel we can just update that line instead of searching through posts
+                        def generateMessageText(currentMessage, target_channel):
+                            reg = target_channel.mention+".*?\n"
+                            repl = target_channel.mention+": "+msg.author.name+"\n"
+                            build_message = re.sub(reg,repl, currentMessage.content)
+                            return build_message
+                        await self.current_message.delete()
+                        self.current_message = await msg.channel.send(content=generateMessageText(self.current_message, mention))
+                        return
+                    #if there is an old message our record could be out of date so we need to regather info and go to the bottom
+                    elif(self.past_message_check == 1 and self.current_message):
+                        await self.current_message.delete()
+                    new_text = await (self.generateMessageText)()
+                    self.past_message_check = 2
+                    self.current_message = await msg.channel.send(content=new_text)
+            return
+            
+            
         
 def setup(bot):
     bot.add_cog(Misc(bot))
