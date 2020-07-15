@@ -204,10 +204,10 @@ class Misc(commands.Cog, name='Misc'):
         
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
-        await self.find_message()
         tChannel = self.quest_board_channel_id
         #if in the correct channel and the message deleted was not the last QBAP
         if(payload.channel_id==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
+            await self.find_message()
             #Since we dont know whose post was deleted we need to cover all the posts to find availablities
             #Also protects against people misposting
             new_text = await (self.generateMessageText)()
@@ -223,9 +223,9 @@ class Misc(commands.Cog, name='Misc'):
             
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
-        await self.find_message()
         tChannel = self.quest_board_channel_id
         if(payload.channel_id==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
+            await self.find_message()
             new_text = await (self.generateMessageText)()
             if(self.current_message and self.past_message_check != 1):
                 await self.current_message.edit(content=new_text)
@@ -237,9 +237,6 @@ class Misc(commands.Cog, name='Misc'):
             
     @commands.Cog.listener()
     async def on_message(self,msg):
-        if any(word in msg.content.lower() for word in ['thank', 'thank you', 'thx', 'gracias']) and 'bot friend' in msg.content.lower():
-            await msg.add_reaction('❤️')
-            await msg.channel.send("You're welcome friend!")
          # suggestions :)
         # sChannelID = 624410169396166656 
 
@@ -287,7 +284,7 @@ class Misc(commands.Cog, name='Misc'):
             channel = msg.channel
             game_channel_category = server.get_channel(self.category_channel_id)
             cMentionArray = msg.channel_mentions
-            game_channel_ids = map(lambda c: c.id, game_channel_category.text_channels)
+            game_channel_ids = list(map(lambda c: c.id, game_channel_category.text_channels))
             for mention in cMentionArray:
                 if mention.id in game_channel_ids:
                     if(self.past_message_check == 2):
