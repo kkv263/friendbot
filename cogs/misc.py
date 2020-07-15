@@ -62,7 +62,7 @@ class Misc(commands.Cog, name='Misc'):
             self.past_message_check= 1
             self.current_message = await self.bot.get_channel(self.quest_board_channel_id).history().get(author__id = self.bot.user.id)
          
-     @commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self,payload):
         # Message for reaction
         tMessage = 658423423592169556
