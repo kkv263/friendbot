@@ -220,6 +220,7 @@ async def checkForGuild(ctx, name):
         return False
     else:
         return records
+        
 def refreshKey (timeStarted):
 		if (time.time() - timeStarted > 60 * 59):
 				gClient.login()

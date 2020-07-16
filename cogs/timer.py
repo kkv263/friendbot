@@ -252,10 +252,13 @@ class Timer(commands.Cog):
                 guildsList = []
                 guildsListStr = ""
                 guildCategoryID = 678381362398625802
+                # guildCategoryID = 452704598440804375
+
                 if (len(msg.channel_mentions) > 3):
                     await channel.send(f"```The number of guilds exceed 3. Please follow this format and try again:\n{commandPrefix}timer guild #guild1 #guild2 ...```") 
                 elif msg.channel_mentions != list():
                     guildsList = msg.channel_mentions
+                    print(guildsList)
                     invalidChannel = False
                     for g in guildsList:
                         if g.category_id != guildCategoryID:
@@ -267,6 +270,17 @@ class Timer(commands.Cog):
                     if not invalidChannel:
                         guildsListStr = "Guilds: " 
                         prepEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n**Signup:** {commandPrefix}timer signup charactername \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
+                        # TODO: GUilds on dm
+                        # guildsCollection = db.guilds
+                        # guildRecordsList = []
+                        # for g in guildsList:
+                        #     guildRecords = guildsCollection.find_one({"Channel ID": g.id })
+                        #     if guildRecords:
+                        #         guildRecordsList.append(guildRecords)
+
+                        # print(guildRecordsList)
+
+
                 else:
                     await channel.send(f"```I couldn't find any mention of a guild. Please follow this format and try again:\n{commandPrefix}timer guild #guild1 #guild2 ...```") 
 
