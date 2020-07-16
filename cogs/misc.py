@@ -12,7 +12,7 @@ class Misc(commands.Cog, name='Misc'):
         self.current_message= None
         #0: No message search so far, 1: Message searched, but no new message made so far, 2: New message made
         self.past_message_check= 0
-        self.quest_board_channel_id = 382027190633627649
+        self.quest_board_channel_id = 382034402840018945
         self.category_channel_id = 382027737189056544
 
     @commands.cooldown(1, 60, type=commands.BucketType.member)
