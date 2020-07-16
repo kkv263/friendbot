@@ -12,8 +12,8 @@ class Misc(commands.Cog, name='Misc'):
         self.current_message= None
         #0: No message search so far, 1: Message searched, but no new message made so far, 2: New message made
         self.past_message_check= 0
-        self.quest_board_channel_id = 382027190633627649
-        self.category_channel_id = 382027737189056544
+        self.quest_board_channel_id = 382027190633627649 #382027190633627649 725577624180621313
+        self.category_channel_id = 382027737189056544 #382027737189056544  728456686024523810
 
     @commands.cooldown(1, 60, type=commands.BucketType.member)
     @commands.command()
@@ -224,7 +224,7 @@ class Misc(commands.Cog, name='Misc'):
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
         tChannel = self.quest_board_channel_id
-        if(payload.channel_id==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
+        if(int(payload.data["channel_id"])==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
             await self.find_message()
             new_text = await (self.generateMessageText)()
             if(self.current_message and self.past_message_check != 1):
