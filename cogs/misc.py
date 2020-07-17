@@ -54,7 +54,6 @@ class Misc(commands.Cog, name='Misc'):
         await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
         
-    
 
     #searches for the last message sent by the bot in case a restart was made
     #Allows it to use it to remove the last post
@@ -306,7 +305,7 @@ class Misc(commands.Cog, name='Misc'):
             await msg.add_reaction('👋')
         #check if any tier boost was done and react
         elif(7 < msg.type.value and msg.type.value < 12):
-            await msg.add_reaction('585637770970660876')
+            await msg.add_reaction('<:boost:585637770970660876>')
         elif any(word in msg.content.lower() for word in ['thank', 'thanks', 'thank you', 'thx', 'gracias', 'danke']) and 'bot friend' in msg.content.lower():
             await msg.add_reaction('❤️')
             await msg.channel.send("You're welcome friend!")
