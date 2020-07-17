@@ -17,10 +17,10 @@ class Campaign(commands.Cog):
 
         guild = ctx.guild
         # Channel where campaignMsg is stored
-        channel = self.bot.get_channel(597572722654052352) 
+        channel = self.bot.get_channel(597572722654052352) #728476108940640297 597572722654052352
         author = ctx.author
         # Message where campaigns are stored.
-        campaignMsg = await channel.fetch_message(729430390598664193)
+        campaignMsg = await channel.fetch_message(729430390598664193) #729127829362442290 729430390598664193
         print(campaignMsg)
         campaignMember = guild.get_member_named(member)
         commandName = ctx.command.name
@@ -59,6 +59,8 @@ class Campaign(commands.Cog):
         try:
             campaignAddMsg = await ctx.channel.send(embed = campaignEmbed)
             await campaignAddMsg.add_reaction('❌')
+            for g in range(0, len(campaignsList)):
+                await campaignAddMsg.add_reaction(numberEmojis[g])
             gReaction, gUser = await self.bot.wait_for("reaction_add", check=campaignEmbedCheck, timeout=60)
         except asyncio.TimeoutError:
             await campaignAddMsg.delete()

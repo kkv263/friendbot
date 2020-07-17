@@ -12,8 +12,8 @@ class Misc(commands.Cog, name='Misc'):
         self.current_message= None
         #0: No message search so far, 1: Message searched, but no new message made so far, 2: New message made
         self.past_message_check= 0
-        self.quest_board_channel_id = 725577624180621313 #382027190633627649 725577624180621313
-        self.category_channel_id = 728456686024523810 #382027737189056544  728456686024523810
+        self.quest_board_channel_id = 382027190633627649 #382027190633627649 725577624180621313
+        self.category_channel_id = 382027737189056544 #382027737189056544  728456686024523810
 
 
     #https://discordapp.com/channels/382025597041246210/432358370578530310/733403065251528795 nice comments that make it worth it <3
@@ -188,7 +188,7 @@ class Misc(commands.Cog, name='Misc'):
         tierMap = {"Tier 0" : "T0", "Tier 1" : "T1", "Tier 2" : "T2", "Tier 3" : "T3", "Tier 4" : "T4"}
         channel_dm_dic = {}
         for c in game_channel_category.text_channels:
-            channel_dm_dic[c.mention]= ["✅ "+c.mention+": Clear", {}]
+            channel_dm_dic[c.mention]= ["✅ "+c.mention+": Clear", set([])]
         #get all posts in the channel
         all_posts = await channel.history(oldest_first=True).flatten()
         for elem in all_posts:
@@ -202,16 +202,18 @@ class Misc(commands.Cog, name='Misc'):
                     if(elem.author.nick):
                         username = elem.author.nick
                     channel_dm_dic[mention.mention][0] = "❌ "+mention.mention+": "+username
-                for tierMention in elem.role_mentions:
-                    print(tierMention)
-                    if tierMention.name in tierMap:
-                        channel_dm_dic[mention.mention][1].add(tierMap[tierMention.name])
+                    for tierMention in elem.role_mentions:
+                        print(tierMention)
+                        if tierMention.name in tierMap:
+                            channel_dm_dic[mention.mention][1].add(tierMap[tierMention.name])
         #build the message using the pairs built above
+        print(channel.guild.me)
         for c in game_channel_category.text_channels:
-            if(c.permissions_for(self.bot.user).view_channel):
+            print(c, c.permissions_for(channel.guild.me).view_channel)
+            if(c.permissions_for(channel.guild.me).view_channel):
                 tierAddendum = ""
-                if(len(build_message+=channel_dm_dic[c.mention][1])> 0):
-                    tierAddendum = " - "+"/".join(channel_dm_dic[c.mention][1].sort())
+                if(len(channel_dm_dic[c.mention][1])> 0):
+                    tierAddendum = " - "+"/".join(sorted(channel_dm_dic[c.mention][1]))
                 build_message+=channel_dm_dic[c.mention][0]+tierAddendum+"\n"
         return build_message
     
@@ -252,10 +254,18 @@ class Misc(commands.Cog, name='Misc'):
                     await self.current_message.delete()
                     self.current_message = await self.current_message.send(content=new_text)
             else:
-                if(self.current_message):
-                    await self.current_message.delete()
                 self.past_message_check = 2
+                if(self.current_message):                
+                    msgAfter = False
+                    async for message in self.bot.get_channel(self.quest_board_channel_id).history(after=self.current_message, limit=1):
+                        msgAfter = True
+                    if(not msgAfter):
+                        await self.current_message.edit(content=new_text)
+                        return
+                    else:
+                        await self.current_message.delete()
                 self.current_message = await self.bot.get_channel(self.quest_board_channel_id).send(content=new_text)
+                
             
     @commands.Cog.listener()
     async def on_message(self,msg):
@@ -309,14 +319,14 @@ class Misc(commands.Cog, name='Misc'):
             game_channel_ids = list(map(lambda c: c.id, game_channel_category.text_channels))
             for mention in cMentionArray:
                 if mention.id in game_channel_ids:
+                    new_text = await (self.generateMessageText)()
                     if(self.past_message_check == 2):
                         await self.current_message.delete()
-                        self.current_message = await msg.channel.send(content=self.generateMessageText())
+                        self.current_message = await msg.channel.send(content=new_text)
                         return
                     #if there is an old message our record could be out of date so we need to regather info and go to the bottom
                     elif(self.past_message_check == 1 and self.current_message):
                         await self.current_message.delete()
-                    new_text = await (self.generateMessageText)()
                     self.past_message_check = 2
                     self.current_message = await msg.channel.send(content=new_text)
                     return
