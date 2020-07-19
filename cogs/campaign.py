@@ -83,7 +83,9 @@ class Campaign(commands.Cog):
             await campaignAddMsg.clear_reactions()
 
         return
+    
 
+            
     @commands.group()
     async def campaign(self, ctx):	
         pass

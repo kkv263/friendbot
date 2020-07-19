@@ -14,6 +14,7 @@ class Misc(commands.Cog, name='Misc'):
         self.past_message_check= 0
         self.quest_board_channel_id = 382027190633627649 #382027190633627649 725577624180621313
         self.category_channel_id = 382027737189056544 #382027737189056544  728456686024523810
+        self.campaign_channel_id = 734276389322096700 #734276389322096700  728456686024523810
 
 
     #https://discordapp.com/channels/382025597041246210/432358370578530310/733403065251528795 nice comments that make it worth it <3
@@ -54,7 +55,32 @@ class Misc(commands.Cog, name='Misc'):
         await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
         
-
+    async def printCampaigns(self,channel):
+        ch =self.bot.get_channel(728476108940640297)
+        message = await ch.fetch_message(733756957856497786)
+        campaign_channel_category =self.bot.get_channel(self.campaign_channel_id)
+        campaign_channel_ids = set(map(lambda c: c.id, campaign_channel_category.text_channels))
+        excluded = [534249473006632960, 382027251618938880, 582450618703020052]
+        text = ""
+        filtered = []
+        for(channel in campaign_channel_category.text_channels):
+            if(channel.has_permission(ctx.guild.me).view_channel and channel.id not in excluded):
+                filtered.push(channel)
+        filtered.sort()
+        for(channel in filtered):
+            text+= channel.mention+" "
+        message.edit(content=text)
+                
+    @commands.Cog.listener()
+    async def on_guild_channel_create(self, channel):
+        if(channel.category.name.toLower() == "campaigns"):   
+            self.printCampaigns(channel)
+            
+    @commands.Cog.listener()
+    async def on_guild_channel_update(before, after):
+        if(before.category.name.toLower() == "campaigns"):   
+            self.printCampaigns(channel)
+            
     #searches for the last message sent by the bot in case a restart was made
     #Allows it to use it to remove the last post
     async def find_message(self):
