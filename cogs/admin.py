@@ -4,6 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
+import sys
 
 def admin_or_owner():
     async def predicate(ctx):
@@ -55,7 +56,6 @@ class Admin(commands.Cog, name="Admin"):
                 print(f"{cog} has been added")
             except (discord.ClientException, ModuleNotFoundError):
                 print(f'Failed to load extension {extension}.')
-                traceback.print_exc()
         except Exception as e:
             print(e)
 

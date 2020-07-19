@@ -55,7 +55,7 @@ class Misc(commands.Cog, name='Misc'):
         await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
         
-    async def printCampaigns(self,channel):
+    async def printCampaigns(self,chan):
         ch =self.bot.get_channel(728476108940640297)
         message = await ch.fetch_message(733756957856497786)
         campaign_channel_category =self.bot.get_channel(self.campaign_channel_id)
@@ -63,23 +63,25 @@ class Misc(commands.Cog, name='Misc'):
         excluded = [534249473006632960, 382027251618938880, 582450618703020052]
         text = ""
         filtered = []
-        for(channel in campaign_channel_category.text_channels):
-            if(channel.has_permission(ctx.guild.me).view_channel and channel.id not in excluded):
-                filtered.push(channel)
-        filtered.sort()
-        for(channel in filtered):
+        for channel in campaign_channel_category.text_channels:
+            if(channel.permissions_for(chan.guild.me).view_channel and channel.id not in excluded):
+                filtered.append(channel)
+        def sortChannel(elem):
+            return elem.name
+        filtered.sort(key = sortChannel)
+        for channel in filtered:
             text+= channel.mention+" "
-        message.edit(content=text)
+        await message.edit(content=text)
                 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
-        if(channel.category.name.toLower() == "campaigns"):   
-            self.printCampaigns(channel)
+        if(channel.category.name.lower() == "campaigns"):   
+            await self.printCampaigns(channel)
             
     @commands.Cog.listener()
-    async def on_guild_channel_update(before, after):
-        if(before.category.name.toLower() == "campaigns"):   
-            self.printCampaigns(channel)
+    async def on_guild_channel_update(self, before, after):
+        if(before.category.name.lower() == "campaigns" and after.category.name.lower() != "campaigns"):   
+            await self.printCampaigns(before)
             
     #searches for the last message sent by the bot in case a restart was made
     #Allows it to use it to remove the last post
