@@ -106,7 +106,7 @@ class Shop(commands.Cog):
 
                 newGP = charRecords['GP'] - gpNeeded
                 shopEmbed.title = f"Buying: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{amount} x {bRecord['Name']} ({gpNeeded}gp): ** \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
+                shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount} x {bRecord['Name']} ({gpNeeded}gp): ** \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -389,7 +389,7 @@ class Shop(commands.Cog):
                     break
 
             if not noodleRole:
-                await channel.send(f"{author.display_name}, you don't have any Noodle roles to purchase a proficiency for {charRecords['Name']}.")
+                await channel.send(f"{author.display_name}, you don't have any Noodle roles! A Noodle role is required in order for {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
                 return    
 
             noodleLimit = noodleRoleArray.index(noodleRole.name)
@@ -398,7 +398,7 @@ class Shop(commands.Cog):
                 charRecords['Proficiency'] = 0
 
             if charRecords['Proficiency'] > noodleLimit:
-                await channel.send(f"{author.display_name}, your current role {noodleRole.name} does not let you purchase any more proficiencies for {charRecords['Name']}.")
+                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not allow {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
                 return
 
             gpNeeded = 0
@@ -406,7 +406,7 @@ class Shop(commands.Cog):
                 gpNeeded = charRecords['Proficiency'] * 500 
             
             if gpNeeded > charRecords['GP']:
-                await channel.send(f"{charRecords['Name']} does not have enough GP to purchase a proficiency.")
+                await channel.send(f"{charRecords['Name']} does not have enough gp to learn a language or gain proficiency in a tool in this way.")
                 return
 
             newGP = charRecords['GP'] - gpNeeded
@@ -420,11 +420,38 @@ class Shop(commands.Cog):
                 print ('MONGO ERROR: ' + str(e))
                 await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
             else:
-                shopEmbed.title = f"Purchasing Proficiency: ({charRecords['Name']})"
-                shopEmbed.description = f"**Proficiency Purchased!** You may now apply one language or tool proficiency of your choice for {charRecords['Name']}.\n\n**Current gp**: {newGP}\n"
+                shopEmbed.title = f"Proficiency Training: {charRecords['Name']}"
+                shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn one language or gain proficiency in a tool of your choice.\n\n**Current gp**: {newGP}\n"
                 await channel.send (embed=shopEmbed)
 
+# Proficiency Training
+# Characters can receive training and spend their gp on the services of an instructor to learn a language or pick up proficiency with a tool, but cannot gain expertise through this training. The cost of this training varies depending on how many proficiencies you have already learned through this system:
+# • 1st proficiency: 1000 gp
+# • 2nd proficiency: 1250 gp
+# • 3rd proficiency: 1500 gp
+# • 4th proficiency: 1750 gp
+# • 5th proficiency: 2000 gp *
+# Note: when you learn your fifth proficiency, you can instead choose to learn a skill and gain proficiency in it.
 
+# Congratulatory message for learning a skill:
+# {charRecords['Name']} has been trained by an instructor and can learn one language or gain proficiency in a tool of your choice. Alternatively, you can choose to gain proficiency in a skill of your choice.
+
+
+# Proficiency Training for Noodle roles
+# The Noodle roles allow your characters to purchase a language or tool proficiency for a nominal fee. As you acquire new Noodle roles on the server, you must first use all previous Noodle roles' benefits before using any new ones.
+# Good: 500
+# Elite: 400
+# True: 300 *
+# Asended: 200
+# Immortal: 100 *
+
+# Note: when you become True Noodle and Immortal Noodle, you can instead choose to learn a skill and gain proficiency in it.
+# Note: all Noodle roles after Immortal are free, with every second one granting the possibility to purchase a skill proficiency.
+
+# Use the same congratulatory message as above for learning a skill.
+
+
+# IMPORTANT: include a yes/no prompt for training proficiencies, including current and new gp (before and after the purchase). The relevant code is found on line 109.
 
 
 def setup(bot):
