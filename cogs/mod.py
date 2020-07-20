@@ -62,7 +62,7 @@ class Mod(commands.Cog):
                 recordString+= "\n"    
 
         modEmbed.description = recordString
-        modEmbed.set_footer(text="🔹 - These fields can be edited using the mod edit command\n🔸 - These fields can be edited using the mod add or mod remove command")
+        modEmbed.set_footer(text="🔹 - These fields can be edited using the mod edit command\n🔸 - These fields can be edited using the mod add or mod remove command.")
 
         if modEmbedmsg:
             await modEmbedmsg.edit(embed=modEmbed)
@@ -99,7 +99,7 @@ class Mod(commands.Cog):
                                 attunedRecords = ', '.join(attunedRecords)
                             removeDict = {removeKey : removeRecords, 'Attuned': attunedRecords}
                         else:
-                            await channel.send(f"The magic item `{mRecord['Name']}` is not inside {charRecords['Name']}'s magic item list to remove")
+                            await channel.send(f"The magic item `{mRecord['Name']}` is not inside {charRecords['Name']}'s magic item list to remove.")
                             return 
 
                     else:
@@ -118,7 +118,7 @@ class Mod(commands.Cog):
                                 await channel.send(f"The magic item `{cRecord['Name']}` is not inside {charRecords['Name']}'s magic item list to remove or is not a magic item.")
                                 return
                         else:
-                            await channel.send(f'The magic item `{removeValue}` does not exist or there are no items to remove. Please try again')
+                            await channel.send(f'The magic item `{removeValue}` does not exist or there are no items to remove. Please try again.')
                             return 
 
                 elif removeKey == "Inventory":
@@ -132,11 +132,11 @@ class Mod(commands.Cog):
                                 removeRecords = 'None'
                             removeDict = {removeKey : removeRecords}
                         else:
-                            await channel.send(f"The item `{iRecord['Name']}` is not inside {charRecords['Name']}'s inventory to remove")
+                            await channel.send(f"The item `{iRecord['Name']}` is not inside {charRecords['Name']}'s inventory to remove.")
                             return
 
                     else:
-                        await channel.send(f"The item `{removeValue}`does not exist or is not a valid shop inventory item")
+                        await channel.send(f"The item `{removeValue}`does not exist or is not a valid shop inventory item.")
                         return 
                     
                 elif removeKey == "Consumables":
@@ -152,15 +152,15 @@ class Mod(commands.Cog):
                             removeValue = cRecord['Name']
                             removeDict = {removeKey : removeRecords}
                         else:
-                            await channel.send(f"The magic item `{cRecord['Name']}` is not inside {charRecords['Name']}'s consumable list to remove")
+                            await channel.send(f"The magic item `{cRecord['Name']}` is not inside {charRecords['Name']}'s consumable list to remove.")
                             return
 
                     else:
-                        await channel.send(f"The item `{removeValue}`does not exist or is not a consumable")
+                        await channel.send(f"The item `{removeValue}`does not exist or is not a consumable.")
                         return 
 
                 else:
-                    await channel.send(f"There's no field called `{removeKey}` Please try again")
+                    await channel.send(f"There's no field called `{removeKey}` Please try again.")
                     return  
                                 
                 try:
@@ -170,10 +170,10 @@ class Mod(commands.Cog):
                     print ('MONGO ERROR: ' + str(e))
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
-                    await channel.send(f"The value `{removeValue}` has been removed from field {removeKey} for {charRecords['Name']}")
+                    await channel.send(f"The value `{removeValue}` has been removed from field {removeKey} for {charRecords['Name']}.")
 
         else:
-            await channel.send(f'The {dbName} `{name}` does not have any fields that use this remove command. Please try again')
+            await channel.send(f'The {dbName} `{name}` does not have any fields that use this remove command. Please try again.')
             return
 
     @mod.command()
@@ -215,7 +215,7 @@ class Mod(commands.Cog):
                                 await channel.send(f"The magic item `{cRecord['Name']}` is already in {charRecords['Name']}'s magic item list.")
                                 return
                         else:
-                            await channel.send(f'The magic item `{addValue}` does not exist, or is not a magic item. Please try again')
+                            await channel.send(f'The magic item `{addValue}` does not exist, or is not a magic item. Please try again.')
                             return 
                 elif addKey == "Inventory":
                     iRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'shop', addValue);
@@ -230,7 +230,7 @@ class Mod(commands.Cog):
                         addDict = {addKey : addRecords}
 
                     else:
-                        await channel.send(f"The item `{addValue}`does not exist or is not a valid shop inventory item")
+                        await channel.send(f"The item `{addValue}`does not exist or is not a valid shop inventory item.")
                         return 
                 elif addKey == "Consumables":
                     cRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit',addValue)
@@ -244,7 +244,7 @@ class Mod(commands.Cog):
                         addDict = {addKey : addRecords}
 
                     else:
-                        await channel.send(f"The item `{addValue}`does not exist or is not a consumable")
+                        await channel.send(f"The item `{addValue}`does not exist or is not a consumable.")
                         return 
 
                 else:
@@ -257,9 +257,9 @@ class Mod(commands.Cog):
                     print ('MONGO ERROR: ' + str(e))
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
-                    await channel.send(f"The value `{addValue}` has been added to field {addKey} for {charRecords['Name']}")
+                    await channel.send(f"The value `{addValue}` has been added to field {addKey} for {charRecords['Name']}.")
         else:
-            await channel.send(f'The {dbName} `{name}` does not have any fields that use this add command. Please try again')
+            await channel.send(f'The {dbName} `{name}` does not have any fields that use this add command. Please try again.')
             return
 
     @mod.command()
@@ -289,15 +289,15 @@ class Mod(commands.Cog):
                                 return
 
                     if editValue[0] < 0 or editValue[1] < 0:
-                        await channel.send(f"The field {editKey} values `{editValue}` must be higher than 0")
+                        await channel.send(f"The field {editKey} values `{editValue}` must be higher than 0.")
                         return
 
                     if editValue[0] % 0.5 != 0 or editValue[1] % 0.5 != 0:
-                        await channel.send(f"The field {editKey} values `{editValue}` must be rounded to the nearest .5 ")
+                        await channel.send(f"The field {editKey} values `{editValue}` must be rounded to the nearest .5.")
                         return
 
                     if editValue[1] != 4.0 and editValue[1] != 8.0:
-                        await channel.send(f"The field {editKey} second value `{editValue[1]}` must be 4.0 or 8.0")
+                        await channel.send(f"The field {editKey} second value `{editValue[1]}` must be 4.0 or 8.0.")
                         return
 
                     editValue = f"{editValue[0]}/{editValue[1]}"
@@ -308,11 +308,11 @@ class Mod(commands.Cog):
                     try:
                         editValue = float(editValue)
                     except ValueError:
-                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value.")
                         return
 
                     if editValue < 0:
-                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0.")
                         return
                     editDict = {editKey : editValue}
 
@@ -327,11 +327,11 @@ class Mod(commands.Cog):
                     try:
                         editValue = int(editValue)
                     except ValueError:
-                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value.")
                         return
 
                     if editValue < 0:
-                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0.")
                         return
 
                     editDict = {editKey : editValue}
@@ -341,7 +341,7 @@ class Mod(commands.Cog):
 
 
                 else:
-                    await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again')
+                    await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again.')
                     return
 
                 try:
@@ -355,9 +355,9 @@ class Mod(commands.Cog):
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
                     if editKey not in charRecords:
-                        await channel.send(f"The field {editKey} has been edited to from `0` to `{editValue}` for {charRecords['Name']}")
+                        await channel.send(f"The field {editKey} has been edited to from `0` to `{editValue}` for {charRecords['Name']}.")
                     else:
-                        await channel.send(f"The field {editKey} has been edited to from `{charRecords[editKey]}` to `{editValue}` for {charRecords['Name']}")
+                        await channel.send(f"The field {editKey} has been edited to from `{charRecords[editKey]}` to `{editValue}` for {charRecords['Name']}.")
         elif dbName == "guild":
             guildRecords = await checkForGuild(ctx, name)
             if guildRecords:
@@ -365,17 +365,17 @@ class Mod(commands.Cog):
                     try:
                         editValue = int(editValue)
                     except ValueError:
-                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                        await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value.")
                         return
 
                     if editValue < 0:
-                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                        await channel.send(f"The field {editKey} doesn't accept number's lower than 0.")
                         return
 
                     editDict = {editKey : editValue}
                   
                 else:
-                    await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again')
+                    await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again.')
                     return
 
                 try:
@@ -385,7 +385,7 @@ class Mod(commands.Cog):
                     print ('MONGO ERROR: ' + str(e))
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try again.")
                 else:
-                    await channel.send(f"The field {editKey} has been edited to from `{guildRecords[editKey]}` to `{editValue}` for {guildRecords['Name']}")
+                    await channel.send(f"The field {editKey} has been edited to from `{guildRecords[editKey]}` to `{editValue}` for {guildRecords['Name']}.")
 
         elif dbName == "user":
             mentions = ctx.message.mentions
@@ -401,11 +401,11 @@ class Mod(commands.Cog):
                 try:
                     editValue = int(editValue)
                 except ValueError:
-                    await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value")
+                    await channel.send(f"The field {editKey} doesn't accept `{editValue}` since it is not an integer value.")
                     return
 
                 if editValue < 0:
-                    await channel.send(f"The field {editKey} doesn't accept number's lower than 0")
+                    await channel.send(f"The field {editKey} doesn't accept number's lower than 0.")
                     return
 
                 editDict = {editKey : editValue}
@@ -413,12 +413,12 @@ class Mod(commands.Cog):
                 if editValue == 0 and editKey in userRecords: 
                     unsetDict = {editKey:1}
             else:
-                await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again')
+                await channel.send(f'The {dbName} `{name}` does not have any fields that use this edit command. Please try again.')
                 return
 
 
         else:
-            await channel.send(f'The database `{dbName}` does not exist')
+            await channel.send(f'The database `{dbName}` does not exist.')
             return
 
         try:
@@ -432,9 +432,9 @@ class Mod(commands.Cog):
             await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
         else:
             if editKey not in userRecords:
-                await channel.send(f"The field {editKey} has been edited to from `0` to `{editValue}` for {mentions[0].display_name}")
+                await channel.send(f"The field {editKey} has been edited to from `0` to `{editValue}` for {mentions[0].display_name}.")
             else:
-                await channel.send(f"The field {editKey} has been edited to from `{userRecords[editKey]}` to `{editValue}` for {mentions[0].display_name}")
+                await channel.send(f"The field {editKey} has been edited to from `{userRecords[editKey]}` to `{editValue}` for {mentions[0].display_name}.")
 
 
 

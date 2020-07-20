@@ -30,7 +30,7 @@ class Guild(commands.Cog):
             elif error.param.name == "channelName":
                 msg = "You're missing the #channel for the guild you want to create. "
             elif error.param.name == "gpName":
-                msg = "You're missing the amount of gp you want to fund a guild." 
+                msg = "You're missing the amount of gp you want to fund the guild." 
         elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
             msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
 
@@ -72,7 +72,7 @@ class Guild(commands.Cog):
             return 
 
         if guildRole == list() or guildChannel == list():
-            await channel.send(f"A guild role or guild channel must be supplied")
+            await channel.send(f"A guild role or guild channel must be supplied.")
             return 
             
 
@@ -106,7 +106,7 @@ class Guild(commands.Cog):
                     guildExists = await checkForGuild(ctx,guildName) 
 
                     if guildExists:
-                        await channel.send(f"There is already a guild by the name of `{guildName}`. Please try creating a guild with a different name")
+                        await channel.send(f"There is already a guild by the name of `{guildName}`. Please try creating a guild with a different name.")
                         return
 
                     # True, Ascended, and Immortal Noodles start with 10, 20, and 30 :sparkles: in their total/bank to start.
@@ -128,7 +128,7 @@ class Guild(commands.Cog):
                         print('Success')
 
                         guildEmbed.title = f"Guild Creation: {guildName}"
-                        guildEmbed.description = f"{charDict['Name']} has created **{guildName}**!\n\nIn order for the guild to open officially, 6000gp must be put into the guild.\n\nOther characters, including your character can fund the guild - `{commandPrefix}guild fund [charactername] [x] {guildName}` (x = amount of GP to fund)\n\nThe guild's status can be checked with `{commandPrefix}guild info {guildName}`\n\nCurrent Funds: 0"
+                        guildEmbed.description = f"{charDict['Name']} has created **{guildName}**!\n\nIn order for the guild to open officially, 6000gp must be put into the guild.\n\nOther characters, including your character, can fund the guild - `{commandPrefix}guild fund [charactername] [x] {guildName}` (x = amount of GP to fund)\n\nThe guild's status can be checked with `{commandPrefix}guild info {guildName}`\n\nCurrent Funds: 0"
                         if guildEmbedmsg:
                             await guildEmbedmsg.clear_reactions()
                             await guildEmbedmsg.edit(embed=guildEmbed)
@@ -136,7 +136,7 @@ class Guild(commands.Cog):
                             guildEmbedmsg = await channel.send(embed=guildEmbed)
                           
             else:
-                await channel.send(f'{author.display_name} you will need to play at least one game with a character before you can create a guild')
+                await channel.send(f'{author.display_name} you will need to play at least one game with a character before you can create a guild.')
                 return
 
         else:
@@ -210,12 +210,12 @@ class Guild(commands.Cog):
 
             if guildRecords:
                 if guildRecords['Funds'] >= 6000:
-                    await channel.send(f"`{guildRecords['Name']}` is not expecting any funds. This guild has already been opened")
+                    await channel.send(f"`{guildRecords['Name']}` is not expecting any funds. This guild has already been opened.")
                     return
 
                 if 'Guild' in charRecords:
                     if charRecords['Guild'] != guildRecords['Name']:
-                        await channel.send(f"{charRecords['Name']} cannot fund `{guildRecords['Name']}` because they belong to the guild `{charRecords['Guild']}`")
+                        await channel.send(f"{charRecords['Name']} cannot fund `{guildRecords['Name']}` because they belong to the guild `{charRecords['Guild']}`.")
                         return
 
                 gpNeeded = 0
@@ -236,11 +236,11 @@ class Guild(commands.Cog):
                      
 
                 if gpNeeded > charRecords['GP']:
-                    await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
+                    await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`.")
                     return
 
                 if gpNeeded > float(gpFund):
-                    await channel.send(f"{charRecords['Name']} needs to donate at least the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`")
+                    await channel.send(f"{charRecords['Name']} needs to donate at least the minimum {gpNeeded}gp to fund `{guildRecords['Name']}`.")
                     return
 
                         
@@ -289,7 +289,7 @@ class Guild(commands.Cog):
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
                     guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
-                    guildEmbed.description = f"{charRecords['Name']} has funded **{guildRecords['Name']}** with {gpFund}gp.\nIf the amount puts the guild's funds over 6000, the leftover is refunded\n\n**Current Guild Funds:** {guildRecords['Funds']}gp / 6000gp\n\n**Current gp**: {newGP}\n"
+                    guildEmbed.description = f"{charRecords['Name']} has funded **{guildRecords['Name']}** with {gpFund}gp.\nIf the amount puts the guild's funds over 6000, the leftover is refunded.\n\n**Current Guild Funds:** {guildRecords['Funds']}gp / 6000gp\n\n**Current gp**: {newGP}\n"
                     if guildRecords['Funds'] >= 6000:
                         guildEmbed.description += f"Congratulations! :tada: **{guildRecords['Name']}**  is officially open!"
                     if guildEmbedmsg:
@@ -298,7 +298,7 @@ class Guild(commands.Cog):
                         guildEmbedmsg = await channel.send(embed=guildEmbed)
 
             else:
-                await channel.send(f'The guild `{guildName}` does not exist. Please try again')
+                await channel.send(f'The guild `{guildName}` does not exist. Please try again.')
                 return
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
@@ -320,7 +320,7 @@ class Guild(commands.Cog):
 
         if charRecords:
             if 'Guild' in charRecords:
-                await channel.send(f"{charRecords['Name']} cannot join any guilds because they belong to the guild `{charRecords['Guild']}`")
+                await channel.send(f"{charRecords['Name']} cannot join any guilds because they belong to the guild `{charRecords['Guild']}`.")
                 return
 
             guildRecords = await checkForGuild(ctx,guildName) 
@@ -346,7 +346,7 @@ class Guild(commands.Cog):
                     return
 
                 if gpNeeded > charRecords['GP']:
-                    await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to join `{guildRecords['Name']}`")
+                    await channel.send(f"{charRecords['Name']} does not have the minimum {gpNeeded}gp to join `{guildRecords['Name']}`.")
                     return
                         
                 guildEmbed.title = f"Joining Guild: {guildRecords['Name']}"
@@ -389,7 +389,7 @@ class Guild(commands.Cog):
                         guildEmbedmsg = await channel.send(embed=guildEmbed)
                 
             else:
-                await channel.send(f'The guild `{guildName}` does not exist. Please try again')
+                await channel.send(f'The guild `{guildName}` does not exist. Please try again.')
                 return
 
             
@@ -412,7 +412,7 @@ class Guild(commands.Cog):
 
         if charRecords:
             if 'Guild' not in charRecords:
-                await channel.send(f"{charRecords['Name']} cannot upgrade their guild rank because they do not belong to a guild currently.")
+                await channel.send(f"{charRecords['Name']} cannot upgrade their guild rank because they currently do not belong to a guild.")
                 return
 
             guildRecords = await checkForGuild(ctx, charRecords['Guild']) 
@@ -420,27 +420,27 @@ class Guild(commands.Cog):
             if guildRecords:
 
                 if guildRecords['Funds'] < 6000: 
-                    await channel.send(f"{charRecords['Name']} cannot upgrade their guild rank because `{charRecords['Guild']}` is not officially open and still needs funding")
+                    await channel.send(f"{charRecords['Name']} cannot upgrade their guild rank because `{charRecords['Guild']}` is not officially open and still needs funding.")
                     return
 
                 if charRecords['Guild Rank'] > 3:
-                    await channel.send(f"{charRecords['Name']} is already at the max rank, and does not need to upgrade anymore.")
+                    await channel.send(f"{charRecords['Name']} is already at the max rank and does not need to upgrade anymore.")
                     return
 
                 elif charRecords['Guild Rank'] == 3:
                     starsAdded = 6
                     if guildRecords['Total Reputation'] < 60:
-                        await channel.send(f"{charRecords['Name']} cannot upgrade because their guild `{guildRecords['Name']}` does not have the `Masterwork Upgrade`")
+                        await channel.send(f"{charRecords['Name']} cannot upgrade because their guild `{guildRecords['Name']}` does not have the `Masterwork Upgrade`.")
                         return
                 elif charRecords['Guild Rank'] == 2:
                     starsAdded = 3
                     if guildRecords['Total Reputation'] < 30:
-                        await channel.send(f"{charRecords['Name']} cannot upgrade because their guild `{guildRecords['Name']}`, does not have the `Large Upgrade`")
+                        await channel.send(f"{charRecords['Name']} cannot upgrade because their guild `{guildRecords['Name']}`, does not have the `Large Upgrade`.")
                         return
                 elif charRecords['Guild Rank'] == 1:
                     starsAdded = 1
                     if guildRecords['Total Reputation'] < 10:
-                        await channel.send(f"{charRecords['Name']} cannot upgrade because their guild `{guildRecords['Name']}`, does not have the `Medium Upgrade`")
+                        await channel.send(f"{charRecords['Name']} cannot upgrade because their guild `{guildRecords['Name']}`, does not have the `Medium Upgrade`.")
                         return
 
                 gpNeeded = charRecords['Guild Rank'] * 1000
@@ -488,7 +488,7 @@ class Guild(commands.Cog):
                         guildEmbedmsg = await channel.send(embed=guildEmbed)
                 
             else:
-                await channel.send(f'The guild `{guildName}` does not exist. Please try again')
+                await channel.send(f'The guild `{guildName}` does not exist. Please try again.')
                 return
 
 
@@ -511,11 +511,11 @@ class Guild(commands.Cog):
 
         if charRecords:
             if 'Guild' not in charRecords:
-                await channel.send(f"{charRecords['Name']} cannot leave any guilds because they do not belong to a guild currently")
+                await channel.send(f"{charRecords['Name']} cannot leave a guild because they currently do not belong to any guild.")
                 return
 
             guildEmbed.title = f"Leaving Guild: {charRecords['Guild']}"
-            guildEmbed.description = f"Are you sure you want to leave **{charRecords['Guild']}**? You will donate all your reputation to the guild's bank.\n\n✅ : Yes\n\n❌: Cancel"
+            guildEmbed.description = f"Are you sure you want to leave **{charRecords['Guild']}**?\n\n✅ : Yes\n\n❌: Cancel"
 
             if guildEmbedmsg:
                 await guildEmbedmsg.edit(embed=guildEmbed)
@@ -546,7 +546,7 @@ class Guild(commands.Cog):
                 print ('MONGO ERROR: ' + str(e))
                 await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
             else:
-                guildEmbed.description = f"{charRecords['Name']} has left **{charRecords['Guild']}** and has donated reputation to their bank"
+                guildEmbed.description = f"{charRecords['Name']} has left **{charRecords['Guild']}**."
                 if guildEmbedmsg:
                     await guildEmbedmsg.edit(embed=guildEmbed)
                 else:
@@ -578,13 +578,13 @@ class Guild(commands.Cog):
 
     #     if charRecords:
     #         if 'Guild' not in charRecords:
-    #             await channel.send(f"{charRecords['Name']} cannot buy any sparkles because they do not belong to a guild currently")
+    #             await channel.send(f"{charRecords['Name']} cannot buy any sparkles because they currently do not belong to any guild.")
     #             return
 
     #         guildRecords = await checkForGuild(ctx, charRecords['Guild']) 
 
     #         if guildRecords['Funds'] < 6000: 
-    #             await channel.send(f"{charRecords['Name']} cannot buy any sparkles because `{charRecords['Guild']}` is not officially open and still needs funding")
+    #             await channel.send(f"{charRecords['Name']} cannot buy any sparkles because `{charRecords['Guild']}` is not officially open and still needs funding.")
     #             return
 
     #         gpNeeded = 0

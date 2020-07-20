@@ -126,7 +126,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                     sameMessage = True
                 return ((r.emoji in alphaEmojis[:min(len(records), 20)]) or (str(r.emoji) == '❌')) and u == author
 
-            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nThe maximum results shown are 20. If the result you are looking for is not here please proceed the command with ❌ and be more specific", value=infoString, inline=False)
+            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nThe maximum results shown are 20. If the result you are looking for is not here, please react with ❌ and be more specific.", value=infoString, inline=False)
             if not apiEmbedmsg or apiEmbedmsg == "Fail":
                 apiEmbedmsg = await channel.send(embed=apiEmbed)
             else:
@@ -167,7 +167,7 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
 
     if charRecords == list():
         if not mod:
-            await channel.send(content=f'I was not able to find your character named `{char}`. Please check your spelling and try again')
+            await channel.send(content=f'I was not able to find your character named `{char}`. Please check your spelling and try again.')
         ctx.command.reset_cooldown(ctx)
         return None, None
 
@@ -184,7 +184,7 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
                     sameMessage = True
                 return ((r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌')) and u == author
 
-            charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character. If you do not see your character here please proceed with ❌ and be more specific with your query.", value=infoString, inline=False)
+            charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
             charEmbedmsg = await channel.send(embed=charEmbed)
             for num in range(0,min(len(charRecords), 9)): await charEmbedmsg.add_reaction(numberEmojis[num])
             await charEmbedmsg.add_reaction('❌')
@@ -193,7 +193,7 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
                 tReaction, tUser = await bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
             except asyncio.TimeoutError:
                 await charEmbedmsg.delete()
-                await channel.send('Character information timed out! Try using the command again')
+                await channel.send('Character information timed out! Try using the command again.')
                 ctx.command.reset_cooldown(ctx)
                 return None, None
             else:
@@ -284,7 +284,7 @@ numberEmojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7�
 alphaEmojis = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬','🇭','🇮','🇯','🇰',
 '🇱','🇲','🇳','🇴','🇵','🇶','🇷','🇸','🇹','🇺','🇻','🇼','🇽','🇾','🇿']
 
-statuses = [f'D&D Friends | {commandPrefix}help', "We're all friends here!", f"See a bug? tell @Xyffei!"]
+statuses = [f'D&D Friends | {commandPrefix}help', "We're all friends here!", f"See a bug? tell @Xyffei!", "Practicing social distancing!", "Wearing a mask!", "Being a good boio."]
 discordClient = discord.Client()
 bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
 

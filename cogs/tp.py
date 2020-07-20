@@ -26,9 +26,9 @@ class Tp(commands.Cog):
             if error.param.name == 'charName':
                 msg = "You're missing your character name in the command. "
             elif error.param.name == "mItem":
-                msg = "You're missing the item you want to buy in the command."
+                msg = "You're missing the item you want to buy in the command. "
             elif error.param.name == "tierNum":
-                msg = "You're missing the tier for the TP you want to abandon."
+                msg = "You're missing the tier for the TP you want to abandon. "
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
             msg = "The amount you want to buy/sell must be a number. "
@@ -71,7 +71,7 @@ class Tp(commands.Cog):
             mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem) 
             if mRecord:
                 if mRecord['Name'] in charRecords['Magic Items']:
-                    await channel.send(f"You already have `{mRecord['Name']}`, and cannot spend more TP/GP on another one.")
+                    await channel.send(f"You already have `{mRecord['Name']}`, and cannot spend more TP/gp on another one.")
                     return 
 
                 tierNum = mRecord['Tier']
@@ -99,17 +99,17 @@ class Tp(commands.Cog):
                 tpEmbed.title = f"{mRecord['Name']} - Tier {mRecord['Tier']} {mRecord['TP']}TP / {mRecord['GP']}gp"
 
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
-                    await channel.send(f"You do not have Tier {tierNum} TP to spend or enough GP  to purchase `{mRecord['Name']}`")
+                    await channel.send(f"You do not have Tier {tierNum} TP to spend or enough gp  to purchase `{mRecord['Name']}`")
                     return
                   
                 elif not haveTP:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n~~1️⃣: {mRecord['TP']}TP (Treasure Points)~~ You do not have TP\n2️⃣: {mRecord['GP']}GP (Gold)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n~~1️⃣: {mRecord['TP']}TP (Treasure Points)~~ You do not have TP\n2️⃣: {mRecord['GP']}gp (Gold)\n\n❌: Cancel"                 
 
                 elif float(charRecords['GP']) < gpNeeded:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n~~2️⃣: {mRecord['GP']}GP (Gold)~~ You do not have enough GP\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n~~2️⃣: {mRecord['GP']}gp (Gold)~~ You do not have enough gp.\n\n❌: Cancel"                 
 
                 else:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with GP or TP?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n2️⃣: {mRecord['GP']}GP (Gold)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n2️⃣: {mRecord['GP']}gp (Gold)\n\n❌: Cancel"                 
                 
                 if tpEmbedmsg:
                     await tpEmbedmsg.edit(embed=tpEmbed)
@@ -143,7 +143,7 @@ class Tp(commands.Cog):
                             tpSplit= currentMagicItem.split('/')
                             refundTP = float(tpSplit[0])
                             charRecords['Current Item'] = "None"
-                            tpEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{mRecord['Name']}** - {charRecords['GP']} => {newGP}gp\nYou will be refunded the TP you have already spent on this item ({refundTP} TP) \n\n✅ : Yes\n\n❌: Cancel"
+                            tpEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{mRecord['Name']}** - {charRecords['GP']} => {newGP}gp\nYou will be refunded the TP you have already spent on this item ({refundTP} TP). \n\n✅ : Yes\n\n❌: Cancel"
                         else:
                             tpEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{mRecord['Name']}** - {charRecords['GP']} => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
 
@@ -254,7 +254,7 @@ class Tp(commands.Cog):
                                     
                 
             else:
-                await channel.send(f'`{mItem}` doesn\'t exist! Check to see if it\'s on the MIT and check your spelling.')
+                await channel.send(f'`{mItem}` doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.')
                 return
 
     @tp.command()
@@ -273,7 +273,7 @@ class Tp(commands.Cog):
 
         if charRecords:
             if charRecords['Current Item'] == "None":
-                await channel.send(f'You do not have a current incomplete item to discard.')
+                await channel.send(f'You do not currently have an incomplete item to discard.')
                 return
 
             currentItem = charRecords['Current Item'].split('(')[0].strip()
@@ -321,7 +321,7 @@ class Tp(commands.Cog):
 
 
         if tierNum not in ('1','2','3','4') and tierNum.lower() not in [r.lower() for r in roleArray]:
-            await channel.send(f"`{tierNum}` is not a valid tier. Please try again with 1,2,3, or 4 or (Junior, Journey, Elite, or True)")
+            await channel.send(f"`{tierNum}` is not a valid tier. Please try again with 1,2,3, or 4 or (Junior, Journey, Elite, or True).")
             return
 
         charRecords, tpEmbedmsg = await checkForChar(ctx, charName, tpEmbed)

@@ -63,7 +63,7 @@ class ItemTables(commands.Cog):
 
         mitEmbed = discord.Embed (
             title= f"{commandUpper} {queryString.capitalize()}",
-            description= f"React with the corresponding bolded letter to access the {commandUpper}",
+            description= f"React with the corresponding bolded letter to access the {commandUpper}.",
             colour = colour,
         )
         mitItemListEmbed = discord.Embed (
@@ -72,7 +72,7 @@ class ItemTables(commands.Cog):
 
         mitEmbed.set_author(name=userName, icon_url=author.avatar_url)
         mitItemListEmbed.set_author(name=userName, icon_url=author.avatar_url)
-        mitEmbed.set_footer(text= "React with ❌ to cancel")
+        mitEmbed.set_footer(text= "React with ❌ to cancel.")
 
         if not queryString or queryString.lower() == 'random':
             choices = getChoices(tierSubArray)
@@ -129,8 +129,8 @@ class ItemTables(commands.Cog):
                     for i in range(pageStart, pageEnd if pageEnd < (len(mitResults) - 1) else (len(mitResults)) ):
                         mitResultsString = mitResultsString + numberEmojis[numberEmoji] + ": " + mitResults[i] + "\n"
                         numberEmoji += 1
-                    mitItemListEmbed.add_field(name=f"[Tier {str(getTier(choiceIndex))}] {tpNumber}: React with the corresponding number", value=mitResultsString, inline=True)
-                    mitItemListEmbed.set_footer(text= f"Page {page+1} of {numPages} -- use {left} or {right} to navigate, {back} to go back, or ❌ to cancel")
+                    mitItemListEmbed.add_field(name=f"[Tier {str(getTier(choiceIndex))}] {tpNumber}: React with the corresponding number.", value=mitResultsString, inline=True)
+                    mitItemListEmbed.set_footer(text= f"Page {page+1} of {numPages} -- use {left} or {right} to navigate, {back} to go back, or ❌ to cancel.")
                     await mitStart.edit(embed=mitItemListEmbed) 
                     await mitStart.add_reaction(left) 
                     await mitStart.add_reaction(right)
@@ -181,7 +181,7 @@ class ItemTables(commands.Cog):
                 refreshKey(refreshTime)
                 mitItem = sheet.cell(queryResults[0].row, choiceIndex + 1, value_render_option='FORMULA').value.split('"')
             elif not queryResults:
-                await ctx.channel.send(f"Your query `{queryString}` did not find any results. Try accessing the Magic Item Tables menu by using `{commandPrefix}{commandName}` or better your query.")
+                await ctx.channel.send(f"Your query `{queryString}` did not find any results. Try accessing the Magic Item Tables menu by using `{commandPrefix}{commandName}` or improve your query.")
                 return
             else:
                 for j in list(queryResults):
@@ -201,7 +201,7 @@ class ItemTables(commands.Cog):
                 )
                 mitQueryEmbed.set_author(name=userName, icon_url=author.avatar_url)
                 mitQueryEmbed.add_field(name="React with the following number.", value=queryResultsString)
-                mitQueryEmbed.set_footer(text= "React with ❌ to cancel")
+                mitQueryEmbed.set_footer(text= "React with ❌ to cancel.")
                 mitQuery = await ctx.channel.send(embed = mitQueryEmbed)
                 try:
                     await mitQuery.add_reaction('❌')
@@ -211,7 +211,7 @@ class ItemTables(commands.Cog):
                     await channel.send(commandUpper+ ' timed out!')
                 else:
                     if qReaction.emoji == '❌':
-                        await mitQuery.edit(embed=None, content=f"{commandUpper} canceled. Type `{commandPrefix}{commandName}` to open the {commandUpper}")
+                        await mitQuery.edit(embed=None, content=f"{commandUpper} canceled. Type `{commandPrefix}{commandName}` to open the {commandUpper}.")
                         await mitQuery.clear_reactions()
                         return
                     queryResultsIndex = (int(str(qReaction.emoji)[0])) - 1
