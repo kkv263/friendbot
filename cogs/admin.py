@@ -5,6 +5,7 @@ import re
 from discord.utils import get        
 from discord.ext import commands
 import sys
+import traceback
 
 def admin_or_owner():
     async def predicate(ctx):
@@ -32,6 +33,13 @@ class Admin(commands.Cog, name="Admin"):
         message = await ch.fetch_message(msg)
         await message.add_reaction(emote)
         await ctx.message.delete()
+    
+    #Allows the sending of messages
+    @commands.command()
+    @admin_or_owner()
+    async def send(self, ctx, channel: int, *, msg: str):
+        ch = ctx.guild.get_channel(channel)
+        await ch.send(content=msg)
 
     #this function allows you to specify a channel and message and have the bot remove its reaction with a given emote
     #Not tested with emotes the bot might not have access to
@@ -43,7 +51,7 @@ class Admin(commands.Cog, name="Admin"):
         await message.remove_reaction(emote, self.bot.user)
         await ctx.message.delete()
     
-    @commands.group()
+    @commands.command()
     @admin_or_owner()
     async def reload(self, ctx, cog: str):
         
@@ -55,9 +63,11 @@ class Admin(commands.Cog, name="Admin"):
                 self.bot.load_extension("cogs." + cog)
                 print(f"{cog} has been added")
             except (discord.ClientException, ModuleNotFoundError):
-                print(f'Failed to load extension {extension}.')
+                print(f'Failed to load extension {cog}.')
+                traceback.print_exc()
         except Exception as e:
-            print(e)
+            print(f'Failed to load extension {cog}.')
+            traceback.print_exc()
 
 
 def setup(bot):
