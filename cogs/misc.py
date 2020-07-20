@@ -53,8 +53,56 @@ class Misc(commands.Cog, name='Misc'):
 
         await channel.send(content=message.author.display_name + ":\n" +  uwuMessage)
         await ctx.message.delete()
+    
+    #this function is passed in with the channel which has been created/moved
+    #relies on ther being a message to use
+    async def printCampaigns(self,chan):
         
-
+        ch =self.bot.get_channel(382027251618938880) #382027251618938880 728476108940640297
+        #find the message in the Campaign Board
+        message = await ch.history().get(author__id = self.bot.user.id)
+        #Go through all categories with Campaign in the name and Grab all channels in the Campaign category and their ids
+        campaign_channels = []
+        for cat in chan.guild.categories:
+            if("campaigns" in cat.name.lower()):
+                campaign_channels+=cat.text_channels
+        excluded = [534249473006632960, 382027251618938880, 582450618703020052]
+        text = "Number of currently-running campaigns: "
+        filtered = []
+        #filter the list of channels to be just viewable and not in the specific excluded list
+        for channel in campaign_channels:
+            if(channel.permissions_for(chan.guild.me).view_channel and channel.id not in excluded):
+                filtered.append(channel)
+        #sort alphebetical ignoring the 'the'
+        def sortChannel(elem):
+            name = elem.name
+            if(name.startswith("the-")):
+                name = name.split("-", 1)[1]
+            return name
+        #generate the string
+        filtered.sort(key = sortChannel)
+        text += "**"+str(len(filtered))+"**!\n\n"
+        text += (" | ").join(map(lambda c: c.mention, filtered))
+        if(not message):
+            message = await ch.send(content=text)
+            return
+        await message.edit(content=text)
+                
+    @commands.Cog.listener()
+    async def on_guild_channel_create(self, channel):
+        if("campaigns" in channel.category.name.lower()):   
+            await self.printCampaigns(channel)
+            
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel):
+        if("campaigns" in channel.category.name.lower()):   
+            await self.printCampaigns(channel)
+            
+    @commands.Cog.listener()
+    async def on_guild_channel_update(self, before, after):
+        if("campaigns" in before.category.name.lower()   and  before.category.name != after.category.name):   
+            await self.printCampaigns(before)
+            
     #searches for the last message sent by the bot in case a restart was made
     #Allows it to use it to remove the last post
     async def find_message(self):
