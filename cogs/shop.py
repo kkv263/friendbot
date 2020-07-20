@@ -389,7 +389,7 @@ class Shop(commands.Cog):
                     break
 
             if not noodleRole:
-                await channel.send(f"{author.display_name}, you don't have any Noodle roles which are required to train {charRecords['Name']} in a language or proficiency.")
+                await channel.send(f"{author.display_name}, you don't have any Noodle roles! A Noodle role is required in order for {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
                 return    
 
             noodleLimit = noodleRoleArray.index(noodleRole.name)
@@ -398,7 +398,7 @@ class Shop(commands.Cog):
                 charRecords['Proficiency'] = 0
 
             if charRecords['Proficiency'] > noodleLimit:
-                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not let you train {charRecords['Name']} in a language or proficiency.")
+                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not allow {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
                 return
 
             gpNeeded = 0
@@ -406,7 +406,7 @@ class Shop(commands.Cog):
                 gpNeeded = charRecords['Proficiency'] * 500 
             
             if gpNeeded > charRecords['GP']:
-                await channel.send(f"{charRecords['Name']} does not have enough gp to be trained in a language or proficiency.")
+                await channel.send(f"{charRecords['Name']} does not have enough gp to learn a language or gain proficiency in a tool in this way.")
                 return
 
             newGP = charRecords['GP'] - gpNeeded
@@ -421,7 +421,7 @@ class Shop(commands.Cog):
                 await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
             else:
                 shopEmbed.title = f"Proficiency Training: {charRecords['Name']}"
-                shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn one language or become proficient in a tool of your choice .\n\n**Current gp**: {newGP}\n"
+                shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn one language or gain proficiency in a tool of your choice.\n\n**Current gp**: {newGP}\n"
                 await channel.send (embed=shopEmbed)
 
 # Proficiency Training
@@ -434,7 +434,7 @@ class Shop(commands.Cog):
 # Note: when you learn your fifth proficiency, you can instead choose to learn a skill and gain proficiency in it.
 
 # Congratulatory message for learning a skill:
-# You have been trained by an instructor and can choose one language or tool proficiency of your choice for {charRecords['Name']}. Alternatively, you can choose to learn a skill and gain proficiency in it.
+# {charRecords['Name']} has been trained by an instructor and can learn one language or gain proficiency in a tool of your choice. Alternatively, you can choose to gain proficiency in a skill of your choice.
 
 
 # Proficiency Training for Noodle roles
@@ -450,7 +450,8 @@ class Shop(commands.Cog):
 
 # Use the same congratulatory message as above for learning a skill.
 
-# Include a yes/no prompt for training proficiencies, including current and new gp (before and after the purchase). The relevant code is found on line 109.
+
+# IMPORTANT: include a yes/no prompt for training proficiencies, including current and new gp (before and after the purchase). The relevant code is found on line 109.
 
 
 def setup(bot):
