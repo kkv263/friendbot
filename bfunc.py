@@ -274,6 +274,17 @@ timezoneVar = 'US/Central'
 # ritTierArray = getTiers(ritSheet.row_values(2))
 # ritSubArray = ritSheet.row_values(3)
 
+# Quest Buffs - 2x Rewards, 2x Items, Recruitment Drive
+questBuffsDict = {'2xRewards': [20, "2x CP,TP, and gp"], 
+"2xItems - Small": [5,"+ 1 Tier 1 Minor Non-Consumable Reward"], 
+"2xItems - Medium": [10, "+ 1 Same Tier or Lower Reward"], 
+"2xItems - Large": [15,"Both of the above + 1 Tier 1 Minor Non-Consumable Reward"], 
+"RD - Small":[4,"Small Guild Upgrade"], 
+"RD - Medium": [6,"Small and Medium Upgrades"], 
+"RD - Large": [9,"Small, Medium, and Large Upgrades"], 
+"RD - All": [13, " All Guild Upgrades"]}
+questBuffsArray = list(questBuffsDict.keys())
+
 left = '\N{BLACK LEFT-POINTING TRIANGLE}'
 right = '\N{BLACK RIGHT-POINTING TRIANGLE}'
 back = '\N{LEFTWARDS ARROW WITH HOOK}'
