@@ -83,6 +83,9 @@ class Misc(commands.Cog, name='Misc'):
         filtered.sort(key = sortChannel)
         text += "**"+str(len(filtered))+"**!\n\n"
         text += (" | ").join(map(lambda c: c.mention, filtered))
+        if(not message):
+            message = await ch.send(content=text)
+            return
         await message.edit(content=text)
                 
     @commands.Cog.listener()
