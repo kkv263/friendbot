@@ -36,7 +36,7 @@ class Log(commands.Cog):
                     break 
 
         if not msgFound:
-            delMessage = await ctx.channel.send(content=f"I couldn't find your game with ID - `{num}` in the last {limit} games. Please try again, I will delete your message and this message in 10 seconds")
+            delMessage = await ctx.channel.send(content=f"I couldn't find your game with ID - `{num}` in the last {limit} games. Please try again, I will delete your message and this message in 10 seconds.")
             await asyncio.sleep(10) 
             await delMessage.delete()
             await ctx.message.delete() 
@@ -62,7 +62,7 @@ class Log(commands.Cog):
                 charData.append({"User ID" : logItems[0].strip() , "Name": logItems[1].split('\n')[0].strip()})
 
         if int(dmID) != ctx.author.id:
-            delMessage = await ctx.channel.send(content=f"It doesn't look your you were the DM of this game. You won't be able to edit this session log. I will delete your message and this message in 10 seconds")
+            delMessage = await ctx.channel.send(content=f"It doesn't look your you were the DM of this game. You won't be able to edit this session log. I will delete your message and this message in 10 seconds.")
             await asyncio.sleep(10) 
             await delMessage.delete()
             await ctx.message.delete() 
@@ -76,7 +76,7 @@ class Log(commands.Cog):
             sessionLogEmbed.description += "\nSummary: " + editString+"\n"
 
         await editMessage.edit(embed=sessionLogEmbed)
-        delMessage = await ctx.channel.send(content=f"I've edited the summary for Game #{num}.\n```{editString}```\nPlease double check that the edit is correct. I will now delete your message and this message in 30 seconds")
+        delMessage = await ctx.channel.send(content=f"I've edited the summary for Game #{num}.\n```{editString}```\nPlease double-check that the edit is correct. I will now delete your message and this message in 30 seconds.")
 
         if "✅" not in sessionLogEmbed.footer.text:
 
@@ -140,7 +140,7 @@ class Log(commands.Cog):
                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the command again.")
             else:
                 print("Success")
-                sessionLogEmbed.set_footer(text=sessionLogEmbed.footer.text + "\n✅ Log complete! Players have been rewarded. THe DM may still edit the summary if they wish.")
+                sessionLogEmbed.set_footer(text=sessionLogEmbed.footer.text + "\n✅ Log complete! Players have been rewarded. THe DM may still edit the summary log if they wish.")
                 await editMessage.edit(embed=sessionLogEmbed)
                 await asyncio.sleep(30) 
                 await delMessage.delete()

@@ -193,7 +193,7 @@ class Shop(commands.Cog):
                     numI += 1
 
             if (len(buyList) > 1):
-                shopEmbed.add_field(name=f"There seems to be multiple results for `{buyItem}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific", value=buyString, inline=False)
+                shopEmbed.add_field(name=f"There seems to be multiple results for `{buyItem}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
                 if not shopEmbedmsg:
                     shopEmbedmsg = await channel.send(embed=shopEmbed)
                 else:
@@ -228,7 +228,7 @@ class Shop(commands.Cog):
         
             if bRecord:
                 if 'Magic Item' in bRecord:
-                    await channel.send(f"{bRecord['Name']} is a magic item and is not sellable. Please try again with a different item")
+                    await channel.send(f"{bRecord['Name']} is a magic item and is not sellable. Please try again with a different item.")
                     return
                 
                 if f"{bRecord['Name']}" not in charRecords['Inventory']:
@@ -307,7 +307,7 @@ class Shop(commands.Cog):
             if bRecord:
                 if 'Spellbook' in charRecords:
                     if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
-                        await channel.send(f"{charRecords['Name']} does already has the spell `{bRecord['Name']}` to copied in thier spellbook!")
+                        await channel.send(f"{charRecords['Name']} does already has the spell `{bRecord['Name']}` to copied in their spellbook!")
                         return  
 
                 if 'Free Spells' not in charRecords:
@@ -320,7 +320,7 @@ class Shop(commands.Cog):
                             break
 
                     if not spellCopied:
-                        await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into thier spellbook!")
+                        await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into their spellbook!")
                         return  
 
                     gpNeeded = bRecord['Level'] * 50
@@ -328,17 +328,17 @@ class Shop(commands.Cog):
                         gpNeeded = gpNeeded / 2
 
                     if gpNeeded > charRecords['GP']:
-                        await channel.send(f"{charRecords['Name']} does not have enough GP to copy `{bRecord['Name']}`")
+                        await channel.send(f"{charRecords['Name']} does not have enough gp to copy `{bRecord['Name']}`.")
                         return
 
                 else:
                     gpNeeded = 0
                     if bRecord['Level'] > 1:
-                        await channel.send(f"`{bRecord['Name']}` is not a level 1 spell that can be copied into your spellbook as a starting level 1 spell")
+                        await channel.send(f"`{bRecord['Name']}` is not a level 1 spell that can be copied into your spellbook.")
                         return     
 
                     if 'Wizard' not in bRecord['Classes']:
-                        await channel.send(f"`{bRecord['Name']}` is not a wizard spell that can be copied into your spellbook as a starting level 1 spell")
+                        await channel.send(f"`{bRecord['Name']}` is not a Wizard spell that can be copied into your spellbook.")
                         return     
                     charRecords['Free Spells'] -= 1
 
@@ -389,7 +389,7 @@ class Shop(commands.Cog):
                     break
 
             if not noodleRole:
-                await channel.send(f"{author.display_name}, you don't have any noodle roles to purchase a proficiency for {charRecords['Name']}.")
+                await channel.send(f"{author.display_name}, you don't have any Noodle roles to purchase a proficiency for {charRecords['Name']}.")
                 return    
 
             noodleLimit = noodleRoleArray.index(noodleRole.name)
@@ -421,7 +421,7 @@ class Shop(commands.Cog):
                 await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
             else:
                 shopEmbed.title = f"Purchasing Proficiency: ({charRecords['Name']})"
-                shopEmbed.description = f"**Proficiency Purchased!** You may now apply one language or tool proficiency of your choice for {charRecords['Name']}\n\n**Current gp**: {newGP}\n"
+                shopEmbed.description = f"**Proficiency Purchased!** You may now apply one language or tool proficiency of your choice for {charRecords['Name']}.\n\n**Current gp**: {newGP}\n"
                 await channel.send (embed=shopEmbed)
 
 
