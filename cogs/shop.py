@@ -389,7 +389,7 @@ class Shop(commands.Cog):
                     break
 
             if not noodleRole:
-                await channel.send(f"{author.display_name}, you don't have any Noodle roles to be trained in a proficiency for {charRecords['Name']}.")
+                await channel.send(f"{author.display_name}, you don't have any Noodle roles which are required to train {charRecords['Name']} in a language or proficiency.")
                 return    
 
             noodleLimit = noodleRoleArray.index(noodleRole.name)
@@ -398,7 +398,7 @@ class Shop(commands.Cog):
                 charRecords['Proficiency'] = 0
 
             if charRecords['Proficiency'] > noodleLimit:
-                await channel.send(f"{author.display_name}, your current role {noodleRole.name} does not let you train any more proficiencies for {charRecords['Name']}.")
+                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not let you train {charRecords['Name']} in a language or proficiency.")
                 return
 
             gpNeeded = 0
@@ -406,7 +406,7 @@ class Shop(commands.Cog):
                 gpNeeded = charRecords['Proficiency'] * 500 
             
             if gpNeeded > charRecords['GP']:
-                await channel.send(f"{charRecords['Name']} does not have enough gp to be trained in a proficiency.")
+                await channel.send(f"{charRecords['Name']} does not have enough gp to be trained in a language or proficiency.")
                 return
 
             newGP = charRecords['GP'] - gpNeeded
@@ -421,7 +421,7 @@ class Shop(commands.Cog):
                 await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
             else:
                 shopEmbed.title = f"Proficiency Training: {charRecords['Name']}"
-                shopEmbed.description = f"You have been trained by an instructor and can choose one language or tool proficiency of your choice for {charRecords['Name']}.\n\n**Current gp**: {newGP}\n"
+                shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn one language or become proficient in a tool of your choice .\n\n**Current gp**: {newGP}\n"
                 await channel.send (embed=shopEmbed)
 
 # Proficiency Training
