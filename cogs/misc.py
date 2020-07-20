@@ -14,7 +14,6 @@ class Misc(commands.Cog, name='Misc'):
         self.past_message_check= 0
         self.quest_board_channel_id = 382027190633627649 #382027190633627649 725577624180621313
         self.category_channel_id = 382027737189056544 #382027737189056544  728456686024523810
-        self.campaign_channel_id = 734276389322096700 #734276389322096700  728456686024523810
 
 
     #https://discordapp.com/channels/382025597041246210/432358370578530310/733403065251528795 nice comments that make it worth it <3
@@ -59,7 +58,7 @@ class Misc(commands.Cog, name='Misc'):
     #relies on ther being a message to use
     async def printCampaigns(self,chan):
         
-        ch =self.bot.get_channel(728476108940640297)
+        ch =self.bot.get_channel(382027251618938880) #382027251618938880 728476108940640297
         #find the message in the Campaign Board
         message = await ch.history().get(author__id = self.bot.user.id)
         #Go through all categories with Campaign in the name and Grab all channels in the Campaign category and their ids
