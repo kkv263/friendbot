@@ -71,7 +71,7 @@ class Tp(commands.Cog):
             mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem) 
             if mRecord:
                 if mRecord['Name'] in charRecords['Magic Items']:
-                    await channel.send(f"You already have `{mRecord['Name']}`, and cannot spend more TP/gp on another one.")
+                    await channel.send(f"You already have `{mRecord['Name']}` and cannot TP or gp on another one.")
                     return 
 
                 tierNum = mRecord['Tier']
@@ -99,17 +99,17 @@ class Tp(commands.Cog):
                 tpEmbed.title = f"{mRecord['Name']} - Tier {mRecord['Tier']} {mRecord['TP']}TP / {mRecord['GP']}gp"
 
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
-                    await channel.send(f"You do not have Tier {tierNum} TP to spend or enough gp  to purchase `{mRecord['Name']}`")
+                    await channel.send(f"You do not have Tier {tierNum} TP or gp to purchase `{mRecord['Name']}`.")
                     return
                   
                 elif not haveTP:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n~~1️⃣: {mRecord['TP']}TP (Treasure Points)~~ You do not have TP\n2️⃣: {mRecord['GP']}gp (Gold)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n~~1️⃣: {mRecord['TP']} TP (Treasure Points)~~ You do not have TP\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
 
                 elif float(charRecords['GP']) < gpNeeded:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n~~2️⃣: {mRecord['GP']}gp (Gold)~~ You do not have enough gp.\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n~~2️⃣: {mRecord['GP']} gp (gold pieces)~~ You do not have enough gp.\n\n❌: Cancel"                 
 
                 else:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']}gp**\n\n1️⃣: {mRecord['TP']}TP (Treasure Points)\n2️⃣: {mRecord['GP']}gp (Gold)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
                 
                 if tpEmbedmsg:
                     await tpEmbedmsg.edit(embed=tpEmbed)
@@ -143,9 +143,9 @@ class Tp(commands.Cog):
                             tpSplit= currentMagicItem.split('/')
                             refundTP = float(tpSplit[0])
                             charRecords['Current Item'] = "None"
-                            tpEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{mRecord['Name']}** - {charRecords['GP']} => {newGP}gp\nYou will be refunded the TP you have already spent on this item ({refundTP} TP). \n\n✅ : Yes\n\n❌: Cancel"
+                            tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: {charRecords['GP']} → {newGP}gp\nYou will be refunded the TP you have already spent on this item ({refundTP} TP). \n\n✅ : Yes\n\n❌: Cancel"
                         else:
-                            tpEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{mRecord['Name']}** - {charRecords['GP']} => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
+                            tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: {charRecords['GP']} → {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
 
                             
                     elif tReaction.emoji == '1️⃣':
@@ -168,13 +168,13 @@ class Tp(commands.Cog):
                                 charRecords[f"T{tierNum} TP"] = 0
                                 charRecords['Current Item'] = f"{mRecord['Name']} {newTP}"
                             else:
-                                newTP = f"({tpSplit[1]}/{tpSplit[1]}) Complete! :tada:"
+                                newTP = f"({tpSplit[1]}/{tpSplit[1]}) - Complete! :tada:"
                                 charRecords[f"T{tierNum} TP"] = abs(float(tpResult))
                                 charRecords['Current Item'] = 'None'
 
                             print(newTP)
                             print(charRecords[f"T{tierNum} TP"])
-                            tpEmbed.description = f"Are you sure you want to continue this purchase?\n\n**{mRecord['Name']}** - ({tpSplit[0]}/{tpSplit[1]}) => {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅ : Yes\n\n❌: Cancel"
+                            tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: ({tpSplit[0]}/{tpSplit[1]}) → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅ : Yes\n\n❌: Cancel"
 
 
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
@@ -244,12 +244,12 @@ class Tp(commands.Cog):
                                 tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try tp buy again.")
                             else:
                                 if newTP:
-                                    tpEmbed.description = f"**TP spent!** Check out what you got!\n\n**{mRecord['Name']}** - {newTP}\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
+                                    tpEmbed.description = f"**TP spent!** Check out what you got!\n\n**{mRecord['Name']}**: {newTP}\n\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
                                 elif newGP:
                                     if refundTP:
-                                        tpEmbed.description = f"**GP spent!** Check out what you got!\n\n**{mRecord['Name']}**\n**Current gp**: {newGP}\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP'] + refundTP} (Refunded {refundTP})"
+                                        tpEmbed.description = f"**gp spent!** Check out what you got!\n\n**{mRecord['Name']}**\n\n**Current gp**: {newGP}\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP'] + refundTP} (Refunded {refundTP})"
                                     else:
-                                        tpEmbed.description = f"**GP spent!** Check out what you got!\n\n**{mRecord['Name']}**\n**Current gp**: {newGP}\n"
+                                        tpEmbed.description = f"**gp spent!** Check out what you got!\n\n**{mRecord['Name']}**\n\n**Current gp**: {newGP}\n"
                                 await tpEmbedmsg.edit(embed=tpEmbed)
                                     
                 
