@@ -60,7 +60,7 @@ class Timer(commands.Cog):
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
     @timer.command()
-    async def prep(self, ctx, userList, *, game="D&D Game"):
+    async def prep(self, ctx, userList, *, game="Name of your quest"):
         def startEmbedcheck(r, u):
             return (r.emoji in numberEmojis[:5] or str(r.emoji) == '❌') and u == author
         channel = ctx.channel
@@ -182,7 +182,7 @@ class Timer(commands.Cog):
                         playerChar = await ctx.invoke(self.timer.get_command('signup'), char=None, author=msg.author, role=role) 
 
                 else:
-                    await channel.send(f"```{msg.author.display_name}, you are not on the roster to play in this game.```")
+                    await channel.send(f"```{msg.author.display_name}, you are not on the roster to play in this quest.```")
                     
                 if playerChar:
                     if playerRoster.index(playerChar[0]) == 0:
@@ -244,7 +244,7 @@ class Timer(commands.Cog):
                     timerStarted = True
 
             elif msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel":
-                await channel.send(f'```Timer canceled! If you would like to prep a new game please use {commandPrefix}timer prep.```') 
+                await channel.send(f'```Timer canceled! If you would like to prep a new quest, please use {commandPrefix}timer prep.```') 
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
 
@@ -416,12 +416,12 @@ class Timer(commands.Cog):
             cpSplit = cRecord[0]['CP'].split('/')
             if 'Death' in cRecord[0]:
                 if not resume:
-                    await channel.send(content=f'```You cannot sign up with `{cRecord[0]["Name"]}`, a dying character, please use `{commandPrefix}char death`.```')
+                    await channel.send(content=f'```You cannot sign up with `{cRecord[0]["Name"]}`, a dead character, please use `{commandPrefix}death`.```')
                 return False 
 
             if next((s for s in cRecord[0].keys() if 'GID' in s), None):
                 if not resume:
-                    await channel.send(content=f'```You cannot sign up with `{cRecord[0]["Name"]}`. This character has still not received their rewards from their last game, please wait until the session log has been checked off.```')
+                    await channel.send(content=f'```You cannot sign up with `{cRecord[0]["Name"]}`. This character has not received their rewards from their last quest. Please wait until the session log has been approved.```')
                 return False    
 
             validLevelStart = 1
@@ -444,13 +444,13 @@ class Timer(commands.Cog):
 
             if charLevel < validLevelStart or charLevel > validLevelEnd:
                 if not resume:
-                    await channel.send(f"```{cRecord[0]['Name']} is not between levels {validLevelStart} - {validLevelEnd} to play in this game. Please choose a different character.```")
+                    await channel.send(f"```{cRecord[0]['Name']} is not between levels {validLevelStart} - {validLevelEnd} to play in this quest. Please choose a different character.```")
                 return False 
 
 
             if float(cpSplit[0]) >= float(cpSplit[1]):
                 if not resume:
-                    await channel.send(content=f'```You need to `{commandPrefix}levelup` your character {cRecord[0]["Name"]} before you can join the game!```')
+                    await channel.send(content=f'```You need to `{commandPrefix}levelup` your character {cRecord[0]["Name"]} before you can join the quest!```')
                 return False 
 
 
@@ -633,7 +633,7 @@ class Timer(commands.Cog):
 
             if rewardList == list():
                 if not resume:
-                    await ctx.channel.send(content=f"```I could not find any mention of a user to hand out a reward.```") 
+                    await ctx.channel.send(content=f"```I could not find any mention of a user to hand out a reward item.```") 
                 return start,dmChar
             else:
                 rewardUser = guild.get_member(rewardList[0])
@@ -654,7 +654,7 @@ class Timer(commands.Cog):
                         totalDurationTime = (time.time() - float(u.split(':')[1])) // 60
                         if totalDurationTime < 180:
                             if not resume:
-                              await ctx.channel.send(content=f"```You may not reward any items if a game's duration is under 3 hours.```") 
+                              await ctx.channel.send(content=f"```You cannot award any reward items if the quest is under three hours.```") 
                             return start, dmChar
                     for item in v:
                         if item[0] == rewardUser:
@@ -672,7 +672,7 @@ class Timer(commands.Cog):
 
                     else:
                         if not resume:
-                            await ctx.channel.send(content=f'```You need to include quotes around your reward item in your command. Please follow this format: \n{commandPrefix}timer reward @player "reward"```')
+                            await ctx.channel.send(content=f'```You need to include quotes around the reward item in your command. Please follow this format:\n{commandPrefix}timer reward @player "reward"```')
                         return start, dmChar
 
                     for query in consumablesList:
@@ -682,7 +682,7 @@ class Timer(commands.Cog):
                             sRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'spells', spellItem)
 
                             if not sRecord and not resume:
-                                await ctx.channel.send(f'`{query}` does not seem to be a valid reward.')
+                                await ctx.channel.send(f'`{query}` does not seem to be a valid reward item.')
                                 return start, dmChar
 
                             else:
@@ -768,9 +768,9 @@ class Timer(commands.Cog):
                             if int(rewardConsumable['Tier']) > tierNum:
                                 if not resume:
                                     if rewardUser == dmChar[0]:
-                                        await ctx.channel.send(f"```You cannot award yourself this reward because it is outside of your reward tier.```")
+                                        await ctx.channel.send(f"```You cannot award yourself this reward because it is above your tier.```")
                                     else:
-                                        await ctx.channel.send(f"```You cannot award this reward because it is outside of your reward tier.```")
+                                        await ctx.channel.send(f"```You cannot award this reward because it is above of your tier.```")
                                 return start, dmChar 
 
                             if dmMnc and rewardUser == dmChar[0] and (rewardConsumable['Minor/Major'] != 'Minor' or not rewardConsumable['Consumable']):
@@ -792,28 +792,28 @@ class Timer(commands.Cog):
                             rewardMajorLimit = 1
                             rewardMinorLimit = 2
 
-                            rewardMajorErrorString = f"```You cannot award anymore **major** reward items\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards```"
-                            rewardMinorErrorString = f"```You cannot award anymore **minor** reward items\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards```"
+                            rewardMajorErrorString = f"```You cannot award any more **Major** reward items.\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards```"
+                            rewardMinorErrorString = f"```You cannot award any more **Minor** reward items.\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards```"
 
                             if rewardUser == dmChar[0]:
                                 if totalDurationTime > 180:
                                     if chooseOr:
                                         if dmMajor > dmMajorLimit or dmMinor > dmMinorLimit:
                                             if not resume:
-                                                await ctx.channel.send(f"```You cannot award yourself anymore major or minor reward items {dmChar[4][3]}.```")
+                                                await ctx.channel.send(f"```You cannot award yourself anymore Major or Minor reward items {dmChar[4][3]}.```")
                                             return start, dmChar 
                                     else:
                                         if dmMajor > dmMajorLimit:
                                             if not resume:
-                                                await ctx.channel.send(f"```You cannot award yourself anymore major reward items {dmChar[4][3]}.```")
+                                                await ctx.channel.send(f"```You cannot award yourself anymore Major reward items {dmChar[4][3]}.```")
                                             return start, dmChar 
                                         elif dmMinor > dmMinorLimit:
                                             if not resume:
-                                                await ctx.channel.send(f"```You cannot award yourself anymore minor reward items {dmChar[4][4]}.```")
+                                                await ctx.channel.send(f"```You cannot award yourself anymore Minor reward items {dmChar[4][4]}.```")
                                             return start, dmChar 
                                 else:
                                     if not resume:
-                                        await ctx.channel.send(f"```Because you have played less than 3 hours, you cannot reward yourself any rewards.```")
+                                        await ctx.channel.send(f"```Because you have played less than three hours, you cannot award yourself any rewards.```")
                                     return start, dmChar 
                             
                             else:
@@ -948,7 +948,7 @@ class Timer(commands.Cog):
                 if userInfo:
                     if not resume and dmChar:
                         if dmChar[0] is addUser:
-                            await channel.send("As the DM you cannot add any characters to your game.") 
+                            await channel.send("You cannot add any characters to your quest as the DM.") 
                             return start
 
                         addEmbed = discord.Embed()
@@ -1139,9 +1139,9 @@ class Timer(commands.Cog):
             msgAfter = False
 
             if role != "":
-                stampHelp = f'```{commandPrefix}timer add @player "charactername" "consumables" - **DM** Adds a player \n{commandPrefix}timer addme "charactername" "consumables" - Adds your character (Needs DM Approval)`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\n{commandPrefix}timer reward @player "rewards" - **DM** Rewards an item to yourself or a player.\n- Consumable - consumes a consumable.\n{commandPrefix}timer stop - stops the current timer.```'
+                stampHelp = f'```ini\n[DM Commands]\n{commandPrefix}timer add @player "character name" "consumables"\n   - Adds a player to the timer.\n{commandPrefix}timer remove @player\n   - Removes a player from the timer.\n{commandPrefix}timer reward @player "rewards"\n   - **DM** awards a reward item to a player.\n{commandPrefix}timer stop\n   - Stops the current timer.\n\n[Player Commands]\n{commandPrefix}timer addme "character name" "consumables"\n   - Adds your character to the timer (requires DM approval).\n{commandPrefix}timer removeme\n   - Removes your character from the timer.\n- Consumable\n   - Uses a consumable.```'
             else:
-                stampHelp = f'```{commandPrefix}timer add @player - **DM** Adds a player \n{commandPrefix}timer addme - Adds yourself to the timer (Needs DM Approval)`\n{commandPrefix}timer remove @player - **DM** Removes a player\n{commandPrefix}timer removeme - Removes yourself from the timer.\ntimer stop - stops the current timer.```'
+                stampHelp = f'```ini\n[DM Commands]\n{commandPrefix}timer add @player\n   - Adds a player to the timer.\n{commandPrefix}timer remove @player\n   - Removes a player from the timer.\n{commandPrefix}timer stop\n   - Stops the current timer.\n\n[Player Commands]\n{commandPrefix}timer addme\n   - Adds your character to the timer (requires DM approval).\n{commandPrefix}timer removeme\n   - Removes your character from the timer.```'
 
             async for message in ctx.channel.history(after=embedMsg, limit=1):
                 msgAfter = True
@@ -1454,35 +1454,35 @@ class Timer(commands.Cog):
             if noodles >= 150 and 'Ascended Noodle' in dmRoleNames:
                 if 'Immortal Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Immortal Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 150 games. This user has 150+ Noodles.")
+                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 150 sessions. This user has 150+ Noodles.")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'Ascended Noodle'))
-                    noodleString += "\nImmortal Noodle Role received! :tada:"
+                    noodleString += "\n**Immortal Noodle** role received! :tada:"
             elif noodles >= 100 and 'True Noodle' in dmRoleNames:
                 if 'Ascended Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Ascended Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 100 games. This user has 100+ Noodles.")
+                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 100 sessions. This user has 100+ Noodles.")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
-                    noodleString += "\nAscended Noodle Role received! :tada:"
+                    noodleString += "\n**Ascended Noodle** role received! :tada:"
 
             elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
                 if 'True Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'True Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 60 games. This user has 60+ Noodles.")
+                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 60 sessions. This user has 60+ Noodles.")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
-                    noodleString += "\nTrue Noodle Role received! :tada:"
+                    noodleString += "\n**True Noodle** role received! :tada:"
             
             elif noodles >= 30 and 'Good Noodle' in dmRoleNames:
                 if 'Elite Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Elite Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 30 games. This user has 30+ Noodles.")
+                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 30 sessions. This user has 30+ Noodles.")
                     await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
-                    noodleString += "\nElite Noodle Role received! :tada:"
+                    noodleString += "\n**Elite Noodle** role received! :tada:"
 
             elif noodles >= 10:
                 if 'Good Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Good Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"DMed 10 games. This user has 10+ Noodles.")
-                    noodleString += "\nGood Noodle Role received! :tada:"
+                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 10 sessions. This user has 10+ Noodles.")
+                    noodleString += "\n**Good Noodle** role received! :tada:"
 
             if role != "": 
                 stopEmbed.clear_fields() 
@@ -1734,7 +1734,7 @@ class Timer(commands.Cog):
                 if "no-context" in channel.name or "secret-testing-area" or  "bot2-testing" in channel.name:
                     pass
                 else:
-                    await channel.send('Try this command in a game channel!')
+                    await channel.send('Try this command in a game room channel!')
                     self.timer.get_command('resume').reset_cooldown(ctx)
                     return
 
