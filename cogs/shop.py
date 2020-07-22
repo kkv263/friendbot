@@ -106,7 +106,7 @@ class Shop(commands.Cog):
 
                 newGP = charRecords['GP'] - gpNeeded
                 shopEmbed.title = f"Buying: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount} x {bRecord['Name']} ({gpNeeded}gp): ** \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
+                shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount} x {bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -246,7 +246,7 @@ class Shop(commands.Cog):
                 newGP = charRecords['GP'] + gpRefund 
                     
                 shopEmbed.title = f"Selling: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount} x {bRecord['Name']}: ** (+{gpRefund}gp) \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
+                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount} x {bRecord['Name']}: ** (+{gpRefund} gp) \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -365,7 +365,7 @@ class Shop(commands.Cog):
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
                     shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell Scroll {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
+                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell scroll of {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
                     await channel.send (embed=shopEmbed)
 
             else:
@@ -393,7 +393,7 @@ class Shop(commands.Cog):
     """
     async def purchaseProficiency(self, purchaseOption, specificationText, skillFloor, skillRate, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author ):
         if gpNeeded > charRecords['GP']:
-            await channel.send(f"{charRecords['Name']} does not have enough gp to learn a proficiency in this way.")
+            await channel.send(f"{charRecords['Name']} does not have enough gp to train a competency in this way.")
             return
         #make sure that only the original author can interact
         def shopEmbedCheck(r, u):
@@ -409,13 +409,13 @@ class Shop(commands.Cog):
         charRecords[purchaseOption] += 1
         
         #pick which text to show for the possibility of Skill being an option
-        purchasePossibilities = "Tool or Language"
+        purchasePossibilities = "language or tool"
         if((not charRecords[purchaseOption]<skillFloor) and (charRecords[purchaseOption]-skillFloor)%skillRate == 0):
-            purchasePossibilities = "Skill, "+purchasePossibilities
+            purchasePossibilities = purchasePossibilities+" (or skill)"
         
         #update embed text to ask for confirmation
-        shopEmbed.title = f"Proficiency Training: ({charRecords['Name']})"
-        shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{specificationText}: {purchasePossibilities} ({gpNeeded}gp): ** \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
+        shopEmbed.title = f"Downtime Training: {charRecords['Name']}"
+        shopEmbed.description = f"Are you sure you want to learn your **{specificationText}** competency?\n\n**{specificationText} {purchasePossibilities} ({gpNeeded} gp):** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
         
         #if a past message exists update that, otherwise send a new one
         if shopEmbedmsg:
@@ -465,7 +465,7 @@ class Shop(commands.Cog):
 
             #limit to 5 purchases
             if charRecords['Proficiency'] > 4:
-                await channel.send(f"**{author.display_name}**, {charRecords['Name']} has already trained to their limit.")
+                await channel.send(f"**{author.display_name}**, {charRecords['Name']} cannot learn any more competencies.")
                 return
             
             # calculate the scaling cost
@@ -494,7 +494,7 @@ class Shop(commands.Cog):
                     break
 
             if not noodleRole:
-                await channel.send(f"{author.display_name}, you don't have any Noodle roles! A Noodle role is required in order for {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
+                await channel.send(f"{author.display_name}, you don't have any Noodle roles! A Noodle role is required in order for {charRecords['Name']} to learn a competency in this way.")
                 return    
             
             #find which rank it is based on the positioning in the array in bfunc
@@ -506,7 +506,7 @@ class Shop(commands.Cog):
 
             #limit the purchase to only the rank
             if charRecords['NoodleTraining'] > noodleLimit:
-                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not allow {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
+                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not allow {charRecords['Name']} to learn a competency in this way.")
                 return
             
             #all purchases past the 5th are free, but the formular can never go negative
