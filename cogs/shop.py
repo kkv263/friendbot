@@ -410,7 +410,8 @@ class Shop(commands.Cog):
         
         #pick which text to show for the possibility of Skill being an option
         purchasePossibilities = "Tool or Language"
-        if((not charRecords[purchaseOption]<skillFloor) and charRecords[purchaseOption]%skillRate == 0):
+        print(charRecords[purchaseOption], skillFloor, skillRate)
+        if((not charRecords[purchaseOption]<skillFloor) and (charRecords[purchaseOption]-skillFloor)%skillRate == 0):
             purchasePossibilities = "Skill, "+purchasePossibilities
         
         #update embed text to ask for confirmation
