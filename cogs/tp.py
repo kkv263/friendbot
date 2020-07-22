@@ -164,17 +164,17 @@ class Tp(commands.Cog):
 
 
                             if tpResult > 0:
-                                newTP = f"({float(tpSplit[1]) - tpResult}/{tpSplit[1]})"
+                                newTP = f"{float(tpSplit[1]) - tpResult}/{tpSplit[1]}"
                                 charRecords[f"T{tierNum} TP"] = 0
                                 charRecords['Current Item'] = f"{mRecord['Name']} {newTP}"
                             else:
-                                newTP = f"({tpSplit[1]}/{tpSplit[1]}) - Complete! :tada:"
+                                newTP = f"{tpSplit[1]}/{tpSplit[1]} - Complete! :tada:"
                                 charRecords[f"T{tierNum} TP"] = abs(float(tpResult))
                                 charRecords['Current Item'] = 'None'
 
                             print(newTP)
                             print(charRecords[f"T{tierNum} TP"])
-                            tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: ({tpSplit[0]}/{tpSplit[1]}) → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅ : Yes\n\n❌: Cancel"
+                            tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅ : Yes\n\n❌: Cancel"
 
 
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
@@ -273,7 +273,7 @@ class Tp(commands.Cog):
 
         if charRecords:
             if charRecords['Current Item'] == "None":
-                await channel.send(f'You do not currently have an incomplete item to discard.')
+                await channel.send(f'You currently do not have an incomplete item to discard.')
                 return
 
             currentItem = charRecords['Current Item'].split('(')[0].strip()

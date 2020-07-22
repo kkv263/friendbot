@@ -306,7 +306,7 @@ class Character(commands.Cog):
                 if charEmbedmsg == "Fail":
                     return
                 if not reRecord:
-                    msg += f'- {r} doesn\'t exist! Check to see if it\'s on the RIT and check your spelling.\n'
+                    msg += f' {r} doesn\'t exist! Check to see if it\'s on the RIT and check your spelling.\n'
                     break
                 else:
                     allRewardItemsString.append(reRecord)
@@ -318,40 +318,63 @@ class Character(commands.Cog):
             rewardMagics = []
             tier1Rewards = []
 
-            if lvl == 4:
+# USE THIS CODE IF MY EXPERIMENT BREAKS IT. THIS IS THE OLD, SEMI-FUNCTIONAL CODE.
+#            if lvl == 4:
+#                tier1CountMNC = 1
+#            elif lvl == 5:
+#                if 'Elite Noodle' in roles:
+#                    tier1Count = 1
+#                tier1CountMNC = 1
+#            elif lvl == 6:
+#                tier1CountMNC = 1
+#                tier2Count = 1
+#            elif lvl == 7:
+#                tier1CountMNC = 1
+#                tier1Count = 1
+#                tier2Count = 1
+#            elif lvl == 8:
+#                tier1CountMNC = 1
+#                tier1Count = 1
+#                tier2Count = 1
+#            elif lvl == 11 or lvl == 9:
+#                if 'Good Noodle' in roles:
+#                    tier1CountMNC = 1
+#                elif 'Elite Noodle' in roles:
+#                    tier1CountMNC = 1
+#                    tier1Count = 1
+#                elif 'True Noodle' in roles:
+#                    tier1CountMNC = 1
+#                    tier2Count = 1
+#                elif 'Ascended Noodle' in roles:
+#                    tier1CountMNC = 1
+#                    tier1Count = 1
+#                    tier2Count = 1
+#                elif 'Immortal Noodle' in roles:
+#                    tier1CountMNC = 1
+#                    tier1Count = 2
+#                    tier2Count = 1
+#
+#            if 'Nitro Booster' in roles:
+#                tier1CountMNC += 1
+
+
+# THIS IS MY CODE WHICH MIGHT BREAK THINGS SO USE THE ABOVE AS A FALL-BACK.
+            if 'Good Noodle' in roles:
                 tier1CountMNC = 1
-            elif lvl == 5:
-                if 'Elite Noodle' in roles:
-                    tier1Count = 1
+            elif 'Elite Noodle' in roles:
                 tier1CountMNC = 1
-            elif lvl == 6:
+                tier1Count = 1
+            elif 'True Noodle' in roles:
                 tier1CountMNC = 1
                 tier2Count = 1
-            elif lvl == 7:
+            elif 'Ascended Noodle' in roles:
                 tier1CountMNC = 1
                 tier1Count = 1
                 tier2Count = 1
-            elif lvl == 8:
+            elif 'Immortal Noodle' in roles:
                 tier1CountMNC = 1
-                tier1Count = 1
+                tier1Count = 2
                 tier2Count = 1
-            elif lvl == 11 or lvl == 9:
-                if 'Good Noodle' in roles:
-                    tier1Count = 1
-                elif 'Elite Noodle' in roles:
-                    tier1Count = 1
-                    tier1CountMNC = 1
-                elif 'True Noodle' in roles:
-                    tier1CountMNC = 1
-                    tier2Count = 1
-                elif 'Ascended Noodle' in roles:
-                    tier1CountMNC = 1
-                    tier1Count = 1
-                    tier2Count = 1
-                elif 'Immortal Noodle' in roles:
-                    tier1CountMNC = 1
-                    tier1Count = 2
-                    tier2Count = 1
 
             if 'Nitro Booster' in roles:
                 tier1CountMNC += 1
@@ -362,7 +385,7 @@ class Character(commands.Cog):
 
             for item in allRewardItemsString:
                 if int(item['Tier']) > 2:
-                    msg += "- One or more of these reward items cannot be purchased at Level " + str(lvl) + "\n"
+                    msg += "- One or more of these reward items cannot be purchased at Level " + str(lvl) + ".\n"
                     break
 
                 if lvl >= 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
@@ -386,7 +409,7 @@ class Character(commands.Cog):
 
 
             if tier1CountMNC < 0 or tier1Count < 0 or tier2Count < 0:
-                msg += f"- You do not have the right roles for these reward items. You can only choose {startt1MNC} [Tier 1 (Non Consumable) Item], {startt1} [Tier 1 Item], and {startt2} [Tier 2 Item].\n"
+                msg += f"- You do not have the right roles for these reward items. You can only choose {startt1MNC} Tier 1 (Non-Consumable) item, {startt1} Tier 1 item, and {startt2} Tier 2 item.\n"
             else:
                 for r in rewardConsumables:
                     if charDict['Consumables'] != "None":
@@ -713,8 +736,8 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
-        charEmbed.description = f"**Race:** {charDict['Race']}\n**Class:** {charDict['Class']}\n**Background:** {charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
+        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']} CP"
+        charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
         if  bankTP1 > 0:
@@ -728,11 +751,11 @@ class Character(commands.Cog):
         if charDict['Consumables'] != 'None':
             charEmbed.add_field(name='Consumables', value=charDict['Consumables'], inline=False)
         charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=True)
-        charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+        charEmbed.add_field(name='Stats', value=f"**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
 
         if 'Wizard' in charDict['Class']:
             charDict['Free Spells'] = 6
-            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. Please use the `{commandPrefix}shop copy` command.", inline=False)
+            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice. Please use the `{commandPrefix}shop copy` command.", inline=False)
 
         
         charDictInvString = ""
@@ -1365,9 +1388,9 @@ class Character(commands.Cog):
             charEmbed.set_footer(text= "React with ❌ to cancel.\nPlease react with a choice even if no reactions appear.")
 
             if charDict['GP'] < gpNeeded:
-                charEmbed.description = f"Please choose between these 3 options for your character {charDict['Name']}\n\n1️⃣: Death - Retires your character. \n2️⃣: Survival - Forfeit rewards and survive. \n~~3️⃣: Revival~~ - You currently have {charDict['GP']}gp but need {gpNeeded}gp to revive."
+                charEmbed.description = f"Please choose between these three options for {charDict['Name']}:\n\n1️⃣: Death - Retires your character.\n2️⃣: Survival - Forfeit rewards and survive.\n3️⃣: ~~Revival~~ - You currently have {charDict['GP']} gp but need {gpNeeded} gp to revive."
             else:
-                charEmbed.description = f"Please choose between these 3 options for your character {charDict['Name']}\n\n1️⃣: Death - Retires your character. \n2️⃣: Survival - Forfeit rewards and survive. \n3️⃣: Revival - Revives your character for {gpNeeded}gp"
+                charEmbed.description = f"Please choose between these three options for {charDict['Name']}:\n\n1️⃣: Death - Retires your character.\n2️⃣: Survival - Forfeit rewards and survive.\n3️⃣: Revival - Revives your character for {gpNeeded} gp."
             if not charEmbedmsg:
                 charEmbedmsg = await channel.send(embed=charEmbed)
             else:
@@ -1631,7 +1654,7 @@ class Character(commands.Cog):
                     print("====")
                     if p != 0:
                         userEmbedList.append(discord.Embed())
-                    userEmbedList[p].add_field(name=f'Characters pg.{p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+                    userEmbedList[p].add_field(name=f'Characters p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
 
                 if not charEmbedmsg:
                     charEmbedmsg = await ctx.channel.send(embed=charEmbed)
@@ -1709,7 +1732,7 @@ class Character(commands.Cog):
 
             if 'Death' in charDict:
                 statusEmoji = "⚰️"
-                description += f"{statusEmoji} Status: **DYING** - please use {commandPrefix}death for your character." 
+                description += f"{statusEmoji} Status: **DEAD** - please use {commandPrefix}death for your character." 
                 charEmbed.colour = discord.Colour(0xbb0a1e)
 
             charDictAuthor = guild.get_member(int(charDict['User ID']))
@@ -2752,7 +2775,7 @@ class Character(commands.Cog):
                 subclassString += f'{alphaEmojis[num]}: {subclassesList[num]}\n'
 
             charEmbed.clear_fields()
-            charEmbed.add_field(name=f"Your class **{charClass}** allows you to pick a subclass at the level you're creating your character. React with the choices below to select your subclass.", value=subclassString, inline=False)
+            charEmbed.add_field(name=f"Your class **{charClass}** allows you to pick a subclass at this level. React to the choices below to select your subclass.", value=subclassString, inline=False)
             alphaIndex = len(subclassesList)
             if charEmbedmsg:
                 await charEmbedmsg.edit(embed=charEmbed)
@@ -2903,7 +2926,7 @@ class Character(commands.Cog):
 
                     charStats[statNames[asi]] = int(charStats[statNames[asi]]) + 1
                     if ctx.invoked_with == "levelup":
-                         charEmbed.description = f"{race}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
+                         charEmbed.description = f"{race}: {charClass}\n**STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}"
                     await charEmbedmsg2.delete()
                     await charEmbedmsg.clear_reactions()
 
@@ -2969,7 +2992,7 @@ class Character(commands.Cog):
                         if f == 'Human (Variant)':
                             charEmbed.add_field(name=f"Your race **Human (Variant)** allows you to choose a feat. Please choose your feat from the list below.", value=f"-", inline=False)
                         else:
-                            charEmbed.add_field(name=f"Please choose your feat from the list below", value=f"━━━━━━━━━━━━━━━━━━━━", inline=False)
+                            charEmbed.add_field(name=f"Please choose your feat from the list below:", value=f"━━━━━━━━━━━━━━━━━━━━", inline=False)
 
                         pageStart = perPage*page
                         pageEnd = perPage * (page + 1)
@@ -2977,7 +3000,7 @@ class Character(commands.Cog):
                         for i in range(pageStart, pageEnd if pageEnd < (len(featChoices) - 1) else (len(featChoices)) ):
                             charEmbed.add_field(name=alphaEmojis[alphaIndex], value=featChoices[i]['Name'], inline=True)
                             alphaIndex+=1
-                        charEmbed.set_footer(text= f"Page {page+1} of {numPages} -- use {left} or {right} to navigate or ❌ to cancel")
+                        charEmbed.set_footer(text= f"Page {page+1} of {numPages} -- use {left} or {right} to navigate or ❌ to cancel.")
                         await charEmbedmsg.edit(embed=charEmbed) 
                         await charEmbedmsg.add_reaction(left) 
                         await charEmbedmsg.add_reaction(right)
