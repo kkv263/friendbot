@@ -12,7 +12,7 @@ from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -133,7 +133,7 @@ class Timer(commands.Cog):
         prepEmbed.clear_fields()
         if not isCampaign:
             prepEmbed.title = f"{game} (Tier {roleArray.index(role) + 1})"
-            prepEmbed.description = f"**Signup:** {commandPrefix}timer signup \"charactername\" \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
+            prepEmbed.description = f"**Signup:** {commandPrefix}timer signup \"charactername\" \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2...\n**Spend Reputation:** {commandPrefix}timer spend #guild"
 
         else:
             prepEmbed.title = f"{game} (Campaign)"
@@ -158,12 +158,16 @@ class Timer(commands.Cog):
             await prepEmbedMsg.edit(embed=prepEmbed)
 
         guildsList = []
+        guildsCollection = db.guilds
+        guildRecordsList = []
+        guildBuffs = {}
+
         signedPlayers = []
 
         timerStarted = False
 
         timerAlias = ["timer", "t"]
-        timerCommands = ['signup', 'cancel', 'guild', 'start', 'add', 'remove']
+        timerCommands = ['signup', 'cancel', 'guild', 'start', 'add', 'remove', 'spend']
       
         timerCombined = []
 
@@ -258,31 +262,109 @@ class Timer(commands.Cog):
                     await channel.send(f"```The number of guilds exceed 3. Please follow this format and try again:\n{commandPrefix}timer guild #guild1 #guild2 ...```") 
                 elif msg.channel_mentions != list():
                     guildsList = msg.channel_mentions
-                    print(guildsList)
                     invalidChannel = False
+                    guildsListStr = "Guilds: " 
+                    # TODO: Guilds on DM
                     for g in guildsList:
                         if g.category_id != guildCategoryID:
                             invalidChannel = True
                             await channel.send(f"```'{g}' is not a guild channel. Please follow this format and try again:\n{commandPrefix}timer guild #guild1 #guild2 ...```") 
                             guildsList = []
                             break
+                        guildRecords = guildsCollection.find_one({"Channel ID": str(g.id) })
+                        if guildRecords:
+                            # guildsListStr += f"{g.mention}\n" 
+                            guildRecordsList.append(guildRecords)
                             
                     if not invalidChannel:
-                        guildsListStr = "Guilds: " 
-                        prepEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n**Signup:** {commandPrefix}timer signup charactername \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
-                        # TODO: GUilds on dm
-                        # guildsCollection = db.guilds
-                        # guildRecordsList = []
-                        # for g in guildsList:
-                        #     guildRecords = guildsCollection.find_one({"Channel ID": g.id })
-                        #     if guildRecords:
-                        #         guildRecordsList.append(guildRecords)
-
-                        # print(guildRecordsList)
+                        prepEmbed.description = f"Guilds: {', '.join([g.mention for g in guildsList])}\n**Signup:** {commandPrefix}timer signup charactername \"consumables\"\n**Add to roster:** {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player\n**Set guild:** {commandPrefix}timer guild #guild1, #guild2..."
 
 
                 else:
                     await channel.send(f"```I couldn't find any mention of a guild. Please follow this format and try again:\n{commandPrefix}timer guild #guild1 #guild2 ...```") 
+
+            #TODO: Gonna be an issue if two quests are spending at the same time Also needs to be DM only..
+            elif (f'{commandPrefix}timer spend' in msg.content or f'{commandPrefix}t spend' in msg.content) and msg.author == author:
+                def timerSpendCheck(r, u):
+                    sameMessage = False
+                    if timerSpendEmbedmsg.id == r.message.id:
+                        sameMessage = True
+                    return ((r.emoji in validBuffs) or (str(r.emoji) == '❌')) and u == author
+
+
+                if guildRecordsList == list():
+                    await channel.send(f"```There are no guilds currently registered to the current quest. Please use '{commandPrefix}timer guild #guild1 #guild2 ...' first.```") 
+                elif (len(msg.channel_mentions) > 1):
+                    await channel.send(f"```The number of guilds exceed 1. You may only spend sparkles on 1 guild at a time. Please follow this format and try again:\n{commandPrefix}timer spend #guild```") 
+                elif msg.channel_mentions != list():
+                    guildSpendStr = ""
+                    for g in guildRecordsList:
+                        if g['Channel ID'] == str(msg.channel_mentions[0].id):
+                            guildSpendStr += f" For {g['Name']} (Current: {g['Reputation']}:sparkles:), Please choose an option below:\n\n"
+                            if g['Reputation'] < 4:
+                                await channel.send(f"```{g['Name']} does not have enough reputation to spend. Please try again.```") 
+                                break
+                            else:
+                                timerSpendEmbed = discord.Embed()
+                                guildSpendLength = 0
+                                validBuffs = []
+                                for buff in questBuffsArray:
+                                    if guildSpendLength == 0:
+                                        guildSpendStr += f"**2x Rewards**\n"
+                                    if guildSpendLength == 1:
+                                        guildSpendStr += f"**2x Items**\n"
+                                    if guildSpendLength == 4:
+                                        guildSpendStr += f"**Recruitment Drive**\n"
+
+                                    if g['Reputation'] > questBuffsDict[buff][0] - 1:
+                                        guildSpendStr += f"{alphaEmojis[guildSpendLength]}: {questBuffsDict[buff][0]}:sparkles: {questBuffsDict[buff][1]}\n"
+                                        validBuffs.append(alphaEmojis[guildSpendLength])
+                                    else:
+                                        guildSpendStr += f"~~{alphaEmojis[guildSpendLength]}: {questBuffsDict[buff][0]}:sparkles: {questBuffsDict[buff][1]}~~\n"
+                                    guildSpendLength += 1
+                                
+
+                                timerSpendEmbed.title = "Guild Buffs"
+                                timerSpendEmbed.description = guildSpendStr
+                                timerSpendEmbedmsg = await channel.send(embed=timerSpendEmbed)
+                                await timerSpendEmbedmsg.add_reaction('❌')
+                                try:
+                                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=timerSpendCheck, timeout=60)
+                                except asyncio.TimeoutError:
+                                    await timerSpendEmbedmsg.delete()
+                                    await channel.send('Timed out! Try using the command again.')
+                                    break
+                                else:
+                                    if tReaction.emoji == '❌':
+                                        await timerSpendEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                                        await timerSpendEmbedmsg.clear_reactions()
+                                        break
+                                await timerSpendEmbedmsg.delete()
+                                print(alphaEmojis.index(tReaction.emoji))
+
+                                if g['Name'] not in guildBuffs:
+                                    guildBuffs[g['Name']] = [questBuffsArray[alphaEmojis.index(tReaction.emoji)]]
+                                else:
+                                    guildBuffs[g['Name']].append(questBuffsArray[alphaEmojis.index(tReaction.emoji)])
+
+                                guildBuffsStr = ""
+
+                                for gk, gv in guildBuffs.items():
+                                    guildBuffsStr += f"**{gk}**: {', '.join(gv)}\n"
+
+
+                                g['Reputation'] -= questBuffsDict[questBuffsArray[alphaEmojis.index(tReaction.emoji)]][0]
+                                print(g['Reputation'])
+                                print(prepEmbed.fields)
+
+                                if prepEmbed.fields[0].name != "**Guild Buffs**":
+                                    prepEmbed.insert_field_at(0, name="**Guild Buffs**", value = guildBuffsStr, inline=False)
+                                else:
+                                    prepEmbed.set_field_at(0, name="**Guild Buffs**", value = guildBuffsStr, inline=False)
+                                break
+
+                else:
+                    await channel.send(f"```I couldn't find any mention of a guild. Please follow this format and try again:\n{commandPrefix}timer spend #guild```") 
 
 
             await prepEmbedMsg.delete()

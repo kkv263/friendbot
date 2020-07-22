@@ -371,17 +371,123 @@ class Shop(commands.Cog):
             else:
                 await channel.send(f'`{spellName}` doesn\'t exist! Check to see if it is a valid spell and check your spelling.')
                 return
+                
+                
+    @commands.group(aliases=['prof'])
+    async def proficiency(self, ctx):
+        pass
+        
+    """"
+    Extracted purchase menu for simplifying the code
+      purchaseOption -> Proficiency or NoodleTraining, to determine which stat to update
+      specificationText -> The text to indicate the source of the purchase to the user
+      skillFloor -> The point at which the skill option becomes available. After this point there is linear scaling using skillRate
+      skillRate -> Because the two versions have different rates at which skill proficiencies can be 
+                    gained this is passed through instead of creating an if-else
+      gpNeeded -> how much gold the purchase will cost
+      charRecords -> the database information of the character being purchased for
+      shopEmbed -> the embed message for the shop
+      shopEmbedmsg -> the message which is being used to display shopEmbed
+      channel -> the channel the interaction is being made in
+      author -> who is doing the purchase
+    """
+    async def purchaseProficiency(self, purchaseOption, specificationText, skillFloor, skillRate, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author ):
+        if gpNeeded > charRecords['GP']:
+            await channel.send(f"{charRecords['Name']} does not have enough gp to learn a proficiency in this way.")
+            return
+        #make sure that only the original author can interact
+        def shopEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+        
+        #calculate gp after purchase
+        newGP = charRecords['GP'] - gpNeeded
+        
+        #increase the purchase level of the specific option
+        charRecords[purchaseOption] += 1
+        
+        #pick which text to show for the possibility of Skill being an option
+        purchasePossibilities = "Tool or Language"
+        print(charRecords[purchaseOption], skillFloor, skillRate)
+        if((not charRecords[purchaseOption]<skillFloor) and (charRecords[purchaseOption]-skillFloor)%skillRate == 0):
+            purchasePossibilities = "Skill, "+purchasePossibilities
+        
+        #update embed text to ask for confirmation
+        shopEmbed.title = f"Proficiency Training: ({charRecords['Name']})"
+        shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{specificationText}: {purchasePossibilities} ({gpNeeded}gp): ** \n {charRecords['GP']}gp => {newGP}gp\n\n✅ : Yes\n\n❌: Cancel"
+        
+        #if a past message exists update that, otherwise send a new one
+        if shopEmbedmsg:
+            await shopEmbedmsg.edit(embed=shopEmbed)
+        else:
+            shopEmbedmsg = await channel.send(embed=shopEmbed)
 
-    @commands.command(aliases=['prof'])
-    async def proficiency(self, ctx , charName):
+        #set up menu interaction
+        await shopEmbedmsg.add_reaction('✅')
+        await shopEmbedmsg.add_reaction('❌')
+        try:
+            tReaction, tUser = await self.bot.wait_for("reaction_add", check=shopEmbedCheck , timeout=60)
+        except asyncio.TimeoutError:
+            await shopEmbedmsg.delete()
+            await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+            return
+        else:
+            #respond to the user
+            await shopEmbedmsg.clear_reactions()
+            if tReaction.emoji == '❌':
+                await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}shop buy` command and try again!")
+                await shopEmbedmsg.clear_reactions()
+                return
+            elif tReaction.emoji == '✅':
+                #update the appropriate DB value corresponding to the purchase and update the gold
+                try:
+                    playersCollection = db.players
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {purchaseOption: charRecords[purchaseOption], 'GP':newGP}})
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    await shopEmbedmsg.edit(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
+                else:
+                    #Inform of the purchase success
+                    shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn a {purchasePossibilities} of your choice.\n\n**Current gp**: {newGP}\n"
+                    await shopEmbedmsg.edit(embed=shopEmbed)
+                    
+    @proficiency.command()
+    async def training(self, ctx , charName):
         channel = ctx.channel
         author = ctx.author
         shopEmbed = discord.Embed()
-        shopCog = self.bot.get_cog('Shop')
+        charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
+        if charRecords:  
+            #create the data entry if it doesnt exist yet
+            if 'Proficiency' not in charRecords:
+                charRecords['Proficiency'] = 0
+
+            #limit to 5 purchases
+            if charRecords['Proficiency'] > 4:
+                await channel.send(f"**{author.display_name}**, {charRecords['Name']} has already trained to their limit.")
+                return
+            
+            # calculate the scaling cost
+            gpNeeded = 1000+ charRecords['Proficiency'] * 250
+            
+            # text used to inform the user which purchase they are making
+            textArray = ["1st", "2nd", "3rd", "4th", "5th"]
+            
+            #call the extracted function
+            await self.purchaseProficiency('Proficiency', textArray[charRecords['Proficiency']], 0, 5, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author )
+                
+    @proficiency.command()
+    async def noodle(self, ctx , charName):
+        channel = ctx.channel
+        author = ctx.author
+        shopEmbed = discord.Embed()
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
         if charRecords:
             roles = author.roles
             
+            #check for a noodle role
             noodleRole = None
             for r in roles:
                 if 'Noodle' in r.name:
@@ -391,38 +497,26 @@ class Shop(commands.Cog):
             if not noodleRole:
                 await channel.send(f"{author.display_name}, you don't have any Noodle roles! A Noodle role is required in order for {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
                 return    
-
+            
+            #find which rank it is based on the positioning in the array in bfunc
             noodleLimit = noodleRoleArray.index(noodleRole.name)
+            
+            #establish the data record if it does not exist yet
+            if 'NoodleTraining' not in charRecords:
+                charRecords['NoodleTraining'] = 0
 
-            if 'Proficiency' not in charRecords:
-                charRecords['Proficiency'] = 0
-
-            if charRecords['Proficiency'] > noodleLimit:
+            #limit the purchase to only the rank
+            if charRecords['NoodleTraining'] > noodleLimit:
                 await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not allow {charRecords['Name']} to learn a language or gain proficiency in a tool in this way.")
                 return
-
-            gpNeeded = 0
-            if charRecords['Proficiency'] < 4:
-                gpNeeded = charRecords['Proficiency'] * 500 
             
-            if gpNeeded > charRecords['GP']:
-                await channel.send(f"{charRecords['Name']} does not have enough gp to learn a language or gain proficiency in a tool in this way.")
-                return
-
-            newGP = charRecords['GP'] - gpNeeded
-            charRecords['Proficiency'] += 1
-
-
-            try:
-                playersCollection = db.players
-                playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Proficiency":charRecords['Proficiency'], 'GP':newGP}})
-            except Exception as e:
-                print ('MONGO ERROR: ' + str(e))
-                await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
-            else:
-                shopEmbed.title = f"Proficiency Training: {charRecords['Name']}"
-                shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn one language or gain proficiency in a tool of your choice.\n\n**Current gp**: {newGP}\n"
-                await channel.send (embed=shopEmbed)
+            #all purchases past the 5th are free, but the formular can never go negative
+            gpNeeded = max(0, 500 - charRecords['NoodleTraining'] * 100)
+            
+            #call the extracted function
+            await self.purchaseProficiency('NoodleTraining',noodleRoleArray[charRecords['NoodleTraining']], 3, 2, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author )
+            
+           
 
 # Proficiency Training
 # Characters can receive training and spend their gp on the services of an instructor to learn a language or pick up proficiency with a tool, but cannot gain expertise through this training. The cost of this training varies depending on how many proficiencies you have already learned through this system:
