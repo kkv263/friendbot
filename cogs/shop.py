@@ -380,6 +380,8 @@ class Shop(commands.Cog):
     """"
     Extracted purchase menu for simplifying the code
       purchaseOption -> Proficiency or NoodleTraining, to determine which stat to update
+      specificationText -> The text to indicate the source of the purchase to the user
+      skillFloor -> The point at which the skill option becomes available. After this point there is linear scaling using skillRate
       skillRate -> Because the two versions have different rates at which skill proficiencies can be 
                     gained this is passed through instead of creating an if-else
       gpNeeded -> how much gold the purchase will cost
@@ -389,7 +391,7 @@ class Shop(commands.Cog):
       channel -> the channel the interaction is being made in
       author -> who is doing the purchase
     """
-    async def purchaseProficiency(self, purchaseOption, specificationText, skillRate, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author ):
+    async def purchaseProficiency(self, purchaseOption, specificationText, skillFloor, skillRate, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author ):
         if gpNeeded > charRecords['GP']:
             await channel.send(f"{charRecords['Name']} does not have enough gp to learn a proficiency in this way.")
             return
@@ -408,7 +410,7 @@ class Shop(commands.Cog):
         
         #pick which text to show for the possibility of Skill being an option
         purchasePossibilities = "Tool or Language"
-        if(charRecords[purchaseOption]%skillRate == 0):
+        if((not charRecords[purchaseOption]<skillFloor) and charRecords[purchaseOption]%skillRate == 0):
             purchasePossibilities = "Skill, "+purchasePossibilities
         
         #update embed text to ask for confirmation
@@ -473,7 +475,7 @@ class Shop(commands.Cog):
             textArray = ["1st", "2nd", "3rd", "4th", "5th"]
             
             #call the extracted function
-            await self.purchaseProficiency('Proficiency', textArray[charRecords['Proficiency']], 5, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author )
+            await self.purchaseProficiency('Proficiency', textArray[charRecords['Proficiency']], 0, 5, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author )
                 
     @proficiency.command()
     async def noodle(self, ctx , charName):
@@ -511,7 +513,7 @@ class Shop(commands.Cog):
             gpNeeded = max(0, 500 - charRecords['NoodleTraining'] * 100)
             
             #call the extracted function
-            await self.purchaseProficiency('NoodleTraining',noodleRoleArray[charRecords['NoodleTraining']], 2, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author )
+            await self.purchaseProficiency('NoodleTraining',noodleRoleArray[charRecords['NoodleTraining']], 3, 2, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author )
             
            
 
