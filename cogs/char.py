@@ -191,7 +191,7 @@ class Character(commands.Cog):
                     msg += '- You cannot spend TP on two of the same magic item.\n'
                     break 
                 if not mRecord:
-                    msg += f'- {m} doesn\'t exist! Check to see if it\'s on the MIT and check your spelling.\n'
+                    msg += f'- {m} doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
                     break
                 else:
                     allMagicItemsString.append(mRecord)
@@ -379,6 +379,9 @@ class Character(commands.Cog):
             if 'Nitro Booster' in roles:
                 tier1CountMNC += 1
 
+            if 'Bean Friend' in roles:
+                tier1CountMNC += 1
+
             startt1MNC = tier1CountMNC
             startt1 = tier1Count
             startt2 = tier2Count
@@ -388,7 +391,9 @@ class Character(commands.Cog):
                     msg += "- One or more of these reward items cannot be purchased at Level " + str(lvl) + ".\n"
                     break
 
-                if lvl >= 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
+# USE THIS CODE IN CONJUNCTION WITH [ORIGINAL CODE] BELOW IF MY EDIT BREAKS IT.
+#                if lvl >= 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
+                if item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
                     tier1CountMNC -= 1
                     rewardMagics.append(item)
                 elif int(item['Tier']) == 2: 
@@ -422,9 +427,9 @@ class Character(commands.Cog):
                     else:
                         charDict['Magic Items'] = r['Name']
 
-
-        elif lvl <= 3 and rewardItems != ['']:
-            msg += f"- Your character's level does not allow reward items. Please try again."
+# [ORIGINAL CODE] USE THIS CODE IN CONJUNCTION WITH ABOVE CODE IF MY EDIT BREAKS IT.
+#        elif lvl <= 3 and rewardItems != ['']:
+#            msg += f"- Your character's level does not allow reward items. Please try again."
             
         # check race
         rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'races',race)

@@ -449,7 +449,7 @@ class Shop(commands.Cog):
                     await shopEmbedmsg.edit(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
                 else:
                     #Inform of the purchase success
-                    shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn a {purchasePossibilities} of your choice.\n\n**Current gp**: {newGP}\n"
+                    shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn a {purchasePossibilities} of your choice. :tada:\n\n**Current gp**: {newGP}\n"
                     await shopEmbedmsg.edit(embed=shopEmbed)
                     
     @proficiency.command()
