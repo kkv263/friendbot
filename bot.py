@@ -156,9 +156,9 @@ async def help(ctx, *, pageString=''):
 # ITEM TABLE CCOMMANDS MENU ($help itemtable)
 
     helpEmbedItems.title = 'Item Table Commands'
-    helpEmbedItems.add_field(name=f'▫️ Magic Item Table Lookup\n{commandPrefix}mit [optional name search]', value="Look up items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}mit Folding Boat", inline=False
-    helpEmbedItems.add_field(name=f'▫️ Reward Item Table Lookup\n{commandPrefix}rit [optional name search]', value="Look up items from the Reward Item Table, sorted by tier and Minor/Major. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}rit Clockwork Dog", inline=False
-    helpEmbedItems.add_field(name=f'▫️ Random Reward Item\n{commandPrefix}rit random', value="Display a random reward item based on the tier and sub-tier you selected.", inline=False
+    helpEmbedItems.add_field(name=f'▫️ Magic Item Table Lookup\n{commandPrefix}mit [optional name search]', value="Look up items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}mit Folding Boat", inline=False)
+    helpEmbedItems.add_field(name=f'▫️ Reward Item Table Lookup\n{commandPrefix}rit [optional name search]', value="Look up items from the Reward Item Table, sorted by tier and Minor/Major. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}rit Clockwork Dog", inline=False)
+    helpEmbedItems.add_field(name=f'▫️ Random Reward Item\n{commandPrefix}rit random', value="Display a random reward item based on the tier and sub-tier you selected.", inline=False)
 
 
 # SHOP COMMANDS MENU ($help shop)
