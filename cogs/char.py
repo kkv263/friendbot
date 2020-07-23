@@ -2165,7 +2165,7 @@ class Character(commands.Cog):
                     if featsChosen != list():
                         charFeatsGained = featsChosen
 
-                charHP = await characterCog.calcHP(ctx, subclasses, charStats, int(newCharLevel))
+                charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
 
                 if charFeatsGained != "":
                     charFeatsGainedStr = f"Feats Gained: {charFeatsGained}"
