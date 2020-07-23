@@ -741,7 +741,7 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']} CP"
+        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}): {charDict['CP']} CP"
         charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
@@ -1222,12 +1222,12 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}) - {charDict['CP']}CP"
-        charEmbed.description = f"**Race:** {charDict['Race']}\n**Class:** {charDict['Class']}\n**Background:** {charDict['Background']}\n**Max HP:** {charDict['HP']}  **GP:** {charDict['GP']} "
+        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}): {charDict['CP']} CP"
+        charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP** {charDict['HP']}:  **gp**: {charDict['GP']} "
         charEmbed.add_field(name='CP, TP, GP', value=f"({charDict['CP']}) CP, {charDict['T1 TP']} TP, {charDict['GP']}gp", inline=True)
         charEmbed.add_field(name='Consumables', value="None", inline=False)
         charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
-        charEmbed.add_field(name='Stats', value=f"**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+        charEmbed.add_field(name='Stats', value=f"**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
         charEmbed.set_footer(text= charEmbed.Empty)
 
         def charCreateCheck(r, u):
@@ -1294,7 +1294,7 @@ class Character(commands.Cog):
             charID = charDict['_id']
 
             charEmbed.title = f"Are you sure you want to retire {charDict['Name']}?"
-            charEmbed.description = "✅ : Yes\n\n❌: Cancel"
+            charEmbed.description = "✅: Yes\n\n❌: Cancel"
             if not charEmbedmsg:
                 charEmbedmsg = await channel.send(embed=charEmbed)
             else:
@@ -1424,7 +1424,7 @@ class Character(commands.Cog):
                 elif tReaction.emoji == '1️⃣':
                     data['deleted'] = True
                     charEmbed.title = f"Are you sure you want to retire {charDict['Name']}?"
-                    charEmbed.description = "✅ : Yes\n\n❌: Cancel"
+                    charEmbed.description = "✅: Yes\n\n❌: Cancel"
                     charEmbed.set_footer(text=charEmbed.Empty)
                     await charEmbedmsg.edit(embed=charEmbed)
                     await charEmbedmsg.add_reaction('✅')
@@ -1710,10 +1710,10 @@ class Character(commands.Cog):
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
             footer = f"To view inventory: {commandPrefix}inv {charDict['Name']}"
-            description = f"{charDict['Race']}, {charDict['Class']}\n{charDict['Background']}\nGames Played: {charDict['Games']}\n"
+            description = f"{charDict['Race']}\n{charDict['Class']}\n{charDict['Background']}\nGames Played: {charDict['Games']}\n"
             if 'Proficiency' in charDict:
-                description +=  f"Noodle Proficiency Bonus: {charDict['Proficiency']}\n"
-            description += f":moneybag: {charDict['GP']}gp\n"
+                description +=  f"Noodle Training: {charDict['Proficiency']}\n"
+            description += f":moneybag: {charDict['GP']} gp\n"
             charLevel = charDict['Level']
             if charLevel < 5:
                 role = 1
@@ -1730,7 +1730,7 @@ class Character(commands.Cog):
 
             cpSplit = charDict['CP'].split('/')
             if float(cpSplit[0]) >= float(cpSplit[1]):
-                footer += f'\n❕ You need to level up! Use {commandPrefix}levelup before playing in your next game.'
+                footer += f'\n❕ You need to level up! Use {commandPrefix}levelup before playing in another quest.'
 
             if charLevel == 4 or charLevel == 10 or charLevel == 16:
                 footer += f'\n❕ You will no longer receive Tier {role} TP the next time you level. Please plan accordingly.'
@@ -1744,12 +1744,12 @@ class Character(commands.Cog):
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
             charEmbed.description = description
             charEmbed.clear_fields()    
-            charEmbed.title = f"{charDict['Name']} (Lv.{charLevel}) - {charDict['CP']}CP"
+            charEmbed.title = f"{charDict['Name']} (Lv.{charLevel}) - {charDict['CP']} CP"
             tpString = ""
             for i in range (1,5):
                 if f"T{i} TP" in charDict:
                     # charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
-                    tpString += f"**Tier {i} TP:** {charDict[f'T{i} TP']} " 
+                    tpString += f"**Tier {i} TP**: {charDict[f'T{i} TP']} " 
             # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
             charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=True)
             if 'Guild' in charDict:
@@ -1856,7 +1856,7 @@ class Character(commands.Cog):
             
             charDict['HP'] += totalHPAdd * charLevel
 
-            charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR:** {charDict['STR']} **DEX:** {charDict['DEX']} **CON:** {charDict['CON']} **INT:** {charDict['INT']} **WIS:** {charDict['WIS']} **CHA:** {charDict['CHA']}", inline=False)
+            charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
             if "Double Rewards Buff" in charDict:
                 drRemain = charDict['Double Rewards Buff'] + timedelta(days=3) - datetime.now()
                 if drRemain > timedelta(seconds=1):
@@ -2031,7 +2031,7 @@ class Character(commands.Cog):
                         classes.append(cRecord['Name'])
 
                 # New Multiclass
-                levelUpEmbed.add_field(name="Would you like to level a new multiclass?", value='✅ : Yes\n\n🚫: No\n\n❌: Cancel')
+                levelUpEmbed.add_field(name="Would you like to level a new multiclass?", value='✅: Yes\n\n🚫: No\n\n❌: Cancel')
                 if not levelUpEmbedmsg:
                     levelUpEmbedmsg = await channel.send(embed=levelUpEmbed)
                 else:
