@@ -143,7 +143,7 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedTimerTwo.title = f"Timer Commands (During a Quest).\n{commandPrefix}timer / {commandPrefix}t"
     helpEmbedTimerTwo.add_field(name=f'▫️ Transferring the Timer\n{commandPrefix}timer transfer', value="Transfer the timer from yourself to the mentioned user who will become the timer's new owner. They will have full control over the running timer.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players\n{commandPrefix}timer add @player "charactername" "consumables', value="Add the mentioned player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Adding Yourself\n{commandPrefix}timer addme "charactername" "consumables"', value="Add yourself to the running timer. Your rewards will be displayed once the timer has been stopped.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the running timer. Their rewards will be displayed once the timer has stopped.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself\n{commandPrefix}timer removeme', value="Remove yourself from the running timer. Your rewards will be displayed once the timer has been stopped.", inline=False)
@@ -156,9 +156,9 @@ async def help(ctx, *, pageString=''):
 # ITEM TABLE CCOMMANDS MENU ($help itemtable)
 
     helpEmbedItems.title = 'Item Table Commands'
-    helpEmbedItems.add_field(name=f'▫️ Magic Item Table Lookup\n{commandPrefix}mit [optional name search]', value="Look up items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}mit Folding Boat", inline=False)
-    helpEmbedItems.add_field(name=f'▫️ Reward Item Table Lookup\n{commandPrefix}rit [optional name search]', value="Look up items from the Reward Item Table, sorted by tier and Minor/Major. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}rit Clockwork Dog", inline=False)
-    helpEmbedItems.add_field(name=f'▫️ Random Reward Item\n{commandPrefix}rit random', value="Display a random reward item based on the tier and sub-tier you selected.", inline=False)
+    helpEmbedItems.add_field(name=f'▫️ Magic Item Table Lookup\n{commandPrefix}mit [optional name search]', value=f"Look up items from the Magic Item Table, sorted by tier and TP cost. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}mit Folding Boat", inline=False)
+    helpEmbedItems.add_field(name=f'▫️ Reward Item Table Lookup\n{commandPrefix}rit [optional name search]', value=f"Look up items from the Reward Item Table, sorted by tier and Minor/Major. React to the lists to change pages or view items. You can also search by name, for example: {commandPrefix}rit Clockwork Dog", inline=False)
+    helpEmbedItems.add_field(name=f'▫️ Random Reward Item\n{commandPrefix}rit random', value=f"Display a random reward item based on the tier and sub-tier you selected.", inline=False)
 
 
 # SHOP COMMANDS MENU ($help shop)
