@@ -149,13 +149,13 @@ class Character(commands.Cog):
         msg = ""
         # name should be less then 50 chars
         if len(name) > 64:
-            msg += "- Your character's name is too long! The limit is 64 characters.\n"
+            msg += "• Your character's name is too long! The limit is 64 characters.\n"
 
         playersCollection = db.players
         userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": name, '$options': 'i' }}))
 
         if userRecords != list():
-            msg += f"- You already have a character by the name of {name}. Please use a different name\n"
+            msg += f"• You already have a character by the name of {name}! Please use a different name!\n"
         
         # level and role check
         roleSet = [1]
@@ -169,7 +169,7 @@ class Character(commands.Cog):
             roleSet = roleSet.union(set(map(lambda x: x+1,roleSet.copy())))
 
         if lvl not in roleSet:
-            msg += f"- You cannot create a character of {lvl}! You do not have the correct role!\n"
+            msg += f"• You cannot create a character of {lvl}! You do not have the correct role!\n"
         
         # CP
         if lvl < 5:
@@ -188,10 +188,10 @@ class Character(commands.Cog):
                     return
 
                 if mRecord in allMagicItemsString:
-                    msg += '- You cannot spend TP on two of the same magic item.\n'
+                    msg += '• You cannot spend TP on two of the same magic item.\n'
                     break 
                 if not mRecord:
-                    msg += f'- {m} doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
+                    msg += f'• {m} doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
                     break
                 else:
                     allMagicItemsString.append(mRecord)
@@ -219,7 +219,7 @@ class Character(commands.Cog):
 
                 for item in allMagicItemsString:
                     if int(item['Tier']) > highestTier:
-                        return "- One or more of these magic items cannot be purchased at Level " + str(lvl), 0, 0
+                        return "• One or more of these magic items cannot be purchased at Level " + str(lvl), 0, 0
                         
                     else:
                         costTP = int(item['TP'])
@@ -388,7 +388,7 @@ class Character(commands.Cog):
 
             for item in allRewardItemsString:
                 if int(item['Tier']) > 2:
-                    msg += "- One or more of these reward items cannot be purchased at Level " + str(lvl) + ".\n"
+                    msg += "• One or more of these reward items cannot be purchased at Level " + str(lvl) + ".\n"
                     break
 
 # USE THIS CODE IN CONJUNCTION WITH [ORIGINAL CODE] BELOW IF MY EDIT BREAKS IT.
@@ -414,7 +414,7 @@ class Character(commands.Cog):
 
 
             if tier1CountMNC < 0 or tier1Count < 0 or tier2Count < 0:
-                msg += f"- You do not have the right roles for these reward items. You can only choose {startt1MNC} Tier 1 (Non-Consumable) item, {startt1} Tier 1 item, and {startt2} Tier 2 item.\n"
+                msg += f"• You do not have the right roles for these reward items. You can only choose {startt1MNC} Tier 1 (Non-Consumable) item, {startt1} Tier 1 item, and {startt2} Tier 2 item.\n"
             else:
                 for r in rewardConsumables:
                     if charDict['Consumables'] != "None":
@@ -436,7 +436,7 @@ class Character(commands.Cog):
         if charEmbedmsg == "Fail":
             return
         if not rRecord:
-            msg += f'- {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'{race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
 
@@ -449,7 +449,7 @@ class Character(commands.Cog):
             for m in multiclassList:
                 mLevel = re.search('\d+', m)
                 if not m:
-                    msg += "- You are missing the level for your multiclass class. Please check your format.\n"
+                    msg += "You are missing the level for your multiclass class. Please check your format.\n"
                     break
                 mLevel = mLevel.group()
                 mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
@@ -470,9 +470,9 @@ class Character(commands.Cog):
 
 
         if not cRecord or cRecord == list():
-            msg += '- That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += 'That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         elif totalLevel != lvl and len(cRecord) > 1:
-            msg += '- Your classes do not add up to the total level. Please double-check your multiclasses\n'
+            msg += 'Your classes do not add up to the total level. Please double-check your multiclasses\n'
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
 
@@ -490,7 +490,7 @@ class Character(commands.Cog):
                 if not charEmbedmsg:
                     charEmbedmsg = await channel.send(embed=charEmbed)
                 elif charEmbedmsg == "Fail":
-                    msg += "- You have either canceled the command or a value was not found."
+                    msg += "• You have either canceled the command or a value was not found."
                 else:
                     await charEmbedmsg.edit(embed=charEmbed)
 
@@ -633,7 +633,7 @@ class Character(commands.Cog):
         if charEmbedmsg == "Fail":
             return
         if not bRecord:
-            msg += f'- That {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'• {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
             totalGP = 0
@@ -645,7 +645,7 @@ class Character(commands.Cog):
             charDict['GP'] = int(bRecord['GP']) + totalGP
         
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
-            msg += '- One or more of your stats are not numbers. Please check your spelling\n'
+            msg += '• One or more of your stats are not numbers. Please check your spelling\n'
         elif msg == "":
             statsArray = [int(sStr), int(sDex), int(sCon), int(sInt), int(sWis), int(sCha)]
             statsArray, charEmbedmsg = await characterCog.pointBuy(ctx, statsArray, rRecord, charEmbed, charEmbedmsg)
@@ -660,7 +660,7 @@ class Character(commands.Cog):
                         totalPoints += (s - 8)
 
                 if totalPoints != 27:
-                    msg += f"- Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
+                    msg += f"• Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
 
         #feats
         if msg == "":
@@ -708,7 +708,7 @@ class Character(commands.Cog):
                     if m['Class']['Multiclass'] != 'None':
                         if '/' not in m['Class']['Multiclass'] and '+' not in m['Class']['Multiclass']:
                             if int(charDict[statReq[0]]) < int(statReq[1]):
-                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {statReq[0]} {charDict[statReq[0]]}\n"
+                                msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {statReq[0]} {charDict[statReq[0]]}!\n"
                                 break
                         elif '/' in m['Class']['Multiclass']:
                             statReq[0] = statReq[0].split('/')
@@ -718,7 +718,7 @@ class Character(commands.Cog):
                                   reqFufill = True
                                   break
                             if not reqFufill:
-                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n"
+                                msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n!"
                         elif '+' in m['Class']['Multiclass']:
                             statReq[0] = statReq[0].split('+')
                             reqFufill = True
@@ -727,7 +727,7 @@ class Character(commands.Cog):
                                   reqFufill = False
                                   break
                             if not reqFufill:
-                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n"
+                                msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n!"
                     
 
 
@@ -735,7 +735,7 @@ class Character(commands.Cog):
             if charEmbedmsg and charEmbedmsg != "Fail":
                 await charEmbedmsg.delete()
             elif charEmbedmsg == "Fail":
-                msg = "- You have either canceled the command or a value was not found."
+                msg = "• You have either canceled the command or a value was not found."
             await ctx.channel.send(f'{author.display_name}, There were error(s) in creating your character:\n```{msg}```')
             self.bot.get_command('create').reset_cooldown(ctx)
             return 
@@ -874,13 +874,13 @@ class Character(commands.Cog):
             return
         # new name should be less then 50 chars
         if len(newname) > 64:
-            msg += "- Your character's new name is too long! The limit is 64 characters.\n"
+            msg += "• Your character's new name is too long! The limit is 64 characters.\n"
         
         playersCollection = db.players
         userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": newname, '$options': 'i' }}))
 
         if userRecords != list() and newname != name:
-            msg += f"- You already have a character by the name {newname}. Please use a different name.\n"
+            msg += f"• You already have a character by the name {newname}. Please use a different name.\n"
 
         charDict['Name'] = newname
 
@@ -951,7 +951,7 @@ class Character(commands.Cog):
         # check race
         rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'races',race)
         if not rRecord:
-            msg += f'- {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'• {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
         
@@ -963,7 +963,7 @@ class Character(commands.Cog):
             for m in multiclassList:
                 mLevel = re.search('\d+', m)
                 if not m:
-                    msg += "- You are missing the level for your multiclass class. Please check your format.\n"
+                    msg += "• You are missing the level for your multiclass class. Please check your format.\n"
                     break
                 mLevel = mLevel.group()
                 mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
@@ -984,9 +984,9 @@ class Character(commands.Cog):
 
 
         if not cRecord or cRecord == list():
-            msg += '- That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += '• That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         elif totalLevel != lvl and len(cRecord) > 1:
-            msg += 'Your classes do not add up to the total level. Please double-check your multiclasses.\n'
+            msg += '• Your classes do not add up to the total level. Please double-check your multiclasses.\n'
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
             # starting equipment
@@ -1135,7 +1135,7 @@ class Character(commands.Cog):
         totalCP = (float(cpSplit[0]) + (float(cpSplit[1]) * (charDict['Level'] - 1) )) 
         bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'backgrounds',bg)
         if not bRecord:
-            msg += f'- {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'• {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
             #60gp per CP
@@ -1147,7 +1147,7 @@ class Character(commands.Cog):
         #check stats - point buy
         charStats = {'STR':int(sStr), 'DEX':int(sDex), 'CON':int(sCon), 'INT':int(sInt), 'WIS':int(sWis), 'CHA':int(sCha)}
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
-            msg += '- One or more of your stats are not numbers. Please check your spelling\n'
+            msg += '• One or more of your stats are not numbers. Please check your spelling\n'
         else:
             statsArray = [int(sStr), int(sDex), int(sCon), int(sInt), int(sWis), int(sCha)]
             statsArray, charEmbedmsg = await characterCog.pointBuy(ctx, statsArray, rRecord, charEmbed, charEmbedmsg)
@@ -1162,7 +1162,7 @@ class Character(commands.Cog):
                         totalPoints += (s - 8)
 
                 if totalPoints != 27:
-                    msg += f"- Your stats plus your race's modifers do not add up to 27 using point buy {totalPoints}/27. Please check your point allocation.\n"
+                    msg += f"• Your stats plus your race's modifers do not add up to 27 using point buy {totalPoints}/27. Please check your point allocation.\n"
             print (statsArray) 
 
         #feats
@@ -1992,7 +1992,7 @@ class Character(commands.Cog):
                 levelUpEmbed.clear_fields()
                 lvl = charLevel
                 newLevel = charLevel + 1
-                levelUpEmbed.title = f"{charName} - Level Up! {lvl} -> {newLevel}"
+                levelUpEmbed.title = f"{charName} - Level Up! {lvl} → {newLevel}"
                 levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
                 chooseClassString = ""
                 alphaIndex = 0
