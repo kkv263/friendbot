@@ -90,9 +90,8 @@ class Tp(commands.Cog):
                 lowestTp = 0
 
                 for tp in range (int(tierNum) - 1, 4):
-                    if tpBank[tp] != 0:
-                        if tpBank[tp] >= float(mRecord['TP']):
-                            haveTP = True
+                    if tpBank[tp] > 0:
+                        haveTP = True
                         lowestTP = tp + 1 
                         break
 
@@ -150,34 +149,48 @@ class Tp(commands.Cog):
                         else:
                             tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: {charRecords['GP']} → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
-                            
+                    # If user decides to buy item with TP:
                     elif tReaction.emoji == '1️⃣':
                         tierNum = lowestTP
-                        if mRecord['Name'] in charRecords['Current Item'] or charRecords['Current Item'] == 'None':
-                            if charRecords['Current Item'] == 'None':
-                                tpNeeded = float(mRecord['TP'])
-                                tpSplit = [0.0, tpNeeded]
-                                tpNeeded = float(mRecord['TP'])
+                        tpNeeded = float(mRecord['TP'])
+                        mIndex = 0
+                        # If the character has no invested TP items OR:
+                        # If the character has invested TP items, but the item they are spending it on is not included
+                        if charRecords['Current Item'] == 'None':
+                            tpSplit = [0.0, tpNeeded]
+                            currentMagicItems = [f"{mRecord['Name']} (0/0)"]
+                        elif mRecord['Name'] not in charRecords['Current Item']:
+                            tpSplit = [0.0, tpNeeded]
+                            currentMagicItems.append(f"{mRecord['Name']} (0/0)")
+                            mIndex = len(currentMagicItems) - 1
+                        else:
+                            mIndex = [m.split(' (')[0] for m in currentMagicItems].index(mRecord['Name'])
+                            currentMagicItem = re.search('\(([^)]+)', currentMagicItems[mIndex]).group(1)
+                            print(currentMagicItem)
+                            tpSplit= currentMagicItem.split('/')
+                            tpNeeded = float(tpSplit[1]) - float(tpSplit[0]) 
+
+                        tpResult = tpNeeded - float(charRecords[f"T{tierNum} TP"])
+
+                        # How (xTP/yTP) is calculated. If spent TP is incomplete, else if spending TP completes the item
+                        if tpResult > 0:
+                            newTP = f"{float(tpSplit[1]) - tpResult}/{tpSplit[1]}"
+                            charRecords[f"T{tierNum} TP"] = 0
+                            currentMagicItems[mIndex] = f"{mRecord['Name']} ({newTP})"
+                            charRecords['Current Item'] = ', '.join(currentMagicItems)
+                        else:
+                            newTP = f"({tpSplit[1]}/{tpSplit[1]}) - Complete! :tada:"
+                            charRecords[f"T{tierNum} TP"] = abs(float(tpResult))
+                            if currentMagicItems != list():
+                                currentMagicItems.pop(mIndex)
+                                charRecords['Current Item'] = ', '.join(currentMagicItems)
+                                print(charRecords['Current Item'])
                             else:
-                                currentMagicItem = re.search('\(([^)]+)', charRecords['Current Item']).group(1)
-                                tpSplit= currentMagicItem.split('/')
-                                tpNeeded = float(tpSplit[1]) - float(tpSplit[0])
-
-                            tpResult = tpNeeded - float(charRecords[f"T{tierNum} TP"])
-
-
-                            if tpResult > 0:
-                                newTP = f"{float(tpSplit[1]) - tpResult}/{tpSplit[1]}"
-                                charRecords[f"T{tierNum} TP"] = 0
-                                charRecords['Current Item'] = f"{mRecord['Name']} {newTP}"
-                            else:
-                                newTP = f"{tpSplit[1]}/{tpSplit[1]} - Complete! :tada:"
-                                charRecords[f"T{tierNum} TP"] = abs(float(tpResult))
                                 charRecords['Current Item'] = 'None'
 
-                            print(newTP)
-                            print(charRecords[f"T{tierNum} TP"])
-                            tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
+                        print(newTP)
+                        print(charRecords[f"T{tierNum} TP"])
+                        tpEmbed.description = f"Are you sure you want to purchase this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
 
 
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
@@ -185,7 +198,6 @@ class Tp(commands.Cog):
                     elif charRecords['Magic Items'] == "None":
                         charRecords['Magic Items'] = mRecord['Name']
                     else:
-                        print('hello there')
                         newMagicItems = charRecords['Magic Items'].split(', ')
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
