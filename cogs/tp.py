@@ -89,14 +89,17 @@ class Tp(commands.Cog):
                 haveTP = False
                 lowestTp = 0
 
-                for tp in range (int(tierNum) - 1, 5):
+                for tp in range (int(tierNum) - 1, 4):
                     if tpBank[tp] != 0:
-                        haveTP = True
+                        if tpBank[tp] >= float(mRecord['TP']):
+                            haveTP = True
                         lowestTP = tp + 1 
                         break
 
 
                 tpEmbed.title = f"{mRecord['Name']} - Tier {mRecord['Tier']} {mRecord['TP']} TP / {mRecord['GP']} gp"
+
+                print(haveTP)
 
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
                     await channel.send(f"You do not have Tier {tierNum} TP or gp to purchase `{mRecord['Name']}`.")
