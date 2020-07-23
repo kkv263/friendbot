@@ -26,12 +26,12 @@ class Tp(commands.Cog):
             if error.param.name == 'charName':
                 msg = "You're missing your character name in the command. "
             elif error.param.name == "mItem":
-                msg = "You're missing the item you want to buy in the command. "
+                msg = "You're missing the item you want to acquire in the command. "
             elif error.param.name == "tierNum":
                 msg = "You're missing the tier for the TP you want to abandon. "
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
-            msg = "The amount you want to buy/sell must be a number. "
+            msg = "The amount you want to acquire must be a number. "
         if msg:
             if ctx.command.name == "buy":
                 msg += f"Please follow this format:\n`{commandPrefix}tp buy \"character name\" \"magicitem\"`.\n"
@@ -84,7 +84,7 @@ class Tp(commands.Cog):
                 for x in range(0,5):
                     if f'T{x} TP' in charRecords:
                       tpBank[x-1] = (charRecords[f'T{x} TP'])
-                      tpBankString += f"{tpBank[x-1]} T{x} TP, " 
+                      tpBankString += f"{tpBank[x-1]} T{x} TP" 
 
                 haveTP = False
                 lowestTp = 0
@@ -96,7 +96,7 @@ class Tp(commands.Cog):
                         break
 
 
-                tpEmbed.title = f"{mRecord['Name']} - Tier {mRecord['Tier']} {mRecord['TP']} TP / {mRecord['GP']} gp"
+                tpEmbed.title = f"{mRecord['Name']}\nTier {mRecord['Tier']} | {mRecord['TP']} TP / {mRecord['GP']} gp"
 
                 print(haveTP)
 
@@ -105,13 +105,13 @@ class Tp(commands.Cog):
                     return
                   
                 elif not haveTP:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: ~~{mRecord['TP']} TP (Treasure Points)~~ You do not have TP\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: ~~{mRecord['TP']} TP (Treasure Points)~~ You do not have enough TP.\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
 
                 elif float(charRecords['GP']) < gpNeeded:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: ~~{mRecord['GP']} gp (gold pieces)~~ You do not have enough gp.\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: ~~{mRecord['GP']} gp (gold pieces)~~ You do not have enough gp.\n\n❌: Cancel"                 
 
                 else:
-                    tpEmbed.description = f"Do you want to buy **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
                 
                 if tpEmbedmsg:
                     await tpEmbedmsg.edit(embed=tpEmbed)
@@ -256,7 +256,7 @@ class Tp(commands.Cog):
                                 
                             except Exception as e:
                                 print ('MONGO ERROR: ' + str(e))
-                                tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try tp buy again.")
+                                tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
                             else:
                                 if newTP:
                                     tpEmbed.description = f"**TP spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**: {newTP}\n\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
@@ -294,7 +294,7 @@ class Tp(commands.Cog):
             currentItem = charRecords['Current Item'].split('(')[0].strip()
 
             tpEmbed.title = f'Discard - {currentItem}'
-            tpEmbed.description = f"Are you sure you want to discard this magic item? **You will not be refunded any TP which you have put towards it**.\n\nDiscard **{charRecords['Current Item']}**? \n\n✅: Yes\n\n❌: Cancel"
+            tpEmbed.description = f"Are you sure you want to discard this magic item? **You will not be refunded any TP which you have put towards it.**\n\nDiscard **{charRecords['Current Item']}**? \n\n✅: Yes\n\n❌: Cancel"
             tpEmbed.set_footer(text=tpEmbed.Empty)
             if tpEmbedmsg:
                 await tpEmbedmsg.edit(embed=tpEmbed)
@@ -322,7 +322,7 @@ class Tp(commands.Cog):
                         playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":'None'}})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
-                        tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try tp buy again.")
+                        tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
                     else:
                         tpEmbed.description = f"I have discarded {currentItem}!"
                         await tpEmbedmsg.edit(embed=tpEmbed)
@@ -360,7 +360,7 @@ class Tp(commands.Cog):
             
 
             tpEmbed.title = f'Abandon - Tier {role} TP'  
-            tpEmbed.description = f"Are you sure you want to abandon your Tier {role} TP? You currently have {charRecords[f'T{role} TP']} Tier {role} TP.\n\n**Note: this action is permanent and cannot be reversed**.\n\n✅: Yes\n\n❌: Cancel"
+            tpEmbed.description = f"Are you sure you want to abandon your Tier {role} TP? You currently have {charRecords[f'T{role} TP']} Tier {role} TP.\n\n**Note: this action is permanent and cannot be reversed.**\n\n✅: Yes\n\n❌: Cancel"
             tpEmbed.set_footer(text=tpEmbed.Empty)
             if tpEmbedmsg:
                 await tpEmbedmsg.edit(embed=tpEmbed)
@@ -387,7 +387,7 @@ class Tp(commands.Cog):
                         playersCollection.update_one({'_id': charRecords['_id']}, {"$unset": {f"T{role} TP":1}})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
-                        tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try tp buy again.")
+                        tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
                     else:
                         tpEmbed.description = f"You have abandoned {charRecords[f'T{role} TP']} T{role} TP!"
                         await tpEmbedmsg.edit(embed=tpEmbed)
