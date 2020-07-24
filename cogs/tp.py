@@ -230,12 +230,21 @@ class Tp(commands.Cog):
                                     # statSplit MAX NUM STAT +X
                                     statSplit = mRecord['Stat Bonuses'].split(' +')
                                     maxSplit = statSplit[0].split(' ')
+                                    oldStat = charRecords[maxSplit[2]]
                                     charRecords[maxSplit[2]] += int(statSplit[1]) 
-
                                     # If theres a MAX, it won't go over.
                                     if "MAX" in statSplit[0]:
                                         if charRecords[maxSplit[2]] > int(maxSplit[1]):
                                             charRecords[maxSplit[2]] = maxSplit[1]
+                                    setData[maxSplit[2]] = charRecords[maxSplit[2]]
+
+                                    # If the stat increased was con, recalc HP
+                                    # The old CON is subtracted, and new CON is added.
+                                    # If the player can't destroy magic items, this is done here, otherwise... it will need to be done in $info.
+                                    if 'CON' in maxSplit[2]:
+                                        charRecords['HP'] -= (int(oldStat) - 10 // 2) * charRecords['Level']
+                                        charRecords['HP'] += (int(charRecords['CON']) - 10 // 2) * charRecords['Level']
+                                        setData['HP'] = charRecords['HP']
 
                                 if newTP:
                                     if charRecords[f"T{tierNum} TP"] == 0:

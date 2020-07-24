@@ -70,6 +70,7 @@ class Character(commands.Cog):
             msg = f'The command is not working correctly. Please try again and make sure the format is correct'
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+            await traceBack(ctx,error, True)
         else:
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
@@ -788,10 +789,11 @@ class Character(commands.Cog):
 
         
         charDictInvString = ""
-        for k,v in charDict['Inventory'].items():
-            charDictInvString += f"• {k} x{v}\n"
-        charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
-        charEmbed.set_footer(text= charEmbed.Empty)
+        if charDict['Inventory'] != "None":
+            for k,v in charDict['Inventory'].items():
+                charDictInvString += f"• {k} x{v}\n"
+            charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
+            charEmbed.set_footer(text= charEmbed.Empty)
 
 
         def charCreateCheck(r, u):
@@ -1782,20 +1784,6 @@ class Character(commands.Cog):
 
             maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
 
-            for m in charDict['Magic Items'].split(', '):
-                if "Tome" in m or "Manual" in m:
-                    mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
-                    if 'Stat Bonuses' in mRecord:
-                        if 'MAX' in mRecord['Stat Bonuses']:
-                            maxItemSplit = mRecord['Stat Bonuses'].split(' ')
-
-                            if maxStatDict[maxItemSplit[2]] < int(maxItemSplit[1]):
-                                maxStatDict[maxItemSplit[2]] = int(maxItemSplit[1])
-
-                                charDict[maxItemSplit[2]] += int(maxItemSplit[3])
-                                if charDict[maxItemSplit[2]] > maxStatDict[maxItemSplit[2]]:
-                                    charDict[maxItemSplit[2]] = maxStatDict[maxItemSplit[2]]
-
             specialCollection = db.special
             specialRecords = list(specialCollection.find())
 
@@ -2364,11 +2352,14 @@ class Character(commands.Cog):
             mString = ""
             numI = 0
 
+
             for k in charRecordMagicItems:
                 if m.lower() in k.lower():
                     mList.append(k)
                     mString += f"{numberEmojis[numI]} {k} \n"
                     numI += 1
+                if numI > 8:
+                    break
 
             if (len(mList) > 1):
                 charEmbed.add_field(name=f"There seems to be multiple results for `{m}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=mString, inline=False)
@@ -2476,11 +2467,15 @@ class Character(commands.Cog):
             mString = ""
             numI = 0
 
-            for k in charRecords['Magic Items'].split(', '):
-                if m.lower() in k.lower():
-                    mList.append(k)
+            # Filter through attuned items, some attuned items have [STAT +X]; filter out those too and get raw.
+            for k in charRecords['Attuned'].split(', '):
+                print(k.lower().split(' [')[0])
+                if m.lower() in k.lower().split(' [')[0]:
+                    mList.append(k.lower().split(' [')[0])
                     mString += f"{numberEmojis[numI]} {k} \n"
                     numI += 1
+                if numI > 8:
+                    break
 
             if (len(mList) > 1):
                 charEmbed.add_field(name=f"There seems to be multiple results for `{m}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=mString, inline=False)
@@ -3013,7 +3008,7 @@ class Character(commands.Cog):
 
                     page = 0;
                     perPage = 24
-                    numPages =((len(featChoices)) // perPage) + 1
+                    numPages =((len(featChoices) - 1) // perPage) + 1
                     featChoices = sorted(featChoices, key = lambda i: i['Name']) 
 
                     while True:
