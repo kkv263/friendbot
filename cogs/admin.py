@@ -53,6 +53,11 @@ class Admin(commands.Cog, name="Admin"):
     
     @commands.command()
     @admin_or_owner()
+    async def killbot(self, ctx):
+        await self.bot.logout()
+    
+    @commands.command()
+    @admin_or_owner()
     async def reload(self, ctx, cog: str):
         
         try:

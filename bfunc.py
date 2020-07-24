@@ -47,8 +47,8 @@ async def traceBack (ctx,error):
 
     xyffei = ctx.guild.get_member(220742049631174656)
 
-    await xyffei.send(f"```{traceback_text}```\n")
-    await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(220742049631174656).mention} has been notified.")
+    #await xyffei.send(f"```{traceback_text}```\n")
+    await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(203948352973438995).mention} has been notified.")
     raise error
 
 def calculateTreasure(seconds, role):
@@ -94,16 +94,39 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     query = query.replace('(', '\\(')
     query = query.replace(')', '\\)')
     query = query.replace('+', '\\+')
-
     if singleItem:
         records = list(collection.find({"Name": query}))
     else:
-        records = list(collection.find({"Name": {"$regex": query, '$options': 'i' }}))
+        filterDic = {"$or": [
+                        {
+                          "Name": {
+                            "$regex": query,
+                            "$options": "i"
+                          }
+                        },
+                        {
+                          "Name": {
+                            "$elemMatch": {
+                              "$regex": query,
+                              "$options": "i"
+                            }
+                          }
+                        }
+                      ]
+                    }
+        # Here lies MSchildorfer's dignity. He copy and pasted with abandon and wondered why
+        #  collection.find(collection.find(filterDic)) does not work for he could not read
+        # https://cdn.discordapp.com/attachments/663504216135958558/735695855667118080/New_Project_-_2020-07-22T231158.186.png
+        records = list(collection.find(filterDic))
+        print(records)
 
     query = query.replace("\\", "")
-
-    records = sorted(records, key = lambda i : i ['Name'])
-
+    def sortingEntryAndList(elem):
+        if(isinstance(elem['Name'],list)): 
+            return elem['Name'][0] 
+        else:  
+            return elem['Name']
+    records = sorted(records, key = sortingEntryAndList)    
     if records == list():
         return None, apiEmbed, apiEmbedmsg
     else:

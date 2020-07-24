@@ -70,7 +70,11 @@ class Tp(commands.Cog):
 
             mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem) 
             if mRecord:
-                if mRecord['Name'] in charRecords['Magic Items']:
+                if(isinstance(mRecord['Name'], list)):
+                    already = any(item in charRecords['Magic Items'] for item in mRecord['Name'])
+                else:
+                    already = mRecord['Name'] in charRecords['Magic Items']
+                if(already):   
                     await channel.send(f"You already have `{mRecord['Name']}` and cannot TP or gp on another one.")
                     return 
 

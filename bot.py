@@ -187,30 +187,6 @@ async def help(ctx, *, pageString=''):
         await helpMsg.clear_reactions()
 
 
-    # while True:
-    #     await helpMsg.add_reaction(left) 
-    #     await helpMsg.add_reaction(right)
-    #     try:
-    #         hReact, hUser = await bot.wait_for("reaction_add", check=helpCheck, timeout=30.0)
-    #     except asyncio.TimeoutError:
-    #         await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use `{commandPrefix}help`!")
-    #         await helpMsg.clear_reactions()
-    #         await helpMsg.add_reaction('💤')
-    #         return
-    #     else:
-    #         if hReact.emoji == left:
-    #             page -= 1
-    #             if page < 0:
-    #                 page = len(helpList) - 1
-    #         if hReact.emoji == right:
-    #             page += 1
-    #             if page > len(helpList) - 1:
-    #                 page = 0
-
-    #         await helpMsg.edit(embed=helpList[page]) 
-    #         await helpMsg.clear_reactions()
-
-
 if __name__ == '__main__':
     for extension in [f.replace('.py', '') for f in listdir(cogs_dir) if isfile(join(cogs_dir, f))]:
         try:
