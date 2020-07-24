@@ -98,8 +98,6 @@ class Tp(commands.Cog):
 
                 tpEmbed.title = f"{mRecord['Name']}\nTier {mRecord['Tier']} - {mRecord['TP']} TP / {mRecord['GP']} gp"
 
-                print(haveTP)
-
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
                     await channel.send(f"You do not have Tier {tierNum} TP or gp to acquire `{mRecord['Name']}`.")
                     return
@@ -191,8 +189,6 @@ class Tp(commands.Cog):
                             else:
                                 charRecords['Current Item'] = 'None'
 
-                        print(newTP)
-                        print(charRecords[f"T{tierNum} TP"])
                         tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
 
 
@@ -205,9 +201,6 @@ class Tp(commands.Cog):
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
                         charRecords['Magic Items'] = ', '.join(newMagicItems)
-
-                    print(charRecords['Current Item'])
-                    print(charRecords['Magic Items'])
 
                     tpEmbed.set_footer(text=tpEmbed.Empty)
                     await tpEmbedmsg.edit(embed=tpEmbed)
@@ -232,10 +225,18 @@ class Tp(commands.Cog):
                                 setData = {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items']}
                                 statSplit = None
                                 unsetTP = False
+                                # For the stat books, this will increase the characters stats permanently here.
                                 if 'Attunement' not in mRecord and 'Stat Bonuses' in mRecord:
+                                    # statSplit MAX NUM STAT +X
                                     statSplit = mRecord['Stat Bonuses'].split(' +')
-                                    setData[statSplit[0]] = charRecords[statSplit[0]] + int(statSplit[1]) 
-                                
+                                    maxSplit = statSplit[0].split(' ')
+                                    charRecords[maxSplit[2]] += int(statSplit[1]) 
+
+                                    # If theres a MAX, it won't go over.
+                                    if "MAX" in statSplit[0]:
+                                        if charRecords[maxSplit[2]] > int(maxSplit[1]):
+                                            charRecords[maxSplit[2]] = maxSplit[1]
+
                                 if newTP:
                                     if charRecords[f"T{tierNum} TP"] == 0:
                                         unsetTP = True
