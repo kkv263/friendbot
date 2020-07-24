@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, traceBack
+from bfunc import db, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, traceBack, alphaEmojis
 
 class Tp(commands.Cog):
     def __init__ (self, bot):
@@ -262,7 +262,10 @@ class Tp(commands.Cog):
                                 tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
                             else:
                                 if newTP:
-                                    tpEmbed.description = f"**TP spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**: {newTP}\n\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
+                                    if "Complete" in newTP:
+                                        tpEmbed.description = f"**TP spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**: {newTP}\n\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
+                                    else:
+                                        tpEmbed.description = f"**TP spent!** Your character still needs to spend more TP to complete the item.\n\n**{mRecord['Name']}**: {newTP}\n\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
                                 elif newGP:
                                     if refundTP:
                                         tpEmbed.description = f"**gp spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**\n\n**Current gp**: {newGP}\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP'] + refundTP} (Refunded {refundTP})"
@@ -289,15 +292,53 @@ class Tp(commands.Cog):
                 sameMessage = True
             return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
+        def discardEmbedCheck(r, u):
+            sameMessage = False
+            if tpEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
+
         if charRecords:
+            # If there are no incomplete TP invested items, cancel command
             if charRecords['Current Item'] == "None":
                 await channel.send(f'You currently do not have an incomplete item to discard.')
                 return
 
-            currentItem = charRecords['Current Item'].split('(')[0].strip()
+            # Split curent items into a list and check with user which item they would like to discard
+            currentItemList = charRecords['Current Item'].split(', ')
+            discardString = ""
+            alphaIndex = 0
+            for c in currentItemList:
+                discardString += f"{alphaEmojis[alphaIndex]}: {c}\n"
+                alphaIndex += 1
 
+            currentItem = currentItemList[0]
+
+            if len(currentItemList) > 1:
+                tpEmbed.description = f"You have multiple items with TP invested. Choose a magic item to discard.\n\n{discardString}"
+                if tpEmbedmsg:
+                    await tpEmbedmsg.edit(embed=tpEmbed)
+                else:
+                    tpEmbedmsg = await channel.send(embed=tpEmbed)
+                await tpEmbedmsg.add_reaction('❌')
+
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=discardEmbedCheck , timeout=60)
+                except asyncio.TimeoutError:
+                    await tpEmbedmsg.delete()
+                    await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
+                    return
+                await tpEmbedmsg.clear_reactions()
+                currentItem = currentItemList.pop(alphaEmojis.index(tReaction.emoji))
+            else:
+                currentItemList = ["None"]
+                
+            currentItemStr = currentItem
+            currentItem = currentItem.split('(')[0].strip()
+
+            # Item has been chosen, prompt user to be sure.
             tpEmbed.title = f'Discard - {currentItem}'
-            tpEmbed.description = f"Are you sure you want to discard this magic item? **You will not be refunded any TP which you have put towards it.**\n\nDiscard **{charRecords['Current Item']}**? \n\n✅: Yes\n\n❌: Cancel"
+            tpEmbed.description = f"Are you sure you want to discard this magic item? **You will not be refunded any TP which you have put towards it.**\n\nDiscard **{currentItemStr}**? \n\n✅: Yes\n\n❌: Cancel"
             tpEmbed.set_footer(text=tpEmbed.Empty)
             if tpEmbedmsg:
                 await tpEmbedmsg.edit(embed=tpEmbed)
@@ -305,6 +346,7 @@ class Tp(commands.Cog):
                 tpEmbedmsg = await channel.send(embed=tpEmbed)
             await tpEmbedmsg.add_reaction('✅')
             await tpEmbedmsg.add_reaction('❌')
+
             try:
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=tpEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
@@ -321,13 +363,12 @@ class Tp(commands.Cog):
                     tpEmbed.clear_fields()
                     try:
                         playersCollection = db.players
-                        # uncomment when ready
-                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":'None'}})
+                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":', '.join(currentItemList)}})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
                         tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
                     else:
-                        tpEmbed.description = f"I have discarded {currentItem}!"
+                        tpEmbed.description = f"{currentItem} has been discarded!\n\nCurrent Item(s): {', '.join(currentItemList)}"
                         await tpEmbedmsg.edit(embed=tpEmbed)
           
     @tp.command()
