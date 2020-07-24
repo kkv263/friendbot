@@ -95,7 +95,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     query = query.replace(')', '\\)')
     query = query.replace('+', '\\+')
     if singleItem:
-        records = list(collection.find({"Name": query}))
+        records = list(collection.find({"Name": {"$regex": query, '$options': 'i' }}))
     else:
         filterDic = {"$or": [
                         {
