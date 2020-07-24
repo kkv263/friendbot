@@ -39,6 +39,8 @@ class Character(commands.Cog):
             elif error.param.name == 'm':
                 msg = "You're missing a magic item to attune to, or unattune, from your character. "
 
+            msg += "**If this error seems incorrect, you may be missing something else. **"
+
         if msg:
             if ctx.command.name == "create":
                 msg += f'Please follow this format:\n`{commandPrefix}create "name" level race class backgound str dex con int wis cha "mitem 1, mitem2 ..." "consumable 1, consumable 2,..."`.\n'
@@ -726,9 +728,9 @@ class Character(commands.Cog):
                 charDict['HP'] = await characterCog.calcHP(ctx,hpRecords,charDict,lvl)
 
             # Multiclass Requirements
-            if '/' in cclass:
-                reqFufillList = []
+            if '/' in cclass and len(cRecord) > 1:
                 for m in cRecord:
+                    reqFufillList = []
                     statReq = m['Class']['Multiclass'].split(' ')
                     if m['Class']['Multiclass'] != 'None':
                         if '/' not in m['Class']['Multiclass'] and '+' not in m['Class']['Multiclass']:
@@ -753,9 +755,6 @@ class Character(commands.Cog):
                                   reqFufillList.append(f"{s} {charDict[s]}")
                             if not reqFufill:
                                 msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {' and '.join(reqFufillList)}\n"
-                    
-
-
         if msg:
             if charEmbedmsg and charEmbedmsg != "Fail":
                 await charEmbedmsg.delete()
@@ -1546,6 +1545,12 @@ class Character(commands.Cog):
         charEmbed = discord.Embed()
         charEmbedmsg = None
 
+        def userCheck(r,u):
+            sameMessage = False
+            if charEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and u == ctx.author and (r.emoji == left or r.emoji == right)
+
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
@@ -1606,13 +1611,60 @@ class Character(commands.Cog):
                     
 
             charEmbed.add_field(name='Consumables', value=consumesString, inline=False)
-            charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
+
+            pages = 1
+            pageStops = [0]
+
+            miString = "• "
+            miArray = charDict['Magic Items'].replace(', ', '\n• ').split('\n')
+
+            for m in miArray:
+                miString += m + "\n"
+
+                if len(miString) > (768 * pages):
+                    pageStops.append(len(miString))
+                    pages += 1
+
+            miEmbedList = [charEmbed]                
+
+            for p in range(len(pageStops)-1):
+                if p != 0:
+                    miEmbedList.append(discord.Embed())
+                miEmbedList[p].add_field(name=f'Magic Items pt. {p+1}', value=miString[pageStops[p]:pageStops[p+1]], inline=False)
+
+            # charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
             charEmbed.set_footer(text=footer)
+
+            print(len(charEmbed))
 
             if not charEmbedmsg:
                 charEmbedmsg = await ctx.channel.send(embed=charEmbed)
             else:
                 await charEmbedmsg.edit(embed=charEmbed)
+
+            page = 0
+            while pages > 1:
+                await charEmbedmsg.add_reaction(left) 
+                await charEmbedmsg.add_reaction(right)
+                try:
+                    hReact, hUser = await self.bot.wait_for("reaction_add", check=userCheck, timeout=30.0)
+                except asyncio.TimeoutError:
+                    await charEmbedmsg.edit(content=f"Your user menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use `{commandPrefix}user`!")
+                    await charEmbedmsg.clear_reactions()
+                    await charEmbedmsg.add_reaction('💤')
+                    return
+                else:
+                    if hReact.emoji == left:
+                        page -= 1
+                        if page < 0:
+                            page = len(miEmbedList) - 1
+                    if hReact.emoji == right:
+                        page += 1
+                        if page > len(miEmbedList) - 1:
+                            page = 0
+
+                    await charEmbedmsg.edit(embed=miEmbedList[page]) 
+                    await charEmbedmsg.clear_reactions()
 
             self.bot.get_command('inv').reset_cooldown(ctx)
 
@@ -1679,10 +1731,7 @@ class Character(commands.Cog):
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to receive Noodles!)"
 
                 userEmbedList = [charEmbed]
-                print(pageStops)
                 for p in range(len(pageStops)-1):
-                    print(charString[pageStops[p]:pageStops[p+1]])
-                    print("====")
                     if p != 0:
                         userEmbedList.append(discord.Embed())
                     userEmbedList[p].add_field(name=f'Characters p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)

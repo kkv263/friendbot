@@ -83,7 +83,7 @@ class Tp(commands.Cog):
 
                 for x in range(0,5):
                     if f'T{x} TP' in charRecords:
-                      tpBank[x-1] = (charRecords[f'T{x} TP'])
+                      tpBank[x-1] = (float(charRecords[f'T{x} TP']))
                       tpBankString += f"{tpBank[x-1]} T{x} TP, " 
 
                 haveTP = False
@@ -242,8 +242,8 @@ class Tp(commands.Cog):
                                     # The old CON is subtracted, and new CON is added.
                                     # If the player can't destroy magic items, this is done here, otherwise... it will need to be done in $info.
                                     if 'CON' in maxSplit[2]:
-                                        charRecords['HP'] -= (int(oldStat) - 10 // 2) * charRecords['Level']
-                                        charRecords['HP'] += (int(charRecords['CON']) - 10 // 2) * charRecords['Level']
+                                        charRecords['HP'] -= ((int(oldStat) - 10) // 2) * charRecords['Level']
+                                        charRecords['HP'] += ((int(charRecords['CON']) - 10) // 2) * charRecords['Level']
                                         setData['HP'] = charRecords['HP']
 
                                 if newTP:
