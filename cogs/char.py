@@ -453,6 +453,7 @@ class Character(commands.Cog):
 
         
         # Check Character's class
+        classStat = []
         cRecord = []
         totalLevel = 0
         mLevel = 0
@@ -625,7 +626,6 @@ class Character(commands.Cog):
                 charEmbed.clear_fields()
 
             # Subclass
-            classStat = []
             for m in cRecord:
                 m['Subclass'] = 'None'
                 if int(m['Level']) < lvl:
