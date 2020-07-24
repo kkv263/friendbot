@@ -62,6 +62,13 @@ class Character(commands.Cog):
                 msg += f'Please follow this format:\n`{commandPrefix}unattune "character name" magicitem`.\n'
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+        # bot.py handles this, so we don't get traceback called.
+        elif isinstance(error, commands.CommandOnCooldown):
+            return
+        # Whenever there's an error with the parameters that bot cannot deduce
+        elif isinstance(error, commands.CommandInvokeError):
+            msg = f'The command is not working correctly. Please try again and make sure the format is correct'
+            await ctx.channel.send(msg)
         else:
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
@@ -441,14 +448,18 @@ class Character(commands.Cog):
             charDict['Race'] = rRecord['Name']
 
         
-        # check class
+        # Check Character's class
         cRecord = []
         totalLevel = 0
+        mLevel = 0
+        # If there's a /, character is creating a multiclass character
         if '/' in cclass:
             multiclassList = cclass.replace(' ', '').split('/')
+            # Iterates through the multiclass list 
             for m in multiclassList:
+                # Separate level and class
                 mLevel = re.search('\d+', m)
-                if not m:
+                if not mLevel:
                     msg += "- You are missing the level for your multiclass class. Please check your format.\n"
                     break
                 mLevel = mLevel.group()
@@ -456,7 +467,17 @@ class Character(commands.Cog):
                 if not mClass:
                     cRecord = None
                     break
-                cRecord.append({'Class': mClass, 'Level':mLevel})
+
+                # Check for class duplicates (ex. Paladin 1 / Paladin 2 = Paladin 3)
+                classDupe = False
+                for c in cRecord:
+                    if c['Class'] == mClass:
+                        c['Level'] = str(int(c['Level']) + int(mLevel))
+                        classDupe = True                    
+                        break
+
+                if not classDupe:
+                    cRecord.append({'Class': mClass, 'Level':mLevel})
                 totalLevel += int(mLevel)
 
         else:
@@ -468,8 +489,9 @@ class Character(commands.Cog):
 
         charDict['Class'] = ""
 
-
-        if not cRecord or cRecord == list():
+        if not mLevel:
+            pass
+        elif not cRecord or cRecord == list():
             msg += '- That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         elif totalLevel != lvl and len(cRecord) > 1:
             msg += '- Your classes do not add up to the total level. Please double-check your multiclasses\n'
@@ -693,41 +715,42 @@ class Character(commands.Cog):
             for key, value in statsFeats.items():
                 charDict[key] = value
 
-        #HP
-        hpRecords = []
-        for cc in cRecord:
-            hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
+            #HP
+            hpRecords = []
+            for cc in cRecord:
+                hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
 
-        if hpRecords:
-            charDict['HP'] = await characterCog.calcHP(ctx,hpRecords,charDict,lvl)
+            if hpRecords:
+                charDict['HP'] = await characterCog.calcHP(ctx,hpRecords,charDict,lvl)
 
             # Multiclass Requirements
             if '/' in cclass:
+                reqFufillList = []
                 for m in cRecord:
                     statReq = m['Class']['Multiclass'].split(' ')
                     if m['Class']['Multiclass'] != 'None':
                         if '/' not in m['Class']['Multiclass'] and '+' not in m['Class']['Multiclass']:
                             if int(charDict[statReq[0]]) < int(statReq[1]):
                                 msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {statReq[0]} {charDict[statReq[0]]}\n"
-                                break
                         elif '/' in m['Class']['Multiclass']:
                             statReq[0] = statReq[0].split('/')
                             reqFufill = False
                             for s in statReq[0]:
                                 if int(charDict[s]) > int(statReq[1]):
                                   reqFufill = True
-                                  break
+                                else:
+                                  reqFufillList.append(f"{s} {charDict[s]}")
                             if not reqFufill:
-                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n"
+                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {' and '.join(reqFufillList)}\n"
                         elif '+' in m['Class']['Multiclass']:
                             statReq[0] = statReq[0].split('+')
                             reqFufill = True
                             for s in statReq[0]:
                                 if int(charDict[s]) < int(statReq[1]):
                                   reqFufill = False
-                                  break
+                                  reqFufillList.append(f"{s} {charDict[s]}")
                             if not reqFufill:
-                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {s} {charDict[s]}\n"
+                                msg += f"- In order to multiclass {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {' and '.join(reqFufillList)}\n"
                     
 
 
