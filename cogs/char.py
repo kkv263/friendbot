@@ -1627,15 +1627,15 @@ class Character(commands.Cog):
 
             miEmbedList = [charEmbed]                
 
-            for p in range(len(pageStops)-1):
-                if p != 0:
-                    miEmbedList.append(discord.Embed())
-                miEmbedList[p].add_field(name=f'Magic Items pt. {p+1}', value=miString[pageStops[p]:pageStops[p+1]], inline=False)
+            if pages > 1:
+                for p in range(len(pageStops)-1):
+                    if p != 0:
+                        miEmbedList.append(discord.Embed())
+                    miEmbedList[p].add_field(name=f'Magic Items pt. {p+1}', value=miString[pageStops[p]:pageStops[p+1]], inline=False)
+            else:
+                charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
 
-            # charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
             charEmbed.set_footer(text=footer)
-
-            print(len(charEmbed))
 
             if not charEmbedmsg:
                 charEmbedmsg = await ctx.channel.send(embed=charEmbed)
@@ -1731,10 +1731,15 @@ class Character(commands.Cog):
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to receive Noodles!)"
 
                 userEmbedList = [charEmbed]
-                for p in range(len(pageStops)-1):
-                    if p != 0:
-                        userEmbedList.append(discord.Embed())
-                    userEmbedList[p].add_field(name=f'Characters p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+
+                if pages > 1:
+                    for p in range(len(pageStops)-1):
+                        if p != 0:
+                            userEmbedList.append(discord.Embed())
+                        userEmbedList[p].add_field(name=f'Characters p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+
+                else:
+                    charEmbed.add_field(name=f'Characters', value=charString, inline=False)
 
                 if not charEmbedmsg:
                     charEmbedmsg = await ctx.channel.send(embed=charEmbed)
@@ -1828,7 +1833,7 @@ class Character(commands.Cog):
             # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
             charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=True)
             if 'Guild' in charDict:
-                charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\n ({charDict['Guild Rank']})", inline=True)
+                charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\nGuild Rank: {charDict['Guild Rank']}", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
 
             maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
@@ -1840,12 +1845,9 @@ class Character(commands.Cog):
             for s in specialRecords:
                 if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items":
                     if s['Name'] in charDict[s['Type']]:
-                        if 'HP' in s:
-                            totalHPAdd += s['HP']
-                          
                         if 'Stat Bonuses' in s:
                             if 'Bonus Level' in s:
-                                if s['Bonus Level'] >= charLevel and s['Name'] in charDict['Class'] and '/' not in charDict['Class']:
+                                if (s['Bonus Level'] <= charLevel) and (s['Name'] in charDict['Class']) and ('/' not in charDict['Class']):
                                     if 'MAX' in s['Stat Bonuses']:
                                         maxItemSplit = s['Stat Bonuses'].split(' ')
                                         if maxStatDict[maxItemSplit[2]] < int(maxItemSplit[1]):
@@ -1861,7 +1863,7 @@ class Character(commands.Cog):
                         if s['Name'] in charDict[s['Type']]:
                             if 'HP' in s:
                                 totalHPAdd += s['HP']
-                        
+
             if 'Attuned' in charDict:
                 charEmbed.add_field(name='Attuned', value='• ' + charDict['Attuned'].replace(', ', '\n• '), inline=False)
                 statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
@@ -1870,7 +1872,7 @@ class Character(commands.Cog):
                         statBonus = a[a.find("[")+1:a.find("]")] 
                         if '+' not in statBonus and '-' not in statBonus:
                             statSplit = statBonus.split(' ')
-                            modStat = str(charDict[statSplit[0]])
+                            modStat = str(charDict[statSplit[0]]).replace(')', '').split(' (')[0]
                             if '[' in modStat and ']' in modStat:
                                 oldStat = modStat[modStat.find("[")+1:modStat.find("]")] 
                                 if '+' not in modStat and '-' not in modStat:
@@ -1905,22 +1907,21 @@ class Character(commands.Cog):
                                 charDict[statSplit[0]] = f"{modStat}" 
 
                 # recalc CON
-
-                # if '(' in charDict['CON']:
-                #     conValue = charDict['CON'].replace(')', '').split('(')
-                #     print (conValue)
-                      
-
-                if statBonusDict['CON'] != 0:
+                if statBonusDict['CON'] != 0 or '(' in str(charDict['CON']):
+                    trueConValue = charDict['CON']
                     conValue = charDict['CON'].replace(')', '').split('(')            
 
+                    if len(conValue) > 1:
+                        trueConValue = max(conValue)
+
                     if '+' in conValue[1]:
-                        conValue[1] = int(conValue[1].replace('+', '')) + int(conValue[0])
+                        trueConValue = int(conValue[1].replace('+', '')) + int(conValue[0])
+
+                    print(trueConValue)
 
                     charDict['HP'] -= ((int(conValue[0]) - 10) // 2) * charLevel
-                    charDict['HP'] += ((int(conValue[1]) - 10) // 2) * charLevel
+                    charDict['HP'] += ((int(trueConValue) - 10) // 2) * charLevel
 
-            
             charDict['HP'] += totalHPAdd * charLevel
 
             charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)

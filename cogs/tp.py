@@ -185,9 +185,8 @@ class Tp(commands.Cog):
                             if currentMagicItems != list():
                                 currentMagicItems.pop(mIndex)
                                 charRecords['Current Item'] = ', '.join(currentMagicItems)
-                                print(charRecords['Current Item'])
-                            else:
-                                charRecords['Current Item'] = 'None'
+                                if currentMagicItems == list():
+                                    charRecords['Current Item'] = 'None'
 
                         tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
 
@@ -197,6 +196,7 @@ class Tp(commands.Cog):
                     elif charRecords['Magic Items'] == "None":
                         charRecords['Magic Items'] = mRecord['Name']
                     else:
+                        charRecords['Magic Items'] = mRecord['Name']
                         newMagicItems = charRecords['Magic Items'].split(', ')
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
