@@ -68,6 +68,7 @@ class Character(commands.Cog):
         # Whenever there's an error with the parameters that bot cannot deduce
         elif isinstance(error, commands.CommandInvokeError):
             msg = f'The command is not working correctly. Please try again and make sure the format is correct'
+            ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
         else:
             ctx.command.reset_cooldown(ctx)
