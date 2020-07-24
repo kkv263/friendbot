@@ -56,6 +56,7 @@ class Guild(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
+    # TODO: Limit to category and make sure channel + role line up.
     async def create(self,ctx, charName, guildName, roleName="", channelName=""):
         channel = ctx.channel
         author = ctx.author
@@ -282,7 +283,7 @@ class Guild(commands.Cog):
                 try:
                     playersCollection = db.players
                     guildsCollection = db.guilds
-                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Reputation': 0}})
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Guild Rank': 1}})
                     guildsCollection.update_one({'Name': guildRecords['Name']}, {"$set": {'Funds':guildRecords['Funds']}})
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
@@ -377,7 +378,7 @@ class Guild(commands.Cog):
 
                 try:
                     playersCollection = db.players
-                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Reputation': 0}})
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Guild Rank': 1}})
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
@@ -541,7 +542,7 @@ class Guild(commands.Cog):
 
             try:
                 playersCollection = db.players
-                playersCollection.update_one({'_id': charRecords['_id']}, {"$unset": {'Guild': 1, 'Reputation':1}})
+                playersCollection.update_one({'_id': charRecords['_id']}, {"$unset": {'Guild': 1, 'Guild Rank':1}})
             except Exception as e:
                 print ('MONGO ERROR: ' + str(e))
                 await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
