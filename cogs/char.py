@@ -494,7 +494,7 @@ class Character(commands.Cog):
 
         charDict['Class'] = ""
 
-        if not mLevel:
+        if not mLevel and '/' in cclass:
             pass
         elif not cRecord or cRecord == list():
             msg += 'That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
