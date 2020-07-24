@@ -1828,7 +1828,7 @@ class Character(commands.Cog):
             # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
             charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=True)
             if 'Guild' in charDict:
-                charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\n:sparkles: ({charDict['Reputation']})", inline=True)
+                charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\n ({charDict['Guild Rank']})", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
 
             maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
@@ -1905,6 +1905,12 @@ class Character(commands.Cog):
                                 charDict[statSplit[0]] = f"{modStat}" 
 
                 # recalc CON
+
+                # if '(' in charDict['CON']:
+                #     conValue = charDict['CON'].replace(')', '').split('(')
+                #     print (conValue)
+                      
+
                 if statBonusDict['CON'] != 0:
                     conValue = charDict['CON'].replace(')', '').split('(')            
 
