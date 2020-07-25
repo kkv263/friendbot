@@ -24,6 +24,15 @@ class Admin(commands.Cog, name="Admin"):
         pass
     
     
+    @react.command()
+    @admin_or_owner()
+    async def printGuilds(self, ctx):
+        out = "All guild channels:\n"
+        ch = ctx.guild.get_channel(452704598440804375)
+        for channel in ch.text_channels:
+            out+="  "+channel.mention+"\n"
+        await ctx.channel.send(content=out)
+    
     #this function allows you to specify a channel and message and have the bot react with a given emote
     #Not tested with emotes the bot might not have access to
     @react.command()
@@ -40,7 +49,7 @@ class Admin(commands.Cog, name="Admin"):
     async def send(self, ctx, channel: int, *, msg: str):
         ch = ctx.guild.get_channel(channel)
         await ch.send(content=msg)
-
+    
     #this function allows you to specify a channel and message and have the bot remove its reaction with a given emote
     #Not tested with emotes the bot might not have access to
     @react.command()

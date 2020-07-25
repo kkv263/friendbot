@@ -53,10 +53,13 @@ class Tp(commands.Cog):
         channel = ctx.channel
         author = ctx.author
         tpEmbed = discord.Embed()
+        #this variable is never used
         tpCog = self.bot.get_cog('Tp')
+        #find a character matching with charName using the function in bfunc
         charRecords, tpEmbedmsg = await checkForChar(ctx, charName, tpEmbed)
 
         if charRecords:
+            #functions to make sure that only the intended user can respond
             def tpChoiceEmbedCheck(r, u):
                 sameMessage = False
                 if tpEmbedmsg.id == r.message.id:
@@ -68,23 +71,47 @@ class Tp(commands.Cog):
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
+            #make the call to the bfunc function to retrieve an item matching with mItem
             mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem) 
+            #if an item was found
             if mRecord:
-                if(isinstance(mRecord['Name'], list)):
-                    already = any(item in charRecords['Magic Items'] for item in mRecord['Name'])
-                else:
-                    already = mRecord['Name'] in charRecords['Magic Items']
-                if(already):   
+                """
+                Alright boyo, here is my masterstroke in this madness
+                Since callAPI we generated the subitems of a grouping as entries and Grouped property has been maintained for them
+                we can now use this to indentify if an item was part of a bigger group
+                The Grouped property for characters acts as a tracker of which item the character worked/is working forward in the group
+                If the user does not have the property, we can thus skip since they could not have gotten the item
+                """
+                if("Grouped" in mRecord and "Grouped" in charRecords):
+                    print("Char: ", charRecords["Grouped"])
+                    """
+                    We can now check if the group name is in any of the Groups that character has interacted with
+                    We can then check for every element in Grouped if the currently requested item is in any of them
+                    The last check is to make sure that all other items beside the initially selected one get blocked
+                    
+                    if(any(mRecord["Grouped"] in group_item_pair for group_item_pair in charRecords["Grouped"])):
+                    """
+                    for groupName in charRecords["Grouped"]:
+                        print("GroupName: ", groupName)
+                        if(mRecord["Grouped"] in groupName and mRecord["Name"] not in groupName):
+                            #inform the user that they already have an item from this group
+                            await channel.send(f"You selected `{mRecord['Name']}`of the `{mRecord['Grouped']}` type for `{charRecords['Name']}` and cannot get another item of the same variant.")
+                            return 
+                # check if the requested item is already in the inventory
+                if(mRecord['Name'] in charRecords['Magic Items']):   
                     await channel.send(f"You already have `{mRecord['Name']}` and cannot TP or gp on another one.")
                     return 
-
+                
+                # get the tier of the item
                 tierNum = mRecord['Tier']
+                # get the gold cost of the item
                 gpNeeded = mRecord['GP']
+                #get the list of all items currently being worked towards
                 currentMagicItems = charRecords['Current Item'].split(', ')
 
                 tpBank = [0,0,0,0]
                 tpBankString = ""
-
+                #grab the available TP of the character
                 for x in range(0,5):
                     if f'T{x} TP' in charRecords:
                       tpBank[x-1] = (charRecords[f'T{x} TP'])
@@ -92,20 +119,22 @@ class Tp(commands.Cog):
 
                 haveTP = False
                 lowestTp = 0
-
+                #get the lowest tier available TP
                 for tp in range (int(tierNum) - 1, 4):
                     if tpBank[tp] > 0:
                         haveTP = True
                         lowestTP = tp + 1 
                         break
 
-
+                # display the cost of the item to the user
                 tpEmbed.title = f"{mRecord['Name']}\nTier {mRecord['Tier']} - {mRecord['TP']} TP / {mRecord['GP']} gp"
-
+                
+                # if the user doesnt have the resources for the purchases, inform them and cancel
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
                     await channel.send(f"You do not have Tier {tierNum} TP or gp to acquire `{mRecord['Name']}`.")
                     return
                   
+                # get confirmation from the user for the purchase
                 elif not haveTP:
                     if tpBank == [0] * 4:
                         tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **no TP** and **{charRecords[f'GP']} gp.**\n\n1️⃣: ~~{mRecord['TP']} TP (Treasure Points)~~ You do not have enough TP.\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
@@ -122,7 +151,7 @@ class Tp(commands.Cog):
                     await tpEmbedmsg.edit(embed=tpEmbed)
                 else:
                     tpEmbedmsg = await channel.send(embed=tpEmbed)
-
+                # get choice from the user
                 if haveTP:
                     await tpEmbedmsg.add_reaction('1️⃣')
                 if float(charRecords['GP']) >= gpNeeded:
@@ -131,6 +160,7 @@ class Tp(commands.Cog):
                 try:
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=tpChoiceEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
+                    #cancel if the user didnt respond within the timeframe
                     await tpEmbedmsg.delete()
                     await channel.send(f'TP canceled. Use `{commandPrefix}tp buy` command and try again!')
                     return
@@ -139,17 +169,23 @@ class Tp(commands.Cog):
                     newGP = ""
                     newTP = ""
                     refundTP = 0.0
+                    #cancel if the user decided to cancel the purchase
                     if tReaction.emoji == '❌':
                         await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp buy` command and try again!")
                         await tpEmbedmsg.clear_reactions()
                         return
+                    #refund the TP in the item if the user decides to purchase with gold
                     elif tReaction.emoji == '2️⃣':
                         newGP = charRecords['GP'] - gpNeeded
+                        #search for the item in the items currently worked towards
                         if mRecord['Name'] in charRecords['Current Item']:
+                            #grab the matching item
                             currentMagicItem = re.search('\(([^)]+)', charRecords['Current Item']).group(1)
+                            #split the current/needed TP
                             tpSplit= currentMagicItem.split('/')
                             refundTP = float(tpSplit[0])
                             charRecords['Current Item'] = "None"
+                            #confirm with the user on the purchase
                             tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {charRecords['GP']} → {newGP} gp\nYou will be refunded the TP you have already spent on this item ({refundTP} TP). \n\n✅: Yes\n\n❌: Cancel"
                         else:
                             tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {charRecords['GP']} → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
@@ -199,8 +235,17 @@ class Tp(commands.Cog):
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
                         pass
                     elif charRecords['Magic Items'] == "None":
+                        #If the item was part of a group set up the Grouped property and add the items group
+                        if("Grouped" not in charRecords):
+                            charRecords["Grouped"] = []
+                        if("Grouped" in mRecord ):
+                            charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                         charRecords['Magic Items'] = mRecord['Name']
                     else:
+                        if("Grouped" not in charRecords):
+                            charRecords["Grouped"] = []
+                        if("Grouped" in mRecord ):
+                            charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                         newMagicItems = charRecords['Magic Items'].split(', ')
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
@@ -226,7 +271,7 @@ class Tp(commands.Cog):
                             tpEmbed.clear_fields()
                             try:
                                 playersCollection = db.players
-                                setData = {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items']}
+                                setData = {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items'], "Grouped":charRecords['Grouped']}
                                 statSplit = None
                                 unsetTP = False
                                 # For the stat books, this will increase the characters stats permanently here.

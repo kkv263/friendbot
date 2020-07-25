@@ -10,6 +10,7 @@ from discord.ext import commands
 import asyncio
 from oauth2client.service_account import ServiceAccountCredentials
 from pymongo import MongoClient
+import re
 
 from pymongo import UpdateOne
 
@@ -74,67 +75,130 @@ def calculateTreasure(seconds, role):
     dgp = int(decimal.Decimal((gp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
 
     return [cp, tp, gp, dcp, dtp, dgp]
-
+"""
+The purpose of this function is to do a general call to the database
+apiEmbed -> the embed element that the calling function will be using
+apiEmbedmsg -> the message that will contain apiEmbed
+table -> the table in the database that should be searched in, most common tables are RIT, MIT and SHOP
+query -> the word which will be searched for in the "Name" property of elements, adjustments were made so that also a special property "Grouped" also gets searched
+singleItem -> if only one item should be returned
+"""
 async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False):
+    
+    #channel and author of the original message creating this call
     channel = ctx.channel
     author = ctx.author
-
+    
+    #do nothing if no table is given
     if table is None:
        return None, apiEmbed, apiEmbedmsg
 
     collection = db[table]
     
+    #get the entire table if no query is given
     if query is None:
         return list(collection.find()), apiEmbed, apiEmbedmsg
 
+    #if the query has no text, return nothing
     if query.strip() == "":
         return None, apiEmbed, apiEmbedmsg
 
+    #restructure the query to be more regEx friendly
     query = query.strip()
     query = query.replace('(', '\\(')
     query = query.replace(')', '\\)')
     query = query.replace('+', '\\+')
+    
+    #I am not sure of the difference in behavior beside the extended Grouped search
     if singleItem:
         records = list(collection.find({"Name": {"$regex": query, '$options': 'i' }}))
     else:
+        #search through the table for an element were the Name or Grouped property contain the query
         filterDic = {"$or": [
                         {
                           "Name": {
                             "$regex": query,
+                            #make the check case-insensitively
                             "$options": "i"
                           }
                         },
                         {
-                          "Name": {
-                            "$elemMatch": {
-                              "$regex": query,
-                              "$options": "i"
-                            }
+                          "Grouped": {
+                            "$regex": query,
+                            "$options": "i"
                           }
                         }
                       ]
                     }
+                    
         # Here lies MSchildorfer's dignity. He copy and pasted with abandon and wondered why
         #  collection.find(collection.find(filterDic)) does not work for he could not read
         # https://cdn.discordapp.com/attachments/663504216135958558/735695855667118080/New_Project_-_2020-07-22T231158.186.png
         records = list(collection.find(filterDic))
-        print(records)
 
+    #restore the original query
     query = query.replace("\\", "")
+    #sort elements by either the name, or the first element of the name list in case it is a list
     def sortingEntryAndList(elem):
         if(isinstance(elem['Name'],list)): 
             return elem['Name'][0] 
         else:  
             return elem['Name']
+    
+    #turn the query into a regex expression
+    r = re.compile(query)
+    #create collections to track needed changes to the records
+    remove_grouper = [] #track all elements that need to be removes since they act as representative for a group of items
+    faux_entries = [] #collection of temporary items that will act as database elements during the call
+    
+    #for every search result check if it contains a group and create entries for each group element if it does
+    for entry in records:
+        print("Entry: ", entry)
+        print("Grouped" in entry)
+        # if the element is part of a group
+        if("Grouped" in entry):
+            # remove it later
+            remove_grouper.append(entry)
+            # check if the query is more specific about a group element
+            newlist = list(filter(r.search, entry['Name']))
+            """
+            if the every element has been filtered out because of the code above then we know from the fact 
+            that this was found in the search that the Grouper field had to have been matched, 
+            indicating that the entire group needs to be listed
+            """
+            if(newlist == list()):
+                newlist = entry['Name']
+            print("Filtered: ", newlist)
+            # for every group element that needs to be considered, create a new element with just the name adjusted
+            for name in newlist:
+                print("Name: ", name)
+                #copy the Group entry to get all relevant information about the item
+                faux_entry = entry.copy()
+                #change the name from the list to the specific element.
+                faux_entry["Name"]= name
+                print("Copy: ", faux_entry)
+                #add it to the tracker
+                faux_entries.append(faux_entry)
+    # remove all group representatives
+    for group_to_remove in remove_grouper:
+        records.remove(group_to_remove)
+    #append the new entries
+    records += faux_entries
+    
+    #sort all items alphabetically 
     records = sorted(records, key = sortingEntryAndList)    
+    
+    #if no elements are left, return nothing
     if records == list():
         return None, apiEmbed, apiEmbedmsg
     else:
+        #create a string to provide information about the items to the user
         infoString = ""
         if (len(records) > 1):
+            #sort items by tier if the magic item tables were requested
             if table == 'mit' or table == 'rit':
                 records = sorted(records, key = lambda i : i ['Tier'])
-
+            #limit items to 20
             for i in range(0, min(len(records), 20)):
                 if table == 'mit':
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']}): **{records[i]['TP']} TP**\n"
@@ -142,13 +206,13 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']} {records[i]['Minor/Major']})\n"
                 else:
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']}\n"
-            
+            #check if the response from the user matches the limits
             def apiEmbedCheck(r, u):
                 sameMessage = False
                 if apiEmbedmsg.id == r.message.id:
                     sameMessage = True
                 return ((r.emoji in alphaEmojis[:min(len(records), 20)]) or (str(r.emoji) == '❌')) and u == author
-
+            #inform the user of the current information and ask for their selection of an item
             apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nThe maximum results shown are 20. If the result you are looking for is not here, please react with ❌ and be more specific.", value=infoString, inline=False)
             if not apiEmbedmsg or apiEmbedmsg == "Fail":
                 apiEmbedmsg = await channel.send(embed=apiEmbed)
@@ -160,21 +224,25 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             try:
                 tReaction, tUser = await bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
             except asyncio.TimeoutError:
+                #stop if no response was given within the timeframe and reenable the command
                 await apiEmbedmsg.delete()
                 await channel.send('Timed out! Try using the command again.')
                 ctx.command.reset_cooldown(ctx)
                 return None, apiEmbed, "Fail"
             else:
+                #stop if the cancel emoji was given and reenable the command
                 if tReaction.emoji == '❌':
                     await apiEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
                     await apiEmbedmsg.clear_reactions()
                     ctx.command.reset_cooldown(ctx)
                     return None, apiEmbed, "Fail"
             apiEmbed.clear_fields()
+            #return the selected item indexed by the emoji given by the user
             await apiEmbedmsg.clear_reactions()
             return records[alphaEmojis.index(tReaction.emoji)], apiEmbed, apiEmbedmsg
 
         else:
+            #if only 1 item was left, simply return it
             return records[0], apiEmbed, apiEmbedmsg
 
 async def checkForChar(ctx, char, charEmbed="", mod=False):
