@@ -268,17 +268,16 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
             infoString = ""
             charRecords = sorted(list(charRecords), key = lambda i : i ['Name'])
             for i in range(0, min(len(charRecords), 9)):
-                infoString += f"{numberEmojis[i]}: {charRecords[i]['Name']} ({guild.get_member(int(charRecords[i]['User ID']))})\n"
+                infoString += f"{alphaEmojis[i]}: {charRecords[i]['Name']} ({guild.get_member(int(charRecords[i]['User ID']))})\n"
             
             def infoCharEmbedcheck(r, u):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((r.emoji in numberEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌')) and u == author
+                return ((r.emoji in alphaEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌')) and u == author
 
             charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
             charEmbedmsg = await channel.send(embed=charEmbed)
-            for num in range(0,min(len(charRecords), 9)): await charEmbedmsg.add_reaction(numberEmojis[num])
             await charEmbedmsg.add_reaction('❌')
 
             try:
@@ -296,7 +295,7 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
                     return None, None
             charEmbed.clear_fields()
             await charEmbedmsg.clear_reactions()
-            return charRecords[int(tReaction.emoji[0]) - 1], charEmbedmsg
+            return charRecords[alphaEmojis.index(tReaction.emoji[0])], charEmbedmsg
 
     return charRecords[0], None
 

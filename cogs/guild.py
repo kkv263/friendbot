@@ -77,6 +77,19 @@ class Guild(commands.Cog):
             return 
             
 
+        #see if channel + role + guildname matchup.
+
+        roleStr = (guildRole[0].name.lower().replace(',', '').replace('.', '').replace(' ', '').replace('-', ''))
+        guildNameStr = (guildName.lower().replace(',', '').replace('.', '').replace(' ', '').replace('-', ''))
+        guildChannelStr = (guildChannel[0].name.replace('-', ''))
+
+        if guildChannelStr != guildNameStr:
+            await channel.send(f"The guild: `{guildName}` does not match with the guild channel `{guildChannel[0].name}`. Please try the command again with the correct channel.")
+            return 
+        elif guildNameStr != roleStr:
+            await channel.send(f"The guild: `{guildName}` does not match with the guild role `{guildRole[0].name}`. Please try the command again with the correct role")
+            return
+
         roles = author.roles
         noodleRole = None
         for r in roles:

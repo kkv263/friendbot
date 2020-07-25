@@ -163,7 +163,7 @@ class Character(commands.Cog):
             msg += "• Your character's name is too long! The limit is 64 characters.\n"
 
         playersCollection = db.players
-        userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": name, '$options': 'i' }}))
+        userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": name }))
 
         if userRecords != list():
             msg += f"• You already have a character by the name of {name}! Please use a different name!\n"
@@ -190,7 +190,7 @@ class Character(commands.Cog):
         charDict['CP'] = f"0/{maxCP}"
         
         # check magic items and TP
-        magicItems = mItems.split(',')
+        magicItems = mItems.strip().split(',')
         allMagicItemsString = []
         if lvl > 1 and magicItems != ['']:
             for m in magicItems:
@@ -309,9 +309,11 @@ class Character(commands.Cog):
 
 
         #check reward items
-        rewardItems = consumes.split(',')
+        rewardItems = consumes.strip().split(',')
         allRewardItemsString = []
-        if lvl > 3 and rewardItems != ['']:
+        if lvl <= 3 and rewardItems != [''] and ('Nitro Booster' not in roles and 'Bean Friend' not in roles):
+            msg += f"- Your character's level or roles does not allow reward items. Please try again."
+        elif rewardItems != ['']:
             for r in rewardItems:
                 reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
                 if charEmbedmsg == "Fail":
@@ -329,47 +331,6 @@ class Character(commands.Cog):
             rewardMagics = []
             tier1Rewards = []
 
-# USE THIS CODE IF MY EXPERIMENT BREAKS IT. THIS IS THE OLD, SEMI-FUNCTIONAL CODE.
-#            if lvl == 4:
-#                tier1CountMNC = 1
-#            elif lvl == 5:
-#                if 'Elite Noodle' in roles:
-#                    tier1Count = 1
-#                tier1CountMNC = 1
-#            elif lvl == 6:
-#                tier1CountMNC = 1
-#                tier2Count = 1
-#            elif lvl == 7:
-#                tier1CountMNC = 1
-#                tier1Count = 1
-#                tier2Count = 1
-#            elif lvl == 8:
-#                tier1CountMNC = 1
-#                tier1Count = 1
-#                tier2Count = 1
-#            elif lvl == 11 or lvl == 9:
-#                if 'Good Noodle' in roles:
-#                    tier1CountMNC = 1
-#                elif 'Elite Noodle' in roles:
-#                    tier1CountMNC = 1
-#                    tier1Count = 1
-#                elif 'True Noodle' in roles:
-#                    tier1CountMNC = 1
-#                    tier2Count = 1
-#                elif 'Ascended Noodle' in roles:
-#                    tier1CountMNC = 1
-#                    tier1Count = 1
-#                    tier2Count = 1
-#                elif 'Immortal Noodle' in roles:
-#                    tier1CountMNC = 1
-#                    tier1Count = 2
-#                    tier2Count = 1
-#
-#            if 'Nitro Booster' in roles:
-#                tier1CountMNC += 1
-
-
-# THIS IS MY CODE WHICH MIGHT BREAK THINGS SO USE THE ABOVE AS A FALL-BACK.
             if 'Good Noodle' in roles:
                 tier1CountMNC = 1
             elif 'Elite Noodle' in roles:
@@ -402,8 +363,6 @@ class Character(commands.Cog):
                     msg += "• One or more of these reward items cannot be purchased at Level " + str(lvl) + ".\n"
                     break
 
-# USE THIS CODE IN CONJUNCTION WITH [ORIGINAL CODE] BELOW IF MY EDIT BREAKS IT.
-#                if lvl >= 4 and item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
                 if item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
                     tier1CountMNC -= 1
                     rewardMagics.append(item)
@@ -438,10 +397,6 @@ class Character(commands.Cog):
                     else:
                         charDict['Magic Items'] = r['Name']
 
-# [ORIGINAL CODE] USE THIS CODE IN CONJUNCTION WITH ABOVE CODE IF MY EDIT BREAKS IT.
-#        elif lvl <= 3 and rewardItems != ['']:
-#            msg += f"- Your character's level does not allow reward items. Please try again."
-            
         # check race
         rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'races',race)
         if charEmbedmsg == "Fail":
