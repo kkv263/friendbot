@@ -114,7 +114,7 @@ class Tp(commands.Cog):
                 #grab the available TP of the character
                 for x in range(0,5):
                     if f'T{x} TP' in charRecords:
-                      tpBank[x-1] = (charRecords[f'T{x} TP'])
+                      tpBank[x-1] = (float(charRecords[f'T{x} TP']))
                       tpBankString += f"{tpBank[x-1]} T{x} TP, " 
 
                 haveTP = False
@@ -225,9 +225,8 @@ class Tp(commands.Cog):
                             if currentMagicItems != list():
                                 currentMagicItems.pop(mIndex)
                                 charRecords['Current Item'] = ', '.join(currentMagicItems)
-                                print(charRecords['Current Item'])
-                            else:
-                                charRecords['Current Item'] = 'None'
+                                if currentMagicItems == list():
+                                    charRecords['Current Item'] = 'None'
 
                         tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
 
@@ -279,12 +278,21 @@ class Tp(commands.Cog):
                                     # statSplit MAX NUM STAT +X
                                     statSplit = mRecord['Stat Bonuses'].split(' +')
                                     maxSplit = statSplit[0].split(' ')
+                                    oldStat = charRecords[maxSplit[2]]
                                     charRecords[maxSplit[2]] += int(statSplit[1]) 
-
                                     # If theres a MAX, it won't go over.
                                     if "MAX" in statSplit[0]:
                                         if charRecords[maxSplit[2]] > int(maxSplit[1]):
                                             charRecords[maxSplit[2]] = maxSplit[1]
+                                    setData[maxSplit[2]] = charRecords[maxSplit[2]]
+
+                                    # If the stat increased was con, recalc HP
+                                    # The old CON is subtracted, and new CON is added.
+                                    # If the player can't destroy magic items, this is done here, otherwise... it will need to be done in $info.
+                                    if 'CON' in maxSplit[2]:
+                                        charRecords['HP'] -= ((int(oldStat) - 10) // 2) * charRecords['Level']
+                                        charRecords['HP'] += ((int(charRecords['CON']) - 10) // 2) * charRecords['Level']
+                                        setData['HP'] = charRecords['HP']
 
                                 if newTP:
                                     if charRecords[f"T{tierNum} TP"] == 0:

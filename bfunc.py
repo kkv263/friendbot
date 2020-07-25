@@ -31,7 +31,7 @@ def timeConversion (time):
 
 #     return getTierArray
 
-async def traceBack (ctx,error):
+async def traceBack (ctx,error,silent=False):
     ctx.command.reset_cooldown(ctx)
     etype = type(error)
     trace = error.__traceback__
@@ -48,8 +48,9 @@ async def traceBack (ctx,error):
 
     xyffei = ctx.guild.get_member(220742049631174656)
 
-    #await xyffei.send(f"```{traceback_text}```\n")
-    await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(203948352973438995).mention} has been notified.")
+    if not silent:
+        await xyffei.send(f"```{traceback_text}```\n")
+        await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(220742049631174656).mention} has been notified.")
     raise error
 
 def calculateTreasure(seconds, role):

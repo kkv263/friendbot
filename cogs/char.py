@@ -39,6 +39,8 @@ class Character(commands.Cog):
             elif error.param.name == 'm':
                 msg = "You're missing a magic item to attune to, or unattune, from your character. "
 
+            msg += "**If this error seems incorrect, you may be missing something else. **"
+
         if msg:
             if ctx.command.name == "create":
                 msg += f'Please follow this format:\n`{commandPrefix}create "name" level race class backgound str dex con int wis cha "mitem 1, mitem2 ..." "consumable 1, consumable 2,..."`.\n'
@@ -70,6 +72,7 @@ class Character(commands.Cog):
             msg = f'The command is not working correctly. Please try again and make sure the format is correct'
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
+            await traceBack(ctx,error, True)
         else:
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
@@ -450,6 +453,7 @@ class Character(commands.Cog):
 
         
         # Check Character's class
+        classStat = []
         cRecord = []
         totalLevel = 0
         mLevel = 0
@@ -490,7 +494,7 @@ class Character(commands.Cog):
 
         charDict['Class'] = ""
 
-        if not mLevel:
+        if not mLevel and '/' in cclass:
             pass
         elif not cRecord or cRecord == list():
             msg += 'That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
@@ -622,7 +626,6 @@ class Character(commands.Cog):
                 charEmbed.clear_fields()
 
             # Subclass
-            classStat = []
             for m in cRecord:
                 m['Subclass'] = 'None'
                 if int(m['Level']) < lvl:
@@ -725,9 +728,9 @@ class Character(commands.Cog):
                 charDict['HP'] = await characterCog.calcHP(ctx,hpRecords,charDict,lvl)
 
             # Multiclass Requirements
-            if '/' in cclass:
-                reqFufillList = []
+            if '/' in cclass and len(cRecord) > 1:
                 for m in cRecord:
+                    reqFufillList = []
                     statReq = m['Class']['Multiclass'].split(' ')
                     if m['Class']['Multiclass'] != 'None':
                         if '/' not in m['Class']['Multiclass'] and '+' not in m['Class']['Multiclass']:
@@ -752,9 +755,6 @@ class Character(commands.Cog):
                                   reqFufillList.append(f"{s} {charDict[s]}")
                             if not reqFufill:
                                 msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {' and '.join(reqFufillList)}\n"
-                    
-
-
         if msg:
             if charEmbedmsg and charEmbedmsg != "Fail":
                 await charEmbedmsg.delete()
@@ -788,10 +788,11 @@ class Character(commands.Cog):
 
         
         charDictInvString = ""
-        for k,v in charDict['Inventory'].items():
-            charDictInvString += f"• {k} x{v}\n"
-        charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
-        charEmbed.set_footer(text= charEmbed.Empty)
+        if charDict['Inventory'] != "None":
+            for k,v in charDict['Inventory'].items():
+                charDictInvString += f"• {k} x{v}\n"
+            charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
+            charEmbed.set_footer(text= charEmbed.Empty)
 
 
         def charCreateCheck(r, u):
@@ -1544,6 +1545,12 @@ class Character(commands.Cog):
         charEmbed = discord.Embed()
         charEmbedmsg = None
 
+        def userCheck(r,u):
+            sameMessage = False
+            if charEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and u == ctx.author and (r.emoji == left or r.emoji == right)
+
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
@@ -1604,13 +1611,60 @@ class Character(commands.Cog):
                     
 
             charEmbed.add_field(name='Consumables', value=consumesString, inline=False)
-            charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
+
+            pages = 1
+            pageStops = [0]
+
+            miString = "• "
+            miArray = charDict['Magic Items'].replace(', ', '\n• ').split('\n')
+
+            for m in miArray:
+                miString += m + "\n"
+
+                if len(miString) > (768 * pages):
+                    pageStops.append(len(miString))
+                    pages += 1
+
+            miEmbedList = [charEmbed]                
+
+            if pages > 1:
+                for p in range(len(pageStops)-1):
+                    if p != 0:
+                        miEmbedList.append(discord.Embed())
+                    miEmbedList[p].add_field(name=f'Magic Items pt. {p+1}', value=miString[pageStops[p]:pageStops[p+1]], inline=False)
+            else:
+                charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
+
             charEmbed.set_footer(text=footer)
 
             if not charEmbedmsg:
                 charEmbedmsg = await ctx.channel.send(embed=charEmbed)
             else:
                 await charEmbedmsg.edit(embed=charEmbed)
+
+            page = 0
+            while pages > 1:
+                await charEmbedmsg.add_reaction(left) 
+                await charEmbedmsg.add_reaction(right)
+                try:
+                    hReact, hUser = await self.bot.wait_for("reaction_add", check=userCheck, timeout=30.0)
+                except asyncio.TimeoutError:
+                    await charEmbedmsg.edit(content=f"Your user menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use `{commandPrefix}user`!")
+                    await charEmbedmsg.clear_reactions()
+                    await charEmbedmsg.add_reaction('💤')
+                    return
+                else:
+                    if hReact.emoji == left:
+                        page -= 1
+                        if page < 0:
+                            page = len(miEmbedList) - 1
+                    if hReact.emoji == right:
+                        page += 1
+                        if page > len(miEmbedList) - 1:
+                            page = 0
+
+                    await charEmbedmsg.edit(embed=miEmbedList[page]) 
+                    await charEmbedmsg.clear_reactions()
 
             self.bot.get_command('inv').reset_cooldown(ctx)
 
@@ -1677,13 +1731,15 @@ class Character(commands.Cog):
                     charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try DMing games to receive Noodles!)"
 
                 userEmbedList = [charEmbed]
-                print(pageStops)
-                for p in range(len(pageStops)-1):
-                    print(charString[pageStops[p]:pageStops[p+1]])
-                    print("====")
-                    if p != 0:
-                        userEmbedList.append(discord.Embed())
-                    userEmbedList[p].add_field(name=f'Characters p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+
+                if pages > 1:
+                    for p in range(len(pageStops)-1):
+                        if p != 0:
+                            userEmbedList.append(discord.Embed())
+                        userEmbedList[p].add_field(name=f'Characters p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+
+                else:
+                    charEmbed.add_field(name=f'Characters', value=charString, inline=False)
 
                 if not charEmbedmsg:
                     charEmbedmsg = await ctx.channel.send(embed=charEmbed)
@@ -1777,24 +1833,10 @@ class Character(commands.Cog):
             # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
             charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=True)
             if 'Guild' in charDict:
-                charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\n:sparkles: ({charDict['Reputation']})", inline=True)
+                charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\nGuild Rank: {charDict['Guild Rank']}", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
 
             maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
-
-            for m in charDict['Magic Items'].split(', '):
-                if "Tome" in m or "Manual" in m:
-                    mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m)
-                    if 'Stat Bonuses' in mRecord:
-                        if 'MAX' in mRecord['Stat Bonuses']:
-                            maxItemSplit = mRecord['Stat Bonuses'].split(' ')
-
-                            if maxStatDict[maxItemSplit[2]] < int(maxItemSplit[1]):
-                                maxStatDict[maxItemSplit[2]] = int(maxItemSplit[1])
-
-                                charDict[maxItemSplit[2]] += int(maxItemSplit[3])
-                                if charDict[maxItemSplit[2]] > maxStatDict[maxItemSplit[2]]:
-                                    charDict[maxItemSplit[2]] = maxStatDict[maxItemSplit[2]]
 
             specialCollection = db.special
             specialRecords = list(specialCollection.find())
@@ -1803,12 +1845,9 @@ class Character(commands.Cog):
             for s in specialRecords:
                 if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items":
                     if s['Name'] in charDict[s['Type']]:
-                        if 'HP' in s:
-                            totalHPAdd += s['HP']
-                          
                         if 'Stat Bonuses' in s:
                             if 'Bonus Level' in s:
-                                if s['Bonus Level'] >= charLevel and s['Name'] in charDict['Class'] and '/' not in charDict['Class']:
+                                if (s['Bonus Level'] <= charLevel) and (s['Name'] in charDict['Class']) and ('/' not in charDict['Class']):
                                     if 'MAX' in s['Stat Bonuses']:
                                         maxItemSplit = s['Stat Bonuses'].split(' ')
                                         if maxStatDict[maxItemSplit[2]] < int(maxItemSplit[1]):
@@ -1824,7 +1863,7 @@ class Character(commands.Cog):
                         if s['Name'] in charDict[s['Type']]:
                             if 'HP' in s:
                                 totalHPAdd += s['HP']
-                        
+
             if 'Attuned' in charDict:
                 charEmbed.add_field(name='Attuned', value='• ' + charDict['Attuned'].replace(', ', '\n• '), inline=False)
                 statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
@@ -1833,7 +1872,7 @@ class Character(commands.Cog):
                         statBonus = a[a.find("[")+1:a.find("]")] 
                         if '+' not in statBonus and '-' not in statBonus:
                             statSplit = statBonus.split(' ')
-                            modStat = str(charDict[statSplit[0]])
+                            modStat = str(charDict[statSplit[0]]).replace(')', '').split(' (')[0]
                             if '[' in modStat and ']' in modStat:
                                 oldStat = modStat[modStat.find("[")+1:modStat.find("]")] 
                                 if '+' not in modStat and '-' not in modStat:
@@ -1868,16 +1907,21 @@ class Character(commands.Cog):
                                 charDict[statSplit[0]] = f"{modStat}" 
 
                 # recalc CON
-                if statBonusDict['CON'] != 0:
+                if statBonusDict['CON'] != 0 or '(' in str(charDict['CON']):
+                    trueConValue = charDict['CON']
                     conValue = charDict['CON'].replace(')', '').split('(')            
 
+                    if len(conValue) > 1:
+                        trueConValue = max(conValue)
+
                     if '+' in conValue[1]:
-                        conValue[1] = int(conValue[1].replace('+', '')) + int(conValue[0])
+                        trueConValue = int(conValue[1].replace('+', '')) + int(conValue[0])
+
+                    print(trueConValue)
 
                     charDict['HP'] -= ((int(conValue[0]) - 10) // 2) * charLevel
-                    charDict['HP'] += ((int(conValue[1]) - 10) // 2) * charLevel
+                    charDict['HP'] += ((int(trueConValue) - 10) // 2) * charLevel
 
-            
             charDict['HP'] += totalHPAdd * charLevel
 
             charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
@@ -2364,11 +2408,14 @@ class Character(commands.Cog):
             mString = ""
             numI = 0
 
+
             for k in charRecordMagicItems:
                 if m.lower() in k.lower():
                     mList.append(k)
                     mString += f"{numberEmojis[numI]} {k} \n"
                     numI += 1
+                if numI > 8:
+                    break
 
             if (len(mList) > 1):
                 charEmbed.add_field(name=f"There seems to be multiple results for `{m}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=mString, inline=False)
@@ -2476,11 +2523,15 @@ class Character(commands.Cog):
             mString = ""
             numI = 0
 
-            for k in charRecords['Magic Items'].split(', '):
-                if m.lower() in k.lower():
-                    mList.append(k)
+            # Filter through attuned items, some attuned items have [STAT +X]; filter out those too and get raw.
+            for k in charRecords['Attuned'].split(', '):
+                print(k.lower().split(' [')[0])
+                if m.lower() in k.lower().split(' [')[0]:
+                    mList.append(k.lower().split(' [')[0])
                     mString += f"{numberEmojis[numI]} {k} \n"
                     numI += 1
+                if numI > 8:
+                    break
 
             if (len(mList) > 1):
                 charEmbed.add_field(name=f"There seems to be multiple results for `{m}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=mString, inline=False)
@@ -3013,7 +3064,7 @@ class Character(commands.Cog):
 
                     page = 0;
                     perPage = 24
-                    numPages =((len(featChoices)) // perPage) + 1
+                    numPages =((len(featChoices) - 1) // perPage) + 1
                     featChoices = sorted(featChoices, key = lambda i: i['Name']) 
 
                     while True:
