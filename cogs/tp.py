@@ -196,7 +196,6 @@ class Tp(commands.Cog):
                     elif charRecords['Magic Items'] == "None":
                         charRecords['Magic Items'] = mRecord['Name']
                     else:
-                        charRecords['Magic Items'] = mRecord['Name']
                         newMagicItems = charRecords['Magic Items'].split(', ')
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
