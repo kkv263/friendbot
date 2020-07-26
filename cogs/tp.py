@@ -83,7 +83,6 @@ class Tp(commands.Cog):
                 If the user does not have the property, we can thus skip since they could not have gotten the item
                 """
                 if("Grouped" in mRecord and "Grouped" in charRecords):
-                    print("Char: ", charRecords["Grouped"])
                     """
                     We can now check if the group name is in any of the Groups that character has interacted with
                     We can then check for every element in Grouped if the currently requested item is in any of them
@@ -92,13 +91,13 @@ class Tp(commands.Cog):
                     if(any(mRecord["Grouped"] in group_item_pair for group_item_pair in charRecords["Grouped"])):
                     """
                     for groupName in charRecords["Grouped"]:
-                        print("GroupName: ", groupName)
-                        if(mRecord["Grouped"] in groupName and mRecord["Name"] not in groupName):
+                        group_name_split = groupName.split(":")
+                        if(mRecord["Grouped"] == group_name_split[0].strip() and mRecord["Name"] != group_name_split[1].strip()):
                             #inform the user that they already have an item from this group
-                            await channel.send(f"You selected `{mRecord['Name']}`of the `{mRecord['Grouped']}` type for `{charRecords['Name']}` and cannot get another item of the same variant.")
+                            await channel.send(f"You previously selected `{group_name_split[1].strip()}` for the `{mRecord['Grouped']}` group for `{charRecords['Name']}` and cannot get another item of the same variant.")
                             return 
                 # check if the requested item is already in the inventory
-                if(mRecord['Name'] in charRecords['Magic Items']):   
+                if(mRecord['Name'] in [name.strip() for name in charRecords['Magic Items'].split(",")]):   
                     await channel.send(f"You already have `{mRecord['Name']}` and cannot TP or gp on another one.")
                     return 
                 
@@ -234,17 +233,8 @@ class Tp(commands.Cog):
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
                         pass
                     elif charRecords['Magic Items'] == "None":
-                        #If the item was part of a group set up the Grouped property and add the items group
-                        if("Grouped" not in charRecords):
-                            charRecords["Grouped"] = []
-                        if("Grouped" in mRecord ):
-                            charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                         charRecords['Magic Items'] = mRecord['Name']
                     else:
-                        if("Grouped" not in charRecords):
-                            charRecords["Grouped"] = []
-                        if("Grouped" in mRecord ):
-                            charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                         newMagicItems = charRecords['Magic Items'].split(', ')
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
@@ -270,6 +260,10 @@ class Tp(commands.Cog):
                             tpEmbed.clear_fields()
                             try:
                                 playersCollection = db.players
+                                if("Grouped" not in charRecords):
+                                    charRecords["Grouped"] = []
+                                if("Grouped" in mRecord and mRecord["Grouped"]+" : "+mRecord["Name"] not in charRecords["Grouped"]):
+                                    charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                                 setData = {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items'], "Grouped":charRecords['Grouped']}
                                 statSplit = None
                                 unsetTP = False
@@ -343,7 +337,8 @@ class Tp(commands.Cog):
         tpEmbed = discord.Embed()
         tpCog = self.bot.get_cog('Tp')
         charRecords, tpEmbedmsg = await checkForChar(ctx, charName, tpEmbed)
-
+        
+        #limit responses to just the original user and the appropriate emotes
         def tpEmbedCheck(r, u):
             sameMessage = False
             if tpEmbedmsg.id == r.message.id:
@@ -355,7 +350,8 @@ class Tp(commands.Cog):
             if tpEmbedmsg.id == r.message.id:
                 sameMessage = True
             return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
-
+        
+        #if the character was found in the DB
         if charRecords:
             # If there are no incomplete TP invested items, cancel command
             if charRecords['Current Item'] == "None":
@@ -365,11 +361,13 @@ class Tp(commands.Cog):
             # Split curent items into a list and check with user which item they would like to discard
             currentItemList = charRecords['Current Item'].split(', ')
             discardString = ""
+            # set up the mapping between letter emoji and item to discard
             alphaIndex = 0
             for c in currentItemList:
                 discardString += f"{alphaEmojis[alphaIndex]}: {c}\n"
                 alphaIndex += 1
-
+            
+            #if there is only one item, select it by default and skip the selection proces
             currentItem = currentItemList[0]
 
             if len(currentItemList) > 1:
@@ -387,10 +385,12 @@ class Tp(commands.Cog):
                     await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
                     return
                 await tpEmbedmsg.clear_reactions()
+                #remove from the list of current items the one that got mapped to the emoji that the user reacted with
                 currentItem = currentItemList.pop(alphaEmojis.index(tReaction.emoji))
             else:
                 currentItemList = ["None"]
-                
+            
+            #store the original string of the item and find the item name without TP
             currentItemStr = currentItem
             currentItem = currentItem.split('(')[0].strip()
 
@@ -408,6 +408,7 @@ class Tp(commands.Cog):
             try:
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=tpEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
+                #cancel if no response was given within the timeframe
                 await tpEmbedmsg.delete()
                 await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
                 return
@@ -420,8 +421,15 @@ class Tp(commands.Cog):
                 elif tReaction.emoji == '✅': 
                     tpEmbed.clear_fields()
                     try:
+                        #filter out the discarded item and its group from the Grouped property
+                        def filterGroupedItems(elem):
+                            if(elem.split(":")[1].strip() != currentItem):
+                                return True
+                            else: return None
+                        #update the database
+                        filtered_grouped = list(filter( filterGroupedItems, charRecords['Grouped']))
                         playersCollection = db.players
-                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":', '.join(currentItemList)}})
+                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":', '.join(currentItemList), "Grouped":filtered_grouped}})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
                         tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
