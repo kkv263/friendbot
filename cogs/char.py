@@ -412,10 +412,13 @@ class Character(commands.Cog):
         cRecord = []
         totalLevel = 0
         mLevel = 0
+        broke = []
         # If there's a /, character is creating a multiclass character
         if '/' in cclass:
             multiclassList = cclass.replace(' ', '').split('/')
             # Iterates through the multiclass list 
+            
+            print("MultList ", multiclassList)
             for m in multiclassList:
                 # Separate level and class
                 mLevel = re.search('\d+', m)
@@ -426,19 +429,21 @@ class Character(commands.Cog):
                 mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
                 if not mClass:
                     cRecord = None
-                    break
+                    broke.append(m[:len(m) - len(mLevel)])
 
                 # Check for class duplicates (ex. Paladin 1 / Paladin 2 = Paladin 3)
                 classDupe = False
-                for c in cRecord:
-                    if c['Class'] == mClass:
-                        c['Level'] = str(int(c['Level']) + int(mLevel))
-                        classDupe = True                    
-                        break
+                
+                if(cRecord or cRecord==list()):
+                    for c in cRecord:
+                        if c['Class'] == mClass:
+                            c['Level'] = str(int(c['Level']) + int(mLevel))
+                            classDupe = True                    
+                            break
 
-                if not classDupe:
-                    cRecord.append({'Class': mClass, 'Level':mLevel})
-                totalLevel += int(mLevel)
+                    if not classDupe:
+                        cRecord.append({'Class': mClass, 'Level':mLevel})
+                    totalLevel += int(mLevel)
 
         else:
             singleClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'classes',cclass)
@@ -448,11 +453,11 @@ class Character(commands.Cog):
                 cRecord = None
 
         charDict['Class'] = ""
-
+        print(len(broke))
         if not mLevel and '/' in cclass:
             pass
-        elif not cRecord or cRecord == list():
-            msg += 'That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+        elif len(broke)>0:
+            msg += f'{broke} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         elif totalLevel != lvl and len(cRecord) > 1:
             msg += 'Your classes do not add up to the total level. Please double-check your multiclasses\n'
         else:
@@ -1744,10 +1749,12 @@ class Character(commands.Cog):
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
-            footer = f"To view inventory: {commandPrefix}inv {charDict['Name']}"
+            footer = f"To view inventory: {commandPrefix}inv {charDict['Name']}"   
             description = f"{charDict['Race']}\n{charDict['Class']}\n{charDict['Background']}\nGames Played: {charDict['Games']}\n"
             if 'Proficiency' in charDict:
-                description +=  f"Noodle Training: {charDict['Proficiency']}\n"
+                description +=  f"Extra Training: {charDict['Proficiency']}\n"
+            if 'NoodleTraining' in charDict:
+                description +=  f"Noodle Training: {charDict['NoodleTraining']}\n"
             description += f":moneybag: {charDict['GP']} gp\n"
             charLevel = charDict['Level']
             if charLevel < 5:
@@ -1790,7 +1797,8 @@ class Character(commands.Cog):
             if 'Guild' in charDict:
                 charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\nGuild Rank: {charDict['Guild Rank']}", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
-
+            
+            
             maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
 
             specialCollection = db.special

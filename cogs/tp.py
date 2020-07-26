@@ -5,6 +5,7 @@ import re
 from discord.utils import get        
 from discord.ext import commands
 from bfunc import db, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, traceBack, alphaEmojis
+import traceback as traces
 
 class Tp(commands.Cog):
     def __init__ (self, bot):
@@ -45,8 +46,124 @@ class Tp(commands.Cog):
         else:
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
+    @tp.command()
+    async def createGroup(self, ctx, query, group):
+    
+        #channel and author of the original message creating this call
+        channel = ctx.channel
+        author = ctx.author
+        
+        collection = db["mit"]
+        apiEmbedmsg = None
+        apiEmbed = discord.Embed()
+        #get the entire table if no query is given
+        if query is None:
+            return None, apiEmbed, apiEmbedmsg
 
-      
+        #if the query has no text, return nothing
+        if query.strip() == "":
+            return None, apiEmbed, apiEmbedmsg
+
+        #restructure the query to be more regEx friendly
+        query = query.strip()
+        query = query.replace('(', '\\(')
+        query = query.replace(')', '\\)')
+        query = query.replace('+', '\\+')
+        
+        #search through the table for an element were the Name or Grouped property contain the query
+        filterDic = {"Name": {
+                            "$regex": query,
+                            #make the check case-insensitively
+                            "$options": "i"
+                          }
+                        }
+        records = list(collection.find(filterDic))
+        
+        #restore the original query
+        query = query.replace("\\", "")
+        #sort elements by either the name, or the first element of the name list in case it is a list
+        def sortingEntryAndList(elem):
+            if(isinstance(elem['Name'],list)): 
+                return elem['Name'][0] 
+            else:  
+                return elem['Name']
+        
+        remove_grouper = [] #track all elements that need to be removes since they act as representative for a group of items
+
+        #for every search result check if it contains a group and create entries for each group element if it does
+        for entry in records:
+            # if the element is part of a group
+            if("Grouped" in entry):
+                # remove it later
+                remove_grouper.append(entry)
+        # remove all group representatives
+        for group_to_remove in remove_grouper:
+            records.remove(group_to_remove)
+        
+        #sort all items alphabetically 
+        records = sorted(records, key = sortingEntryAndList)    
+        
+        #if no elements are left, return nothing
+        if records == list():
+            return None, apiEmbed, apiEmbedmsg
+        else:
+            try:
+                #create a string to provide information about the items to the user
+                infoString = ""
+                collapseList=[]
+                for rec in records:
+                    infoString = f"{rec['Name']} (Tier {rec['Tier']}): **{rec['TP']} TP: **{rec['GP']} GP**\n"
+                    def apiEmbedCheck(r, u):
+                        sameMessage = False
+                        if apiEmbedmsg.id == r.message.id:
+                            sameMessage = True
+                        return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌') or (str(r.emoji) == '⛔')) and u == author
+                    #inform the user of the current information and ask for their selection of an item
+                    apiEmbed.add_field(name=f"Select which one to collapse.", value=infoString, inline=False)
+                    if not apiEmbedmsg or apiEmbedmsg == "Fail":
+                        apiEmbedmsg = await channel.send(embed=apiEmbed)
+                    else:
+                        await apiEmbedmsg.edit(embed=apiEmbed)
+
+                    await apiEmbedmsg.add_reaction('✅')
+                    await apiEmbedmsg.add_reaction('❌')
+                    await apiEmbedmsg.add_reaction('⛔')
+
+                    try:
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+                    except asyncio.TimeoutError:
+                        #stop if no response was given within the timeframe and reenable the command
+                        await apiEmbedmsg.delete()
+                        await channel.send('Timed out! Try using the command again.')
+                        ctx.command.reset_cooldown(ctx)
+                        return None, apiEmbed, "Fail"
+                    else:
+                        #stop if the cancel emoji was given and reenable the command
+                        if tReaction.emoji == '❌':
+                            pass
+                        elif tReaction.emoji == '✅':
+                            collapseList.append(rec)
+                        else:
+                            tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process cancelled")
+                            return
+                    #return the selected item indexed by the emoji given by the user
+                    apiEmbed.clear_fields()
+                    await apiEmbedmsg.clear_reactions()
+                name_list = list([x["Name"] for x in collapseList])
+                charDict = collapseList[0].copy()
+                charDict["Name"] = name_list
+                charDict["Grouped"] = group
+                charDict.pop("_id")
+                collection.insert_one(charDict)
+                for entry in collapseList:
+                    collection.delete_one({'_id': entry['_id']})
+                tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process finished. These items have been grouped\n"+"\n".join(name_list))
+                return
+            except Exception as e:
+                print ('MONGO ERROR: ' + str(e))
+                traces.print_exc()
+                tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
+
     @tp.command()
     async def buy(self, ctx , charName, mItem):
 
