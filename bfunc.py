@@ -76,6 +76,11 @@ def calculateTreasure(seconds, role):
     dgp = int(decimal.Decimal((gp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
 
     return [cp, tp, gp, dcp, dtp, dgp]
+    
+
+    
+    
+    
 """
 The purpose of this function is to do a general call to the database
 apiEmbed -> the embed element that the calling function will be using
@@ -154,16 +159,12 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     
     #for every search result check if it contains a group and create entries for each group element if it does
     for entry in records:
-        print("Entry: ", entry)
-        print("Grouped" in entry)
         # if the element is part of a group
         if("Grouped" in entry):
             # remove it later
             remove_grouper.append(entry)
             # check if the query is more specific about a group element
-            print("Search: ", entry['Name'])
             newlist = list(filter(r.search, entry['Name']))
-            print("Filtered: ", newlist)
             """
             if the every element has been filtered out because of the code above then we know from the fact 
             that this was found in the search that the Grouper field had to have been matched, 

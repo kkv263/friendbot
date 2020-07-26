@@ -2000,15 +2000,17 @@ class Timer(commands.Cog):
                     msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined)) and m.channel == channel)
 
                 if (f"{commandPrefix}timer transfer " in msg.content or f"{commandPrefix}t transfer " in msg.content) and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
+                    
+                    """
                     if f'{commandPrefix}timer transfer ' in msg.content:
                       newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
                     elif f'{commandPrefix}t transfer ' in msg.content:
                       newUser = msg.content.split(f'{commandPrefix}t transfer ')[1] 
-
-                    newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
-                    if newAuthor is not None:
-                        author = newAuthor
-                        await channel.send(f'{author.mention}, the current timer has been transferred to you. Use `{commandPrefix}timer stop` whenever you would like to stop the timer.')
+                    newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser)
+                    """
+                    if len(msg.mentions)>0:
+                        author = msg.mentions[0]
+                        await channel.send(f'{author.display_name}, the current timer has been transferred to you. Use `{commandPrefix}timer stop` whenever you would like to stop the timer.')
                     else:
                         await channel.send(f'Sorry, I could not find the user `{newUser}` to transfer the timer.')
                 elif (msg.content == f"{commandPrefix}timer stop" or msg.content == f"{commandPrefix}timer end" or msg.content == f"{commandPrefix}t stop" or msg.content == f"{commandPrefix}t end") and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
