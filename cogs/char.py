@@ -130,6 +130,7 @@ class Character(commands.Cog):
           'Games': 0
         }
 
+        # Prevents name, level, race, class, background from being blank. Resets infinite cooldown and prompts
         if not name:
             await channel.send(content="````The name of your character cannot be blank! Please try again.```")
             self.bot.get_command('create').reset_cooldown(ctx)
@@ -157,8 +158,12 @@ class Character(commands.Cog):
 
 
         lvl = int(level)
+
+        # Provides an error message at the end. If there are more than one, it will join msg.
         msg = ""
-        # name should be less then 50 chars
+
+        
+        # Name should be less then 50 chars
         if len(name) > 64:
             msg += "• Your character's name is too long! The limit is 64 characters.\n"
 
@@ -168,7 +173,15 @@ class Character(commands.Cog):
         if userRecords != list():
             msg += f"• You already have a character by the name of {name}! Please use a different name!\n"
         
-        # level and role check
+        # ██████╗░░█████╗░██╗░░░░░███████╗  ░░░░██╗  ██╗░░░░░███████╗██╗░░░██╗███████╗██╗░░░░░
+        # ██╔══██╗██╔══██╗██║░░░░░██╔════╝  ░░░██╔╝  ██║░░░░░██╔════╝██║░░░██║██╔════╝██║░░░░░
+        # ██████╔╝██║░░██║██║░░░░░█████╗░░  ░░██╔╝░  ██║░░░░░█████╗░░╚██╗░██╔╝█████╗░░██║░░░░░
+        # ██╔══██╗██║░░██║██║░░░░░██╔══╝░░  ░██╔╝░░  ██║░░░░░██╔══╝░░░╚████╔╝░██╔══╝░░██║░░░░░
+        # ██║░░██║╚█████╔╝███████╗███████╗  ██╔╝░░░  ███████╗███████╗░░╚██╔╝░░███████╗███████╗
+        # ╚═╝░░╚═╝░╚════╝░╚══════╝╚══════╝  ╚═╝░░░░  ╚══════╝╚══════╝░░░╚═╝░░░╚══════╝╚══════╝
+
+        # Check if level or roles are vaild
+        # A set that filters valid levels depending on user's roles
         roleSet = [1]
         for d in roleCreationDict.keys():
             if d in roles:
@@ -176,22 +189,33 @@ class Character(commands.Cog):
 
         roleSet = set(roleSet)
 
-        if "Nitro Booster" in roles and lvl < 11:
+        # If roles are present, add base levels + 1 for extra levels for these special roles.
+        if ("Nitro Booster" in roles or 'Bean Friend' in roles) and lvl < 11:
             roleSet = roleSet.union(set(map(lambda x: x+1,roleSet.copy())))
 
         if lvl not in roleSet:
             msg += f"• You cannot create a character of {lvl}! You do not have the correct role!\n"
         
-        # CP
+        # Checks CP
         if lvl < 5:
             maxCP = 4
         else:
             maxCP = 8
         charDict['CP'] = f"0/{maxCP}"
         
-        # check magic items and TP
+        
+        # ███╗░░░███╗░█████╗░░██████╗░██╗░█████╗░  ██╗████████╗███████╗███╗░░░███╗  ░░░░██╗  ████████╗██████╗░
+        # ████╗░████║██╔══██╗██╔════╝░██║██╔══██╗  ██║╚══██╔══╝██╔════╝████╗░████║  ░░░██╔╝  ╚══██╔══╝██╔══██╗
+        # ██╔████╔██║███████║██║░░██╗░██║██║░░╚═╝  ██║░░░██║░░░█████╗░░██╔████╔██║  ░░██╔╝░  ░░░██║░░░██████╔╝
+        # ██║╚██╔╝██║██╔══██║██║░░╚██╗██║██║░░██╗  ██║░░░██║░░░██╔══╝░░██║╚██╔╝██║  ░██╔╝░░  ░░░██║░░░██╔═══╝░
+        # ██║░╚═╝░██║██║░░██║╚██████╔╝██║╚█████╔╝  ██║░░░██║░░░███████╗██║░╚═╝░██║  ██╔╝░░░  ░░░██║░░░██║░░░░░
+        # ╚═╝░░░░░╚═╝╚═╝░░╚═╝░╚═════╝░╚═╝░╚════╝░  ╚═╝░░░╚═╝░░░╚══════╝╚═╝░░░░░╚═╝  ╚═╝░░░░  ░░░╚═╝░░░╚═╝░░░░░
+        # Magic Item / TP
+        # Check if magic items exist, and calculates the TP cost of each magic item.
         magicItems = mItems.strip().split(',')
         allMagicItemsString = []
+
+        # If magic items parameter isn't blank, check each magic item to see if valid, and check for duplicates.
         if lvl > 1 and magicItems != ['']:
             for m in magicItems:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'mit',m) 
@@ -214,6 +238,8 @@ class Character(commands.Cog):
                 highestTier = 0
                 magicItemsCurrent = []
                 magicItemsBought = []
+
+                # Calculates T1/T2 TP that a character should have and their tie level to tier limit
                 if lvl > 1 and lvl < 6: 
                     bankTP1 = (lvl-1) * 2 
                     highestTier = 1
@@ -229,14 +255,18 @@ class Character(commands.Cog):
                 buyT1 = False
 
                 for item in allMagicItemsString:
+                    #  See if player isn't going over tier 2 or tier 1
                     if int(item['Tier']) > highestTier:
                         return "• One or more of these magic items cannot be purchased at Level " + str(lvl), 0, 0
                         
+                    # Split T2 and T1 items.
                     else:
                         costTP = int(item['TP'])
                         if int(item['Tier']) == 2:
                             magicItemsTier2.append(item)
                             continue
+
+                        # Go through T1 Items and spend TP. Puts incomplete magic items as current item.
                         else:
                             buyT1 = True
                             bankTP1 = costTP - bankTP1
@@ -251,7 +281,10 @@ class Character(commands.Cog):
                               isLeftoverT1 = True
 
 
+                # Go through T2 items
                 for item in magicItemsTier2:
+
+                    # If there is an incomplete item from T1 TP, see if it can be completed with T2 TP
                     if magicItemsCurrent:
                         magicItemsCurrentItem = magicItemsCurrent[1].split('/')
                         bankTP2 = int(magicItemsCurrentItem[1]) - int(magicItemsCurrentItem[0]) - bankTP2
@@ -267,6 +300,7 @@ class Character(commands.Cog):
                             charDict['Current Item'] = ""
                             isLeftoverT2 = True
 
+                    # Spend T2 TP with T2 items
                     if bankTP2 > 0:
                         costTP = int(item['TP'])
                         bankTP2 = costTP - bankTP2
@@ -298,6 +332,8 @@ class Character(commands.Cog):
                 pass
             else:
                 charDict['Magic Items'] = ', '.join([str(string['Name']) for string in magicItemsBought])
+        
+        # Level 1 cannot buy magic items because they have 0 TP to spend.
         elif lvl > 1 and magicItems == ['']:
             if lvl > 1 and lvl < 6: 
                 bankTP1 = (lvl-1) * 2 
@@ -308,7 +344,15 @@ class Character(commands.Cog):
             msg += 'You cannot purchase magic items at Level 1.\n'
 
 
-        #check reward items
+
+        # ██████╗░███████╗░██╗░░░░░░░██╗░█████╗░██████╗░██████╗░  ██╗████████╗███████╗███╗░░░███╗░██████╗
+        # ██╔══██╗██╔════╝░██║░░██╗░░██║██╔══██╗██╔══██╗██╔══██╗  ██║╚══██╔══╝██╔════╝████╗░████║██╔════╝
+        # ██████╔╝█████╗░░░╚██╗████╗██╔╝███████║██████╔╝██║░░██║  ██║░░░██║░░░█████╗░░██╔████╔██║╚█████╗░
+        # ██╔══██╗██╔══╝░░░░████╔═████║░██╔══██║██╔══██╗██║░░██║  ██║░░░██║░░░██╔══╝░░██║╚██╔╝██║░╚═══██╗
+        # ██║░░██║███████╗░░╚██╔╝░╚██╔╝░██║░░██║██║░░██║██████╔╝  ██║░░░██║░░░███████╗██║░╚═╝░██║██████╔╝
+        # ╚═╝░░╚═╝╚══════╝░░░╚═╝░░░╚═╝░░╚═╝░░╚═╝╚═╝░░╚═╝╚═════╝░  ╚═╝░░░╚═╝░░░╚══════╝╚═╝░░░░░╚═╝╚═════╝░
+        # Reward Items
+
         rewardItems = consumes.strip().split(',')
         allRewardItemsString = []
         if lvl <= 3 and rewardItems != [''] and ('Nitro Booster' not in roles and 'Bean Friend' not in roles):
@@ -368,7 +412,10 @@ class Character(commands.Cog):
                     rewardMagics.append(item)
                 elif int(item['Tier']) == 2: 
                     tier2Count -= 1
-                    rewardMagics.append(item)
+                    if 'Consumable' not in item:
+                      rewardMagics.append(item)
+                    else:
+                        rewardConsumables.append(item)
                 elif int(item['Tier']) == 1:
                     tier1Rewards.append(item)
             for item in tier1Rewards:
@@ -1819,6 +1866,7 @@ class Character(commands.Cog):
                             if 'HP' in s:
                                 totalHPAdd += s['HP']
 
+            # Check for stat increases in attuned magic items.
             if 'Attuned' in charDict:
                 charEmbed.add_field(name='Attuned', value='• ' + charDict['Attuned'].replace(', ', '\n• '), inline=False)
                 statBonusDict = { 'STR': 0 ,'DEX': 0,'CON': 0, 'INT': 0, 'WIS': 0,'CHA': 0}
@@ -1828,6 +1876,9 @@ class Character(commands.Cog):
                         if '+' not in statBonus and '-' not in statBonus:
                             statSplit = statBonus.split(' ')
                             modStat = str(charDict[statSplit[0]]).replace(')', '').split(' (')[0]
+                            print(statSplit)
+                            print('===')
+                            print(modStat)
                             if '[' in modStat and ']' in modStat:
                                 oldStat = modStat[modStat.find("[")+1:modStat.find("]")] 
                                 if '+' not in modStat and '-' not in modStat:
@@ -1842,7 +1893,10 @@ class Character(commands.Cog):
                                         charDict[statSplit[0]] = f"{modStat} ({statSplit[1]})"
 
                             elif int(statSplit[1]) > int(modStat):
-                                charDict[statSplit[0]] = f"{modStat} ({statSplit[1]})"
+                                maxStatNum = statSplit[1]
+                                if '(' in str(charDict[statSplit[0]]):
+                                    maxStatNum = max(int(str((charDict[statSplit[0]])).replace(')', '').split(' (')[1]), int(statSplit[1]) )
+                                charDict[statSplit[0]] = f"{modStat} ({maxStatNum})"
 
                         elif '+' in statBonus:
                             statBonusSplit = statBonus.split(';')
@@ -2332,6 +2386,7 @@ class Character(commands.Cog):
                 await channel.send(f"You cannot attune items with a dead character. Please use `$death {charRecords['Name']}` for your character.")
                 return
 
+            # Check number of items character can attune to. Artificer has exceptions.
             attuneLength = 3
             if charRecords['Class'] == 'Artificer':
                 if charRecords['Level'] >= 16:
@@ -2363,7 +2418,7 @@ class Character(commands.Cog):
             mString = ""
             numI = 0
 
-
+            # Check if query is in character's Magic Item List. Limit is 8 to show if there are multiple matches.
             for k in charRecordMagicItems:
                 if m.lower() in k.lower():
                     mList.append(k)
@@ -2372,6 +2427,7 @@ class Character(commands.Cog):
                 if numI > 8:
                     break
 
+            # IF multiple matches, check which one the player meant.
             if (len(mList) > 1):
                 charEmbed.add_field(name=f"There seems to be multiple results for `{m}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=mString, inline=False)
                 if not charEmbedmsg:
@@ -2404,6 +2460,7 @@ class Character(commands.Cog):
                 await channel.send(f'`{m}` doesn\'t exist on the Magic Item Table! Check to see if it is a valid item and check your spelling.')
                 return
 
+            # Check if magic item's actually exist, and grab properties. (See if they're attuneable)
             mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'mit', m, True)
             if not mRecord:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m, True)
@@ -2417,6 +2474,8 @@ class Character(commands.Cog):
                     await channel.send(f"You don't have the item `{mRecord['Name']}` in your inventory to attune to.")
                     return
 
+            # Check if they are already attuned to the item.
+            data = {}
             if mRecord['Name'] in [a.split('[')[0].strip() for a in attuned]:
                 await channel.send(f"You are already attuned to `{mRecord['Name']}`")
                 return
@@ -2425,7 +2484,6 @@ class Character(commands.Cog):
                     await channel.send(f"`Hammer of Thunderbolts` requires you to have a `Belt of Giant Strength` and `Gauntlets of Ogre Power` in your inventory in order to attune to it.")
                     return 
             elif 'Attunement' in mRecord:
-                data = {}
                 if 'Stat Bonuses' in mRecord:
                     attuned.append(f"{mRecord['Name']} [{mRecord['Stat Bonuses']}]")
                 else:

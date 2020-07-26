@@ -215,7 +215,11 @@ class Timer(commands.Cog):
 
             elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and msg.author == author:
                 addUser = await ctx.invoke(self.timer.get_command('add'), msg=msg, prep=True)
-                if addUser not in playerRoster:
+                print(addUser)
+
+                if addUser is None:
+                    pass
+                elif addUser not in playerRoster:
                     if not isCampaign:
                         prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up a character to play.', inline=False)
                     else:
@@ -228,8 +232,10 @@ class Timer(commands.Cog):
 
             elif (f"{commandPrefix}timer remove " in msg.content or f"{commandPrefix}t remove " in msg.content) and msg.author == author:
                 removeUser = await ctx.invoke(self.timer.get_command('remove'), msg=msg, prep=True)
-
-                if playerRoster.index(removeUser) != 0:
+                print (removeUser)
+                if removeUser is None:
+                    pass
+                elif playerRoster.index(removeUser) != 0:
                     prepEmbed.remove_field(playerRoster.index(removeUser))
                     playerRoster.remove(removeUser)
 
@@ -239,7 +245,7 @@ class Timer(commands.Cog):
                 else:
                     await channel.send('You cannot remove yourself from the timer.')
 
-            elif msg.content == f"{commandPrefix}timer start" or msg.content == f"{commandPrefix}t start":
+            elif (msg.content == f"{commandPrefix}timer start" or msg.content == f"{commandPrefix}t start") and (msg.author in playerRoster and msg.author == author):
                 if author not in [a[0] for a in signedPlayers]:
                     await channel.send(f'```The DM has not signed up yet! Please `{commandPrefix}timer signup` your character before starting the timer.```') 
                 elif author in [a[0] for a in signedPlayers] and len(signedPlayers) == 1:
@@ -247,7 +253,9 @@ class Timer(commands.Cog):
                 else:
                     timerStarted = True
 
-            elif msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel":
+            
+
+            elif (msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel") and (msg.author in playerRoster and msg.author == author):
                 await channel.send(f'```Timer canceled! If you would like to prep a new quest, please use {commandPrefix}timer prep.```') 
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
@@ -255,8 +263,9 @@ class Timer(commands.Cog):
             elif (f'{commandPrefix}timer guild' in msg.content or f'{commandPrefix}t guild' in msg.content) and msg.author == author:
                 guildsList = []
                 guildsListStr = ""
-                guildCategoryID = 678381362398625802
-                # guildCategoryID = 452704598440804375
+                # guildCategoryID = 678381362398625802
+                # guild category channel for DnDFriends
+                guildCategoryID = 452704598440804375
 
                 if (len(msg.channel_mentions) > 3):
                     await channel.send(f"```The number of guilds exceed 3. Please follow this format and try again:\n{commandPrefix}timer guild #guild1 #guild2 ...```") 
@@ -1084,7 +1093,11 @@ class Timer(commands.Cog):
             guild = ctx.guild
             addList = msg.raw_mentions
             addUser = ""
-            if addList != list():
+
+            if len(addList) > 1:
+                await ctx.channel.send(content=f"I cannot add more than one player! Please try the command with one player and check your format and spelling.")
+                return None
+            elif addList != list():
                 addUser = guild.get_member(addList[0])
                 if prep:
                     return addUser
@@ -1094,7 +1107,7 @@ class Timer(commands.Cog):
             return start
 
     @timer.command()
-    async def removeme(self,ctx, msg=None, start={},role="",user="", resume=False, death=False):
+    async def removeme(self,ctx, msg=None, start="",role="",user="", resume=False, death=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             userFound = False
@@ -1140,18 +1153,23 @@ class Timer(commands.Cog):
         return start
 
     @timer.command()
-    async def death(self,ctx, msg, start={}, role="", resume=False):
+    async def death(self,ctx, msg, start="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=start, role=role, resume=resume, death=True)
             return startTimes
 
     @timer.command()
-    async def remove(self,ctx, msg, start={},role="", prep=False, resume=False, death=False):
+    async def remove(self,ctx, msg, start="",role="", prep=False, resume=False, death=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             guild = ctx.guild
             removeList = msg.raw_mentions
             removeUser = ""
-            if removeList != list():
+
+            if len(removeList) > 1:
+                await ctx.channel.send(content=f"I cannot remove more than one player! Please try the command with one player and check your format and spelling.")
+                return None
+
+            elif removeList != list():
                 removeUser = guild.get_member(removeList[0])
                 if prep:
                     return removeUser
@@ -1161,7 +1179,7 @@ class Timer(commands.Cog):
                 if not resume:
                     await ctx.channel.send(content=f"I cannot find any mention of the user you are trying to remove. Please check your format and spelling.")
 
-        return start
+            return start
 
     
     @timer.command()
