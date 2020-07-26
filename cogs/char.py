@@ -1385,7 +1385,6 @@ class Character(commands.Cog):
         guild = ctx.guild
         charEmbed = discord.Embed()
         charEmbedmsg = None
-
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
         def retireEmbedCheck(r, u):
@@ -1454,7 +1453,6 @@ class Character(commands.Cog):
 
                     return
                 elif tReaction.emoji == '1️⃣':
-                    data['deleted'] = True
                     charEmbed.title = f"Are you sure you want to retire {charDict['Name']}?"
                     charEmbed.description = "✅: Yes\n\n❌: Cancel"
                     charEmbed.set_footer(text=charEmbed.Empty)
@@ -1591,8 +1589,9 @@ class Character(commands.Cog):
                         type.append("")
                     else:
                         type[1] = '(' + type[1]
-
-                    if type[0].strip() not in typeDict:
+                  
+                    type[0] = type[0].strip()
+                    if type[0] not in typeDict:
                         typeDict[type[0]] = [f"• {i['Name']} {type[1]} x{charDict['Inventory'][i['Name']]}\n"]
                     else:
                         typeDict[type[0]].append(f"• {i['Name']} {type[1]} x{charDict['Inventory'][i['Name']]}\n")
@@ -2465,7 +2464,7 @@ class Character(commands.Cog):
             elif len(mList) == 1:
                 m = mList[0]
             else:
-                await channel.send(f'`{m}` doesn\'t exist on the Magic Item Table! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f"`{m}` isn't in {charRecords['Name']}'s inventory. Please try the command again.")
                 return
 
             # Check if magic item's actually exist, and grab properties. (See if they're attuneable)

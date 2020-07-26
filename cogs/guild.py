@@ -56,7 +56,6 @@ class Guild(commands.Cog):
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
     @guild.command()
-    # TODO: Limit to category and make sure channel + role line up.
     async def create(self,ctx, charName, guildName, roleName="", channelName=""):
         channel = ctx.channel
         author = ctx.author

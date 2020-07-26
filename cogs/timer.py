@@ -12,7 +12,7 @@ from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray, noodleRoleArray
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -1541,8 +1541,6 @@ class Timer(commands.Cog):
             hoursPlayed = (minutesPlayed / 60)
             noodlesGained = sparklesGained = int(hoursPlayed) // 3
 
-            print(int(noodlesGained))
-
             if uRecord:
                 if 'Noodles' not in uRecord:
                     uRecord['Noodles'] = 0
@@ -1551,31 +1549,35 @@ class Timer(commands.Cog):
 
             noodleString = "Current Noodles: " + str(noodles)
             dmRoleNames = [r.name for r in dmChar[0].roles]
-            if noodles >= 150 and 'Ascended Noodle' in dmRoleNames:
+            if noodles >= 150:
                 if 'Immortal Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Immortal Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 150 sessions. This user has 150+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Ascended Noodle'))
+                    if 'Ascended Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Ascended Noodle'))
                     noodleString += "\n**Immortal Noodle** role received! :tada:"
-            elif noodles >= 100 and 'True Noodle' in dmRoleNames:
+            elif noodles >= 100:
                 if 'Ascended Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Ascended Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 100 sessions. This user has 100+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
+                    if 'True Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
                     noodleString += "\n**Ascended Noodle** role received! :tada:"
 
-            elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
+            elif noodles >= 60:
                 if 'True Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'True Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 60 sessions. This user has 60+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
+                    if 'Elite Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
                     noodleString += "\n**True Noodle** role received! :tada:"
             
-            elif noodles >= 30 and 'Good Noodle' in dmRoleNames:
+            elif noodles >= 30:
                 if 'Elite Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Elite Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 30 sessions. This user has 30+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
+                    if 'Good Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
                     noodleString += "\n**Elite Noodle** role received! :tada:"
 
             elif noodles >= 10:
@@ -1751,7 +1753,7 @@ class Timer(commands.Cog):
 
                 try:
                     statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
-                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodlesGained}}, upsert=True)
+                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodles}}, upsert=True)
                     usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
                     usersCollection.bulk_write(usersData)
                     #TODO: why is it giving one rep?
@@ -2017,7 +2019,7 @@ class Timer(commands.Cog):
                     timerStopped = True
                     await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart, dmChar=dmChar, guildsList=guildsList)
                     return
-                elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and '@player' not in msg.content:
+                elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and '@player' not in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     startTimes = await ctx.invoke(self.timer.get_command('add'), start=startTimes, role=role, msg=msg)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif (f"{commandPrefix}timer addme " in msg.content or f"{commandPrefix}t addme " in msg.content) and '@player' not in msg.content and (msg.content != f'{commandPrefix}timer addme' or msg.content != f'{commandPrefix}t addme'):

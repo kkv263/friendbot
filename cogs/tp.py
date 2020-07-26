@@ -33,6 +33,9 @@ class Tp(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
             msg = "The amount you want to acquire must be a number. "
+        # bot.py handles this, so we don't get traceback called.
+        elif isinstance(error, commands.CommandOnCooldown):
+            return
         if msg:
             if ctx.command.name == "buy":
                 msg += f"Please follow this format:\n`{commandPrefix}tp buy \"character name\" \"magicitem\"`.\n"
@@ -164,6 +167,7 @@ class Tp(commands.Cog):
                 traces.print_exc()
                 tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
 
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @tp.command()
     async def buy(self, ctx , charName, mItem):
 
@@ -212,10 +216,12 @@ class Tp(commands.Cog):
                         if(mRecord["Grouped"] == group_name_split[0].strip() and mRecord["Name"] != group_name_split[1].strip()):
                             #inform the user that they already have an item from this group
                             await channel.send(f"You previously selected `{group_name_split[1].strip()}` for the `{mRecord['Grouped']}` group for `{charRecords['Name']}` and cannot get another item of the same variant.")
+                            ctx.command.reset_cooldown(ctx)
                             return 
                 # check if the requested item is already in the inventory
                 if(mRecord['Name'] in [name.strip() for name in charRecords['Magic Items'].split(",")]):   
                     await channel.send(f"You already have `{mRecord['Name']}` and cannot TP or gp on another one.")
+                    ctx.command.reset_cooldown(ctx)
                     return 
                 
                 # get the tier of the item
@@ -248,6 +254,7 @@ class Tp(commands.Cog):
                 # if the user doesnt have the resources for the purchases, inform them and cancel
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
                     await channel.send(f"You do not have Tier {tierNum} TP or gp to acquire `{mRecord['Name']}`.")
+                    ctx.command.reset_cooldown(ctx)
                     return
                   
                 # get confirmation from the user for the purchase
@@ -279,6 +286,7 @@ class Tp(commands.Cog):
                     #cancel if the user didnt respond within the timeframe
                     await tpEmbedmsg.delete()
                     await channel.send(f'TP canceled. Use `{commandPrefix}tp buy` command and try again!')
+                    ctx.command.reset_cooldown(ctx)
                     return
                 else:
                     await tpEmbedmsg.clear_reactions()
@@ -289,6 +297,7 @@ class Tp(commands.Cog):
                     if tReaction.emoji == '❌':
                         await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp buy` command and try again!")
                         await tpEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
                         return
                     #refund the TP in the item if the user decides to purchase with gold
                     elif tReaction.emoji == '2️⃣':
@@ -347,6 +356,7 @@ class Tp(commands.Cog):
                         tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
 
 
+                    # If not complete, leave in current items, otherwise add to magic item list / consuambles
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
                         pass
                     elif charRecords['Magic Items'] == "None":
@@ -366,12 +376,14 @@ class Tp(commands.Cog):
                     except asyncio.TimeoutError:
                         await tpEmbedmsg.delete()
                         await channel.send(f'TP canceled. Use `{commandPrefix}tp buy` command and try again!')
+                        ctx.command.reset_cooldown(ctx)
                         return
                     else:
                         await tpEmbedmsg.clear_reactions()
                         if tReaction.emoji == '❌':
                             await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp buy` command and try again!")
                             await tpEmbedmsg.clear_reactions()
+                            ctx.command.reset_cooldown(ctx)
                             return
                         elif tReaction.emoji == '✅':
                             tpEmbed.clear_fields()
@@ -441,12 +453,15 @@ class Tp(commands.Cog):
                                     else:
                                         tpEmbed.description = f"**gp spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**\n\n**Current gp**: {newGP}\n"
                                 await tpEmbedmsg.edit(embed=tpEmbed)
+                                ctx.command.reset_cooldown(ctx)
                                     
                 
             else:
                 await channel.send(f'`{mItem}` doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @tp.command()
     async def discard(self, ctx , charName):
         channel = ctx.channel
@@ -473,6 +488,7 @@ class Tp(commands.Cog):
             # If there are no incomplete TP invested items, cancel command
             if charRecords['Current Item'] == "None":
                 await channel.send(f'You currently do not have an incomplete item to discard.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
             # Split curent items into a list and check with user which item they would like to discard
@@ -500,6 +516,7 @@ class Tp(commands.Cog):
                 except asyncio.TimeoutError:
                     await tpEmbedmsg.delete()
                     await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
+                    ctx.command.reset_cooldown(ctx)
                     return
                 await tpEmbedmsg.clear_reactions()
                 #remove from the list of current items the one that got mapped to the emoji that the user reacted with
@@ -528,12 +545,14 @@ class Tp(commands.Cog):
                 #cancel if no response was given within the timeframe
                 await tpEmbedmsg.delete()
                 await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
+                ctx.command.reset_cooldown(ctx)
                 return
             else:
                 await tpEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
                     await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp discard` command and try again!")
                     await tpEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
                     return
                 elif tReaction.emoji == '✅': 
                     tpEmbed.clear_fields()
@@ -553,7 +572,9 @@ class Tp(commands.Cog):
                     else:
                         tpEmbed.description = f"{currentItem} has been discarded!\n\nCurrent Item(s): {', '.join(currentItemList)}"
                         await tpEmbedmsg.edit(embed=tpEmbed)
-          
+                        ctx.command.reset_cooldown(ctx)
+
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @tp.command()
     async def abandon(self, ctx , charName, tierNum):
         channel = ctx.channel
@@ -564,6 +585,7 @@ class Tp(commands.Cog):
 
         if tierNum not in ('1','2','3','4') and tierNum.lower() not in [r.lower() for r in roleArray]:
             await channel.send(f"`{tierNum}` is not a valid tier. Please try again with `1`, `2`, `3`, or `4`. Alternatively, type `Junior`, `Journey`, `Elite`, or `True`.")
+            ctx.command.reset_cooldown(ctx)
             return
 
         charRecords, tpEmbedmsg = await checkForChar(ctx, charName, tpEmbed)
@@ -583,6 +605,7 @@ class Tp(commands.Cog):
 
             if f"T{role} TP" not in charRecords:
                 await channel.send(f"You do not have T{role} TP to abandon.")
+                ctx.command.reset_cooldown(ctx)
                 return
             
 
@@ -600,12 +623,14 @@ class Tp(commands.Cog):
             except asyncio.TimeoutError:
                 await tpEmbedmsg.delete()
                 await channel.send(f'TP canceled. Use `{commandPrefix}tp abandon` command and try again!')
+                ctx.command.reset_cooldown(ctx)
                 return
             else:
                 await tpEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
                     await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp abandon` command and try again!")
                     await tpEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
                     return
                 elif tReaction.emoji == '✅': 
                     tpEmbed.clear_fields()
@@ -618,6 +643,7 @@ class Tp(commands.Cog):
                     else:
                         tpEmbed.description = f"You have abandoned {charRecords[f'T{role} TP']} T{role} TP!"
                         await tpEmbedmsg.edit(embed=tpEmbed)
+                        ctx.command.reset_cooldown(ctx)
 
 
 def setup(bot):
