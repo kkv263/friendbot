@@ -60,7 +60,7 @@ class Timer(commands.Cog):
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
     @timer.command()
-    async def prep(self, ctx, userList, *, game="Name of your quest"):
+    async def prep(self, ctx, userList, *, game="D&D Quest"):
         def startEmbedcheck(r, u):
             return (r.emoji in numberEmojis[:5] or str(r.emoji) == '❌') and u == author
         channel = ctx.channel
@@ -97,7 +97,7 @@ class Timer(commands.Cog):
             return 
 
         playerRoster = [author] + ctx.message.mentions
-        prepEmbed.add_field(name=f"React with [1-4] for the tier of your quest: **{game}**\nPlease re-react with your choice if your prompt does not go through.", value=f"{numberEmojis[0]} New / Junior Friend [1-4]\n{numberEmojis[1]} Journeyfriend [5-10]\n{numberEmojis[2]} Elite Friend [11-16]\n{numberEmojis[3]} True Friend [17-20]", inline=False)
+        prepEmbed.add_field(name=f"React with [1-4] for the tier of your quest: **{game}**.\n", value=f"{numberEmojis[0]} New / Junior Friend (Level 1-4)\n{numberEmojis[1]} Journeyfriend (Level 5-10)\n{numberEmojis[2]} Elite Friend (Level 11-16)\n{numberEmojis[3]} True Friend (Level 17-20)", inline=False)
         prepEmbed.set_author(name=userName, icon_url=author.avatar_url)
         prepEmbed.set_footer(text= "React with ❌ to cancel.")
         prepEmbedMsg = None
@@ -149,7 +149,7 @@ class Timer(commands.Cog):
                 else:
                     prepEmbed.add_field(name=p.display_name, value='Has not yet signed up for the campaign.', inline=False)
 
-        prepEmbed.set_footer(text= f"If enough players are signed up, use **`{commandPrefix}timer`** start to start the timer. Use the following command to see a list of timer commands:\n```yaml\n{commandPrefix}timer help```")
+        prepEmbed.set_footer(text= f"If enough players have signed up, use the following command to start the timer: {commandPrefix}timer start\nUse the following command to see a list of timer commands: commandPrefix}timer help")
 
 
         if not prepEmbedMsg:
@@ -248,7 +248,7 @@ class Timer(commands.Cog):
                     timerStarted = True
 
             elif msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel":
-                await channel.send(f'Timer canceled! If you would like to prep a new quest, use the following command:\n```yaml\n{commandPrefix}timer prep.```') 
+                await channel.send(f'Timer canceled! If you would like to prepare a new timer, use the following command:\n```yaml\n{commandPrefix}timer prep```') 
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
 
@@ -375,7 +375,7 @@ class Timer(commands.Cog):
     @timer.command()
     async def signup(self,ctx, char="", author="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == "resume":
-            signupFormat = f'Please follow this format:\n```yaml\n{commandPrefix}timer signup "character name" "consumables"'
+            signupFormat = f'Please follow this format:\n```yaml\n{commandPrefix}timer signup "character name" "consumables"```'
             charEmbed = discord.Embed()
             charEmbedmsg = None
             channel = ctx.channel
@@ -1221,9 +1221,9 @@ class Timer(commands.Cog):
             msgAfter = False
 
             if role != "":
-                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables.\n   - "consumable"```'
+                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables\n   - "consumable"```'
             else:
-                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables.\n   - "consumable"```'
+                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables\n   - "consumable"```'
 
             async for message in ctx.channel.history(after=embedMsg, limit=1):
                 msgAfter = True
@@ -1656,7 +1656,7 @@ class Timer(commands.Cog):
 
                 stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
-                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
+                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} gp**\n")
                 if guildRewardsStr != "":
                     stopEmbed.add_field(value=guildRewardsStr, name=f"Guild Rewards", inline=False)
                 sessionLogString = f"\n**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}\nGame ID:"

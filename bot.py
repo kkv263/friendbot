@@ -202,7 +202,7 @@ async def help(ctx, *, pageString=''):
     try:
         hReact, hUser = await bot.wait_for("reaction_add", check=helpCheck, timeout=30.0)
     except asyncio.TimeoutError:
-        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use the following command:\n```yaml\n{commandPrefix}help```")
+        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. Use the following command if you need to cycle through help menu again:\n```yaml\n{commandPrefix}help```")
         await helpMsg.clear_reactions()
         await helpMsg.add_reaction('💤')
         return

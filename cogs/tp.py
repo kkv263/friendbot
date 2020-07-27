@@ -19,7 +19,7 @@ class Tp(commands.Cog):
         msg = None
 
         if isinstance(error, commands.CommandNotFound):
-            await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` requires an additional keyword to the command or is invalid, please try again!')
+            await ctx.channel.send(f'Sorry, the command **`{commandPrefix}{ctx.invoked_with}`** requires an additional keyword to the command or is invalid, please try again!')
             return
             
         if isinstance(error, commands.MissingRequiredArgument):
@@ -34,11 +34,11 @@ class Tp(commands.Cog):
             msg = "The amount you want to acquire must be a number. "
         if msg:
             if ctx.command.name == "buy":
-                msg += f"Please follow this format:\n`{commandPrefix}tp buy \"character name\" \"magicitem\"`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}tp buy \"character name\" \"magic item\"```\n"
             elif ctx.command.name == "discard":
-                msg += f"Please follow this format:\n`{commandPrefix}tp discard \"character name\"`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}tp discard \"character name\"```\n"
             elif ctx.command.name == "abandon":
-                msg += f"Please follow this format:\n`{commandPrefix}tp abandon \"character name\" tier`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}tp abandon \"character name\" tier```\n"
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
@@ -95,11 +95,11 @@ class Tp(commands.Cog):
                         print("GroupName: ", groupName)
                         if(mRecord["Grouped"] in groupName and mRecord["Name"] not in groupName):
                             #inform the user that they already have an item from this group
-                            await channel.send(f"You selected `{mRecord['Name']}`of the `{mRecord['Grouped']}` type for `{charRecords['Name']}` and cannot get another item of the same variant.")
+                            await channel.send(f"***{mRecord['Name']}*** is a variant of the ***{mRecord['Grouped']}*** item and ***{charRecords['Name']}*** already owns a variant of the that item.")
                             return 
                 # check if the requested item is already in the inventory
                 if(mRecord['Name'] in charRecords['Magic Items']):   
-                    await channel.send(f"You already have `{mRecord['Name']}` and cannot TP or gp on another one.")
+                    await channel.send(f"You already have ***{mRecord['Name']}*** and cannot spend TP or gp on another one.")
                     return 
                 
                 # get the tier of the item
