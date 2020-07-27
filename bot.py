@@ -43,13 +43,15 @@ async def on_command_error(ctx,error):
 
     elif isinstance(error, commands.CommandOnCooldown):
         commandParent = ctx.command.parent
-        if commandParent == None:
-            commmandParent = ""
+        if commandParent is None:
+            commandParent = ''
+        else:
+            commandParent = commandParent.name + " "
 
         if error.retry_after == float('inf'):
-            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{commandParent.name} {ctx.invoked_with}` is already in progress, please complete the command before trying again.")
+            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{commandParent}{ctx.invoked_with}` is already in progress, please complete the command before trying again.")
         else:
-            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{commandParent.name} {ctx.invoked_with}` is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
+            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{commandParent}{ctx.invoked_with}` is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
         return
 
     elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:

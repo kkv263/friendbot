@@ -277,10 +277,10 @@ class Shop(commands.Cog):
                     bRecord['GP'] /= bRecord['Pack']
 
                 gpRefund = round((bRecord['GP'] / 2) * amount, 2)
-                newGP = charRecords['GP'] + gpRefund 
+                newGP = round(charRecords['GP'] + gpRefund,2)
                     
                 shopEmbed.title = f"Selling: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount} x {bRecord['Name']}: ** (+{gpRefund} gp) \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount} x {bRecord['Name']}: ** (+{gpRefund} gp)\n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)

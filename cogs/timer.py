@@ -729,7 +729,7 @@ class Timer(commands.Cog):
             else:
                 rewardUser = guild.get_member(rewardList[0])
                 startcopy = start.copy()
-                userFound = False;
+                userFound = False
                 timeKey = ""
                 userCount = 0
 
@@ -1008,7 +1008,7 @@ class Timer(commands.Cog):
     async def addme(self,ctx, *, role="", msg=None, start="" ,prep=None, user="", dmChar=None, resume=False, ):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
-            userFound = False;
+            userFound = False
             timeKey = ""
             addUser = user
             channel = ctx.channel

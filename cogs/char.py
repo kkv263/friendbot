@@ -190,8 +190,13 @@ class Character(commands.Cog):
         roleSet = set(roleSet)
 
         # If roles are present, add base levels + 1 for extra levels for these special roles.
-        if ("Nitro Booster" in roles or 'Bean Friend' in roles) and lvl < 11:
+        if ("Nitro Booster" in roles) and lvl < 11:
             roleSet = roleSet.union(set(map(lambda x: x+1,roleSet.copy())))
+
+        if ("Bean Friend" in roles) and lvl < 11:
+            roleSet = roleSet.union(set(map(lambda x: x+1,roleSet.copy())))
+          
+        print (roleSet)
 
         if lvl not in roleSet:
             msg += f"• You cannot create a character of {lvl}! You do not have the correct role!\n"
@@ -244,7 +249,7 @@ class Character(commands.Cog):
                     bankTP1 = (lvl-1) * 2 
                     highestTier = 1
                 elif lvl > 5:
-                    bankTP1 = 8;
+                    bankTP1 = 8
                     bankTP2 = (lvl-5) * 4
                     highestTier = 2
 
@@ -338,7 +343,7 @@ class Character(commands.Cog):
             if lvl > 1 and lvl < 6: 
                 bankTP1 = (lvl-1) * 2 
             elif lvl > 5:
-                bankTP1 = 8;
+                bankTP1 = 8
                 bankTP2 = (lvl-5) * 4
         elif lvl == 1 and magicItems != ['']:
             msg += 'You cannot purchase magic items at Level 1.\n'
@@ -1908,6 +1913,12 @@ class Character(commands.Cog):
                         elif '+' in statBonus:
                             statBonusSplit = statBonus.split(';')
                             statSplit = statBonusSplit[0].split(' +')
+                            if 'MAX' in statSplit[0]:
+                                maxStat = statSplit[0][:-3]
+                                statSplit[0] = statSplit[0].replace(maxStat, "")
+                                maxStat = maxStat.split(" ")
+                                maxStatDict[statSplit[0]] = int(maxStat[1])
+
                             modStat = str(charDict[statSplit[0]])
                             modStat = modStat.split(' (')[0]
                             statBonusDict[statSplit[0]] += int(statSplit[1])
@@ -2483,13 +2494,14 @@ class Character(commands.Cog):
 
             # Check if they are already attuned to the item.
             data = {}
+            if mRecord['Name'] == 'Hammer of Thunderbolts':
+                if 'Belt of' not in charRecords['Magic Items'] and 'Frost Giant Strength' not in charRecords['Magic Items'] and 'Gauntlets of Ogre Power' not in charRecords['Magic Items']:
+                    await channel.send(f"`Hammer of Thunderbolts` requires you to have a `Belt of Giant Strength (any variety)` and `Gauntlets of Ogre Power` in your inventory in order to attune to it.")
+                    return 
+
             if mRecord['Name'] in [a.split('[')[0].strip() for a in attuned]:
                 await channel.send(f"You are already attuned to `{mRecord['Name']}`")
                 return
-            elif mRecord['Name'] == 'Hammer of Thunderbolts':
-                if 'Belt of' not in charRecords['Magic Items'] and 'Frost Giant Strength' not in charRecords['Magic Items'] and 'Gauntlets of Ogre Power' not in charRecords['Magic Items']:
-                    await channel.send(f"`Hammer of Thunderbolts` requires you to have a `Belt of Giant Strength` and `Gauntlets of Ogre Power` in your inventory in order to attune to it.")
-                    return 
             elif 'Attunement' in mRecord:
                 if 'Stat Bonuses' in mRecord:
                     attuned.append(f"{mRecord['Name']} [{mRecord['Stat Bonuses']}]")
@@ -3082,7 +3094,7 @@ class Character(commands.Cog):
                             sameMessage = True
                         return sameMessage and u == author and (r.emoji == left or r.emoji == right or r.emoji == '❌' or r.emoji == back or r.emoji in alphaEmojis[:alphaIndex])
 
-                    page = 0;
+                    page = 0
                     perPage = 24
                     numPages =((len(featChoices) - 1) // perPage) + 1
                     featChoices = sorted(featChoices, key = lambda i: i['Name']) 
@@ -3118,7 +3130,7 @@ class Character(commands.Cog):
                             if react.emoji == left:
                                 page -= 1
                                 if page < 0:
-                                  page = numPages - 1;
+                                  page = numPages - 1
                             elif react.emoji == right:
                                 page += 1
                                 if page > numPages - 1: 
