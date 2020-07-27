@@ -76,6 +76,11 @@ def calculateTreasure(seconds, role):
     dgp = int(decimal.Decimal((gp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
 
     return [cp, tp, gp, dcp, dtp, dgp]
+    
+
+    
+    
+    
 """
 The purpose of this function is to do a general call to the database
 apiEmbed -> the embed element that the calling function will be using
@@ -136,7 +141,9 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         #  collection.find(collection.find(filterDic)) does not work for he could not read
         # https://cdn.discordapp.com/attachments/663504216135958558/735695855667118080/New_Project_-_2020-07-22T231158.186.png
         records = list(collection.find(filterDic))
-
+    
+    #turn the query into a regex expression
+    r = re.compile(query)
     #restore the original query
     query = query.replace("\\", "")
     #sort elements by either the name, or the first element of the name list in case it is a list
@@ -146,16 +153,12 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         else:  
             return elem['Name']
     
-    #turn the query into a regex expression
-    r = re.compile(query)
     #create collections to track needed changes to the records
     remove_grouper = [] #track all elements that need to be removes since they act as representative for a group of items
     faux_entries = [] #collection of temporary items that will act as database elements during the call
     
     #for every search result check if it contains a group and create entries for each group element if it does
     for entry in records:
-        print("Entry: ", entry)
-        print("Grouped" in entry)
         # if the element is part of a group
         if("Grouped" in entry):
             # remove it later
@@ -169,15 +172,12 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             """
             if(newlist == list()):
                 newlist = entry['Name']
-            print("Filtered: ", newlist)
             # for every group element that needs to be considered, create a new element with just the name adjusted
             for name in newlist:
-                print("Name: ", name)
                 #copy the Group entry to get all relevant information about the item
                 faux_entry = entry.copy()
                 #change the name from the list to the specific element.
                 faux_entry["Name"]= name
-                print("Copy: ", faux_entry)
                 #add it to the tracker
                 faux_entries.append(faux_entry)
     # remove all group representatives

@@ -31,9 +31,9 @@ bot.remove_command('help')
 
 @bot.event
 async def on_command_error(ctx,error):
-    # TODO: Fix for char create and guild create
     msg = None
     print(ctx.invoked_with)
+    print(ctx.command.parent)
     print(error)
 
     if isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
@@ -42,10 +42,16 @@ async def on_command_error(ctx,error):
         return
 
     elif isinstance(error, commands.CommandOnCooldown):
-        if error.retry_after == float('inf'):
-            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{ctx.invoked_with}`*** is already in progress, please complete the command before trying again.")
+        commandParent = ctx.command.parent
+        if commandParent is None:
+            commandParent = ''
         else:
-            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{ctx.invoked_with}`*** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
+            commandParent = commandParent.name + " "
+
+        if error.retry_after == float('inf'):
+            await ctx.channel.send(f"Sorry, the command ***``{commandPrefix}{commandParent}{ctx.invoked_with}`{ctx.invoked_with}`*** is already in progress, please complete the command before trying again.")
+        else:
+            await ctx.channel.send(f"Sorry, the command ***``{commandPrefix}{commandParent}{ctx.invoked_with}`}`*** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
         return
 
     elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
