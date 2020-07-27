@@ -49,16 +49,16 @@ async def on_command_error(ctx,error):
             commandParent = commandParent.name + " "
 
         if error.retry_after == float('inf'):
-            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{commandParent}{ctx.invoked_with}` is already in progress, please complete the command before trying again.")
+            await ctx.channel.send(f"Sorry, the command ***``{commandPrefix}{commandParent}{ctx.invoked_with}`{ctx.invoked_with}`*** is already in progress, please complete the command before trying again.")
         else:
-            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{commandParent}{ctx.invoked_with}` is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
+            await ctx.channel.send(f"Sorry, the command ***``{commandPrefix}{commandParent}{ctx.invoked_with}`}`*** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
         return
 
     elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
         return
 
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` is not valid, please try again!')
+        await ctx.channel.send(f'Sorry, the command ***`{commandPrefix}{ctx.invoked_with}`*** is not valid, please try again!')
 
     else:
         ctx.command.reset_cooldown(ctx)
@@ -148,15 +148,15 @@ async def help(ctx, *, pageString=''):
 # TIMER COMMANDS (DURING A QUEST) MENU ($help timer2)
 
     helpEmbedTimerTwo.title = f"Timer Commands (During a Quest)\n{commandPrefix}timer, {commandPrefix}t"
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Yourself (Player)\n{commandPrefix}timer addme "charactername" "consumables"', value="Add yourself to the running timer. Your rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Using Consumables (Player)\n- consumable', value="Use the specified consumable your character brought with them into the quest. This will immediately delete it from their inventory.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself (Player)\n{commandPrefix}timer removeme', value="Remove yourself from the running timer. Your rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the running timer. Their rewards will be displayed once the timer has stopped.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Yourself (Player)\n{commandPrefix}timer addme "charactername" "consumables"', value="Add yourself to the timer with the consumables that your character is bringing with them.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Using Consumables (Player)\n- "consumable"', value="Use the specified consumable that your character brought with them. This will immediately delete it from their inventory.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself (Player)\n{commandPrefix}timer removeme', value="Remove yourself from the timer.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the timer with their character and consumables.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the timer.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Awarding Reward Items (DM)\n{commandPrefix}timer reward @player "reward item 1, reward item 2, [...]"', value="Reward the mentioned player one or more reward item(s) from the Reward Item Table.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Killing a Character (DM)\n{commandPrefix}timer death @player', value="Remove the mentioned player from the timer when their character has died during the quest. The player can choose if their character is permanently retired, survives the quest with no rewards, or is revived afterwards at the cost of some gp in order to receive rewards.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Transferring the Timer (DM)\n{commandPrefix}timer transfer', value="Transfer the timer from yourself to the mentioned user who will become the timer's new owner. They will have full control over the running timer.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Stopping the Timer (DM)\n{commandPrefix}timer stop', value="Stop the running timer. This will immediately display how much CP, TP, and gp each player earned. Players who joined late will have their rewards displayed separately. The timer can only be stopped by its owner or a Mod.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Transferring the Timer (DM)\n{commandPrefix}timer transfer @player', value="Transfer the timer from yourself to the mentioned user who will become the timer's new owner. They will have full control over the timer.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Stopping the Timer (DM)\n{commandPrefix}timer stop', value="Stop the timer and immediately display how much CP, TP, and gp each player earned. Players who joined late or left early will have their rewards displayed separately. The timer can only be stopped by its owner or a Mod.", inline=False)
 
 
 # ITEM TABLE CCOMMANDS MENU ($help itemtable)
@@ -208,7 +208,7 @@ async def help(ctx, *, pageString=''):
     try:
         hReact, hUser = await bot.wait_for("reaction_add", check=helpCheck, timeout=30.0)
     except asyncio.TimeoutError:
-        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use `{commandPrefix}help`!")
+        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use the following command:\n```yaml\n{commandPrefix}help```")
         await helpMsg.clear_reactions()
         await helpMsg.add_reaction('💤')
         return
