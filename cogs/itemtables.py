@@ -114,7 +114,7 @@ class ItemTables(commands.Cog):
                         sameMessage = True
                     return sameMessage and u == author and (r.emoji == left or r.emoji == right or r.emoji == '❌' or r.emoji == back or r.emoji in numberEmojis[:numberEmoji] or r.emoji in numberEmojisMobile[:numberEmoji])
 
-                page = 0;
+                page = 0
                 perPage = 9
                 tpNumber = mitResults.pop(2)
                 mitResults.pop(0)
@@ -146,7 +146,7 @@ class ItemTables(commands.Cog):
                         if react.emoji == left:
                             page -= 1
                             if page < 0:
-                              page = numPages - 1;
+                              page = numPages - 1
                         elif react.emoji == right:
                             page += 1
                             if page > numPages - 1: 

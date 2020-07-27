@@ -5,6 +5,7 @@ import re
 from discord.utils import get        
 from discord.ext import commands
 from bfunc import db, commandPrefix, numberEmojis, roleArray, callAPI, checkForChar, traceBack, alphaEmojis
+import traceback as traces
 
 class Tp(commands.Cog):
     def __init__ (self, bot):
@@ -32,6 +33,9 @@ class Tp(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
             msg = "The amount you want to acquire must be a number. "
+        # bot.py handles this, so we don't get traceback called.
+        elif isinstance(error, commands.CommandOnCooldown):
+            return
         if msg:
             if ctx.command.name == "buy":
                 msg += f"Please follow this format:\n```yaml\n{commandPrefix}tp buy \"character name\" \"magic item\"```\n"
@@ -45,8 +49,125 @@ class Tp(commands.Cog):
         else:
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
+    @tp.command()
+    async def createGroup(self, ctx, query, group):
+    
+        #channel and author of the original message creating this call
+        channel = ctx.channel
+        author = ctx.author
+        
+        collection = db["mit"]
+        apiEmbedmsg = None
+        apiEmbed = discord.Embed()
+        #get the entire table if no query is given
+        if query is None:
+            return None, apiEmbed, apiEmbedmsg
 
-      
+        #if the query has no text, return nothing
+        if query.strip() == "":
+            return None, apiEmbed, apiEmbedmsg
+
+        #restructure the query to be more regEx friendly
+        query = query.strip()
+        query = query.replace('(', '\\(')
+        query = query.replace(')', '\\)')
+        query = query.replace('+', '\\+')
+        
+        #search through the table for an element were the Name or Grouped property contain the query
+        filterDic = {"Name": {
+                            "$regex": query,
+                            #make the check case-insensitively
+                            "$options": "i"
+                          }
+                        }
+        records = list(collection.find(filterDic))
+        
+        #restore the original query
+        query = query.replace("\\", "")
+        #sort elements by either the name, or the first element of the name list in case it is a list
+        def sortingEntryAndList(elem):
+            if(isinstance(elem['Name'],list)): 
+                return elem['Name'][0] 
+            else:  
+                return elem['Name']
+        
+        remove_grouper = [] #track all elements that need to be removes since they act as representative for a group of items
+
+        #for every search result check if it contains a group and create entries for each group element if it does
+        for entry in records:
+            # if the element is part of a group
+            if("Grouped" in entry):
+                # remove it later
+                remove_grouper.append(entry)
+        # remove all group representatives
+        for group_to_remove in remove_grouper:
+            records.remove(group_to_remove)
+        
+        #sort all items alphabetically 
+        records = sorted(records, key = sortingEntryAndList)    
+        
+        #if no elements are left, return nothing
+        if records == list():
+            return None, apiEmbed, apiEmbedmsg
+        else:
+            try:
+                #create a string to provide information about the items to the user
+                infoString = ""
+                collapseList=[]
+                for rec in records:
+                    infoString = f"{rec['Name']} (Tier {rec['Tier']}): **{rec['TP']} TP: **{rec['GP']} GP**\n"
+                    def apiEmbedCheck(r, u):
+                        sameMessage = False
+                        if apiEmbedmsg.id == r.message.id:
+                            sameMessage = True
+                        return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌') or (str(r.emoji) == '⛔')) and u == author
+                    #inform the user of the current information and ask for their selection of an item
+                    apiEmbed.add_field(name=f"Select which one to collapse.", value=infoString, inline=False)
+                    if not apiEmbedmsg or apiEmbedmsg == "Fail":
+                        apiEmbedmsg = await channel.send(embed=apiEmbed)
+                    else:
+                        await apiEmbedmsg.edit(embed=apiEmbed)
+
+                    await apiEmbedmsg.add_reaction('✅')
+                    await apiEmbedmsg.add_reaction('❌')
+                    await apiEmbedmsg.add_reaction('⛔')
+
+                    try:
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+                    except asyncio.TimeoutError:
+                        #stop if no response was given within the timeframe and reenable the command
+                        await apiEmbedmsg.delete()
+                        await channel.send('Timed out! Try using the command again.')
+                        ctx.command.reset_cooldown(ctx)
+                        return None, apiEmbed, "Fail"
+                    else:
+                        #stop if the cancel emoji was given and reenable the command
+                        if tReaction.emoji == '❌':
+                            pass
+                        elif tReaction.emoji == '✅':
+                            collapseList.append(rec)
+                        else:
+                            tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process cancelled")
+                            return
+                    #return the selected item indexed by the emoji given by the user
+                    apiEmbed.clear_fields()
+                    await apiEmbedmsg.clear_reactions()
+                name_list = list([x["Name"] for x in collapseList])
+                charDict = collapseList[0].copy()
+                charDict["Name"] = name_list
+                charDict["Grouped"] = group
+                charDict.pop("_id")
+                collection.insert_one(charDict)
+                for entry in collapseList:
+                    collection.delete_one({'_id': entry['_id']})
+                tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process finished. These items have been grouped\n"+"\n".join(name_list))
+                return
+            except Exception as e:
+                print ('MONGO ERROR: ' + str(e))
+                traces.print_exc()
+                tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
+
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @tp.command()
     async def buy(self, ctx , charName, mItem):
 
@@ -83,7 +204,6 @@ class Tp(commands.Cog):
                 If the user does not have the property, we can thus skip since they could not have gotten the item
                 """
                 if("Grouped" in mRecord and "Grouped" in charRecords):
-                    print("Char: ", charRecords["Grouped"])
                     """
                     We can now check if the group name is in any of the Groups that character has interacted with
                     We can then check for every element in Grouped if the currently requested item is in any of them
@@ -92,14 +212,16 @@ class Tp(commands.Cog):
                     if(any(mRecord["Grouped"] in group_item_pair for group_item_pair in charRecords["Grouped"])):
                     """
                     for groupName in charRecords["Grouped"]:
-                        print("GroupName: ", groupName)
-                        if(mRecord["Grouped"] in groupName and mRecord["Name"] not in groupName):
+                        group_name_split = groupName.split(":")
+                        if(mRecord["Grouped"] == group_name_split[0].strip() and mRecord["Name"] != group_name_split[1].strip()):
                             #inform the user that they already have an item from this group
                             await channel.send(f"***{mRecord['Name']}*** is a variant of the ***{mRecord['Grouped']}*** item and ***{charRecords['Name']}*** already owns a variant of the that item.")
+                            ctx.command.reset_cooldown(ctx)
                             return 
                 # check if the requested item is already in the inventory
-                if(mRecord['Name'] in charRecords['Magic Items']):   
+                if(mRecord['Name'] in [name.strip() for name in charRecords['Magic Items'].split(",")]): 
                     await channel.send(f"You already have ***{mRecord['Name']}*** and cannot spend TP or gp on another one.")
+                    ctx.command.reset_cooldown(ctx)
                     return 
                 
                 # get the tier of the item
@@ -132,6 +254,7 @@ class Tp(commands.Cog):
                 # if the user doesnt have the resources for the purchases, inform them and cancel
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
                     await channel.send(f"You do not have Tier {tierNum} TP or gp to acquire `{mRecord['Name']}`.")
+                    ctx.command.reset_cooldown(ctx)
                     return
                   
                 # get confirmation from the user for the purchase
@@ -163,6 +286,7 @@ class Tp(commands.Cog):
                     #cancel if the user didnt respond within the timeframe
                     await tpEmbedmsg.delete()
                     await channel.send(f'TP canceled. Use `{commandPrefix}tp buy` command and try again!')
+                    ctx.command.reset_cooldown(ctx)
                     return
                 else:
                     await tpEmbedmsg.clear_reactions()
@@ -173,6 +297,7 @@ class Tp(commands.Cog):
                     if tReaction.emoji == '❌':
                         await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp buy` command and try again!")
                         await tpEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
                         return
                     #refund the TP in the item if the user decides to purchase with gold
                     elif tReaction.emoji == '2️⃣':
@@ -231,20 +356,12 @@ class Tp(commands.Cog):
                         tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
 
 
+                    # If not complete, leave in current items, otherwise add to magic item list / consuambles
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
                         pass
                     elif charRecords['Magic Items'] == "None":
-                        #If the item was part of a group set up the Grouped property and add the items group
-                        if("Grouped" not in charRecords):
-                            charRecords["Grouped"] = []
-                        if("Grouped" in mRecord ):
-                            charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                         charRecords['Magic Items'] = mRecord['Name']
                     else:
-                        if("Grouped" not in charRecords):
-                            charRecords["Grouped"] = []
-                        if("Grouped" in mRecord ):
-                            charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                         newMagicItems = charRecords['Magic Items'].split(', ')
                         newMagicItems.append(mRecord['Name'])
                         newMagicItems.sort()
@@ -259,17 +376,23 @@ class Tp(commands.Cog):
                     except asyncio.TimeoutError:
                         await tpEmbedmsg.delete()
                         await channel.send(f'TP canceled. Use `{commandPrefix}tp buy` command and try again!')
+                        ctx.command.reset_cooldown(ctx)
                         return
                     else:
                         await tpEmbedmsg.clear_reactions()
                         if tReaction.emoji == '❌':
                             await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp buy` command and try again!")
                             await tpEmbedmsg.clear_reactions()
+                            ctx.command.reset_cooldown(ctx)
                             return
                         elif tReaction.emoji == '✅':
                             tpEmbed.clear_fields()
                             try:
                                 playersCollection = db.players
+                                if("Grouped" not in charRecords):
+                                    charRecords["Grouped"] = []
+                                if("Grouped" in mRecord and mRecord["Grouped"]+" : "+mRecord["Name"] not in charRecords["Grouped"]):
+                                    charRecords["Grouped"].append(mRecord["Grouped"]+" : "+mRecord["Name"])
                                 setData = {"Current Item":charRecords['Current Item'], "Magic Items":charRecords['Magic Items'], "Grouped":charRecords['Grouped']}
                                 statSplit = None
                                 unsetTP = False
@@ -330,12 +453,15 @@ class Tp(commands.Cog):
                                     else:
                                         tpEmbed.description = f"**gp spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**\n\n**Current gp**: {newGP}\n"
                                 await tpEmbedmsg.edit(embed=tpEmbed)
+                                ctx.command.reset_cooldown(ctx)
                                     
                 
             else:
                 await channel.send(f'`{mItem}` doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @tp.command()
     async def discard(self, ctx , charName):
         channel = ctx.channel
@@ -343,7 +469,8 @@ class Tp(commands.Cog):
         tpEmbed = discord.Embed()
         tpCog = self.bot.get_cog('Tp')
         charRecords, tpEmbedmsg = await checkForChar(ctx, charName, tpEmbed)
-
+        
+        #limit responses to just the original user and the appropriate emotes
         def tpEmbedCheck(r, u):
             sameMessage = False
             if tpEmbedmsg.id == r.message.id:
@@ -355,21 +482,25 @@ class Tp(commands.Cog):
             if tpEmbedmsg.id == r.message.id:
                 sameMessage = True
             return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
-
+        
+        #if the character was found in the DB
         if charRecords:
             # If there are no incomplete TP invested items, cancel command
             if charRecords['Current Item'] == "None":
                 await channel.send(f'You currently do not have an incomplete item to discard.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
             # Split curent items into a list and check with user which item they would like to discard
             currentItemList = charRecords['Current Item'].split(', ')
             discardString = ""
+            # set up the mapping between letter emoji and item to discard
             alphaIndex = 0
             for c in currentItemList:
                 discardString += f"{alphaEmojis[alphaIndex]}: {c}\n"
                 alphaIndex += 1
-
+            
+            #if there is only one item, select it by default and skip the selection proces
             currentItem = currentItemList[0]
 
             if len(currentItemList) > 1:
@@ -385,12 +516,15 @@ class Tp(commands.Cog):
                 except asyncio.TimeoutError:
                     await tpEmbedmsg.delete()
                     await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
+                    ctx.command.reset_cooldown(ctx)
                     return
                 await tpEmbedmsg.clear_reactions()
+                #remove from the list of current items the one that got mapped to the emoji that the user reacted with
                 currentItem = currentItemList.pop(alphaEmojis.index(tReaction.emoji))
             else:
                 currentItemList = ["None"]
-                
+            
+            #store the original string of the item and find the item name without TP
             currentItemStr = currentItem
             currentItem = currentItem.split('(')[0].strip()
 
@@ -408,27 +542,39 @@ class Tp(commands.Cog):
             try:
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=tpEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
+                #cancel if no response was given within the timeframe
                 await tpEmbedmsg.delete()
                 await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
+                ctx.command.reset_cooldown(ctx)
                 return
             else:
                 await tpEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
                     await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp discard` command and try again!")
                     await tpEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
                     return
                 elif tReaction.emoji == '✅': 
                     tpEmbed.clear_fields()
                     try:
+                        #filter out the discarded item and its group from the Grouped property
+                        def filterGroupedItems(elem):
+                            if(elem.split(":")[1].strip() != currentItem):
+                                return True
+                            else: return None
+                        #update the database
+                        filtered_grouped = list(filter( filterGroupedItems, charRecords['Grouped']))
                         playersCollection = db.players
-                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":', '.join(currentItemList)}})
+                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":', '.join(currentItemList), "Grouped":filtered_grouped}})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
                         tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
                     else:
                         tpEmbed.description = f"{currentItem} has been discarded!\n\nCurrent Item(s): {', '.join(currentItemList)}"
                         await tpEmbedmsg.edit(embed=tpEmbed)
-          
+                        ctx.command.reset_cooldown(ctx)
+
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @tp.command()
     async def abandon(self, ctx , charName, tierNum):
         channel = ctx.channel
@@ -439,6 +585,7 @@ class Tp(commands.Cog):
 
         if tierNum not in ('1','2','3','4') and tierNum.lower() not in [r.lower() for r in roleArray]:
             await channel.send(f"`{tierNum}` is not a valid tier. Please try again with `1`, `2`, `3`, or `4`. Alternatively, type `Junior`, `Journey`, `Elite`, or `True`.")
+            ctx.command.reset_cooldown(ctx)
             return
 
         charRecords, tpEmbedmsg = await checkForChar(ctx, charName, tpEmbed)
@@ -458,6 +605,7 @@ class Tp(commands.Cog):
 
             if f"T{role} TP" not in charRecords:
                 await channel.send(f"You do not have T{role} TP to abandon.")
+                ctx.command.reset_cooldown(ctx)
                 return
             
 
@@ -475,12 +623,14 @@ class Tp(commands.Cog):
             except asyncio.TimeoutError:
                 await tpEmbedmsg.delete()
                 await channel.send(f'TP canceled. Use `{commandPrefix}tp abandon` command and try again!')
+                ctx.command.reset_cooldown(ctx)
                 return
             else:
                 await tpEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
                     await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp abandon` command and try again!")
                     await tpEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
                     return
                 elif tReaction.emoji == '✅': 
                     tpEmbed.clear_fields()
@@ -493,6 +643,7 @@ class Tp(commands.Cog):
                     else:
                         tpEmbed.description = f"You have abandoned {charRecords[f'T{role} TP']} T{role} TP!"
                         await tpEmbedmsg.edit(embed=tpEmbed)
+                        ctx.command.reset_cooldown(ctx)
 
 
 def setup(bot):

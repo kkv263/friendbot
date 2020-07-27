@@ -12,7 +12,7 @@ from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray, noodleRoleArray
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -215,7 +215,11 @@ class Timer(commands.Cog):
 
             elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and msg.author == author:
                 addUser = await ctx.invoke(self.timer.get_command('add'), msg=msg, prep=True)
-                if addUser not in playerRoster:
+                print(addUser)
+
+                if addUser is None:
+                    pass
+                elif addUser not in playerRoster:
                     if not isCampaign:
                         prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up a character to play.', inline=False)
                     else:
@@ -228,8 +232,10 @@ class Timer(commands.Cog):
 
             elif (f"{commandPrefix}timer remove " in msg.content or f"{commandPrefix}t remove " in msg.content) and msg.author == author:
                 removeUser = await ctx.invoke(self.timer.get_command('remove'), msg=msg, prep=True)
-
-                if playerRoster.index(removeUser) != 0:
+                print (removeUser)
+                if removeUser is None:
+                    pass
+                elif playerRoster.index(removeUser) != 0:
                     prepEmbed.remove_field(playerRoster.index(removeUser))
                     playerRoster.remove(removeUser)
 
@@ -239,24 +245,25 @@ class Timer(commands.Cog):
                 else:
                     await channel.send('You cannot remove yourself from the timer.')
 
-            elif msg.content == f"{commandPrefix}timer start" or msg.content == f"{commandPrefix}t start":
+            elif (msg.content == f"{commandPrefix}timer start" or msg.content == f"{commandPrefix}t start") and (msg.author in playerRoster and msg.author == author):
                 if author not in [a[0] for a in signedPlayers]:
                     await channel.send(f'The DM has not signed up yet! Use the following command to sign to the quest with your character before starting the timer:\n```yaml\n{commandPrefix}timer signup```') 
                 elif author in [a[0] for a in signedPlayers] and len(signedPlayers) == 1:
                     await channel.send(f'There are no players signed up! Players, use the following command to sign up to the quest with your character before the DM starts the timer:\n```yaml\n{commandPrefix}timer signup```') 
                 else:
                     timerStarted = True
-
-            elif msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel":
-                await channel.send(f'Timer canceled! If you would like to prepare a new timer, use the following command:\n```yaml\n{commandPrefix}timer prep```') 
+                                                   
+            elif msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel" and (msg.author in playerRoster and msg.author == author):
+                await channel.send(f'Timer canceled! If you would like to prep a new quest, use the following command:\n```yaml\n{commandPrefix}timer prep.```') 
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
 
             elif (f'{commandPrefix}timer guild' in msg.content or f'{commandPrefix}t guild' in msg.content) and msg.author == author:
                 guildsList = []
                 guildsListStr = ""
-                guildCategoryID = 678381362398625802
-                # guildCategoryID = 452704598440804375
+                # guildCategoryID = 678381362398625802
+                # guild category channel for DnDFriends
+                guildCategoryID = 452704598440804375
 
                 if (len(msg.channel_mentions) > 3):
                     await channel.send(f"The number of guilds exceeds three. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, [...]```") 
@@ -720,7 +727,7 @@ class Timer(commands.Cog):
             else:
                 rewardUser = guild.get_member(rewardList[0])
                 startcopy = start.copy()
-                userFound = False;
+                userFound = False
                 timeKey = ""
                 userCount = 0
 
@@ -999,7 +1006,7 @@ class Timer(commands.Cog):
     async def addme(self,ctx, *, role="", msg=None, start="" ,prep=None, user="", dmChar=None, resume=False, ):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
-            userFound = False;
+            userFound = False
             timeKey = ""
             addUser = user
             channel = ctx.channel
@@ -1084,7 +1091,11 @@ class Timer(commands.Cog):
             guild = ctx.guild
             addList = msg.raw_mentions
             addUser = ""
-            if addList != list():
+
+            if len(addList) > 1:
+                await ctx.channel.send(content=f"I cannot add more than one player! Please try the command with one player and check your format and spelling.")
+                return None
+            elif addList != list():
                 addUser = guild.get_member(addList[0])
                 if prep:
                     return addUser
@@ -1094,7 +1105,7 @@ class Timer(commands.Cog):
             return start
 
     @timer.command()
-    async def removeme(self,ctx, msg=None, start={},role="",user="", resume=False, death=False):
+    async def removeme(self,ctx, msg=None, start="",role="",user="", resume=False, death=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             userFound = False
@@ -1140,18 +1151,23 @@ class Timer(commands.Cog):
         return start
 
     @timer.command()
-    async def death(self,ctx, msg, start={}, role="", resume=False):
+    async def death(self,ctx, msg, start="", role="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=start, role=role, resume=resume, death=True)
             return startTimes
 
     @timer.command()
-    async def remove(self,ctx, msg, start={},role="", prep=False, resume=False, death=False):
+    async def remove(self,ctx, msg, start="",role="", prep=False, resume=False, death=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             guild = ctx.guild
             removeList = msg.raw_mentions
             removeUser = ""
-            if removeList != list():
+
+            if len(removeList) > 1:
+                await ctx.channel.send(content=f"I cannot remove more than one player! Please try the command with one player and check your format and spelling.")
+                return None
+
+            elif removeList != list():
                 removeUser = guild.get_member(removeList[0])
                 if prep:
                     return removeUser
@@ -1161,7 +1177,7 @@ class Timer(commands.Cog):
                 if not resume:
                     await ctx.channel.send(content=f"I cannot find any mention of the user you are trying to remove. Please check your format and spelling.")
 
-        return start
+            return start
 
     
     @timer.command()
@@ -1523,8 +1539,6 @@ class Timer(commands.Cog):
             hoursPlayed = (minutesPlayed / 60)
             noodlesGained = sparklesGained = int(hoursPlayed) // 3
 
-            print(int(noodlesGained))
-
             if uRecord:
                 if 'Noodles' not in uRecord:
                     uRecord['Noodles'] = 0
@@ -1533,31 +1547,35 @@ class Timer(commands.Cog):
 
             noodleString = "Current Noodles: " + str(noodles)
             dmRoleNames = [r.name for r in dmChar[0].roles]
-            if noodles >= 150 and 'Ascended Noodle' in dmRoleNames:
+            if noodles >= 150:
                 if 'Immortal Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Immortal Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 150 sessions. This user has 150+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Ascended Noodle'))
+                    if 'Ascended Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Ascended Noodle'))
                     noodleString += "\n**Immortal Noodle** role received! :tada:"
-            elif noodles >= 100 and 'True Noodle' in dmRoleNames:
+            elif noodles >= 100:
                 if 'Ascended Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Ascended Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 100 sessions. This user has 100+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
+                    if 'True Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
                     noodleString += "\n**Ascended Noodle** role received! :tada:"
 
-            elif noodles >= 60 and 'Elite Noodle' in dmRoleNames:
+            elif noodles >= 60:
                 if 'True Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'True Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 60 sessions. This user has 60+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
+                    if 'Elite Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
                     noodleString += "\n**True Noodle** role received! :tada:"
             
-            elif noodles >= 30 and 'Good Noodle' in dmRoleNames:
+            elif noodles >= 30:
                 if 'Elite Noodle' not in dmRoleNames:
                     noodleRole = get(guild.roles, name = 'Elite Noodle')
                     await dmChar[0].add_roles(noodleRole, reason=f"Hosted 30 sessions. This user has 30+ Noodles.")
-                    await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
+                    if 'Good Noodle' in dmRoleNames:
+                        await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
                     noodleString += "\n**Elite Noodle** role received! :tada:"
 
             elif noodles >= 10:
@@ -1733,7 +1751,7 @@ class Timer(commands.Cog):
 
                 try:
                     statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
-                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodlesGained}}, upsert=True)
+                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodles}}, upsert=True)
                     usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
                     usersCollection.bulk_write(usersData)
                     #TODO: why is it giving one rep?
@@ -1982,14 +2000,8 @@ class Timer(commands.Cog):
                     msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined)) and m.channel == channel)
 
                 if (f"{commandPrefix}timer transfer " in msg.content or f"{commandPrefix}t transfer " in msg.content) and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
-                    if f'{commandPrefix}timer transfer ' in msg.content:
-                      newUser = msg.content.split(f'{commandPrefix}timer transfer ')[1] 
-                    elif f'{commandPrefix}t transfer ' in msg.content:
-                      newUser = msg.content.split(f'{commandPrefix}t transfer ')[1] 
-
-                    newAuthor = await ctx.invoke(self.timer.get_command('transfer'), user=newUser) 
-                    if newAuthor is not None:
-                        author = newAuthor
+                    if len(msg.mentions)>0:
+                        author = msg.mentions[0]
                         await channel.send(f'***{author.mention}***, the current timer has been transferred to you. Use the following command to see a list of timer commands:\n```yaml\n{commandPrefix}timer stop```')
                     else:
                         await channel.send(f'Sorry, I could not find the user ***{newUser}*** to transfer the timer.')
@@ -1997,7 +2009,7 @@ class Timer(commands.Cog):
                     timerStopped = True
                     await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart, dmChar=dmChar, guildsList=guildsList)
                     return
-                elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and '@player' not in msg.content:
+                elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and '@player' not in msg.content and (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "Admins".lower() in [r.name.lower() for r in msg.author.roles]):
                     startTimes = await ctx.invoke(self.timer.get_command('add'), start=startTimes, role=role, msg=msg)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif (f"{commandPrefix}timer addme " in msg.content or f"{commandPrefix}t addme " in msg.content) and '@player' not in msg.content and (msg.content != f'{commandPrefix}timer addme' or msg.content != f'{commandPrefix}t addme'):

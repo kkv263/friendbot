@@ -140,7 +140,7 @@ class Log(commands.Cog):
                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the command again.")
             else:
                 print("Success")
-                sessionLogEmbed.set_footer(text=sessionLogEmbed.footer.text + "\n✅ Log complete! Players have been rewarded. THe DM may still edit the summary log if they wish.")
+                sessionLogEmbed.set_footer(text=sessionLogEmbed.footer.text + "\n✅ Log complete! Players have been rewarded. The DM may still edit the summary log if they wish.")
                 await editMessage.edit(embed=sessionLogEmbed)
                 await asyncio.sleep(30) 
                 await delMessage.delete()
