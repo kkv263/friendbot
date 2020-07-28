@@ -354,7 +354,7 @@ class Misc(commands.Cog, name='Misc'):
         #check if any tier boost was done and react
         elif(7 < msg.type.value and msg.type.value < 12):
             await msg.add_reaction('<:boost:585637770970660876>')
-        elif any(word in msg.content.lower() for word in ['thank', 'thanks', 'thank you', 'thx', 'gracias', 'danke']) and 'bot friend' in msg.content.lower():
+        elif any(word in msg.content.lower() for word in ['thank', 'thx', 'gracias', 'danke', "obrigado","merci","grazie","tack","xie xie","arigatou","spasibo", "shukran", "mahalo", "kiitos","ありがとう"]) and 'bot friend' in msg.content.lower():
             await msg.add_reaction('❤️')
             await msg.channel.send("You're welcome friend!")
         elif msg.channel.id == tChannel and msg.author.id != self.bot.user.id:
