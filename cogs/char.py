@@ -2096,7 +2096,7 @@ class Character(commands.Cog):
 
                 # Multiclass Requirements
                 failMulticlassList = []
-                baseClass = ""
+                baseClass = {'Name': ''}
                 
                 for cRecord in classRecords:
                     if cRecord['Name'] in charClass:
