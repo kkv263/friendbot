@@ -214,7 +214,7 @@ class Guild(commands.Cog):
             sameMessage = False
             if guildEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
         charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
 
@@ -327,7 +327,7 @@ class Guild(commands.Cog):
             sameMessage = False
             if guildEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
         charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
 
@@ -419,7 +419,7 @@ class Guild(commands.Cog):
             sameMessage = False
             if guildEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
         charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
 
@@ -518,7 +518,7 @@ class Guild(commands.Cog):
             sameMessage = False
             if guildEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
         charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
 
@@ -585,7 +585,7 @@ class Guild(commands.Cog):
     #         sameMessage = False
     #         if guildEmbedmsg.id == r.message.id:
     #             sameMessage = True
-    #         return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+    #         return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
     #     charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
 

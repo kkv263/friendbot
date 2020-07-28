@@ -120,7 +120,7 @@ class Tp(commands.Cog):
                         sameMessage = False
                         if apiEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌') or (str(r.emoji) == '⛔')) and u == author
+                        return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌') or (str(r.emoji) == '⛔')) and u == author and sameMessage
                     #inform the user of the current information and ask for their selection of an item
                     apiEmbed.add_field(name=f"Select which one to collapse.", value=infoString, inline=False)
                     if not apiEmbedmsg or apiEmbedmsg == "Fail":
@@ -185,12 +185,12 @@ class Tp(commands.Cog):
                 sameMessage = False
                 if tpEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '1️⃣' and haveTP) or (charRecords['GP'] >= gpNeeded and str(r.emoji) == '2️⃣') or (str(r.emoji) == '❌')) and u == author
+                return ((str(r.emoji) == '1️⃣' and haveTP) or (charRecords['GP'] >= gpNeeded and str(r.emoji) == '2️⃣') or (str(r.emoji) == '❌')) and u == author and sameMessage
             def tpEmbedCheck(r, u):
                 sameMessage = False
                 if tpEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author and sameMessage
 
             #make the call to the bfunc function to retrieve an item matching with mItem
             mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem) 
@@ -475,13 +475,13 @@ class Tp(commands.Cog):
             sameMessage = False
             if tpEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author and sameMessage
 
         def discardEmbedCheck(r, u):
             sameMessage = False
             if tpEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author
+            return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author and sameMessage
         
         #if the character was found in the DB
         if charRecords:
@@ -595,7 +595,7 @@ class Tp(commands.Cog):
                 sameMessage = False
                 if tpEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author and sameMessage
             
             role = 0
             if tierNum.isdigit():

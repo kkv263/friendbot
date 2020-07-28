@@ -296,7 +296,7 @@ class Timer(commands.Cog):
                     sameMessage = False
                     if timerSpendEmbedmsg.id == r.message.id:
                         sameMessage = True
-                    return ((r.emoji in validBuffs) or (str(r.emoji) == '❌')) and u == author
+                    return sameMessage and ((r.emoji in validBuffs) or (str(r.emoji) == '❌')) and u == author
 
 
                 if guildRecordsList == list():
@@ -449,7 +449,7 @@ class Timer(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in numberEmojis[:min(len(cRecord), 9)]) or (str(r.emoji) == '❌') and u == author
+                return sameMessage and (r.emoji in numberEmojis[:min(len(cRecord), 9)]) or (str(r.emoji) == '❌') and u == author
 
             charString = ""
             numI = 0
@@ -1015,7 +1015,7 @@ class Timer(commands.Cog):
                 sameMessage = False
                 if addEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == dmChar[0]
+                return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == dmChar[0]
 
             if not resume:
                 startTime = time.time()

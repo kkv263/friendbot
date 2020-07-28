@@ -752,7 +752,7 @@ class Character(commands.Cog):
                             statReq[0] = statReq[0].split('/')
                             reqFufill = False
                             for s in statReq[0]:
-                                if int(charDict[s]) > int(statReq[1]):
+                                if int(charDict[s]) >= int(statReq[1]):
                                   reqFufill = True
                                 else:
                                   reqFufillList.append(f"{s} {charDict[s]}")
@@ -2095,35 +2095,45 @@ class Character(commands.Cog):
                 lvlClass = charClass
 
                 # Multiclass Requirements
+                failMulticlassList = []
+                baseClass = ""
+                
                 for cRecord in classRecords:
-                    if cRecord['Name'] not in charClass:
-                        statReq = cRecord['Multiclass'].split(' ')
-                        if cRecord['Multiclass'] != 'None':
-                            if '/' not in cRecord['Multiclass'] and '+' not in cRecord['Multiclass']:
-                                if int(infoRecords[statReq[0]]) < int(statReq[1]):
-                                    continue
-                            elif '/' in cRecord['Multiclass']:
-                                statReq[0] = statReq[0].split('/')
-                                reqFufill = False
-                                for s in statReq[0]:
-                                    if int(infoRecords[s]) > int(statReq[1]):
-                                      reqFufill = True
-                                      break
-                                if not reqFufill:
-                                    continue
-                            elif '+' in cRecord['Multiclass']:
-                                statReq[0] = statReq[0].split('+')
-                                reqFufill = True
-                                for s in statReq[0]:
-                                    if int(infoRecords[s]) < int(statReq[1]):
-                                      reqFufill = False
-                                      break
-                                if not reqFufill:
-                                    continue
+                    if cRecord['Name'] in charClass:
+                        baseClass = cRecord
 
-                        chooseClassString += f"{alphaEmojis[alphaIndex]}: {cRecord['Name']}\n"
-                        alphaIndex += 1
-                        classes.append(cRecord['Name'])
+                    statReq = cRecord['Multiclass'].split(' ')
+                    if cRecord['Multiclass'] != 'None':
+                        if '/' not in cRecord['Multiclass'] and '+' not in cRecord['Multiclass']:
+                            if int(infoRecords[statReq[0]]) < int(statReq[1]):
+                                failMulticlassList.append(cRecord['Name'])
+                                continue
+                        elif '/' in cRecord['Multiclass']:
+                            statReq[0] = statReq[0].split('/')
+                            reqFufill = False
+                            for s in statReq[0]:
+                                if int(infoRecords[s]) >= int(statReq[1]):
+                                    reqFufill = True
+                            if not reqFufill:
+                                failMulticlassList.append(cRecord['Name'])
+                                continue
+
+                        elif '+' in cRecord['Multiclass']:
+                            statReq[0] = statReq[0].split('+')
+                            reqFufill = True
+                            for s in statReq[0]:
+                                if int(infoRecords[s]) < int(statReq[1]):
+                                    reqFufill = False
+                                    break
+                            if not reqFufill:
+                                failMulticlassList.append(cRecord['Name'])
+                                continue
+
+
+                        if cRecord['Name'] not in failMulticlassList and cRecord['Name'] != baseClass['Name']:
+                            chooseClassString += f"{alphaEmojis[alphaIndex]}: {cRecord['Name']}\n"
+                            alphaIndex += 1
+                            classes.append(cRecord['Name'])
 
                 # New Multiclass
                 levelUpEmbed.add_field(name="Would you like to level a new multiclass?", value='✅: Yes\n\n🚫: No\n\n❌: Cancel')
@@ -2150,6 +2160,12 @@ class Character(commands.Cog):
                         return
                     elif tReaction.emoji == '✅':
                         levelUpEmbed.clear_fields()
+                        if baseClass['Name'] in failMulticlassList:
+                            await levelUpEmbedmsg.edit(embed=None, content=f"You cannot multiclass right now because your base class, `{baseClass['Name']}` requires at least `{baseClass['Multiclass']}` \nCurrent stats: **STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}")
+                            await levelUpEmbedmsg.clear_reactions()
+                            self.bot.get_command('levelup').reset_cooldown(ctx)
+                            return
+
                         levelUpEmbed.add_field(name="Pick a new class you would like to multiclass into", value=chooseClassString)
                         await levelUpEmbedmsg.edit(embed=levelUpEmbed)
                         await levelUpEmbedmsg.add_reaction('❌')
@@ -2430,7 +2446,7 @@ class Character(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌')) and u == author
+                return sameMessage and ((r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌')) and u == author
 
             mList = []
             mString = ""
@@ -2549,7 +2565,7 @@ class Character(commands.Cog):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌')) and u == author
+                return sameMessage and ((r.emoji in numberEmojis[:min(len(mList), 9)]) or (str(r.emoji) == '❌')) and u == author
 
             mList = []
             mString = ""

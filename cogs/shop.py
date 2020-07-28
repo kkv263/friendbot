@@ -68,7 +68,7 @@ class Shop(commands.Cog):
                 sameMessage = False
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+                return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
             #If player is trying to buy spell scroll, search for spell scroll in DB, and find level it can be bought at 
             if "spell scroll" in buyItem.lower():
@@ -189,13 +189,13 @@ class Shop(commands.Cog):
                 sameMessage = False
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+                return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
             
             def apiEmbedCheck(r, u):
                 sameMessage = False
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in numberEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
+                return sameMessage and (r.emoji in numberEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
 
             buyList = []
             buyString = ""
@@ -446,7 +446,7 @@ class Shop(commands.Cog):
             sameMessage = False
             if shopEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
         
         #calculate gp after purchase
         newGP = charRecords['GP'] - gpNeeded

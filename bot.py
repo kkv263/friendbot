@@ -70,7 +70,7 @@ async def help(ctx, *, pageString=''):
         sameMessage = False
         if helpMsg.id == r.message.id:
             sameMessage = True
-        return (r.emoji in numberEmojis[:numPages]) and u == ctx.author
+        return (r.emoji in numberEmojis[:numPages]) and u == ctx.author and sameMessage
 
     helpEmbedMenu = discord.Embed()
     helpEmbedChar = discord.Embed()
