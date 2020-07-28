@@ -108,6 +108,10 @@ class Tp(commands.Cog):
             return None, apiEmbed, apiEmbedmsg
         else:
             try:
+                latest=" Go"
+                latest1=""
+                latest2=""
+                latest3=""
                 #create a string to provide information about the items to the user
                 infoString = ""
                 collapseList=[]
@@ -118,8 +122,9 @@ class Tp(commands.Cog):
                         if apiEmbedmsg.id == r.message.id:
                             sameMessage = True
                         return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌') or (str(r.emoji) == '⛔')) and u == author
-                    #inform the user of the current information and ask for their selection of an item
-                    apiEmbed.add_field(name=f"Select which one to collapse.", value=infoString, inline=False)
+                    #inform the user of the current information and ask for their selection of an item               
+                    apiEmbed.add_field(name=f"Latest Change", value=latest, inline=False)
+                    apiEmbed.add_field(name=f"Select which one to collapse.", value=infoString, inline=False)     
                     if not apiEmbedmsg or apiEmbedmsg == "Fail":
                         apiEmbedmsg = await channel.send(embed=apiEmbed)
                     else:
@@ -128,7 +133,7 @@ class Tp(commands.Cog):
                     await apiEmbedmsg.add_reaction('✅')
                     await apiEmbedmsg.add_reaction('❌')
                     await apiEmbedmsg.add_reaction('⛔')
-
+                
                     try:
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
                     except asyncio.TimeoutError:
@@ -138,6 +143,11 @@ class Tp(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return None, apiEmbed, "Fail"
                     else:
+                        latest3 = latest2
+                        latest2 = latest1
+                        latest1 = rec["Name"]+ ": "+tReaction.emoji+"\n"
+                        latest=latest3+latest2+latest1
+                        
                         #stop if the cancel emoji was given and reenable the command
                         if tReaction.emoji == '❌':
                             pass
