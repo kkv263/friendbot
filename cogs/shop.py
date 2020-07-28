@@ -118,7 +118,7 @@ class Shop(commands.Cog):
                     ctx.command.reset_cooldown(ctx)
                     return
 
-                newGP = charRecords['GP'] - gpNeeded
+                newGP = round(charRecords['GP'] - gpNeeded , 2)
                 shopEmbed.title = f"Buying: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
                 shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount} x {bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
