@@ -900,7 +900,7 @@ class Character(commands.Cog):
         msg = ""
 
         if 'Death' in charDict.keys():
-            await channel.send(content=f'You cannot respec with dead character. Use the following command to decide their fate:\n```yaml\n$death {charRecords['Name']}```")
+            await channel.send(content=f"You cannot respec with dead character. Use the following command to decide their fate:\n```yaml\n$death {charRecords['Name']}```")
             return
 
         # level check
@@ -2031,7 +2031,7 @@ class Character(commands.Cog):
             charFeats = infoRecords['Feats']
 
             if 'Death' in infoRecords.keys():
-                await channel.send(f'You cannot level up a dead character. Use the following command to decide their fate:\n```yaml\n$death {charRecords['Name']}```")
+                await channel.send(f"You cannot level up a dead character. Use the following command to decide their fate:\n```yaml\n$death {charRecords['Name']}```")
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
 
