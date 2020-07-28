@@ -149,7 +149,7 @@ class Timer(commands.Cog):
                 else:
                     prepEmbed.add_field(name=p.display_name, value='Has not yet signed up for the campaign.', inline=False)
 
-        prepEmbed.set_footer(text= f"If enough players have signed up, use the following command to start the timer: {commandPrefix}timer start\nUse the following command to see a list of timer commands: commandPrefix}timer help")
+        prepEmbed.set_footer(text= f"If enough players have signed up, use the following command to start the timer: {commandPrefix}timer start\nUse the following command to see a list of timer commands: {commandPrefix}timer help")
 
 
         if not prepEmbedMsg:
