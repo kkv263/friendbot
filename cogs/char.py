@@ -1452,7 +1452,7 @@ class Character(commands.Cog):
             else:
                 await charEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await charEmbedmsg.edit(embed=None, content=f"Death canceled. Try again using the same command:\n```yaml\n{commandPrefix}death```')
+                    await charEmbedmsg.edit(embed=None, content=f"Death canceled. Try again using the same command:\n```yaml\n{commandPrefix}death```")
                     await charEmbedmsg.clear_reactions()
                     self.bot.get_command('death').reset_cooldown(ctx)
 
@@ -1474,7 +1474,7 @@ class Character(commands.Cog):
                     else:
                         await charEmbedmsg.clear_reactions()
                         if tReaction.emoji == '❌':
-                            await charEmbedmsg.edit(embed=None, content=f"Death canceled. Try again using the same command:\n```yaml\n{commandPrefix}death```')
+                            await charEmbedmsg.edit(embed=None, content=f"Death canceled. Try again using the same command:\n```yaml\n{commandPrefix}death```")
                             await charEmbedmsg.clear_reactions()
                             self.bot.get_command('death').reset_cooldown(ctx)
                             return
@@ -2031,7 +2031,7 @@ class Character(commands.Cog):
             charFeats = infoRecords['Feats']
 
             if 'Death' in infoRecords.keys():
-                await channel.send(f"You cannot level up a dead character. Use the following command to decide their fate:\n```yaml\n$death \"{charRecords[\'Name\']}\"```")
+                await channel.send(f'You cannot level up a dead character. Use the following command to decide their fate:\n```yaml\n$death "{charRecords["Name"]}"```')
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
 
