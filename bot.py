@@ -111,15 +111,15 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedChar.title = 'Character Commands'
     helpEmbedChar.add_field(name=f'▫️ User Information\n{commandPrefix}user', value="View your total quests played with all of your characters, your Noodles, and a list of your characters.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Creation\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Create a character with the specified parameters.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Multiclass Character Creation\n{commandPrefix}create "character name" level "race" "class1 # / class2 #..." "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Create a character as above, except with multiclassing!", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Leveling Up\n{commandPrefix}levelup "character name"\n[{commandPrefix}lvl, {commandPrefix}lv, {commandPrefix}lvlup]', value="Level up the specified character to the next level.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Character Creation\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character with the specified parameters.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Multiclass Character Creation\n{commandPrefix}create "character name" level "race" "class1 # / class2 #..." "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character as above, except with multiclassing!", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Leveling Up\n{commandPrefix}levelup "character name"\n[{commandPrefix}lvlup, {commandPrefix}lvl, {commandPrefix}lvl]', value="Level up the specified character to the next level.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Respec\n{commandPrefix}respec "character name" "new character name" level "race" "class" "background" STR DEX CON INT WIS CHA', value="Respec the specified character based on the amount of CP they have. You can choose a new name, class, race, background, and stats for them; however, TP and gp will be assigned to them based on the amount of CP they have and everything else that they had will be reset.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Information\n{commandPrefix}info "character name"\n[{commandPrefix}i, {commandPrefix}char]', value="View the stats and general information of the specified character.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Character Information\n{commandPrefix}info "character name"\n[{commandPrefix}char, {commandPrefix}i]', value="View the stats and general information of the specified character.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Character Inventory\n{commandPrefix}inventory "character name"\n[{commandPrefix}inv, {commandPrefix}bag]', value="View the inventory of the specified character. The inventory lists mundane items, consumables, and magic items.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Image\n{commandPrefix}image "character name" url\n[{commandPrefix}img]', value="Add an image to the specified character's information page (`$info` command) using a URL. Please keep images SFW!", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Character Image\n{commandPrefix}image "character name" "URL"\n[{commandPrefix}img]', value="Add an image to the specified character's information page (`$info` command) using a URL. Please keep images SFW!", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Attunement\n{commandPrefix}attune "character name" "magic item"\n[{commandPrefix}att]', value="Attune to a magic item with the specified character. Stat bonuses from magic items are applied to the character's stats when attuned to the item.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Unattunement\n{commandPrefix}unattune "character name" "magic item"\n[{commandPrefix}uatt, {commandPrefix}unatt]', value="Unattune from a magic item with the specified character. Stat bonuses from magic items are removed from the character's stats when unattuned from the item.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Unattunement\n{commandPrefix}unattune "character name" "magic item"\n[{commandPrefix}unatt, {commandPrefix}uatt]', value="Unattune from a magic item with the specified character. Stat bonuses from magic items are removed from the character's stats when unattuned from the item.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Retire\n{commandPrefix}retire "character name"', value="Retire the specified character. They will no longer be accessible.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Death Options\n{commandPrefix}death "character name"', value=f"Decide the fate of the specified character who died during a quest.", inline=False)
 
@@ -174,7 +174,7 @@ async def help(ctx, *, pageString=''):
 # TP COMMANDS MENU ($help tp)
 
     helpEmbedTp.title = 'TP Commands'
-    helpEmbedTp.add_field(name=f'▫️ Acquiring a Magic Item\n{commandPrefix}tp buy "character name" "MIT Item" #', value="Put TP towards a magic item or acquire it with gp.", inline=False)
+    helpEmbedTp.add_field(name=f'▫️ Acquiring a Magic Item\n{commandPrefix}tp buy "character name" "magic item"', value="Put TP towards a magic item or acquire it with gp.", inline=False)
     helpEmbedTp.add_field(name=f'▫️ Discarding an Incomplete Magic Item\n{commandPrefix}tp discard "character name"', value="Discard an incomplete magic item as well as all TP that has been put towards it.", inline=False)
     helpEmbedTp.add_field(name=f'▫️ Abandoning Leftover TP\n{commandPrefix}tp abandon "character name" tier', value="Abandon leftover TP in the tier of your choosing.", inline=False)
 
@@ -202,7 +202,7 @@ async def help(ctx, *, pageString=''):
     try:
         hReact, hUser = await bot.wait_for("reaction_add", check=helpCheck, timeout=30.0)
     except asyncio.TimeoutError:
-        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. Use the following command if you need to cycle through help menu again:\n```yaml\n{commandPrefix}help```")
+        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. Use the first command if you need to cycle through help menu again or use any of the other commands to view a specific help menu:\n```yaml\n{commandPrefix}help char\n{commandPrefix}help timer1\n{commandPrefix}help timer2\n{commandPrefix}help itemtable\n{commandPrefix}help shop\n{commandPrefix}help tp\n{commandPrefix}help guild```")
         await helpMsg.clear_reactions()
         await helpMsg.add_reaction('💤')
         return
