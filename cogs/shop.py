@@ -19,7 +19,7 @@ class Shop(commands.Cog):
         msg = None
 
         if isinstance(error, commands.CommandNotFound):
-            await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` requires an additional keyword to the command or is invalid, please try again!')
+            await ctx.channel.send(f'Sorry, the command **`{commandPrefix}{ctx.invoked_with}`** requires an additional keyword to the command or is invalid, please try again!')
             return
             
         if isinstance(error, commands.MissingRequiredArgument):
@@ -71,17 +71,17 @@ class Shop(commands.Cog):
                 return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
             #If player is trying to buy spell scroll, search for spell scroll in DB, and find level it can be bought at 
-            if "spell scroll" in buyItem.lower():
+            if "spell scroll" or "potion" in buyItem.lower():
                 spellItem = buyItem.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
                 sRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'spells', spellItem) 
 
                 if not sRecord:
-                    await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                    await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
                     ctx.command.reset_cooldown(ctx)
                     return
 
                 if sRecord['Level'] > 5:
-                    await channel.send(f"You cannot purchase spell scroll `{sRecord['Name']}`; Spell scrolls of levels higher than 5 cannot be purchased.")
+                    await channel.send(f"You cannot purchase a spell scroll of **{sRecord['Name']}**. Spell scrolls higher than 5th level cannot be purchased.")
                     ctx.command.reset_cooldown(ctx)
                     return
 
@@ -114,13 +114,13 @@ class Shop(commands.Cog):
                     amount *= bRecord['Pack']
 
                 if float(charRecords['GP']) < gpNeeded:
-                    await channel.send(f"You do not have enough GP to purchase `{bRecord['Name']}` - Quantity ({amount})")
+                    await channel.send(f"You do not have enough gp to purchase {amount}x **{bRecord['Name']}**!")
                     ctx.command.reset_cooldown(ctx)
                     return
 
                 newGP = charRecords['GP'] - gpNeeded
-                shopEmbed.title = f"Buying: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount} x {bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                shopEmbed.title = f"{charRecords['Name']} is purchasing: {amount}x {bRecord['Name']}"
+                shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount}x {bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -165,12 +165,12 @@ class Shop(commands.Cog):
                             print ('MONGO ERROR: ' + str(e))
                             shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
-                            shopEmbed.description = f"**{bRecord['Name']} purchased! (x{amount})**\n\n**Current gp**: {newGP}\n"
+                            shopEmbed.description = f"**{bRecord['Name']} purchased! ({amount}x)**\n\n**Current gp**: {newGP} gp\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
 
             else:
-                await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
@@ -222,7 +222,7 @@ class Shop(commands.Cog):
 
             # If there are multiple matches user can pick the correct one
             if (len(buyList) > 1):
-                shopEmbed.add_field(name=f"There seems to be multiple results for `{buyItem}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
+                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
                 if not shopEmbedmsg:
                     shopEmbedmsg = await channel.send(embed=shopEmbed)
                 else:
@@ -250,7 +250,7 @@ class Shop(commands.Cog):
             elif len(buyList) == 1:
                 buyItem = buyList[0]
             else:
-                await channel.send(f'`{buyItem}` doesn\'t exist or is a unsellable magic item! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'**{buyItem}** doesn\'t exist or is an unsellable magic item! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
@@ -259,17 +259,17 @@ class Shop(commands.Cog):
             if bRecord:
                 # See if item is a magic item (they are unsellable)
                 if 'Magic Item' in bRecord:
-                    await channel.send(f"{bRecord['Name']} is a magic item and is not sellable. Please try again with a different item.")
+                    await channel.send(f"**{bRecord['Name']}** is a magic item and is not sellable. Please try again with a different item.")
                     ctx.command.reset_cooldown(ctx)
                     return
                 
                 if f"{bRecord['Name']}" not in charRecords['Inventory']:
-                    await channel.send(f"You do not have any {bRecord['Name']} to sell!")
+                    await channel.send(f"You do not have any **{bRecord['Name']}** to sell!")
                     ctx.command.reset_cooldown(ctx)
                     return
 
                 elif charRecords['Inventory'][f"{bRecord['Name']}"] < amount:
-                    await channel.send(f"You do not have {amount} {bRecord['Name']} to sell!")
+                    await channel.send(f"You do not have {amount}x **{bRecord['Name']}** to sell!")
                     ctx.command.reset_cooldown(ctx)
                     return 
 
@@ -279,8 +279,8 @@ class Shop(commands.Cog):
                 gpRefund = round((bRecord['GP'] / 2) * amount, 2)
                 newGP = round(charRecords['GP'] + gpRefund,2)
                     
-                shopEmbed.title = f"Selling: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount} x {bRecord['Name']}: ** (+{gpRefund} gp)\n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                shopEmbed.title = f"{charRecords['Name']} is selling: {amount}x {bRecord['Name']}"
+                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount}x {bRecord['Name']}: ** ({gpRefund} gp)\n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -314,12 +314,12 @@ class Shop(commands.Cog):
                             print ('MONGO ERROR: ' + str(e))
                             shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
-                            shopEmbed.description = f"**{bRecord['Name']} sold! (x{amount})** \n\n**Current gp**: {newGP}\n"
+                            shopEmbed.description = f"**{bRecord['Name']} sold! ({amount}x)** \n\n**Current gp**: {newGP} gp\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
 
             else:
-                await channel.send(f'`{buyItem}` doesn\'t exist or is a unsellable magic item! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'**{buyItem}** doesn\'t exist or is an unsellable magic item! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
@@ -336,7 +336,7 @@ class Shop(commands.Cog):
         if charRecords:
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
             if 'Wizard' not in charRecords['Class'] and 'Ritual Caster' not in charRecords['Feats'] and 'Warlock' not in charRecords['Class']:
-                await channel.send(f"You not have the right class/subclass or feat to copy spells!")
+                await channel.send(f"You not have the right class, subclass, or feat to copy spells!")
                 ctx.command.reset_cooldown(ctx)
                 return 
 
@@ -347,7 +347,7 @@ class Shop(commands.Cog):
             if bRecord:
                 if 'Spellbook' in charRecords:
                     if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
-                        await channel.send(f"{charRecords['Name']} does already has the spell `{bRecord['Name']}` to copied in their spellbook!")
+                        await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their spellbook!")
                         ctx.command.reset_cooldown(ctx)
                         return  
 
@@ -410,7 +410,7 @@ class Shop(commands.Cog):
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
                     shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell scroll of {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
+                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell scroll of {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n"
                     await channel.send (embed=shopEmbed)
                     ctx.command.reset_cooldown(ctx)
 
@@ -495,7 +495,7 @@ class Shop(commands.Cog):
                     await shopEmbedmsg.edit(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
                 else:
                     #Inform of the purchase success
-                    shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn a {purchasePossibilities} of your choice. :tada:\n\n**Current gp**: {newGP}\n"
+                    shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn a {purchasePossibilities} of your choice. :tada:\n\n**Current gp**: {newGP} gp\n"
                     await shopEmbedmsg.edit(embed=shopEmbed)
                     
     @proficiency.command()

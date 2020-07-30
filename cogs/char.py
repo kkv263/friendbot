@@ -19,49 +19,49 @@ class Character(commands.Cog):
             
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'char':
-                msg = "```• You're missing the character name in the command.```\n"
+                msg = "```:warning: You're missing the character name in the command.```\n"
             elif error.param.name == "name":
-                msg = "```• You're missing the name for the character you want to create or respec.```\n"
+                msg = "```:warning: You're missing the name for the character you want to create or respec.```\n"
             elif error.param.name == "newname":
-                msg = "```• You're missing a new name for the character you want to respec.```\n"
+                msg = "```:warning: You're missing a new name for the character you want to respec.```\n"
             elif error.param.name == "level":
-                msg = "```• You're missing a level for the character you want to create.```\n"
+                msg = "```:warning: You're missing a level for the character you want to create.```\n"
             elif error.param.name == "race":
-                msg = "```• You're missing a race for the character you want to create.```\n"
+                msg = "```:warning: You're missing a race for the character you want to create.```\n"
             elif error.param.name == "cclass":
-                msg = "```• You're missing a class for the character you want to create.```\n"
+                msg = "```:warning: You're missing a class for the character you want to create.```\n"
             elif error.param.name == 'bg':
-                msg = "```• You're missing a background the your character you want to create.```\n"
+                msg = "```:warning: You're missing a background the your character you want to create.```\n"
             elif error.param.name == 'sStr' or  error.param.name == 'sDex' or error.param.name == 'sCon' or error.param.name == 'sInt' or error.param.name == 'sWis' or error.param.name == 'sCha':
-                msg = "```• You're missing a stat (STR, DEX, CON, INT, WIS, or CHA) for the character you want to create.```\n"
+                msg = "```:warning: You're missing a stat (STR, DEX, CON, INT, WIS, or CHA) for the character you want to create.```\n"
             elif error.param.name == 'url':
-                msg = "```• You're missing a URL to add an image to the character's information window.```\n"
+                msg = "```:warning: You're missing a URL to add an image to the character's information window.```\n"
             elif error.param.name == 'm':
-                msg = "```• You're missing a magic item to attune to, or unattune from, your character.```\n"
+                msg = "```:warning: You're missing a magic item to attune to, or unattune from, your character.```\n"
 
             msg += "**Note: if this error seems incorrect, you may be missing something else.**\n"
 
         if msg:
             if ctx.command.name == "create":
-                msg += f'• Please follow this format:\n{commandPrefix}create "name" level "race" "class" "backgound" str dex con int wis cha "magic item 1, magic item 2, [...]" "consumable 1, consumable 2, [...]"\n'
+                msg += f'Please follow this format:\n{commandPrefix}create "name" level "race" "class" "backgound" str dex con int wis cha "magic item 1, magic item 2, [...]" "consumable 1, consumable 2, [...]"\n'
             elif ctx.command.name == "respec":
-                msg += f'• Please follow this format:\n{commandPrefix}respec "name" "new name" "race" "class" "background" str dex con int wis cha "magic item 1, magic item2, [...]" "consumable 1, consumable 2, [...]"\n'
+                msg += f'Please follow this format:\n{commandPrefix}respec "name" "new name" "race" "class" "background" str dex con int wis cha "magic item 1, magic item2, [...]" "consumable 1, consumable 2, [...]"\n'
             elif ctx.command.name == "retire":
-                msg += f'• Please follow this format:\n{commandPrefix}retire "character name"\n'
+                msg += f'Please follow this format:\n{commandPrefix}retire "character name"\n'
             elif ctx.command.name == "death":
-                msg += f'• Please follow this format:\n{commandPrefix}death "character name"\n'
+                msg += f'Please follow this format:\n{commandPrefix}death "character name"\n'
             elif ctx.command.name == "inventory":
-                msg += f'• Please follow this format:\n{commandPrefix}inventory "character name"\n'
+                msg += f'Please follow this format:\n{commandPrefix}inventory "character name"\n'
             elif ctx.command.name == "info":
-                msg += f'• Please follow this format:\n{commandPrefix}info "character name"\n'
+                msg += f'Please follow this format:\n{commandPrefix}info "character name"\n'
             elif ctx.command.name == "image":
-                msg += f'• Please follow this format:\n{commandPrefix}image "character name" url\n'
+                msg += f'Please follow this format:\n{commandPrefix}image "character name" url\n'
             elif ctx.command.name == "levelup":
-                msg += f'• Please follow this format:\n{commandPrefix}levelup "character name"\n'
+                msg += f'Please follow this format:\n{commandPrefix}levelup "character name"\n'
             elif ctx.command.name == "attune":
-                msg += f'• Please follow this format:\n{commandPrefix}attune "character name" "magic item"\n'
+                msg += f'Please follow this format:\n{commandPrefix}attune "character name" "magic item"\n'
             elif ctx.command.name == "unattune":
-                msg += f'• Please follow this format:\n{commandPrefix}unattune "character name" "magic item"\n'
+                msg += f'Please follow this format:\n{commandPrefix}unattune "character name" "magic item"\n'
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
         # bot.py handles this, so we don't get traceback called.
@@ -132,27 +132,27 @@ class Character(commands.Cog):
 
         # Prevents name, level, race, class, background from being blank. Resets infinite cooldown and prompts
         if not name:
-            await channel.send(content="• The name of your character cannot be blank! Please try again.\n")
+            await channel.send(content=":warning: The name of your character cannot be blank! Please try again.\n")
             self.bot.get_command('create').reset_cooldown(ctx)
             return
 
         if not level:
-            await channel.send(content="• The level of your character cannot be blank! Please try again.\n")
+            await channel.send(content=":warning: The level of your character cannot be blank! Please try again.\n")
             self.bot.get_command('create').reset_cooldown(ctx)
             return
 
         if not race:
-            await channel.send(content="• The race of your character cannot be blank! Please try again.\n")
+            await channel.send(content=":warning: The race of your character cannot be blank! Please try again.\n")
             self.bot.get_command('create').reset_cooldown(ctx)
             return
 
         if not cclass:
-            await channel.send(content="• The class of your character cannot be blank! Please try again.\n")
+            await channel.send(content=":warning: The class of your character cannot be blank! Please try again.\n")
             self.bot.get_command('create').reset_cooldown(ctx)
             return
         
         if not bg:
-            await channel.send(content="• The background of your character cannot be blank! Please try again.\n")
+            await channel.send(content=":warning: The background of your character cannot be blank! Please try again.\n")
             self.bot.get_command('create').reset_cooldown(ctx)
             return
 
@@ -165,13 +165,13 @@ class Character(commands.Cog):
         
         # Name should be less then 50 chars
         if len(name) > 64:
-            msg += "• Your character's name is too long! The limit is 64 characters.\n"
+            msg += ":warning: Your character's name is too long! The limit is 64 characters.\n"
 
         playersCollection = db.players
         userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": name }))
 
         if userRecords != list():
-            msg += f"• You already have a character by the name of {name}! Please use a different name.\n"
+            msg += f":warning: You already have a character by the name of ***{name}***! Please use a different name.\n"
         
         # ██████╗░░█████╗░██╗░░░░░███████╗  ░░░░██╗  ██╗░░░░░███████╗██╗░░░██╗███████╗██╗░░░░░
         # ██╔══██╗██╔══██╗██║░░░░░██╔════╝  ░░░██╔╝  ██║░░░░░██╔════╝██║░░░██║██╔════╝██║░░░░░
@@ -199,7 +199,7 @@ class Character(commands.Cog):
         print (roleSet)
 
         if lvl not in roleSet:
-            msg += f"• You cannot create a character of {lvl}! You do not have the correct role!\n"
+            msg += f":warning: You cannot create a character of **{lvl}**! You do not have the correct role!\n"
         
         # Checks CP
         if lvl < 5:
@@ -228,10 +228,10 @@ class Character(commands.Cog):
                     return
 
                 if mRecord in allMagicItemsString:
-                    msg += '• You cannot spend TP on two of the same magic item.\n'
+                    msg += ':warning: You cannot spend TP on two of the same magic item.\n'
                     break 
                 if not mRecord:
-                    msg += f'• {m} doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
+                    msg += f':warning: **{m}** doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
                     break
                 else:
                     allMagicItemsString.append(mRecord)
@@ -262,7 +262,7 @@ class Character(commands.Cog):
                 for item in allMagicItemsString:
                     #  See if player isn't going over tier 2 or tier 1
                     if int(item['Tier']) > highestTier:
-                        return "• One or more of these magic items cannot be acquired at Level " + str(lvl), 0, 0
+                        return ":warning: One or more of these magic items cannot be acquired at Level " + str(lvl), 0, 0
                         
                     # Split T2 and T1 items.
                     else:
@@ -409,7 +409,7 @@ class Character(commands.Cog):
 
             for item in allRewardItemsString:
                 if int(item['Tier']) > 2:
-                    msg += "• One or more of these reward items cannot be acquired at Level " + str(lvl) + ".\n"
+                    msg += ":warning: One or more of these reward items cannot be acquired at Level " + str(lvl) + ".\n"
                     break
 
                 if item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
@@ -436,7 +436,7 @@ class Character(commands.Cog):
 
 
             if tier1CountMNC < 0 or tier1Count < 0 or tier2Count < 0:
-                msg += f"• You do not have the right roles for these reward items. You can only choose {startt1MNC} Tier 1 (Non-Consumable) item(s), {startt1} Tier 1 (or lower) item(s), and {startt2} Tier 2 (or lower) item(s).\n"
+                msg += f":warning: You do not have the right roles for these reward items. You can only choose **{startt1MNC}** Tier 1 (Non-Consumable) item(s), **{startt1}** Tier 1 (or lower) item(s), and **{startt2}** Tier 2 (or lower) item(s).\n"
             else:
                 for r in rewardConsumables:
                     if charDict['Consumables'] != "None":
@@ -454,7 +454,7 @@ class Character(commands.Cog):
         if charEmbedmsg == "Fail":
             return
         if not rRecord:
-            msg += f'• {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f':warning: **{race}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
 
@@ -475,7 +475,7 @@ class Character(commands.Cog):
                 # Separate level and class
                 mLevel = re.search('\d+', m)
                 if not mLevel:
-                    msg += "• You are missing the level for your multiclass class. Please check your format.\n"
+                    msg += ":warning: You are missing the level for your multiclass class. Please check your format.\n"
                     break
                 mLevel = mLevel.group()
                 mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
@@ -509,9 +509,9 @@ class Character(commands.Cog):
         if not mLevel and '/' in cclass:
             pass
         elif len(broke)>0:
-            msg += f'{broke} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f':warning: **{broke}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         elif totalLevel != lvl and len(cRecord) > 1:
-            msg += '• Your classes do not add up to the total level. Please double-check your multiclasses.\n'
+            msg += ':warning: Your classes do not add up to the total level. Please double-check your multiclasses.\n'
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
 
@@ -529,7 +529,7 @@ class Character(commands.Cog):
                 if not charEmbedmsg:
                     charEmbedmsg = await channel.send(embed=charEmbed)
                 elif charEmbedmsg == "Fail":
-                    msg += "• You have either canceled the command or a value was not found."
+                    msg += ":warning: You have either canceled the command or a value was not found."
                 else:
                     await charEmbedmsg.edit(embed=charEmbed)
 
@@ -671,7 +671,7 @@ class Character(commands.Cog):
         if charEmbedmsg == "Fail":
             return
         if not bRecord:
-            msg += f'• {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f':warning: **{bg}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
             totalGP = 0
@@ -683,7 +683,7 @@ class Character(commands.Cog):
             charDict['GP'] = int(bRecord['GP']) + totalGP
         
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
-            msg += '• One or more of your stats are not numbers. Please check your spelling\n'
+            msg += ':warning: One or more of your stats are not numbers. Please check your spelling\n'
         elif msg == "":
             statsArray = [int(sStr), int(sDex), int(sCon), int(sInt), int(sWis), int(sCha)]
             statsArray, charEmbedmsg = await characterCog.pointBuy(ctx, statsArray, rRecord, charEmbed, charEmbedmsg)
@@ -698,7 +698,7 @@ class Character(commands.Cog):
                         totalPoints += (s - 8)
 
                 if totalPoints != 27:
-                    msg += f"• Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
+                    msg += f":warning: Your stats plus your race's modifers do not add up to 27 using point buy ({totalPoints}/27). Please check your point allocation.\n"
 
         #feats
         if msg == "":
@@ -747,7 +747,7 @@ class Character(commands.Cog):
                     if m['Class']['Multiclass'] != 'None':
                         if '/' not in m['Class']['Multiclass'] and '+' not in m['Class']['Multiclass']:
                             if int(charDict[statReq[0]]) < int(statReq[1]):
-                                msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {statReq[0]} {charDict[statReq[0]]}\n"
+                                msg += f":warning: In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {statReq[0]} {charDict[statReq[0]]}\n"
                         elif '/' in m['Class']['Multiclass']:
                             statReq[0] = statReq[0].split('/')
                             reqFufill = False
@@ -757,7 +757,7 @@ class Character(commands.Cog):
                                 else:
                                   reqFufillList.append(f"{s} {charDict[s]}")
                             if not reqFufill:
-                                msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {' and '.join(reqFufillList)}\n"
+                                msg += f":warning: In order to multiclass to or from **{m['Class']['Name']}** you need at least **{m['Class']['Multiclass']}**. Your character only has **{' and '.join(reqFufillList)}**\n"
                         elif '+' in m['Class']['Multiclass']:
                             statReq[0] = statReq[0].split('+')
                             reqFufill = True
@@ -766,12 +766,12 @@ class Character(commands.Cog):
                                   reqFufill = False
                                   reqFufillList.append(f"{s} {charDict[s]}")
                             if not reqFufill:
-                                msg += f"• In order to multiclass to or from {m['Class']['Name']} you need at least {m['Class']['Multiclass']}. Your character only has {' and '.join(reqFufillList)}\n"
+                                msg += f":warning: In order to multiclass to or from **{m['Class']['Name']}** you need at least **{m['Class']['Multiclass']}**. Your character only has **{' and '.join(reqFufillList)}**\n"
         if msg:
             if charEmbedmsg and charEmbedmsg != "Fail":
                 await charEmbedmsg.delete()
             elif charEmbedmsg == "Fail":
-                msg = "• You have either canceled the command or a value was not found."
+                msg = ":warning: You have either canceled the command or a value was not found."
             await ctx.channel.send(f'***{author.display_name}***, there were error(s) when creating your character:\n```{msg}```')
             self.bot.get_command('create').reset_cooldown(ctx)
             return 
@@ -911,13 +911,13 @@ class Character(commands.Cog):
             return
         # new name should be less then 50 chars
         if len(newname) > 64:
-            msg += "• Your character's new name is too long! The limit is 64 characters.\n"
+            msg += ":warning: Your character's new name is too long! The limit is 64 characters.\n"
         
         playersCollection = db.players
         userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": newname, '$options': 'i' }}))
 
         if userRecords != list() and newname != name:
-            msg += f"• You already have a character by the name {newname}. Please use a different name.\n"
+            msg += f":warning: You already have a character by the name **{newname}**. Please use a different name.\n"
 
         charDict['Name'] = newname
 
@@ -988,7 +988,7 @@ class Character(commands.Cog):
         # check race
         rRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'races',race)
         if not rRecord:
-            msg += f'• {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f':warning: **{race}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
         
@@ -1000,7 +1000,7 @@ class Character(commands.Cog):
             for m in multiclassList:
                 mLevel = re.search('\d+', m)
                 if not m:
-                    msg += "• You are missing the level for your multiclass class. Please check your format.\n"
+                    msg += ":warning: You are missing the level for your multiclass class. Please check your format.\n"
                     break
                 mLevel = mLevel.group()
                 mClass, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'classes',m[:len(m) - len(mLevel)])
@@ -1021,9 +1021,9 @@ class Character(commands.Cog):
 
 
         if not cRecord or cRecord == list():
-            msg += '• That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += ':warning: That class isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         elif totalLevel != lvl and len(cRecord) > 1:
-            msg += '• Your classes do not add up to the total level. Please double-check your multiclasses.\n'
+            msg += ':warning: Your classes do not add up to the total level. Please double-check your multiclasses.\n'
         else:
             cRecord = sorted(cRecord, key = lambda i: i['Level'], reverse=True) 
             # starting equipment
@@ -1172,7 +1172,7 @@ class Character(commands.Cog):
         totalCP = (float(cpSplit[0]) + (float(cpSplit[1]) * (charDict['Level'] - 1) )) 
         bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'backgrounds',bg)
         if not bRecord:
-            msg += f'• {bg} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f':warning: **{bg}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
             #60gp per CP
@@ -1184,7 +1184,7 @@ class Character(commands.Cog):
         #check stats - point buy
         charStats = {'STR':int(sStr), 'DEX':int(sDex), 'CON':int(sCon), 'INT':int(sInt), 'WIS':int(sWis), 'CHA':int(sCha)}
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
-            msg += '• One or more of your stats are not numbers. Please check your spelling.\n'
+            msg += ':warning: One or more of your stats are not numbers. Please check your spelling.\n'
         else:
             statsArray = [int(sStr), int(sDex), int(sCon), int(sInt), int(sWis), int(sCha)]
             statsArray, charEmbedmsg = await characterCog.pointBuy(ctx, statsArray, rRecord, charEmbed, charEmbedmsg)
@@ -1199,7 +1199,7 @@ class Character(commands.Cog):
                         totalPoints += (s - 8)
 
                 if totalPoints != 27:
-                    msg += f"• Your stats plus your race's modifers do not add up to 27 using point buy {totalPoints}/27. Please check your point allocation.\n"
+                    msg += f":warning: Your stats plus your race's modifers do not add up to 27 using point buy {totalPoints}/27. Please check your point allocation.\n"
             print (statsArray) 
 
         #feats
@@ -1714,7 +1714,7 @@ class Character(commands.Cog):
                 for charDict in charRecords:
                     totalGamesPlayed += charDict['Games'] 
                     tempCharString = charString
-                    charString += f"• **{charDict['Name']}** (Lv.{charDict['Level']}): {charDict['Race']}, {charDict['Class']}\n"
+                    charString += f":warning: ***{charDict['Name']}*** (Lv.{charDict['Level']}): {charDict['Race']}, {charDict['Class']}\n"
 
                     if 'Guild' in charDict:
                         charString += f"\a\a+ Guild: {charDict['Guild']}\n"
@@ -1823,10 +1823,10 @@ class Character(commands.Cog):
 
             cpSplit = charDict['CP'].split('/')
             if float(cpSplit[0]) >= float(cpSplit[1]):
-                footer += f'\n❕ You need to level up! Use {commandPrefix}levelup before playing in another quest.'
+                footer += f'\n:warning: You need to level up! Use `{commandPrefix}levelup` before playing in another quest.'
 
             if charLevel == 4 or charLevel == 10 or charLevel == 16:
-                footer += f'\n❕ You will no longer receive Tier {role} TP the next time you level. Please plan accordingly.'
+                footer += f'\n:warning: You will no longer receive Tier {role} TP the next time you level up! Please plan accordingly.'
 
             if 'Death' in charDict:
                 statusEmoji = "⚰️"
@@ -1994,10 +1994,10 @@ class Character(commands.Cog):
             try:
                 r = requests.head(url)
                 if r.status_code != requests.codes.ok:
-                    await ctx.channel.send(content=f'It looks like the URL is either invalid or contains a broken image. Please follow this format:\n`{commandPrefix}image "character name" URL`.\n') 
+                    await ctx.channel.send(content=f'It looks like the URL is either invalid or contains a broken image. Please follow this format:\n```yaml\n{commandPrefix}image "character name" URL```\n') 
                     return
             except:
-                await ctx.channel.send(content=f'It looks like the URL is either invalid or contains a broken image. Please follow this format:\n`{commandPrefix}image "character name" URL`.\n') 
+                await ctx.channel.send(content=f'It looks like the URL is either invalid or contains a broken image. Please follow this format:\n```yaml\n{commandPrefix}image "character name" URL```\n') 
                 return
               
             try:
@@ -2008,7 +2008,7 @@ class Character(commands.Cog):
                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
             else:
                 print('Success')
-                await ctx.channel.send(content=f'I have updated the image for the character {char}. Please check using the `{commandPrefix}info` command.')
+                await ctx.channel.send(content=f'I have updated the image for the character ***{char}***. Please double-check using one of the following commands:\n```yaml\n{commandPrefix}info "character name"\n{commandPrefix}char "character name"\n{commandPrefix}i "character name"```')
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @commands.command(aliases=['lvl', 'lvlup', 'lv'])
@@ -2161,7 +2161,7 @@ class Character(commands.Cog):
                     elif tReaction.emoji == '✅':
                         levelUpEmbed.clear_fields()
                         if baseClass['Name'] in failMulticlassList:
-                            await levelUpEmbedmsg.edit(embed=None, content=f"You cannot multiclass right now because your base class, `{baseClass['Name']}` requires at least `{baseClass['Multiclass']}` \nCurrent stats: **STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}")
+                            await levelUpEmbedmsg.edit(embed=None, content=f"You cannot multiclass right now because your base class, **{baseClass['Name']}**, requires at least **{baseClass['Multiclass']}**.\nCurrent stats: **STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}")
                             await levelUpEmbedmsg.clear_reactions()
                             self.bot.get_command('levelup').reset_cooldown(ctx)
                             return
@@ -2315,7 +2315,7 @@ class Character(commands.Cog):
                     else:
                         statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
 
-                levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: ({totalCP}) CP'
+                levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: {totalCP} CP'
                 levelUpEmbed.description = levelUpEmbed.description + f"\n{charFeatsGainedStr}"
                 levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
                 levelUpEmbed.clear_fields()
@@ -2393,7 +2393,7 @@ class Character(commands.Cog):
                     await author.remove_roles(roleRemove)
 
                 levelUpEmbed.clear_fields()
-                await levelUpEmbedmsg.edit(content=f"**LEVEL UP*!** :arrow_up:\n:warning: **Don't forget to spend your TP!** Use the following command to spend your TP:\n```yaml\n$tp buy {charName} \"magic item\"```", embed=levelUpEmbed)
+                await levelUpEmbedmsg.edit(content=f"**LEVEL UP!** :arrow_up:\n:warning: **Don't forget to spend your TP using the following command**:\n```yaml\n$tp buy {charName} \"magic item\"```", embed=levelUpEmbed)
 
                 if roleName != "":
                     levelUpEmbed.title = f":tada: {roleName} role acquired! :tada:\n" + levelUpEmbed.title
@@ -2417,7 +2417,7 @@ class Character(commands.Cog):
 
         if charRecords:
             if 'Death' in charRecords:
-                await channel.send(f"You cannot attune items with a dead character! Use the following command to decide their fate:\n```yaml\n$death {charRecords['Name']}```")
+                await channel.send(f"You cannot attune to items with a dead character! Use the following command to decide their fate:\n```yaml\n$death \"{charRecords['Name']}\"```")
                 return
 
             # Check number of items character can attune to. Artificer has exceptions.
@@ -2550,7 +2550,7 @@ class Character(commands.Cog):
 
         if charRecords:
             if 'Death' in charRecords:
-                await channel.send(f"You cannot unattune from items with a dead character. Use the following command to decide their fate:\n```yaml\n$death {charRecords['Name']}```")
+                await channel.send(f"You cannot unattune from items with a dead character. Use the following command to decide their fate:\n```yaml\n$death \"{charRecords['Name']}\"```")
                 return
 
             if "Attuned" not in charRecords:

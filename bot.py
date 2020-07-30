@@ -49,16 +49,16 @@ async def on_command_error(ctx,error):
             commandParent = commandParent.name + " "
 
         if error.retry_after == float('inf'):
-            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{commandParent}{ctx.invoked_with}`*** is already in progress, please complete the command before trying again.")
+            await ctx.channel.send(f"Sorry, the command **`{commandPrefix}{commandParent}{ctx.invoked_with}`** is already in progress, please complete the command before trying again.")
         else:
-            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{commandParent}{ctx.invoked_with}`*** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
+            await ctx.channel.send(f"Sorry, the command **`{commandPrefix}{commandParent}{ctx.invoked_with}`** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
         return
 
     elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
         return
 
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.channel.send(f'Sorry, the command ***`{commandPrefix}{ctx.invoked_with}`*** is not valid, please try again!')
+        await ctx.channel.send(f'Sorry, the command **`{commandPrefix}{ctx.invoked_with}`** is not valid, please try again!')
 
     else:
         ctx.command.reset_cooldown(ctx)
