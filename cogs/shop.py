@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, commandPrefix, numberEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack
+from bfunc import db, commandPrefix,  alphaEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack
 
 class Shop(commands.Cog):
     def __init__ (self, bot):
@@ -118,7 +118,7 @@ class Shop(commands.Cog):
                     ctx.command.reset_cooldown(ctx)
                     return
 
-                newGP = charRecords['GP'] - gpNeeded
+                newGP = round(charRecords['GP'] - gpNeeded , 2)
                 shopEmbed.title = f"{charRecords['Name']} is purchasing: {amount}x {bRecord['Name']}"
                 shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount}x {bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
@@ -195,7 +195,7 @@ class Shop(commands.Cog):
                 sameMessage = False
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return sameMessage and (r.emoji in numberEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
+                return sameMessage and (r.emoji in alphaEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
 
             buyList = []
             buyString = ""
@@ -215,10 +215,18 @@ class Shop(commands.Cog):
             # Iterate through character's inventory to see if item is sellable
             if charRecords['Inventory'] != "None":
                 for k in charRecords['Inventory'].keys():
+                    print(k)
                     if buyItem.lower() in k.lower():
                         buyList.append(k)
-                        buyString += f"{numberEmojis[numI]} {k} \n"
+                        buyString += f"{alphaEmojis[numI]} {k} \n"
                         numI += 1
+
+            # If the query is in the character's consumables, reject it.
+            if buyItem.lower() in charRecords['Consumables'].lower():
+                await channel.send(f"`{buyItem}` is a consumable item and is not sellable. Please try again with a different item.")
+                ctx.command.reset_cooldown(ctx)
+                return
+
 
             # If there are multiple matches user can pick the correct one
             if (len(buyList) > 1):
@@ -250,7 +258,7 @@ class Shop(commands.Cog):
             elif len(buyList) == 1:
                 buyItem = buyList[0]
             else:
-                await channel.send(f'**{buyItem}** doesn\'t exist or is an unsellable magic item! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'**{buyItem}** is not in your inventory to sell! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
