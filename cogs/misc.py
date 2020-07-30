@@ -12,8 +12,8 @@ class Misc(commands.Cog, name='Misc'):
         self.current_message= None
         #0: No message search so far, 1: Message searched, but no new message made so far, 2: New message made
         self.past_message_check= 0
-        self.quest_board_channel_id = 382027190633627649 #382027190633627649 725577624180621313
-        self.category_channel_id = 382027737189056544 #382027737189056544  728456686024523810
+        self.quest_board_channel_id = 728476108940640297 #382027190633627649 728476108940640297
+        self.category_channel_id = 728456686024523810 #382027737189056544  728456686024523810
 
 
     #https://discordapp.com/channels/382025597041246210/432358370578530310/733403065251528795 nice comments that make it worth it <3
@@ -254,9 +254,7 @@ class Misc(commands.Cog, name='Misc'):
                         if tierMention.name in tierMap:
                             channel_dm_dic[mention.mention][1].add(tierMap[tierMention.name])
         #build the message using the pairs built above
-        print(channel.guild.me)
         for c in game_channel_category.text_channels:
-            print(c, c.permissions_for(channel.guild.me).view_channel)
             if(c.permissions_for(channel.guild.me).view_channel):
                 tierAddendum = ""
                 if(len(channel_dm_dic[c.mention][1])> 0):
