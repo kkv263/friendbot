@@ -71,7 +71,7 @@ class Shop(commands.Cog):
                 return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
             #If player is trying to buy spell scroll, search for spell scroll in DB, and find level it can be bought at 
-            if "spell scroll" or "potion" in buyItem.lower():
+            if "spell scroll" in buyItem.lower():
                 spellItem = buyItem.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
                 sRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'spells', spellItem) 
 
