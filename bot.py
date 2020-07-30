@@ -172,7 +172,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedShop.title = 'Shop Commands'
     helpEmbedShop.add_field(name=f'▫️ Buying an Item\n{commandPrefix}shop buy "character name" "item" #', value="Purchase a specified number of a single mundane item from the shop.", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Selling a Mundane Item\n{commandPrefix}shop sell "character name" "item" #', value="Sell a specified number of a single mundane item to the shop", inline=False)
-    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell" #', value="Copy a spell scroll into your character's spellbook. Limited to classes that have access to a spellbook. Some subclasses offer discounts which are applied.", inline=False)
+    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell"', value="Copy a spell scroll into your character's spellbook. Limited to classes that have access to a spellbook. Some subclasses offer discounts which are applied.", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Training Extra Competencies\n{commandPrefix}proficiency training "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on).", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Training Noodle Competencies\n{commandPrefix}proficiency noodle "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on), discounted and with extra benefits for those with a Noodle role!", inline=False)
 

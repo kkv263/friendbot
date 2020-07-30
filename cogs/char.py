@@ -107,6 +107,8 @@ class Character(commands.Cog):
         bankTP1 = 0
         bankTP2 = 0
 
+        # TODO: add maxStats = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20} to keep track of max for character (magic items + manual/tomes)
+
         charDict = {
           'User ID': str(author.id),
           'Name': name,
