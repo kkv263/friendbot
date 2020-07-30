@@ -297,7 +297,7 @@ class Misc(commands.Cog, name='Misc'):
                     await self.current_message.edit(content=new_text)
                 else:
                     await self.current_message.delete()
-                    self.current_message = await self.current_message.send(content=new_text)
+                    self.current_message = await self.current_message.channel.send(content=new_text)
             else:
                 self.past_message_check = 2
                 if(self.current_message):                
