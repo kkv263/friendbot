@@ -212,7 +212,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                 sameMessage = False
                 if apiEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((r.emoji in alphaEmojis[:min(len(records), 20)]) or (str(r.emoji) == '❌')) and u == author
+                return ((r.emoji in alphaEmojis[:min(len(records), 20)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
             #inform the user of the current information and ask for their selection of an item
             apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nThe maximum results shown are 20. If the result you are looking for is not here, please react with ❌ and be more specific.", value=infoString, inline=False)
             if not apiEmbedmsg or apiEmbedmsg == "Fail":
@@ -274,7 +274,7 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
                 sameMessage = False
                 if charEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((r.emoji in alphaEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌')) and u == author
+                return ((r.emoji in alphaEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
 
             charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
             charEmbedmsg = await channel.send(embed=charEmbed)

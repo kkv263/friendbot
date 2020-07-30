@@ -31,9 +31,9 @@ bot.remove_command('help')
 
 @bot.event
 async def on_command_error(ctx,error):
-    # TODO: Fix for char create and guild create
     msg = None
     print(ctx.invoked_with)
+    print(ctx.command.parent)
     print(error)
 
     if isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
@@ -42,17 +42,23 @@ async def on_command_error(ctx,error):
         return
 
     elif isinstance(error, commands.CommandOnCooldown):
-        if error.retry_after == float('inf'):
-            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{ctx.invoked_with}` is already in progress, please complete the command before trying again.")
+        commandParent = ctx.command.parent
+        if commandParent is None:
+            commandParent = ''
         else:
-            await ctx.channel.send(f"Sorry, the command `{commandPrefix}{ctx.invoked_with}` is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
+            commandParent = commandParent.name + " "
+
+        if error.retry_after == float('inf'):
+            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{commandParent}{ctx.invoked_with}`*** is already in progress, please complete the command before trying again.")
+        else:
+            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{commandParent}{ctx.invoked_with}`*** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
         return
 
     elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
         return
 
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.channel.send(f'Sorry, the command `{commandPrefix}{ctx.invoked_with}` is not valid, please try again!')
+        await ctx.channel.send(f'Sorry, the command ***`{commandPrefix}{ctx.invoked_with}`*** is not valid, please try again!')
 
     else:
         ctx.command.reset_cooldown(ctx)
@@ -64,7 +70,7 @@ async def help(ctx, *, pageString=''):
         sameMessage = False
         if helpMsg.id == r.message.id:
             sameMessage = True
-        return (r.emoji in numberEmojis[:numPages]) and u == ctx.author
+        return (r.emoji in numberEmojis[:numPages]) and u == ctx.author and sameMessage
 
     helpEmbedMenu = discord.Embed()
     helpEmbedChar = discord.Embed()
@@ -111,15 +117,15 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedChar.title = 'Character Commands'
     helpEmbedChar.add_field(name=f'▫️ User Information\n{commandPrefix}user', value="View your total quests played with all of your characters, your Noodles, and a list of your characters.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Creation\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Create a character with the specified parameters.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Multiclass Character Creation\n{commandPrefix}create "character name" level "race" "class1 # / class2 #..." "background" STR DEX CON INT WIS CHA "MIT items" "RIT items"', value="Create a character as above, except with multiclassing!", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Leveling Up\n{commandPrefix}levelup "character name"\n[{commandPrefix}lvl, {commandPrefix}lv, {commandPrefix}lvlup]', value="Level up the specified character to the next level.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Character Creation\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character with the specified parameters.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Multiclass Character Creation\n{commandPrefix}create "character name" level "race" "class1 # / class2 #..." "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character as above, except with multiclassing!", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Leveling Up\n{commandPrefix}levelup "character name"\n[{commandPrefix}lvlup, {commandPrefix}lvl, {commandPrefix}lvl]', value="Level up the specified character to the next level.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Respec\n{commandPrefix}respec "character name" "new character name" level "race" "class" "background" STR DEX CON INT WIS CHA', value="Respec the specified character based on the amount of CP they have. You can choose a new name, class, race, background, and stats for them; however, TP and gp will be assigned to them based on the amount of CP they have and everything else that they had will be reset.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Information\n{commandPrefix}info "character name"\n[{commandPrefix}i, {commandPrefix}char]', value="View the stats and general information of the specified character.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Character Information\n{commandPrefix}info "character name"\n[{commandPrefix}char, {commandPrefix}i]', value="View the stats and general information of the specified character.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Character Inventory\n{commandPrefix}inventory "character name"\n[{commandPrefix}inv, {commandPrefix}bag]', value="View the inventory of the specified character. The inventory lists mundane items, consumables, and magic items.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Image\n{commandPrefix}image "character name" url\n[{commandPrefix}img]', value="Add an image to the specified character's information page (`$info` command) using a URL. Please keep images SFW!", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Character Image\n{commandPrefix}image "character name" "URL"\n[{commandPrefix}img]', value="Add an image to the specified character's information page (`$info` command) using a URL. Please keep images SFW!", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Attunement\n{commandPrefix}attune "character name" "magic item"\n[{commandPrefix}att]', value="Attune to a magic item with the specified character. Stat bonuses from magic items are applied to the character's stats when attuned to the item.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Unattunement\n{commandPrefix}unattune "character name" "magic item"\n[{commandPrefix}uatt, {commandPrefix}unatt]', value="Unattune from a magic item with the specified character. Stat bonuses from magic items are removed from the character's stats when unattuned from the item.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Unattunement\n{commandPrefix}unattune "character name" "magic item"\n[{commandPrefix}unatt, {commandPrefix}uatt]', value="Unattune from a magic item with the specified character. Stat bonuses from magic items are removed from the character's stats when unattuned from the item.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Retire\n{commandPrefix}retire "character name"', value="Retire the specified character. They will no longer be accessible.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Death Options\n{commandPrefix}death "character name"', value=f"Decide the fate of the specified character who died during a quest.", inline=False)
 
@@ -142,15 +148,15 @@ async def help(ctx, *, pageString=''):
 # TIMER COMMANDS (DURING A QUEST) MENU ($help timer2)
 
     helpEmbedTimerTwo.title = f"Timer Commands (During a Quest)\n{commandPrefix}timer, {commandPrefix}t"
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Yourself (Player)\n{commandPrefix}timer addme "charactername" "consumables"', value="Add yourself to the running timer. Your rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Using Consumables (Player)\n- consumable', value="Use the specified consumable your character brought with them into the quest. This will immediately delete it from their inventory.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself (Player)\n{commandPrefix}timer removeme', value="Remove yourself from the running timer. Your rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the running timer. Their individual rewards will be displayed once the timer has been stopped.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the running timer. Their rewards will be displayed once the timer has stopped.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Yourself (Player)\n{commandPrefix}timer addme "charactername" "consumables"', value="Add yourself to the timer with the consumables that your character is bringing with them.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Using Consumables (Player)\n- "consumable"', value="Use the specified consumable that your character brought with them. This will immediately delete it from their inventory.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself (Player)\n{commandPrefix}timer removeme', value="Remove yourself from the timer.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the timer with their character and consumables.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the timer.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Awarding Reward Items (DM)\n{commandPrefix}timer reward @player "reward item 1, reward item 2, [...]"', value="Reward the mentioned player one or more reward item(s) from the Reward Item Table.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Killing a Character (DM)\n{commandPrefix}timer death @player', value="Remove the mentioned player from the timer when their character has died during the quest. The player can choose if their character is permanently retired, survives the quest with no rewards, or is revived afterwards at the cost of some gp in order to receive rewards.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Transferring the Timer (DM)\n{commandPrefix}timer transfer', value="Transfer the timer from yourself to the mentioned user who will become the timer's new owner. They will have full control over the running timer.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Stopping the Timer (DM)\n{commandPrefix}timer stop', value="Stop the running timer. This will immediately display how much CP, TP, and gp each player earned. Players who joined late will have their rewards displayed separately. The timer can only be stopped by its owner or a Mod.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Transferring the Timer (DM)\n{commandPrefix}timer transfer @player', value="Transfer the timer from yourself to the mentioned user who will become the timer's new owner. They will have full control over the timer.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Stopping the Timer (DM)\n{commandPrefix}timer stop', value="Stop the timer and immediately display how much CP, TP, and gp each player earned. Players who joined late or left early will have their rewards displayed separately. The timer can only be stopped by its owner or a Mod.", inline=False)
 
 
 # ITEM TABLE CCOMMANDS MENU ($help itemtable)
@@ -174,7 +180,7 @@ async def help(ctx, *, pageString=''):
 # TP COMMANDS MENU ($help tp)
 
     helpEmbedTp.title = 'TP Commands'
-    helpEmbedTp.add_field(name=f'▫️ Acquiring a Magic Item\n{commandPrefix}tp buy "character name" "MIT Item" #', value="Put TP towards a magic item or acquire it with gp.", inline=False)
+    helpEmbedTp.add_field(name=f'▫️ Acquiring a Magic Item\n{commandPrefix}tp buy "character name" "magic item"', value="Put TP towards a magic item or acquire it with gp.", inline=False)
     helpEmbedTp.add_field(name=f'▫️ Discarding an Incomplete Magic Item\n{commandPrefix}tp discard "character name"', value="Discard an incomplete magic item as well as all TP that has been put towards it.", inline=False)
     helpEmbedTp.add_field(name=f'▫️ Abandoning Leftover TP\n{commandPrefix}tp abandon "character name" tier', value="Abandon leftover TP in the tier of your choosing.", inline=False)
 
@@ -202,7 +208,7 @@ async def help(ctx, *, pageString=''):
     try:
         hReact, hUser = await bot.wait_for("reaction_add", check=helpCheck, timeout=30.0)
     except asyncio.TimeoutError:
-        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. If you need to cycle through the list of commands again use `{commandPrefix}help`!")
+        await helpMsg.edit(content=f"Your help menu has timed out! I'll leave this page open for you. Use the first command if you need to cycle through help menu again or use any of the other commands to view a specific help menu:\n```yaml\n{commandPrefix}help char\n{commandPrefix}help timer1\n{commandPrefix}help timer2\n{commandPrefix}help itemtable\n{commandPrefix}help shop\n{commandPrefix}help tp\n{commandPrefix}help guild```")
         await helpMsg.clear_reactions()
         await helpMsg.add_reaction('💤')
         return

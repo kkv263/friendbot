@@ -32,6 +32,10 @@ class Shop(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
             msg = "The amount you want to buy/sell must be a number. "
+        # bot.py handles this, so we don't get traceback called.
+        elif isinstance(error, commands.CommandOnCooldown):
+            return
+
         if msg:
             if ctx.command.name == "buy":
                 msg += f"Please follow this format:\n`{commandPrefix}shop buy \"character name\" \"item\" amount`.\n"
@@ -48,13 +52,15 @@ class Shop(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
 
-      
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @shop.command()
     async def buy(self, ctx, charName, buyItem, amount=1):
         channel = ctx.channel
         author = ctx.author
         shopEmbed = discord.Embed()
         shopCog = self.bot.get_cog('Shop')
+
+        # Check if character exists
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
 
         if charRecords:
@@ -62,22 +68,27 @@ class Shop(commands.Cog):
                 sameMessage = False
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+                return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
+            #If player is trying to buy spell scroll, search for spell scroll in DB, and find level it can be bought at 
             if "spell scroll" in buyItem.lower():
                 spellItem = buyItem.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
                 sRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'spells', spellItem) 
 
                 if not sRecord:
                     await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                    ctx.command.reset_cooldown(ctx)
                     return
 
                 if sRecord['Level'] > 5:
                     await channel.send(f"You cannot purchase spell scroll `{sRecord['Name']}`; Spell scrolls of levels higher than 5 cannot be purchased.")
+                    ctx.command.reset_cooldown(ctx)
                     return
+
                 bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', 'spell scroll') 
                 bRecord['Name'] = f"Spell Scroll ({sRecord['Name']})"
     
+                # GP Prices for Spell Scrolls
                 if sRecord['Level'] == 0:
                     bRecord['GP'] = 25
                 elif sRecord['Level'] == 1:
@@ -91,9 +102,11 @@ class Shop(commands.Cog):
                 elif sRecord['Level'] == 5:
                     bRecord['GP'] = 1000
 
+            # If it's anything else, see if it exists
             else:
                 bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop',buyItem) 
         
+            # Check if there's enough GP to buy
             if bRecord:
                 gpNeeded = (bRecord['GP'] * amount)
 
@@ -102,9 +115,10 @@ class Shop(commands.Cog):
 
                 if float(charRecords['GP']) < gpNeeded:
                     await channel.send(f"You do not have enough GP to purchase `{bRecord['Name']}` - Quantity ({amount})")
+                    ctx.command.reset_cooldown(ctx)
                     return
 
-                newGP = charRecords['GP'] - gpNeeded
+                newGP = round(charRecords['GP'] - gpNeeded , 2)
                 shopEmbed.title = f"Buying: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
                 shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount} x {bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
@@ -120,14 +134,17 @@ class Shop(commands.Cog):
                 except asyncio.TimeoutError:
                     await shopEmbedmsg.delete()
                     await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                    ctx.command.reset_cooldown(ctx)
                     return
                 else:
                     await shopEmbedmsg.clear_reactions()
                     if tReaction.emoji == '❌':
                         await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}shop buy` command and try again!")
                         await shopEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
                         return
                     elif tReaction.emoji == '✅':
+                        # If it's a consumable, throw it in consumables, otherwise magic item list
                         if "Consumable" in bRecord:
                             if charRecords['Consumables'] != "None":
                                 charRecords['Consumables'] += ', ' + bRecord['Name']
@@ -150,12 +167,14 @@ class Shop(commands.Cog):
                         else:
                             shopEmbed.description = f"**{bRecord['Name']} purchased! (x{amount})**\n\n**Current gp**: {newGP}\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
+                            ctx.command.reset_cooldown(ctx)
 
             else:
                 await channel.send(f'`{buyItem}` doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
-    # TODO: Sell consumables
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @shop.command()
     async def sell(self, ctx , charName, buyItem, amount=1):
         channel = ctx.channel
@@ -164,34 +183,44 @@ class Shop(commands.Cog):
         shopCog = self.bot.get_cog('Shop')
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
 
+        # Check if character exists.
         if charRecords:
             def shopEmbedCheck(r, u):
                 sameMessage = False
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+                return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
             
             def apiEmbedCheck(r, u):
                 sameMessage = False
                 if shopEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return (r.emoji in numberEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
+                return sameMessage and (r.emoji in numberEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
 
             buyList = []
             buyString = ""
             numI = 0
+
+            # Check if the item being sold is a spell scroll, if it is... reject it
             if "spell scroll" in buyItem.lower():
                 await channel.send(f'You cannot sell spell scrolls to the shop. Please try again with a different item.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
-            print(charRecords['Inventory'].keys())
+            if charRecords['Inventory'] == "None":
+                await channel.send(f'You do not have any items to sell. Please try again with an item.')
+                ctx.command.reset_cooldown(ctx)
+                return
 
-            for k in charRecords['Inventory'].keys():
-                if buyItem.lower() in k.lower():
-                    buyList.append(k)
-                    buyString += f"{numberEmojis[numI]} {k} \n"
-                    numI += 1
+            # Iterate through character's inventory to see if item is sellable
+            if charRecords['Inventory'] != "None":
+                for k in charRecords['Inventory'].keys():
+                    if buyItem.lower() in k.lower():
+                        buyList.append(k)
+                        buyString += f"{numberEmojis[numI]} {k} \n"
+                        numI += 1
 
+            # If there are multiple matches user can pick the correct one
             if (len(buyList) > 1):
                 shopEmbed.add_field(name=f"There seems to be multiple results for `{buyItem}`, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
                 if not shopEmbedmsg:
@@ -222,31 +251,36 @@ class Shop(commands.Cog):
                 buyItem = buyList[0]
             else:
                 await channel.send(f'`{buyItem}` doesn\'t exist or is a unsellable magic item! Check to see if it is a valid item and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'shop', buyItem, True) 
         
             if bRecord:
+                # See if item is a magic item (they are unsellable)
                 if 'Magic Item' in bRecord:
                     await channel.send(f"{bRecord['Name']} is a magic item and is not sellable. Please try again with a different item.")
+                    ctx.command.reset_cooldown(ctx)
                     return
                 
                 if f"{bRecord['Name']}" not in charRecords['Inventory']:
                     await channel.send(f"You do not have any {bRecord['Name']} to sell!")
+                    ctx.command.reset_cooldown(ctx)
                     return
 
                 elif charRecords['Inventory'][f"{bRecord['Name']}"] < amount:
                     await channel.send(f"You do not have {amount} {bRecord['Name']} to sell!")
+                    ctx.command.reset_cooldown(ctx)
                     return 
 
                 if "Pack" in bRecord:
                     bRecord['GP'] /= bRecord['Pack']
 
                 gpRefund = round((bRecord['GP'] / 2) * amount, 2)
-                newGP = charRecords['GP'] + gpRefund 
+                newGP = round(charRecords['GP'] + gpRefund,2)
                     
                 shopEmbed.title = f"Selling: {amount} x {bRecord['Name']}: ({charRecords['Name']})"
-                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount} x {bRecord['Name']}: ** (+{gpRefund} gp) \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount} x {bRecord['Name']}: ** (+{gpRefund} gp)\n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -260,12 +294,14 @@ class Shop(commands.Cog):
                 except asyncio.TimeoutError:
                     await shopEmbedmsg.delete()
                     await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                    ctx.command.reset_cooldown(ctx)
                     return
                 else:
                     await shopEmbedmsg.clear_reactions()
                     if tReaction.emoji == '❌':
                         await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}tp buy` command and try again!")
                         await shopEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
                         return
                     elif tReaction.emoji == '✅':
                         charRecords['Inventory'][f"{bRecord['Name']}"] -= amount
@@ -280,12 +316,15 @@ class Shop(commands.Cog):
                         else:
                             shopEmbed.description = f"**{bRecord['Name']} sold! (x{amount})** \n\n**Current gp**: {newGP}\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
+                            ctx.command.reset_cooldown(ctx)
 
             else:
                 await channel.send(f'`{buyItem}` doesn\'t exist or is a unsellable magic item! Check to see if it is a valid item and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
                 return
 
 
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @shop.command()
     async def copy(self, ctx , charName, spellName):
         channel = ctx.channel
@@ -298,6 +337,7 @@ class Shop(commands.Cog):
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
             if 'Wizard' not in charRecords['Class'] and 'Ritual Caster' not in charRecords['Feats'] and 'Warlock' not in charRecords['Class']:
                 await channel.send(f"You not have the right class/subclass or feat to copy spells!")
+                ctx.command.reset_cooldown(ctx)
                 return 
 
             consumes = charRecords['Consumables'].split(', ')
@@ -308,6 +348,7 @@ class Shop(commands.Cog):
                 if 'Spellbook' in charRecords:
                     if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
                         await channel.send(f"{charRecords['Name']} does already has the spell `{bRecord['Name']}` to copied in their spellbook!")
+                        ctx.command.reset_cooldown(ctx)
                         return  
 
                 if 'Free Spells' not in charRecords:
@@ -321,6 +362,7 @@ class Shop(commands.Cog):
 
                     if not spellCopied:
                         await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into their spellbook!")
+                        ctx.command.reset_cooldown(ctx)
                         return  
 
                     gpNeeded = bRecord['Level'] * 50
@@ -329,16 +371,19 @@ class Shop(commands.Cog):
 
                     if gpNeeded > charRecords['GP']:
                         await channel.send(f"{charRecords['Name']} does not have enough gp to copy `{bRecord['Name']}`.")
+                        ctx.command.reset_cooldown(ctx)
                         return
 
                 else:
                     gpNeeded = 0
                     if bRecord['Level'] > 1:
                         await channel.send(f"`{bRecord['Name']}` is not a level 1 spell that can be copied into your spellbook.")
+                        ctx.command.reset_cooldown(ctx)
                         return     
 
                     if 'Wizard' not in bRecord['Classes']:
                         await channel.send(f"`{bRecord['Name']}` is not a Wizard spell that can be copied into your spellbook.")
+                        ctx.command.reset_cooldown(ctx)
                         return     
                     charRecords['Free Spells'] -= 1
 
@@ -367,11 +412,12 @@ class Shop(commands.Cog):
                     shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
                     shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell scroll of {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP}\n"
                     await channel.send (embed=shopEmbed)
+                    ctx.command.reset_cooldown(ctx)
 
             else:
                 await channel.send(f'`{spellName}` doesn\'t exist! Check to see if it is a valid spell and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
                 return
-                
                 
     @commands.group(aliases=['prof'])
     async def proficiency(self, ctx):
@@ -400,7 +446,7 @@ class Shop(commands.Cog):
             sameMessage = False
             if shopEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
         
         #calculate gp after purchase
         newGP = charRecords['GP'] - gpNeeded

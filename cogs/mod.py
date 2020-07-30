@@ -122,7 +122,7 @@ class Mod(commands.Cog):
                             return 
 
                 elif removeKey == "Inventory":
-                    iRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'shop', removeValue);
+                    iRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'shop', removeValue)
                     if iRecord:
                         removeRecords = charRecords['Inventory']
                         print(removeRecords)
@@ -218,7 +218,7 @@ class Mod(commands.Cog):
                             await channel.send(f'The magic item `{addValue}` does not exist, or is not a magic item. Please try again.')
                             return 
                 elif addKey == "Inventory":
-                    iRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'shop', addValue);
+                    iRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'shop', addValue)
                     if iRecord:
                         addRecords = charRecords['Inventory']
                         if addRecords == 'None':
