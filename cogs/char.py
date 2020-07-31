@@ -1853,9 +1853,7 @@ class Character(commands.Cog):
             tpString = ""
             for i in range (1,5):
                 if f"T{i} TP" in charDict:
-                    # charEmbed.add_field(name=f"T{i} TP", value=charDict[f"T{i} TP"], inline=True)
                     tpString += f"**Tier {i} TP**: {charDict[f'T{i} TP']} " 
-            # statTemp = { 'STR': charDict['STR'] ,'DEX': charDict['DEX'],'CON': charDict['CON'], 'INT': charDict['INT'], 'WIS': charDict['WIS'],'CHA': charDict['CHA']}
             charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=True)
             if 'Guild' in charDict:
                 charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\nGuild Rank: {charDict['Guild Rank']}", inline=True)
@@ -1867,6 +1865,10 @@ class Character(commands.Cog):
             if 'Max Stats' in charDict:
                 maxStatDict = charDict['Max Stats']
 
+            for sk in charDict['Max Stats'].keys():
+                if charDict[sk] > charDict['Max Stats'][sk]:
+                    charDict[sk] = charDict['Max Stats'][sk]
+                   
             specialCollection = db.special
             specialRecords = list(specialCollection.find())
 
@@ -2324,6 +2326,11 @@ class Character(commands.Cog):
                     else:
                         statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
 
+                if 'Max Stats' not in infoRecords:
+                    infoRecords['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
+                
+                data['Max Stats'] = infoRecords['Max Stats']
+
                 #Special stat bonuses (Barbarian cap / giant soul sorc)
                 specialCollection = db.special
                 specialRecords = list(specialCollection.find())
@@ -2333,26 +2340,28 @@ class Character(commands.Cog):
                         for c in subclasses:
                             if s['Bonus Level'] == c['Level'] and s['Name'] in f"{c['Name']} ({c['Subclass']})":
                                 if 'MAX' in s['Stat Bonuses']:
-                                    if 'Max Stats' not in infoRecords:
-                                        infoRecords['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
-                                    
-                                    data['Max Stats'] = infoRecords['Max Stats']
-
                                     statSplit = s['Stat Bonuses'].split('MAX ')[1].split(', ')
                                     for stat in statSplit:
                                         maxSplit = stat.split(' +')
                                         data[maxSplit[0]] += int(maxSplit[1])
+                                        charStats[maxSplit[0]] += int(maxSplit[1])
                                         data['Max Stats'][maxSplit[0]] += int(maxSplit[1]) 
 
                                     specialStatStr = f"Level {s['Bonus Level']} {c['Name']} stat bonus unlocked! - {s['Stat Bonuses']}"
 
-                infoRecords['CON'] = data['CON']
+
+                maxStatStr = ""
+                for sk in data['Max Stats'].keys():
+                    if charStats[sk] > data['Max Stats'][sk]:
+                        charStats[sk] = data['Max Stats'][sk]
+                        maxStatStr += f"\n{charFeatsGained} will not increase {infoRecords['Name']}'s {sk} because the MAX is {data['Max Stats'][sk]}."
+
+                infoRecords['CON'] = charStats['CON']
                 charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
                 data['HP'] = charHP
 
                 levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: {totalCP} CP'
-
-                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{data['STR']} **DEX**:{data['DEX']} **CON**:{data['CON']} **INT**:{data['INT']} **WIS**:{data['WIS']} **CHA**:{data['CHA']}" + f"\n{charFeatsGainedStr}\n{specialStatStr}"
+                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}" + f"\n{charFeatsGainedStr}{maxStatStr}\n{specialStatStr}"
                 levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
                 levelUpEmbed.clear_fields()
 
