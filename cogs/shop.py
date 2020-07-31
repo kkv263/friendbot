@@ -253,7 +253,7 @@ class Shop(commands.Cog):
                         return None, shopEmbed, shopEmbedmsg
                 shopEmbed.clear_fields()
                 await shopEmbedmsg.clear_reactions()
-                buyItem = buyList[int(tReaction.emoji[0]) - 1]
+                buyItem = buyList[alphaEmojis.index(tReaction.emoji)]
 
             elif len(buyList) == 1:
                 buyItem = buyList[0]
