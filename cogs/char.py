@@ -107,8 +107,6 @@ class Character(commands.Cog):
         bankTP1 = 0
         bankTP2 = 0
 
-        # TODO: add maxStats = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20} to keep track of max for character (magic items + manual/tomes)
-
         charDict = {
           'User ID': str(author.id),
           'Name': name,
@@ -1213,7 +1211,7 @@ class Character(commands.Cog):
                     msg += f":warning: Your stats plus your race's modifers do not add up to 27 using point buy {totalPoints}/27. Please check your point allocation.\n"
             print (statsArray) 
 
-        #feats
+        #Feats
         if msg == "":
             featLevels = []
             featChoices = []
@@ -1231,7 +1229,8 @@ class Character(commands.Cog):
                 if 'Rogue' in c['Class']['Name'] and int(c['Level']) > 9:
                     featLevels.append(10)
 
-            featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, rRecord['Name'], charDict['Class'], cRecord, featLevels, charEmbed, charEmbedmsg, charStats, "")
+            featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, rRecord['Name'], charDict['Class'], cRecord, featLevels, charEmbed, charEmbedmsg, charDict, "")
+
             if not featsChosen and not statsFeats and not charEmbedmsg:
                 return
             if featsChosen != list():
@@ -1865,24 +1864,14 @@ class Character(commands.Cog):
             
             maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
 
+            if 'Max Stats' in charDict:
+                maxStatDict = charDict['Max Stats']
+
             specialCollection = db.special
             specialRecords = list(specialCollection.find())
 
             totalHPAdd = 0
             for s in specialRecords:
-                if s['Type'] == "Race" or s['Type'] == "Class" or s['Type'] == "Feats" or s['Type'] == "Magic Items":
-                    if s['Name'] in charDict[s['Type']]:
-                        if 'Stat Bonuses' in s:
-                            if 'Bonus Level' in s:
-                                if (s['Bonus Level'] <= charLevel) and (s['Name'] in charDict['Class']) and ('/' not in charDict['Class']):
-                                    if 'MAX' in s['Stat Bonuses']:
-                                        maxItemSplit = s['Stat Bonuses'].split(' ')
-                                        if maxStatDict[maxItemSplit[2]] < int(maxItemSplit[1]):
-                                            maxStatDict[maxItemSplit[2]] += int(maxItemSplit[3])
-                                            charDict[maxItemSplit[2]] += int(maxItemSplit[3])
-
-                                            if charDict[maxItemSplit[2]] > maxStatDict[maxItemSplit[2]]:
-                                                charDict[maxItemSplit[2]] = maxStatDict[maxItemSplit[2]]
                                             
                                     
                 if 'Attuned' in charDict:
@@ -1930,7 +1919,7 @@ class Character(commands.Cog):
                                 maxStat = statSplit[0][:-3]
                                 statSplit[0] = statSplit[0].replace(maxStat, "")
                                 maxStat = maxStat.split(" ")
-                                maxStatDict[statSplit[0]] = int(maxStat[1])
+                                print(maxStatDict)
 
                             modStat = str(charDict[statSplit[0]])
                             modStat = modStat.split(' (')[0]
@@ -2048,6 +2037,12 @@ class Character(commands.Cog):
                 await channel.send(f'You cannot level up a dead character. Use the following command to decide their fate:\n```yaml\n$death "{charRecords["Name"]}"```')
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
+
+            if charLevel > 19:
+                await channel.send(f"{infoRecords['Name']} is level 20 and cannot level up anymore.")
+                self.bot.get_command('levelup').reset_cooldown(ctx)
+                return
+                
 
             elif float(cpSplit[0]) < float(cpSplit[1]):
                 await channel.send(f'***{charName}*** is not ready to level up. They currently have **{cpSplit[0]}/{cpSplit[1]}** CP.')
@@ -2284,15 +2279,14 @@ class Character(commands.Cog):
                 charFeatsGained = ""
                 charFeatsGainedStr = ""
                 if featLevels != list():
-                    featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, infoRecords['Race'], charClass, subclasses, featLevels, levelUpEmbed, levelUpEmbedmsg, charStats, charFeats)
+                    featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, infoRecords['Race'], charClass, subclasses, featLevels, levelUpEmbed, levelUpEmbedmsg, infoRecords, charFeats)
                     if not featsChosen and not statsFeats and not charEmbedmsg:
                         return
 
                     charStats = statsFeats 
+                    
                     if featsChosen != list():
                         charFeatsGained = featsChosen
-
-                charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
 
                 if charFeatsGained != "":
                     charFeatsGainedStr = f"Feats Gained: **{charFeatsGained}**"
@@ -2301,13 +2295,12 @@ class Character(commands.Cog):
                       'Class': charClass,
                       'Level': int(newCharLevel),
                       'CP': totalCP,
-                      'HP': charHP,
-                      'STR': charStats['STR'],
-                      'DEX': charStats['DEX'],
-                      'CON': charStats['CON'],
-                      'INT': charStats['INT'],
-                      'WIS': charStats['WIS'],
-                      'CHA': charStats['CHA'],
+                      'STR': int(charStats['STR']),
+                      'DEX': int(charStats['DEX']),
+                      'CON': int(charStats['CON']),
+                      'INT': int(charStats['INT']),
+                      'WIS': int(charStats['WIS']),
+                      'CHA': int(charStats['CHA']),
                 }
 
                 if charFeatsGained != "":
@@ -2331,9 +2324,35 @@ class Character(commands.Cog):
                     else:
                         statsRecord['Class'][subclassCheckClass['Name']] = {'Count': 1}
 
+                #Special stat bonuses (Barbarian cap / giant soul sorc)
+                specialCollection = db.special
+                specialRecords = list(specialCollection.find())
+                specialStatStr = ""
+                for s in specialRecords:
+                    if 'Bonus Level' in s:
+                        for c in subclasses:
+                            if s['Bonus Level'] == c['Level'] and s['Name'] in f"{c['Name']} ({c['Subclass']})":
+                                if 'MAX' in s['Stat Bonuses']:
+                                    if 'Max Stats' not in infoRecords:
+                                        infoRecords['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
+                                    
+                                    data['Max Stats'] = infoRecords['Max Stats']
+
+                                    statSplit = s['Stat Bonuses'].split('MAX ')[1].split(', ')
+                                    for stat in statSplit:
+                                        maxSplit = stat.split(' +')
+                                        data[maxSplit[0]] += int(maxSplit[1])
+                                        data['Max Stats'][maxSplit[0]] += int(maxSplit[1]) 
+
+                                    specialStatStr = f"Level {s['Bonus Level']} {c['Name']} stat bonus unlocked! - {s['Stat Bonuses']}"
+
+                infoRecords['CON'] = data['CON']
+                charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
+                data['HP'] = charHP
+
                 levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: {totalCP} CP'
 
-                levelUpEmbed.description = levelUpEmbed.description + f"\n{charFeatsGainedStr}"
+                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{data['STR']} **DEX**:{data['DEX']} **CON**:{data['CON']} **INT**:{data['INT']} **WIS**:{data['WIS']} **CHA**:{data['CHA']}" + f"\n{charFeatsGainedStr}\n{specialStatStr}"
                 levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
                 levelUpEmbed.clear_fields()
 
@@ -2527,8 +2546,17 @@ class Character(commands.Cog):
                     return
 
             # Check if they are already attuned to the item.
-            data = {}
             if mRecord['Name'] == 'Hammer of Thunderbolts':
+                if 'Max Stats' not in charRecords:
+                    charRecords['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
+                # statSplit = MAX STAT +X
+                statSplit = mRecord['Stat Bonuses'].split(' +')
+                maxSplit = statSplit[0].split(' ')
+
+                #Increase stats from Hammer and add to max stats. 
+                if "MAX" in statSplit[0]:
+                    charRecords['Max Stats'][maxSplit[1]] += int(statSplit[1]) 
+
                 if 'Belt of' not in charRecords['Magic Items'] and 'Frost Giant Strength' not in charRecords['Magic Items'] and 'Gauntlets of Ogre Power' not in charRecords['Magic Items']:
                     await channel.send(f"`Hammer of Thunderbolts` requires you to have a `Belt of Giant Strength (any variety)` and `Gauntlets of Ogre Power` in your inventory in order to attune to it.")
                     return 
@@ -2546,7 +2574,8 @@ class Character(commands.Cog):
                 return
                         
             
-            data['Attuned'] = ', '.join(attuned)
+            charRecords['Attuned'] = ', '.join(attuned)
+            data = charRecords
 
             try:
                 playersCollection = db.players
@@ -2642,15 +2671,23 @@ class Character(commands.Cog):
                 await channel.send(f"**{mRecord['Name']}** cannot be unattuned from because it is currently not attuned to you.")
                 return
             else:
+                if mRecord['Name'] == 'Hammer of Thunderbolts':
+                    statSplit = mRecord['Stat Bonuses'].split(' +')
+                    maxSplit = statSplit[0].split(' ')
+                    if "MAX" in statSplit[0]:
+                        charRecords['Max Stats'][maxSplit[1]] -= int(statSplit[1]) 
+
                 if 'Stat Bonuses' in mRecord:
                     attuned.remove(f"{mRecord['Name']} [{mRecord['Stat Bonuses']}]") 
                 else:
-                    attuned.remove(mRecord['Name'])
+                    attuned.remove(mRecord['Name']) 
+                  
+                charRecords['Attuned'] = ', '.join(attuned)
 
                 try:
                     playersCollection = db.players
                     if attuned != list():
-                        playersCollection.update_one({'_id': charID}, {"$set": {"Attuned": ', '.join(attuned)}})
+                        playersCollection.update_one({'_id': charID}, {"$set": charRecords})
                     else:
                         playersCollection.update_one({'_id': charID}, {"$unset": {"Attuned":1}})
 
@@ -2777,7 +2814,7 @@ class Character(commands.Cog):
                 currentLevel += 1
             currentLevel = 0
 
-        totalHP += ((charDict['CON'] - 10) // 2 ) * lvl
+        totalHP += ((int(charDict['CON']) - 10) // 2 ) * lvl
 
         specialCollection = db.special
         specialRecords = list(specialCollection.find())
@@ -2975,6 +3012,10 @@ class Character(commands.Cog):
         featsPickedList = []
         featsChosen = ""
 
+
+        if 'Max Stats' not in charStats:
+            charStats['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
+
         for f in featLevels:
                 charEmbed.clear_fields()
                 if f != 'Human (Variant)':
@@ -3030,10 +3071,10 @@ class Character(commands.Cog):
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None, None
                     asi = int(tReaction.emoji[0]) - 1
-                    
-                    if (int(charStats[statNames[asi]]) + 1 > 20):
+
+                    if (int(charStats[statNames[asi]]) + 1 > charStats['Max Stats'][statNames[asi]]):
                         await charEmbedmsg.delete()
-                        await channel.send("You cannot increase your character's stat above 20. Please try creating your character again.")
+                        await channel.send(f"You cannot increase your character's {statNames[asi]} above your MAX {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None, None
 
@@ -3065,8 +3106,8 @@ class Character(commands.Cog):
                             return None, None, None
                     asi = int(tReaction.emoji[0]) - 1
 
-                    if (int(charStats[statNames[asi]]) + 1 > 20):
-                        await channel.send("You cannot increase a stat above 20. Please try creating your character again.")
+                    if (int(charStats[statNames[asi]]) + 1 > charStats['Max Stats'][statNames[asi]]):
+                        await channel.send(f"You cannot increase your character's {statNames[asi]} above your MAX {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None, None
 
