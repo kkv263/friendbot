@@ -1625,7 +1625,7 @@ class Character(commands.Cog):
 
             if mPages > 1:
                 for p in range(len(mPageStops)-1):
-                    charEmbed.add_field(name=f'Magic Items p. {p+1}', value=miString[mPageStops[p]:mPageStops[p+1]], inline=False)
+                    charEmbed.add_field(name=f'Magic Items pt. {p+1}', value=miString[mPageStops[p]:mPageStops[p+1]], inline=False)
             else:
                 charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
 
@@ -1661,10 +1661,10 @@ class Character(commands.Cog):
             if len(charEmbed) > 2048:
                 charEmbedDict = charEmbed.to_dict()
                 for f in charEmbedDict['fields']:
-                    embedList[pages - 1].add_field(name=f["name"], value=f["value"] ,inline=False)
                     if len(embedList[pages - 1]) > 2048:
                         pages += 1
                         embedList.append(discord.Embed())
+                    embedList[pages - 1].add_field(name=f["name"], value=f["value"] ,inline=False)
             else:
                  embedList[0] = charEmbed
 
