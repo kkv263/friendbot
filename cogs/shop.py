@@ -197,6 +197,12 @@ class Shop(commands.Cog):
                     sameMessage = True
                 return sameMessage and (r.emoji in alphaEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
 
+            def apiConsumesEmbedCheck(r, u):
+                sameMessage = False
+                if shopEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return sameMessage and (r.emoji in alphaEmojis[:min(len(sellConsumesList), 9)]) or (str(r.emoji) == '❌') and u == author
+
             buyList = []
             buyString = ""
             numI = 0
@@ -222,11 +228,14 @@ class Shop(commands.Cog):
                         numI += 1
 
             # If the query is in the character's consumables, reject it.
-            if buyItem.lower() in charRecords['Consumables'].lower():
-                await channel.send(f"`{buyItem}` is a consumable item and is not sellable. Please try again with a different item.")
-                ctx.command.reset_cooldown(ctx)
-                return
-
+            sellConsumesList = []
+            sellConsumesStr = ""
+            numJ = 0
+            for c in charRecords['Consumables'].split(', '):
+                if buyItem.lower() in c.lower():
+                    sellConsumesStr += f"{alphaEmojis[numJ]} {c} \n"
+                    numJ += 1
+                    sellConsumesList.append(c)
 
             # If there are multiple matches user can pick the correct one
             if (len(buyList) > 1):
@@ -257,6 +266,33 @@ class Shop(commands.Cog):
 
             elif len(buyList) == 1:
                 buyItem = buyList[0]
+            elif len(sellConsumesList) > 1:
+                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=sellConsumesStr, inline=False)
+                if not shopEmbedmsg:
+                    shopEmbedmsg = await channel.send(embed=shopEmbed)
+                else:
+                    await shopEmbedmsg.edit(embed=shopEmbed)
+
+                await shopEmbedmsg.add_reaction('❌')
+
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiConsumesEmbedCheck, timeout=60)
+                except asyncio.TimeoutError:
+                    await shopEmbedmsg.delete()
+                    await channel.send('Timed out! Try using the command again.')
+                    ctx.command.reset_cooldown(ctx)
+                    return None, shopEmbed, shopEmbedmsg
+                else:
+                    if tReaction.emoji == '❌':
+                        await shopEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                        await shopEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
+                        return None, shopEmbed, shopEmbedmsg
+                shopEmbed.clear_fields()
+                await shopEmbedmsg.clear_reactions()
+                buyItem = sellConsumesList[alphaEmojis.index(tReaction.emoji)]
+            elif len(sellConsumesList) == 1:
+                buyItem = sellConsumesList[0]
             else:
                 await channel.send(f'**{buyItem}** is not in your inventory to sell! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
@@ -268,6 +304,11 @@ class Shop(commands.Cog):
                 # See if item is a magic item (they are unsellable)
                 if 'Magic Item' in bRecord:
                     await channel.send(f"**{bRecord['Name']}** is a magic item and is not sellable. Please try again with a different item.")
+                    ctx.command.reset_cooldown(ctx)
+                    return
+
+                if 'Consumable' in bRecord:
+                    await channel.send(f"**{bRecord['Name']}** is a consumable and is not sellable. Please try again with a different item.")
                     ctx.command.reset_cooldown(ctx)
                     return
                 

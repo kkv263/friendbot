@@ -261,6 +261,10 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
     guild = ctx.guild
 
     playersCollection = db.players
+
+    char = char.strip()
+    char = char.replace('(', '\\(').replace(')', '\\)').replace('+', '\\+')
+
     if mod == True:
         charRecords = list(playersCollection.find({"Name": {"$regex": char, '$options': 'i' }})) 
     else:

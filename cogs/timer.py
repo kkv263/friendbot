@@ -12,7 +12,7 @@ from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray, noodleRoleArray
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray, noodleRoleArray, checkForChar
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -437,61 +437,11 @@ class Timer(commands.Cog):
             if charList[len(charList) - 1] != charName:
                 consumablesList = charList[len(charList) - 1].split(', ')
 
-            playersCollection = db.players
-            cRecord  = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": charName, '$options': 'i' }}))
+            cRecord, charEmbedmsg = await checkForChar(ctx, charName, charEmbed)
 
-            if cRecord == list():
+            if not cRecord:
                 if not resume:
                     await channel.send(content=f'I was not able to find the character ***{charName}***!\n\n{signupFormat}')
-                return False
-
-            def apiEmbedCheck(r, u):
-                sameMessage = False
-                if charEmbedmsg.id == r.message.id:
-                    sameMessage = True
-                return sameMessage and (r.emoji in numberEmojis[:min(len(cRecord), 9)]) or (str(r.emoji) == '❌') and u == author
-
-            charString = ""
-            numI = 0
-
-            print(charList)
-
-            for k in cRecord:
-                print(k)
-                charString += f"{numberEmojis[numI]} {k['Name']} \n"
-                numI += 1
-
-            if (len(cRecord) > 1):
-                charEmbed.add_field(name=f"There seems to be multiple results for ***{charName}***, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=charString, inline=False)
-                if not charEmbedmsg:
-                    charEmbedmsg = await channel.send(embed=charEmbed)
-                else:
-                    await charEmbedmsg.edit(embed=charEmbed)
-
-                await charEmbedmsg.add_reaction('❌')
-
-                try:
-                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
-                except asyncio.TimeoutError:
-                    await charEmbedmsg.delete()
-                    await channel.send('Timed out! Try using the command again.')
-                    ctx.command.reset_cooldown(ctx)
-                    return None, charEmbed, charEmbedmsg
-                else:
-                    if tReaction.emoji == '❌':
-                        await charEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
-                        await charEmbedmsg.clear_reactions()
-                        ctx.command.reset_cooldown(ctx)
-                        return None, charEmbed, charEmbedmsg
-                charEmbed.clear_fields()
-                await charEmbedmsg.clear_reactions()
-                cRecord[0] = cRecord[int(tReaction.emoji[0]) - 1]
-
-            elif len(cRecord) == 1:
-                pass
-            else:
-                if not resume:
-                    await channel.send(content=f'I could not find the character ***{charName}***.\n\n{signupFormat}')
                 return False
 
             if charEmbedmsg:
@@ -502,20 +452,20 @@ class Timer(commands.Cog):
                     await channel.send(content=f'You did not input a character!\n\n{signupFormat}')
                 return False
 
-            cpSplit = cRecord[0]['CP'].split('/')
-            if 'Death' in cRecord[0]:
+            cpSplit = cRecord['CP'].split('/')
+            if 'Death' in cRecord:
                 if not resume:
-                    await channel.send(content=f'You cannot sign up with ***{cRecord[0]["Name"]}*** because they are dead. Please use the following command to resolve their death:\n```yaml\n{commandPrefix}death```')
+                    await channel.send(content=f'You cannot sign up with ***{cRecord["Name"]}*** because they are dead. Please use the following command to resolve their death:\n```yaml\n{commandPrefix}death```')
                 return False 
 
-            if next((s for s in cRecord[0].keys() if 'GID' in s), None):
+            if next((s for s in cRecord.keys() if 'GID' in s), None):
                 if not resume:
-                    await channel.send(content=f'You cannot sign up with ***{cRecord[0]["Name"]}*** because they have not received their rewards from their last quest. Please wait until the session log has been approved.')
+                    await channel.send(content=f'You cannot sign up with ***{cRecord["Name"]}*** because they have not received their rewards from their last quest. Please wait until the session log has been approved.')
                 return False    
 
             validLevelStart = 1
             validLevelEnd = 1
-            charLevel = cRecord[0]['Level']
+            charLevel = cRecord['Level']
 
             if role == "True":
                 validLevelStart = 17
@@ -533,18 +483,18 @@ class Timer(commands.Cog):
 
             if charLevel < validLevelStart or charLevel > validLevelEnd:
                 if not resume:
-                    await channel.send(f"***{cRecord[0]['Name']}*** is not between levels {validLevelStart} - {validLevelEnd} to play in this quest. Please choose a different character.")
+                    await channel.send(f"***{cRecord['Name']}*** is not between levels {validLevelStart} - {validLevelEnd} to play in this quest. Please choose a different character.")
                 return False 
 
 
             if float(cpSplit[0]) >= float(cpSplit[1]):
                 if not resume:
-                    await channel.send(content=f'You need to level up your character ***{cRecord[0]["Name"]}*** before you can join the quest! Use the following command to level up:\n```yaml\n`{commandPrefix}levelup```')
+                    await channel.send(content=f'You need to level up your character ***{cRecord["Name"]}*** before you can join the quest! Use the following command to level up:\n```yaml\n`{commandPrefix}levelup```')
                 return False 
 
 
             if consumablesList and role != "DM":
-                charConsumables = cRecord[0]['Consumables'].split(', ')
+                charConsumables = cRecord['Consumables'].split(', ')
                 gameConsumables = []
                 checkedIndices = []
                 notValidConsumables = ""
@@ -583,9 +533,9 @@ class Timer(commands.Cog):
                 if not gameConsumables:
                     gameConsumables = ['None']
 
-                return [author,cRecord[0],gameConsumables, cRecord[0]['_id']]
+                return [author,cRecord,gameConsumables, cRecord['_id']]
 
-            return [author,cRecord[0],['None'],cRecord[0]['_id']]
+            return [author,cRecord,['None'],cRecord['_id']]
 
     @timer.command()
     async def deductConsumables(self, ctx, msg,start, resume=False): 

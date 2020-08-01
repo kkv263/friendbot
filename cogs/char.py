@@ -1589,11 +1589,50 @@ class Character(commands.Cog):
                 role = 4
                 charEmbed.colour = (roleColors['True Friend'])
 
+            # Show Spellbook in inventory
+            if 'Spellbook' in charDict:
+                spellBookString = ""
+                for s in charDict['Spellbook']:
+                    spellBookString += f"• {s['Name']} ({s['School']})\n" 
+                charEmbed.add_field(name='Spellbook', value=spellBookString, inline=False)
+
+    
+            # Show Consumables in inventory.
+            consumesString = ""
+            consumesCount = collections.Counter(charDict['Consumables'].split(', '))
+            for k, v in consumesCount.items():
+                if v == 1:
+                    consumesString += f"• {k}\n"
+                else:
+                    consumesString += f"• {k} x{v}\n"
+
+            charEmbed.add_field(name='Consumables', value=consumesString, inline=False)
+
+            # Show Magic items in inventory.
+            mPages = 1
+            mPageStops = [0]
+
+            miString = "• "
+            miArray = charDict['Magic Items'].replace(', ', '\n• ').split('\n')
+
+            for m in miArray:
+                miString += m + "\n"
+
+                if len(miString) > (768 * mPages):
+                    mPageStops.append(len(miString))
+                    mPages += 1
+
+
+            if mPages > 1:
+                for p in range(len(mPageStops)-1):
+                    charEmbed.add_field(name=f'Magic Items p. {p+1}', value=miString[mPageStops[p]:mPageStops[p+1]], inline=False)
+            else:
+                charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
+
 
             charDictAuthor = guild.get_member(int(charDict['User ID']))
             charEmbed.title = f"{charDict['Name']} (Lv.{charLevel}): Inventory"
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
-            charEmbed.clear_fields()    
             if charDict['Inventory'] != 'None':
                 typeDict = {}
                 invCollection = db.shop
@@ -1615,55 +1654,29 @@ class Character(commands.Cog):
                     v.sort()
                     charEmbed.add_field(name=k, value=''.join(v), inline=False)
 
-            consumesCount = collections.Counter(charDict['Consumables'].split(', '))
-
-            consumesString = ""
-            for k, v in consumesCount.items():
-                if v == 1:
-                    consumesString += f"• {k}\n"
-                else:
-                    consumesString += f"• {k} x{v}\n"
-
-            if 'Spellbook' in charDict:
-                spellBookString = ""
-                for s in charDict['Spellbook']:
-                    spellBookString += f"• {s['Name']} ({s['School']})\n" 
-                charEmbed.add_field(name='Spellbook', value=spellBookString, inline=False)
-                    
-
-            charEmbed.add_field(name='Consumables', value=consumesString, inline=False)
-
+            print(len(charEmbed))        
+            embedList = [discord.Embed()]
             pages = 1
-            pageStops = [0]
 
-            miString = "• "
-            miArray = charDict['Magic Items'].replace(', ', '\n• ').split('\n')
-
-            for m in miArray:
-                miString += m + "\n"
-
-                if len(miString) > (768 * pages):
-                    pageStops.append(len(miString))
-                    pages += 1
-
-            miEmbedList = [charEmbed]                
-
-            if pages > 1:
-                for p in range(len(pageStops)-1):
-                    if p != 0:
-                        miEmbedList.append(discord.Embed())
-                    miEmbedList[p].add_field(name=f'Magic Items p. {p+1}', value=miString[pageStops[p]:pageStops[p+1]], inline=False)
+            if len(charEmbed) > 2048:
+                charEmbedDict = charEmbed.to_dict()
+                for f in charEmbedDict['fields']:
+                    embedList[pages - 1].add_field(name=f["name"], value=f["value"] ,inline=False)
+                    if len(embedList[pages - 1]) > 2048:
+                        pages += 1
+                        embedList.append(discord.Embed())
             else:
-                charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
+                 embedList[0] = charEmbed
 
-            charEmbed.set_footer(text=footer)
-
-            if not charEmbedmsg:
-                charEmbedmsg = await ctx.channel.send(embed=charEmbed)
-            else:
-                await charEmbedmsg.edit(embed=charEmbed)
 
             page = 0
+            embedList[0].set_footer(text=f"{footer}\nPage {page+1} of {pages}")
+
+            if not charEmbedmsg:
+                charEmbedmsg = await ctx.channel.send(embed=embedList[0])
+            else:
+                await charEmbedmsg.edit(embed=embedList[0])
+
             while pages > 1:
                 await charEmbedmsg.add_reaction(left) 
                 await charEmbedmsg.add_reaction(right)
@@ -1678,13 +1691,13 @@ class Character(commands.Cog):
                     if hReact.emoji == left:
                         page -= 1
                         if page < 0:
-                            page = len(miEmbedList) - 1
+                            page = len(embedList) - 1
                     if hReact.emoji == right:
                         page += 1
-                        if page > len(miEmbedList) - 1:
+                        if page > len(embedList) - 1:
                             page = 0
-
-                    await charEmbedmsg.edit(embed=miEmbedList[page]) 
+                    embedList[page].set_footer(text=f"{footer}\nPage {page+1} of {pages}")
+                    await charEmbedmsg.edit(embed=embedList[page]) 
                     await charEmbedmsg.clear_reactions()
 
             self.bot.get_command('inv').reset_cooldown(ctx)
@@ -2470,7 +2483,6 @@ class Character(commands.Cog):
         if charRecords:
             if 'Death' in charRecords:
                 await channel.send(f"You cannot attune to items with a dead character! Use the following command to decide their fate:\n```yaml\n$death \"{charRecords['Name']}\"```")
-
                 return
 
             # Check number of items character can attune to. Artificer has exceptions.
@@ -2506,11 +2518,13 @@ class Character(commands.Cog):
             numI = 0
 
             # Check if query is in character's Magic Item List. Limit is 8 to show if there are multiple matches.
+            print([a.split(' [')[0] for a in attuned])
             for k in charRecordMagicItems:
                 if m.lower() in k.lower():
-                    mList.append(k)
-                    mString += f"{numberEmojis[numI]} {k} \n"
-                    numI += 1
+                    if k not in [a.split(' [')[0] for a in attuned]:
+                        mList.append(k)
+                        mString += f"{numberEmojis[numI]} {k} \n"
+                        numI += 1
                 if numI > 8:
                     break
 
