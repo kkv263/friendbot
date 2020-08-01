@@ -255,20 +255,22 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             #if only 1 item was left, simply return it
             return records[0], apiEmbed, apiEmbedmsg
 
-async def checkForChar(ctx, char, charEmbed="", mod=False):
+async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
     channel = ctx.channel
     author = ctx.author
     guild = ctx.guild
 
+    if authorCheck != None:
+        author = authorCheck
+
     playersCollection = db.players
 
     char = char.strip()
-    charQuery = char.replace('(', '\\(').replace(')', '\\)').replace('+', '\\+')
 
     if mod == True:
-        charRecords = list(playersCollection.find({"Name": {"$regex": charQuery, '$options': 'i' }})) 
+        charRecords = list(playersCollection.find({"Name": {"$regex": char, '$options': 'i' }})) 
     else:
-        charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": charQuery, '$options': 'i' }}))
+        charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": char, '$options': 'i' }}))
 
     if charRecords == list():
         if not mod:

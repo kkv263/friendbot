@@ -437,7 +437,7 @@ class Timer(commands.Cog):
             if charList[len(charList) - 1] != charName:
                 consumablesList = charList[len(charList) - 1].split(', ')
 
-            cRecord, charEmbedmsg = await checkForChar(ctx, charName, charEmbed)
+            cRecord, charEmbedmsg = await checkForChar(ctx, charName, charEmbed, author)
 
             if not cRecord:
                 if not resume:
