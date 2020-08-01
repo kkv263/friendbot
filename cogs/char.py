@@ -2087,7 +2087,7 @@ class Character(commands.Cog):
                         sameMessage = False
                         if levelUpEmbedmsg.id == r.message.id:
                             sameMessage = True
-                        return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '🚫') or (str(r.emoji) == '❌')) and u == author
+                        return sameMessage and ((str(r.emoji) == '✅' and chooseClassString != "") or (str(r.emoji) == '🚫') or (str(r.emoji) == '❌')) and u == author
                 def alphaEmbedCheck(r, u):
                         sameMessage = False
                         if levelUpEmbedmsg.id == r.message.id:
@@ -2146,13 +2146,19 @@ class Character(commands.Cog):
                             alphaIndex += 1
                             classes.append(cRecord['Name'])
 
+
                 # New Multiclass
-                levelUpEmbed.add_field(name="Would you like to choose a new multiclass?", value='✅: Yes\n\n🚫: No\n\n❌: Cancel')
+                if chooseClassString != "":
+                    levelUpEmbed.add_field(name="Would you like to choose a new multiclass?", value='✅: Yes\n\n🚫: No\n\n❌: Cancel')
+                else:
+                    levelUpEmbed.add_field(name="""~~Would you like to choose a new multiclass?~~\nThere are no classes available to multiclass into. Please react "No" to proceed""", value='~~✅: Yes~~\n\n🚫: No\n\n❌: Cancel')
+
                 if not levelUpEmbedmsg:
                     levelUpEmbedmsg = await channel.send(embed=levelUpEmbed)
                 else:
                     await levelUpEmbedmsg.edit(embed=levelUpEmbed)
-                await levelUpEmbedmsg.add_reaction('✅')
+                if chooseClassString != "":
+                    await levelUpEmbedmsg.add_reaction('✅')
                 await levelUpEmbedmsg.add_reaction('🚫')
                 await levelUpEmbedmsg.add_reaction('❌')
                 try:
@@ -2353,8 +2359,9 @@ class Character(commands.Cog):
                 maxStatStr = ""
                 for sk in data['Max Stats'].keys():
                     if charStats[sk] > data['Max Stats'][sk]:
-                        charStats[sk] = data['Max Stats'][sk]
-                        maxStatStr += f"\n{charFeatsGained} will not increase {infoRecords['Name']}'s {sk} because the MAX is {data['Max Stats'][sk]}."
+                        data[sk] = charStats[sk] = data['Max Stats'][sk]
+                        if charFeatsGained != "":
+                            maxStatStr += f"\n{infoRecords['Name']}'s {sk} will not increase because the MAX is {data['Max Stats'][sk]}."
 
                 infoRecords['CON'] = charStats['CON']
                 charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
@@ -2810,8 +2817,7 @@ class Character(commands.Cog):
         await ctx.channel.send(embed=statsEmbed)
 
     async def calcHP (self, ctx, classes, charDict, lvl):
-        classes = sorted(classes, key = lambda i: i['Hit Die Max'],reverse=True) 
-
+        # classes = sorted(classes, key = lambda i: i['Hit Die Max'],reverse=True) 
         totalHP = 0
         totalHP += classes[0]['Hit Die Max']
         currentLevel = 1
