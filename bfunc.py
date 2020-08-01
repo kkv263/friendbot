@@ -263,12 +263,12 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
     playersCollection = db.players
 
     char = char.strip()
-    char = char.replace('(', '\\(').replace(')', '\\)').replace('+', '\\+')
+    charQuery = char.replace('(', '\\(').replace(')', '\\)').replace('+', '\\+')
 
     if mod == True:
-        charRecords = list(playersCollection.find({"Name": {"$regex": char, '$options': 'i' }})) 
+        charRecords = list(playersCollection.find({"Name": {"$regex": charQuery, '$options': 'i' }})) 
     else:
-        charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": char, '$options': 'i' }}))
+        charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": charQuery, '$options': 'i' }}))
 
     if charRecords == list():
         if not mod:

@@ -1873,9 +1873,10 @@ class Character(commands.Cog):
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
             
             
-            maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
 
-            if 'Max Stats' in charDict:
+            if 'Max Stats' not in charDict:
+                maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
+            else:
                 maxStatDict = charDict['Max Stats']
 
             for sk in charDict['Max Stats'].keys():
