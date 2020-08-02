@@ -2,7 +2,7 @@ import discord
 import asyncio
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, checkForGuild, noodleRoleArray, db, traceBack
+from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, checkForGuild, noodleRoleArray, db, traceBack, alphaEmojis
 
 class Guild(commands.Cog):
     def __init__ (self, bot):
@@ -31,8 +31,8 @@ class Guild(commands.Cog):
                 msg = "You're missing the #channel for the guild you want to create. "
             elif error.param.name == "gpName":
                 msg = "You're missing the amount of gp you want to donate to the guild." 
-        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
-            msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
+        # elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+        #     msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
 
         if msg:
             if ctx.command.name == "info":
@@ -67,6 +67,7 @@ class Guild(commands.Cog):
 
         roles = [r.name for r in ctx.author.roles]
 
+        # Check if the user using the command has the guildmaster role
         if 'Guildmaster' not in roles:
             await channel.send(f"You do not have the Guildmaster role to use this command.")
             return 
@@ -77,7 +78,6 @@ class Guild(commands.Cog):
             
 
         #see if channel + role + guildname matchup.
-
         roleStr = (guildRole[0].name.lower().replace(',', '').replace('.', '').replace(' ', '').replace('-', ''))
         guildNameStr = (guildName.lower().replace(',', '').replace('.', '').replace(' ', '').replace('-', ''))
         guildChannelStr = (guildChannel[0].name.replace('-', ''))
@@ -89,6 +89,7 @@ class Guild(commands.Cog):
             await channel.send(f"The guild: ***{guildName}*** does not match the guild role ***{guildRole[0].name}***. Please try the command again with the correct role.")
             return
 
+        # Grab user's noodle role
         roles = author.roles
         noodleRole = None
         for r in roles:
@@ -96,42 +97,100 @@ class Guild(commands.Cog):
                 noodleRole = r
 
         if noodleRole:
-            noodleLimit = noodleRoleArray.index(noodleRole.name) - 1
             usersCollection = db.users
             userRecords = usersCollection.find_one({"User ID": str(author.id)})
             if userRecords: 
                 charDict, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
                 if charDict:
+
+                    # GP needed to fund guild.
+                    gpNeeded = 0
+
+                    if charDict['Level'] < 5:
+                        gpNeeded = 200
+                    elif charDict['Level'] < 11:
+                        gpNeeded = 400
+                    elif charDict['Level'] < 17:
+                        gpNeeded = 600
+                    elif charDict['Level'] < 21:
+                        gpNeeded = 800
+
+                    if gpNeeded > charDict['GP']:
+                        await channel.send(f"***{charDict['Name']}*** does not have at least {gpNeeded} gp in order to fund ***{guildName}***.")
+                        return
+
+                    charDict['GP'] -= gpNeeded
+
+                    noodleRep = ["Elite Noodle (0)", "True Noodle (10)", "Ascended Noodle (20)", "Immortal Noodle (30)"]
                     charID = charDict['_id']
                     if 'Guilds' not in userRecords: 
-                        userRecords['Guilds'] = 0
-
-                    if userRecords['Guilds'] > noodleLimit:
-                        await channel.send(f"***{author.display_name}***, your current role ***{noodleRole.name}*** does not let you create another guild.")
-                        return
+                        userRecords['Guilds'] = []
 
                     if 'Guild' in charDict:
                         await channel.send(f"***{charDict['Name']}*** is already a part of ***{charDict['Guild']}*** and won't be able to create another guild.")
                         return
 
-                    userRecords['Guilds'] += 1
+                    # Available Noodle Roles.
+                    for i in range (noodleRoleArray.index(noodleRole.name) + 1, len(noodleRoleArray)):
+                        del noodleRep[-1]
 
-                    guildExists = await checkForGuild(ctx,guildName) 
+                    # Look through Noodles and filter used noodles for base rep.
+                    for n in userRecords["Guilds"]:
+                        if n in noodleRep:
+                            noodleRep.remove(n)
+
+                    if noodleRep == list():
+                        await channel.send(f"You have used are your noodles to fund reputation to your other guilds and won't be able to create another guild.")
+                        return
+
+                    noodleRepStr = ""
+                    for i in range(0, len(noodleRep)):
+                        noodleRepStr += f"{alphaEmojis[i]}: {noodleRep[i]}\n"
+
+                    def guildNoodleEmbedcheck(r, u):
+                        sameMessage = False
+                        if guildEmbedmsg.id == r.message.id:
+                            sameMessage = True
+                        return (r.emoji in alphaEmojis[:len(noodleRep)] or (str(r.emoji) == '❌')) and u == author and sameMessage
+
+
+                    guildEmbed.add_field(name=f"Based on the available noodles, please choose your guild's base reputation.", value=noodleRepStr, inline=False)
+                    guildEmbedmsg = await channel.send(embed=guildEmbed)
+                    await guildEmbedmsg.add_reaction('❌')
+
+                    try:
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildNoodleEmbedcheck, timeout=60)
+                    except asyncio.TimeoutError:
+                        await guildEmbedmsg.delete()
+                        await channel.send('Guild command timed out! Try using the command again.')
+                        ctx.command.reset_cooldown(ctx)
+                        return
+                    else:
+                        if tReaction.emoji == '❌':
+                            await guildEmbedmsg.edit(embed=None, content=f"Guild command canceled. Please use the command and try again!")
+                            await guildEmbedmsg.clear_reactions()
+                            ctx.command.reset_cooldown(ctx)
+                            return
+                    guildEmbed.clear_fields()
+                    await guildEmbedmsg.clear_reactions()
+                    baseRep = int(noodleRep[alphaEmojis.index(tReaction.emoji[0])].split(' (')[1].replace(')',""))
+                    userRecords['Guilds'].append(noodleRep[alphaEmojis.index(tReaction.emoji[0])])
+
+                    # Quick check to see if guild already exists
+                    guildsCollection = db.guilds
+                    guildExists = guildsCollection.find_one({"Name": {"$regex": guildName, '$options': 'i' }})
+
 
                     if guildExists:
                         await channel.send(f"There is already a guild by the name of ***{guildName}***. Please try creating a guild with a different name.")
                         return
 
-                    # True, Ascended, and Immortal Noodles start with 10, 20, and 30 :sparkles: in their total/bank to start.
-                    totalRep = (noodleRoleArray.index(noodleRole.name) - 1 ) * 10
-                        
-                    guildsDict = {'Role ID': str(guildRole[0].id), 'Channel ID': str(guildChannel[0].id), 'Name': guildName, 'Funds': 0, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': totalRep, 'Total Reputation': totalRep}
+                    guildsDict = {'Role ID': str(guildRole[0].id), 'Channel ID': str(guildChannel[0].id), 'Name': guildName, 'Funds': gpNeeded, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': baseRep, 'Total Reputation': baseRep}
                     await author.add_roles(guildRole[0], reason=f"Created guild {guildName}")
 
                     try:
                         playersCollection = db.players
-                        guildsCollection = db.guilds
-                        playersCollection.update_one({'_id': charID}, {"$set": {"Guild": guildName, 'Guild Rank': 1}})
+                        playersCollection.update_one({'_id': charID}, {"$set": {"Guild": guildName, 'Guild Rank': 1, 'GP':charDict['GP']}})
                         usersCollection.update_one({"User ID": str(author.id)}, {"$set": {"Guilds": userRecords['Guilds']}})
                         guildsCollection.insert_one(guildsDict)
                     except Exception as e:
@@ -141,7 +200,7 @@ class Guild(commands.Cog):
                         print('Success')
 
                         guildEmbed.title = f"Guild Creation: {guildName}"
-                        guildEmbed.description = f"***{charDict['Name']}*** has created ***{guildName}***!\n\n6000 gp must be donated in order for the guild to officially open!\n\nOther characters, including yours, can fund the guild using the following command:\n```yaml\n{commandPrefix}guild fund \"charactername\" gp {guildName}```\nThe guild's status can be checked with the following command:\n```{commandPrefix}guild info {guildName}```\n\nCurrent Guild Funds: 0 gp"
+                        guildEmbed.description = f"***{charDict['Name']}*** has created ***{guildName}***!\n\n6000 gp must be donated in order for the guild to officially open!\n\nOther characters, including yours, can fund the guild using the following command:\n```yaml\n{commandPrefix}guild fund \"charactername\" gp {guildName}```\nThe guild's status can be checked with the following command:\n```{commandPrefix}guild info {guildName}```\n\nCurrent Guild Funds: {gpNeeded} gp"
                         if guildEmbedmsg:
                             await guildEmbedmsg.clear_reactions()
                             await guildEmbedmsg.edit(embed=guildEmbed)
@@ -163,9 +222,9 @@ class Guild(commands.Cog):
         author = ctx.author
         guild = ctx.guild
         guildEmbed = discord.Embed()
-        guildEmbedEmbedmsg = None
+        guildEmbedmsg = None
 
-        guildRecords = await checkForGuild(ctx,guildName) 
+        guildRecords, guildEmbedmsg = await checkForGuild(ctx,guildName, guildEmbed) 
 
         if guildRecords:
             guildRank = ""
@@ -184,10 +243,13 @@ class Guild(commands.Cog):
             playersCollection = db.players
             guildMembers = list(playersCollection.find({"Guild": guildRecords['Name']}))
 
-            guildMemberStr = ""
-            for g in guildMembers:
-                guildMemberStr += f"{guild.get_member(int(g['User ID'])).mention} **{g['Name']}** [Rank {g['Guild Rank']}]\n"
-            guildEmbed.add_field(name="Members", value=guildMemberStr)
+            if guildMembers != list():
+                guildMemberStr = ""
+                for g in guildMembers:
+                    guildMemberStr += f"{guild.get_member(int(g['User ID'])).mention} **{g['Name']}** [Rank {g['Guild Rank']}]\n"
+                guildEmbed.add_field(name="Members", value=guildMemberStr)
+            else:
+                guildEmbed.add_field(name="Members", value="There are no guild members currently.")
 
             if guildRecords['Funds'] < 6000:
                 guildEmbed.add_field(name="Funds", value=f"{guildRecords['Funds']} gp / 6000 gp.\n**{6000 - guildRecords['Funds']} gp** required to open the guild!", inline=False)
@@ -354,9 +416,6 @@ class Guild(commands.Cog):
                 elif charRecords['Level'] < 21:
                     gpNeeded = 800
 
-                if (float(gpFund)) > charRecords['GP']:
-                    await channel.send(f"***{charRecords['Name']}*** currently has {charRecords['GP']} and does not have {gpFund} gp to fund ***{guildRecords['Name']}***.")
-                    return
 
                 if gpNeeded > charRecords['GP']:
                     await channel.send(f"***{charRecords['Name']}*** does not have the minimum {gpNeeded}gp to join ***{guildRecords['Name']}***.")

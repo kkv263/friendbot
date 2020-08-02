@@ -314,18 +314,58 @@ async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
 
     return charRecords[0], None
 
-async def checkForGuild(ctx, name):
+async def checkForGuild(ctx, name, guildEmbed="" ):
     channel = ctx.channel
     author = ctx.author
     guild = ctx.guild
 
-    collection = db.guilds
-    records = collection.find_one({"Name": {"$regex": name, '$options': 'i' }})
+    name = name.strip()
 
-    if not records:
-        return False
+    collection = db.guilds
+    guildRecords = list(collection.find({"Name": {"$regex": name, '$options': 'i' }}))
+
+    print(guildRecords)
+
+    if guildRecords == list():
+        await channel.send(content=f'I was not able to find a guild named `{name}`. Please check your spelling and try again.')
+        ctx.command.reset_cooldown(ctx)
+        return None, None
     else:
-        return records
+        if len(guildRecords) > 1:
+            infoString = ""
+            guildRecords = sorted(list(guildRecords), key = lambda i : i ['Name'])
+            for i in range(0, min(len(guildRecords), 9)):
+                infoString += f"{alphaEmojis[i]}: {guildRecords[i]['Name']}\n"
+            
+            def infoCharEmbedcheck(r, u):
+                sameMessage = False
+                if guildEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return ((r.emoji in alphaEmojis[:min(len(guildRecords), 9)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
+
+            guildEmbed.add_field(name=f"There seems to be multiple results for `{name}`, please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
+            guildEmbedmsg = await channel.send(embed=guildEmbed)
+            await guildEmbedmsg.add_reaction('❌')
+
+            try:
+                tReaction, tUser = await bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
+            except asyncio.TimeoutError:
+                await guildEmbedmsg.delete()
+                await channel.send('Guild command timed out! Try using the command again.')
+                ctx.command.reset_cooldown(ctx)
+                return None, None
+            else:
+                if tReaction.emoji == '❌':
+                    await guildEmbedmsg.edit(embed=None, content=f"Guild command canceled. Please use the command and try again!")
+                    await guildEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
+                    return None, None
+            guildEmbed.clear_fields()
+            await guildEmbedmsg.clear_reactions()
+            return guildRecords[alphaEmojis.index(tReaction.emoji[0])], guildEmbedmsg
+
+    return guildRecords[0], None
+
         
 def refreshKey (timeStarted):
 		if (time.time() - timeStarted > 60 * 59):
