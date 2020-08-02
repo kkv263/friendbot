@@ -1012,7 +1012,6 @@ class Character(commands.Cog):
 
         extraTP = extraCp / 2 
 
-
         # If magic items parameter isn't blank, check each magic item to see if valid, and check for duplicates.
         if magicItems != ['']:
             for m in magicItems:
@@ -1462,6 +1461,7 @@ class Character(commands.Cog):
             if lvl > 5:
                 totalGP = (lvl-6) * 960 + 1920
 
+            totalGP += extraCp * 60
             charDict['GP'] = int(bRecord['GP']) + totalGP
 
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
