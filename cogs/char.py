@@ -1010,7 +1010,7 @@ class Character(commands.Cog):
         if extraCp > float(charDict['CP'].split('/')[1]):
             msg += f":warning: {charDict['Name']} needs to level up before they can respec into a new character"
 
-        extraTP = extraCP / 2 
+        extraTP = extraCp / 2 
 
 
         # If magic items parameter isn't blank, check each magic item to see if valid, and check for duplicates.
