@@ -55,7 +55,11 @@ async def traceBack (ctx,error,silent=False):
 
 def calculateTreasure(seconds, role):
     cp = ((seconds) // 1800) / 2
-    tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
+
+    # old rounding code 
+    # tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
+
+    tp = cp / 2
     gp = cp * 60
     role = role.lower()
 

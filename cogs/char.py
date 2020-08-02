@@ -847,14 +847,14 @@ class Character(commands.Cog):
         except asyncio.TimeoutError:
             await charEmbedmsg.delete()
             await channel.send(f'Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
-            self.bot.get_command('respec').reset_cooldown(ctx)
+            self.bot.get_command('create').reset_cooldown(ctx)
             return
         else:
             await charEmbedmsg.clear_reactions()
             if tReaction.emoji == '❌':
                 await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
                 await charEmbedmsg.clear_reactions()
-                self.bot.get_command('respec').reset_cooldown(ctx)
+                self.bot.get_command('create').reset_cooldown(ctx)
                 return
 
         statsCollection = db.stats
@@ -1010,11 +1010,8 @@ class Character(commands.Cog):
         if extraCp > float(charDict['CP'].split('/')[1]):
             msg += f":warning: {charDict['Name']} needs to level up before they can respec into a new character"
 
-        extraTP = .5 if extraCp == .5 else int(decimal.Decimal((extraCp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2 
+        extraTP = extraCP / 2 
 
-        print('TP HERE')
-        print(extraTP)
-        print(bankTP1)
 
         # If magic items parameter isn't blank, check each magic item to see if valid, and check for duplicates.
         if magicItems != ['']:
