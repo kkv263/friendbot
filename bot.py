@@ -193,7 +193,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedGuild.add_field(name=f'▫️ Viewing a Guild\n{commandPrefix}guild info "guild name"', value="View the specified guild's roster and the amount of reputation in its bank. If the guild has yet to be funded, it will show the amount gp required before it will open.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Joining a Guild\n{commandPrefix}guild join "character name" "guild name"', value="Join the specified guild with the specified character.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Leaving a Guild\n{commandPrefix}guild leave "character name"', value="Leave the guild which the specified character currently belongs to.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rep "character name" #', value="Upgrade the specified character's rank in the guild which they currently belong to by donating gp.", inline=False)
+    helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rankup "character name"', value="Upgrade the specified character's rank in the guild which they currently belong to by donating gp.", inline=False)
 
 
     numPages = len(helpList)
