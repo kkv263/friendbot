@@ -188,7 +188,7 @@ class Timer(commands.Cog):
                 else:
                     await channel.send(f"***{msg.author.display_name}***, you are not on the roster to play in this quest.")
                     
-                if playerChar and playerChar in playerRoster:
+                if playerChar:
                     if playerRoster.index(playerChar[0]) == 0:
                         prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{author.display_name} **(DM)**", value= f"***{playerChar[1]['Name']}** will receive DM rewards.", inline=False)
                         if playerChar[0] in [s[0] for s in signedPlayers]:
