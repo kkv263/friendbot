@@ -1851,7 +1851,7 @@ class Character(commands.Cog):
                     charDict['Death'] = ''
                     data = {
                         'Consumables': deathDict['Consumables'],
-                        'Games': charDict['Games'] += 1
+                        'Games': charDict['Games'] + 1
                     }
                     surviveString = f"Congratulations! ***{charDict['Name']}*** has survived and has forfeited their rewards."
 
