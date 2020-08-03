@@ -188,7 +188,7 @@ class Timer(commands.Cog):
                 else:
                     await channel.send(f"***{msg.author.display_name}***, you are not on the roster to play in this quest.")
                     
-                if playerChar:
+                if playerChar and playerChar in playerRoster:
                     if playerRoster.index(playerChar[0]) == 0:
                         prepEmbed.set_field_at(playerRoster.index(playerChar[0]), name=f"{author.display_name} **(DM)**", value= f"***{playerChar[1]['Name']}** will receive DM rewards.", inline=False)
                         if playerChar[0] in [s[0] for s in signedPlayers]:
@@ -1133,7 +1133,7 @@ class Timer(commands.Cog):
 
     
     @timer.command()
-    async def stamp(self,ctx, stamp=0, role="", game="", author="", start={}, embed="", embedMsg=""):
+    async def stamp(self,ctx, stamp=0, role="", game="", author="", start="", embed="", embedMsg=""):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             startcopy = start.copy()
             user = author.display_name
@@ -1205,7 +1205,7 @@ class Timer(commands.Cog):
             return embedMsg
 
     @timer.command(aliases=['end'])
-    async def stop(self,ctx,*,start={}, role="", game="", datestart="", dmChar="", guildsList=""):
+    async def stop(self,ctx,*,start="", role="", game="", datestart="", dmChar="", guildsList=""):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             if not self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx):
                 await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you previously had a timer, use the following command to resume the that timer:\n```yaml\n{commandPrefix}timer resume```")

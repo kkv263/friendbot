@@ -33,7 +33,10 @@ class Guild(commands.Cog):
                 msg = "You're missing the amount of gp you want to donate to the guild." 
         # elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
         #     msg = "There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. "
-
+        
+        # bot.py handles this, so we don't get traceback called.
+        elif isinstance(error, commands.CommandOnCooldown):
+            return
         if msg:
             if ctx.command.name == "info":
                 msg += f"Please follow this format:\n```yaml\n{commandPrefix}guild info \"guild name\"```\n"
