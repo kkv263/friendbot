@@ -973,7 +973,7 @@ class Character(commands.Cog):
         if userRecords != list() and newname != name:
             msg += f":warning: You already have a character by the name ***{newname}***. Please use a different name.\n"
 
-
+        oldName = charDict['Name']
         charDict['Name'] = newname
 
         if not race:
@@ -1008,7 +1008,7 @@ class Character(commands.Cog):
         extraCp = float(charDict['CP'].split('/')[0])
 
         if extraCp > float(charDict['CP'].split('/')[1]):
-            msg += f":warning: {charDict['Name']} needs to level up before they can respec into a new character"
+            msg += f":warning: {oldName} needs to level up before they can respec into a new character"
 
         extraTP = extraCp / 2 
 
@@ -1827,9 +1827,9 @@ class Character(commands.Cog):
                                 usersRecord = list(collection.find({"User ID": charDict['User ID']}))[0]
 
                                 if 'Games' not in usersRecord:
-                                    usersRecord['Games'] = charDict['Games']
+                                    usersRecord['Games'] = 1
                                 else:
-                                    usersRecord['Games'] += charDict['Games']
+                                    usersRecord['Games'] += 1
 
                                 usersCollection.update_one({'User ID': charDict['User ID']}, {"$set": {'Games': usersRecord['Games']}}, upsert=True)
                                 pass
@@ -1851,6 +1851,7 @@ class Character(commands.Cog):
                     charDict['Death'] = ''
                     data = {
                         'Consumables': deathDict['Consumables'],
+                        'Games': charDict['Games'] += 1
                     }
                     surviveString = f"Congratulations! ***{charDict['Name']}*** has survived and has forfeited their rewards."
 
@@ -1871,6 +1872,14 @@ class Character(commands.Cog):
                     try:
                         playersCollection = db.players
                         playersCollection.update_one({'_id': charID}, {"$set": data, "$unset": {"Death":1}})
+                        usersRecord = list(collection.find({"User ID": charDict['User ID']}))[0]
+
+                        if 'Games' not in usersRecord:
+                            usersRecord['Games'] = 1
+                        else:
+                            usersRecord['Games'] += 1
+
+                                usersCollection.update_one({'User ID': charDict['User ID']}, {"$set": {'Games': usersRecord['Games']}}, upsert=True)
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
                         charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
@@ -2204,7 +2213,7 @@ class Character(commands.Cog):
             
 
             if 'Max Stats' not in charDict:
-                maxStatDict = { 'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
+                maxStatDict = charDict['Max Stats'] = {'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
             else:
                 maxStatDict = charDict['Max Stats']
 

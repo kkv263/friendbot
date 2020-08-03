@@ -514,16 +514,18 @@ class Timer(commands.Cog):
                     return False
 
                 for i in range(len(consumablesList)):
+                    itemFound = False
                     for j in range(len(charConsumables)):
                         if j in checkedIndices:
                             continue
-                        elif consumablesList[i].lower().replace(" ", "").strip() == charConsumables[j].lower().replace(" ", ""):
+                        elif consumablesList[i].lower().replace(" ", "").strip() in charConsumables[j].lower().replace(" ", ""):
                             checkedIndices.append(j)
                             gameConsumables.append(charConsumables[j])
+                            itemFound = True
                             break
-                        else:
-                            notValidConsumables += consumablesList[i] + '\n'
-                            break 
+                    if not itemFound:
+                        notValidConsumables += consumablesList[i] + '\n'
+                        break 
 
                 if notValidConsumables:
                     if not resume:
@@ -1845,10 +1847,10 @@ class Timer(commands.Cog):
                             pConsumables = ['None']
                             pTemp.append(guild.get_member(int(playerResumeList[p])))
                             if p == 0:
-                                pName = playerInfoList[p].split(' will receive DM rewards')[0].split('=')[1]
+                                pName = playerInfoList[p].split(' will receive DM rewards')[0].split('=')[1].replace("*", "")
                                
                             else:
-                                pName = playerInfoList[p].split('=')[0]
+                                pName = playerInfoList[p].split('=')[0].replace("*", "")
 
                             cRecord  = list(playersCollection.find({"User ID": str(playerResumeList[p]), "Name": {"$regex": pName.strip(), '$options': 'i' }}))
 
