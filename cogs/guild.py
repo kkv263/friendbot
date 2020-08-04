@@ -284,7 +284,7 @@ class Guild(commands.Cog):
         charRecords, guildEmbedmsg = await checkForChar(ctx, charName, guildEmbed)
 
         if charRecords:
-            guildRecords = await checkForGuild(ctx,guildName) 
+            guildRecords, guildEmbedmsg = await checkForGuild(ctx,guildName,guildEmbed) 
 
             if guildRecords:
                 if guildRecords['Funds'] >= 6000:
@@ -401,7 +401,7 @@ class Guild(commands.Cog):
                 await channel.send(f"***{charRecords['Name']}*** cannot join any guilds because they belong to the guild ***{charRecords['Guild']}***.")
                 return
 
-            guildRecords = await checkForGuild(ctx,guildName) 
+            guildRecords, guildEmbedmsg = await checkForGuild(ctx,guildName,guildEmbed) 
 
             if guildRecords:
                 if guildRecords['Funds'] < 6000:
@@ -490,7 +490,7 @@ class Guild(commands.Cog):
                 await channel.send(f"***{charRecords['Name']}*** cannot upgrade their guild rank because they currently do not belong to a guild.")
                 return
 
-            guildRecords = await checkForGuild(ctx, charRecords['Guild']) 
+            guildRecords, guildEmbedmsg = await checkForGuild(ctx,guildName,guildEmbed) 
             
             if guildRecords:
 
