@@ -612,13 +612,13 @@ class Guild(commands.Cog):
                     await guildEmbedmsg.clear_reactions()
                     return
 
-            guildRecords = list(db.guilds.find({"User ID": str(author.id), "Guild": {"$regex": charRecords['Guild'], '$options': 'i' }}))
+            playersCollection = db.players
+            guildRecords = list(playersCollection.find({"User ID": str(author.id), "Guild": {"$regex": charRecords['Guild'], '$options': 'i' }}))
             # If there is only one of user's character in the guild remove the role.
             if (len(guildRecords) == 1):
                 await author.remove_roles(get(guild.roles, name = charRecords['Guild']), reason=f"Left guild {charRecords['Guild']}")
 
             try:
-                playersCollection = db.players
                 playersCollection.update_one({'_id': charRecords['_id']}, {"$unset": {'Guild': 1, 'Guild Rank':1}})
             except Exception as e:
                 print ('MONGO ERROR: ' + str(e))
