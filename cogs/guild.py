@@ -448,7 +448,7 @@ class Guild(commands.Cog):
                         return
 
                 newGP = (charRecords['GP'] - float(gpNeeded)) 
-                await author.add_roles(guild.get_role(guildRecords['Role ID']), reason=f"Joined guild {guildName}")
+                await author.add_roles(guild.get_role(int(guildRecords['Role ID'])), reason=f"Joined guild {guildName}")
 
                 try:
                     playersCollection = db.players
@@ -490,7 +490,7 @@ class Guild(commands.Cog):
                 await channel.send(f"***{charRecords['Name']}*** cannot upgrade their guild rank because they currently do not belong to a guild.")
                 return
 
-            guildRecords, guildEmbedmsg = await checkForGuild(ctx,guildName,guildEmbed) 
+            guildRecords, guildEmbedmsg = await checkForGuild(ctx,charRecords['Guild'],guildEmbed) 
             
             if guildRecords:
 
@@ -612,7 +612,10 @@ class Guild(commands.Cog):
                     await guildEmbedmsg.clear_reactions()
                     return
 
-            await author.remove_roles(get(guild.roles, name = charRecords['Guild']), reason=f"Left guild {charRecords['Guild']}")
+            guildRecords = list(db.guilds.find({"User ID": str(author.id), "Guild": {"$regex": charRecords['Guild'], '$options': 'i' }}))
+            # If there is only one of user's character in the guild remove the role.
+            if (len(guildRecords) == 1):
+                await author.remove_roles(get(guild.roles, name = charRecords['Guild']), reason=f"Left guild {charRecords['Guild']}")
 
             try:
                 playersCollection = db.players
