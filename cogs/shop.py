@@ -391,7 +391,8 @@ class Shop(commands.Cog):
 
             consumes = charRecords['Consumables'].split(', ')
 
-            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'spells',spellName)
+            spellItem = spellName.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'spells',spellItem)
 
             if bRecord:
                 if 'Spellbook' in charRecords:
@@ -408,6 +409,9 @@ class Shop(commands.Cog):
                             spellCopied = True
                             consumes.remove(c)
                             break
+
+                    if consumes == list():
+                        consumes = ["None"]
 
                     if not spellCopied:
                         await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into their spellbook!")
