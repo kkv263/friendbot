@@ -72,11 +72,17 @@ class Shop(commands.Cog):
 
             #If player is trying to buy spell scroll, search for spell scroll in DB, and find level it can be bought at 
             if "spell scroll" in buyItem.lower():
+                if "spell scroll" == buyItem.lower().strip():
+                    await channel.send(f"""Please be more specific with the spell scroll you're purchasing. The format is `{commandPrefix}shop buy "charactername" "Spell Scroll (Spell Name)"` """)
+                    ctx.command.reset_cooldown(ctx)
+                    return 
+
                 spellItem = buyItem.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
                 sRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'spells', spellItem) 
 
                 if not sRecord:
-                    await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                    if shopEmbedmsg != "Fail":
+                        await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
                     ctx.command.reset_cooldown(ctx)
                     return
 
@@ -170,7 +176,8 @@ class Shop(commands.Cog):
                             ctx.command.reset_cooldown(ctx)
 
             else:
-                await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                if shopEmbedmsg != "Fail":
+                    await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 

@@ -218,6 +218,9 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']}): **{records[i]['TP']} TP**\n"
                 elif table == 'rit':
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']} {records[i]['Minor/Major']})\n"
+                # base spell scroll db entry should not be searched
+                elif table == 'shop' and records[i]['Type'] == "Spell Scroll":
+                    pass
                 else:
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']}\n"
             #check if the response from the user matches the limits
