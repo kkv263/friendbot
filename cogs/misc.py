@@ -157,11 +157,6 @@ class Misc(commands.Cog):
                     print('member not found')
             else:
                 print('role not found')
-            
-    @commands.group()
-    @admin_or_owner()
-    async def version(self, ctx):
-        print(discord.__version__)
     
     #A function that grabs all messages in the quest board and compiles a list of availablities
     async def generateMessageText(self):
