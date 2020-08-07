@@ -595,18 +595,18 @@ class Character(commands.Cog):
 
                     for k,v in startEquipmentItem.items():
                         if '[' in k and ']' in k:
-                            type = k.split('[')
+                            iType = k.split('[')
                             invCollection = db.shop
-                            if 'Instrument' in type[1]:
-                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[1].replace(']','')}.*")]}}))
+                            if 'Instrument' in iType[1]:
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{iType[1].replace(']','')}.*")]}}))
                             else:
-                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(']','')}.*")]}}))
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{iType[0]}.*"),re.compile(f".*{iType[1].replace(']','')}.*")]}}))
 
                             charInv = sorted(charInv, key = lambda i: i['Name']) 
 
                             typeEquipmentList = []
                             for i in range (0,int(v)):
-                                charInvString = f"Please choose from the choices below for {type[0]} {i+1}:\n"
+                                charInvString = f"Please choose from the choices below for {iType[0]} {i+1}:\n"
                                 alphaIndex = 0
                                 for c in charInv:
                                     if 'Yklwa' not in c['Name'] and 'Light Repeating Crossbow' not in c['Name'] and 'Double-Bladed Scimitar' not in c['Name']:
@@ -677,12 +677,68 @@ class Character(commands.Cog):
         # TODO: BG items
         # check bg and gp
         bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'backgrounds',bg)
+
+        def bgItemCheck(r, u):
+            sameMessage = False
+            if charEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author and sameMessage
+
+
         if charEmbedmsg == "Fail":
+            self.bot.get_command('create').reset_cooldown(ctx)
             return
         if not bRecord:
             msg += f':warning: **{bg}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
+
+            for e in bRecord['Equipment']:
+                for ek, ev in e.items():
+                    if type(ev) == dict:
+                        beChoiceString = ""
+                        alphaIndex = 0
+                        beList = []
+                        for c in ev.keys():
+                            beChoiceString += f"{alphaEmojis[alphaIndex]}: {c}\n"
+                            beList.append(c)
+                            alphaIndex += 1
+
+                        charEmbed.add_field(name=f"Your background `{bRecord['Name']}` lets you choose one {ek}.", value=beChoiceString)
+                        if not charEmbedmsg:
+                            charEmbedmsg = await channel.send(embed=charEmbed)
+                        else:
+                            await charEmbedmsg.edit(embed=charEmbed)
+
+                        await charEmbedmsg.add_reaction('❌')
+                        try:
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=bgItemCheck , timeout=60)
+                        except asyncio.TimeoutError:
+                            await charEmbedmsg.delete()
+                            await channel.send(f'Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                            self.bot.get_command('create').reset_cooldown(ctx)
+                            return
+                        else:
+                            await charEmbedmsg.clear_reactions()
+                            if tReaction.emoji == '❌':
+                                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
+                                await charEmbedmsg.clear_reactions()
+                                self.bot.get_command('create').reset_cooldown(ctx)
+
+                        charEmbed.clear_fields()
+                        ek = beList[alphaEmojis.index(tReaction.emoji)]
+                        ev = 1
+
+                    if charDict['Inventory'] == "None":
+                        charDict['Inventory'] = {ek : ev}
+                    else:
+                        if bRecord['Name'] not in charDict['Inventory']:
+                            charDict['Inventory'][ek] = ev
+                        else:
+                            charDict['Inventory'][ek] += ev
+
+            self.bot.get_command('create').reset_cooldown(ctx)
+
             totalGP = 0
             if lvl > 1 and lvl < 6: 
                 totalGP = (lvl-1) * 240
@@ -738,6 +794,7 @@ class Character(commands.Cog):
             featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, rRecord['Name'], charDict['Class'], cRecord, featLevels, charEmbed, charEmbedmsg, charDict, "")
 
             if not featsChosen and not statsFeats and not charEmbedmsg:
+                self.bot.get_command('create').reset_cooldown(ctx)
                 return
 
             if featsChosen:
@@ -1368,18 +1425,18 @@ class Character(commands.Cog):
 
                     for k,v in startEquipmentItem.items():
                         if '[' in k and ']' in k:
-                            type = k.split('[')
+                            iType = k.split('[')
                             invCollection = db.shop
-                            if 'Instrument' in type[1]:
-                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[1].replace(']','')}.*")]}}))
+                            if 'Instrument' in iType[1]:
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{iType[1].replace(']','')}.*")]}}))
                             else:
-                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{type[0]}.*"),re.compile(f".*{type[1].replace(']','')}.*")]}}))
+                                charInv = list(invCollection.find({"Type": {'$all': [re.compile(f".*{iType[0]}.*"),re.compile(f".*{iType[1].replace(']','')}.*")]}}))
 
                             charInv = sorted(charInv, key = lambda i: i['Name']) 
 
                             typeEquipmentList = []
                             for i in range (0,int(v)):
-                                charInvString = f"Please choose from the choices below for {type[0]} {i+1}:\n"
+                                charInvString = f"Please choose from the choices below for {iType[0]} {i+1}:\n"
                                 alphaIndex = 0
                                 for c in charInv:
                                     if 'Yklwa' not in c['Name'] and 'Light Repeating Crossbow' not in c['Name'] and 'Double-Bladed Scimitar' not in c['Name']:
@@ -1976,17 +2033,17 @@ class Character(commands.Cog):
                 invCollection = db.shop
                 charInv = list(invCollection.find({"Name": {'$in': list(charDict['Inventory'].keys())}}))
                 for i in charInv:
-                    type = i['Type'].split('(')
-                    if len(type) == 1:
-                        type.append("")
+                    iType = i['Type'].split('(')
+                    if len(iType) == 1:
+                        iType.append("")
                     else:
-                        type[1] = '(' + type[1]
+                        iType[1] = '(' + iType[1]
                   
-                    type[0] = type[0].strip()
-                    if type[0] not in typeDict:
-                        typeDict[type[0]] = [f"• {i['Name']} {type[1]} x{charDict['Inventory'][i['Name']]}\n"]
+                    iType[0] = iType[0].strip()
+                    if iType[0] not in typeDict:
+                        typeDict[iType[0]] = [f"• {i['Name']} {iType[1]} x{charDict['Inventory'][i['Name']]}\n"]
                     else:
-                        typeDict[type[0]].append(f"• {i['Name']} {type[1]} x{charDict['Inventory'][i['Name']]}\n")
+                        typeDict[iType[0]].append(f"• {i['Name']} {iType[1]} x{charDict['Inventory'][i['Name']]}\n")
 
                 for k, v in typeDict.items():
                     v.sort()
