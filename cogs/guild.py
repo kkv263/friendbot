@@ -420,17 +420,14 @@ class Guild(commands.Cog):
                     return
 
                 elif charRecords['Guild Rank'] == 3:
-                    starsAdded = 6
                     if guildRecords['Total Reputation'] < 60:
                         await channel.send(f"***{charRecords['Name']}*** cannot upgrade their rank because their guild ***{guildRecords['Name']}*** has not unlocked their Masterwork upgrade yet.")
                         return
                 elif charRecords['Guild Rank'] == 2:
-                    starsAdded = 3
                     if guildRecords['Total Reputation'] < 30:
                         await channel.send(f"***{charRecords['Name']}*** cannot upgrade their rank because their guild ***{guildRecords['Name']}*** has not unlocked their Large upgrade yet.")
                         return
                 elif charRecords['Guild Rank'] == 1:
-                    starsAdded = 1
                     if guildRecords['Total Reputation'] < 10:
                         await channel.send(f"***{charRecords['Name']}*** cannot upgrade their rank because their guild ***{guildRecords['Name']}*** has not unlocked their Medium upgrade yet.")
                         return
@@ -466,9 +463,7 @@ class Guild(commands.Cog):
                 newGP = (charRecords['GP'] - float(gpNeeded)) 
                 try:
                     playersCollection = db.players
-                    guildsCollection = db.guilds
                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'GP':newGP, 'Guild Rank': charRecords['Guild Rank'] + 1}})
-                    guildsCollection.update_one({'Name': guildRecords['Name']}, {"$set": {'Total Reputation':guildRecords['Total Reputation'] + starsAdded, 'Reputation': guildRecords['Reputation'] + starsAdded}})
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
