@@ -674,7 +674,6 @@ class Character(commands.Cog):
                         charDict['Class'] = className
                     else:
                         charDict['Class'] += f' / {className}'
-        # TODO: BG items
         # check bg and gp
         bRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'backgrounds',bg)
 
@@ -730,12 +729,12 @@ class Character(commands.Cog):
                         ev = 1
 
                     if charDict['Inventory'] == "None":
-                        charDict['Inventory'] = {ek : ev}
+                        charDict['Inventory'] = {ek : int(ev)}
                     else:
                         if bRecord['Name'] not in charDict['Inventory']:
-                            charDict['Inventory'][ek] = ev
+                            int(charDict['Inventory'][ek]) = int(ev)
                         else:
-                            charDict['Inventory'][ek] += ev
+                            int(charDict['Inventory'][ek]) += int(ev)
 
             self.bot.get_command('create').reset_cooldown(ctx)
 

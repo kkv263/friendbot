@@ -324,7 +324,7 @@ class Shop(commands.Cog):
                     ctx.command.reset_cooldown(ctx)
                     return
 
-                elif charRecords['Inventory'][f"{bRecord['Name']}"] < amount:
+                elif int(charRecords['Inventory'][f"{bRecord['Name']}"]) < amount:
                     await channel.send(f"You do not have {amount}x **{bRecord['Name']}** to sell!")
                     ctx.command.reset_cooldown(ctx)
                     return 
@@ -360,8 +360,8 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return
                     elif tReaction.emoji == '✅':
-                        charRecords['Inventory'][f"{bRecord['Name']}"] -= amount
-                        if charRecords['Inventory'][f"{bRecord['Name']}"] <= 0:
+                        int(charRecords['Inventory'][f"{bRecord['Name']}"]) -= amount
+                        if int(charRecords['Inventory'][f"{bRecord['Name']}"]) <= 0:
                             del charRecords['Inventory'][f"{bRecord['Name']}"]
                         try:
                             playersCollection = db.players
