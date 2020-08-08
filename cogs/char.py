@@ -732,9 +732,9 @@ class Character(commands.Cog):
                         charDict['Inventory'] = {ek : int(ev)}
                     else:
                         if bRecord['Name'] not in charDict['Inventory']:
-                            int(charDict['Inventory'][ek]) = int(ev)
+                            charDict['Inventory'][ek] = int(ev)
                         else:
-                            int(charDict['Inventory'][ek]) += int(ev)
+                            charDict['Inventory'][ek] += int(ev)
 
             self.bot.get_command('create').reset_cooldown(ctx)
 
