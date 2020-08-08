@@ -360,7 +360,7 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return
                     elif tReaction.emoji == '✅':
-                        int(charRecords['Inventory'][f"{bRecord['Name']}"]) -= amount
+                        charRecords['Inventory'][f"{bRecord['Name']}"] -= amount
                         if int(charRecords['Inventory'][f"{bRecord['Name']}"]) <= 0:
                             del charRecords['Inventory'][f"{bRecord['Name']}"]
                         try:
