@@ -703,10 +703,12 @@ class Character(commands.Cog):
             
             for e in bRecord['Equipment']:
                 beTopChoiceList = []
+                beTopChoiceKeys = []
                 alphaIndexTop = 0
                 beTopChoiceString = ""
                 for ek, ev in e.items():
                     if type(ev) == dict:
+                        beTopChoiceKeys.append(ek)
                         beTopChoiceList.append(ev)
                         beTopChoiceString += f"{alphaEmojis[alphaIndexTop]}: {ek}\n"
                         alphaIndexTop += 1
@@ -744,14 +746,16 @@ class Character(commands.Cog):
                                 self.bot.get_command('create').reset_cooldown(ctx)
 
                         beTopValues = beTopChoiceList[alphaEmojis.index(tReaction.emoji)]
+                        beTopKey = beTopChoiceKeys[alphaEmojis.index(tReaction.emoji)]
                     elif len(beTopChoiceList) == 1:
                         beTopValues = beTopChoiceList[0]
+                        beTopKey = beTopChoiceKeys[0]
 
                     beChoiceString = ""
                     alphaIndex = 0
                     beList = []
 
-                    if 'Pack' in ek:
+                    if 'Pack' in beTopKey:
                        for c in beTopValues:
                           if charDict['Inventory'] == "None":
                               charDict['Inventory'] = {c : 1}
@@ -766,7 +770,7 @@ class Character(commands.Cog):
                             beList.append(c)
                             alphaIndex += 1
 
-                        charEmbed.add_field(name=f"Your background `{bRecord['Name']}` lets you choose one {ek}.", value=beChoiceString, inline=False)
+                        charEmbed.add_field(name=f"Your background `{bRecord['Name']}` lets you choose one {beTopKey}.", value=beChoiceString, inline=False)
                         if not charEmbedmsg:
                             charEmbedmsg = await channel.send(embed=charEmbed)
                         else:
