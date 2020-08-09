@@ -49,16 +49,16 @@ async def on_command_error(ctx,error):
             commandParent = commandParent.name + " "
 
         if error.retry_after == float('inf'):
-            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{commandParent}{ctx.invoked_with}`*** is already in progress, please complete the command before trying again.")
+            await ctx.channel.send(f"Sorry, the command **`{commandPrefix}{commandParent}{ctx.invoked_with}`** is already in progress, please complete the command before trying again.")
         else:
-            await ctx.channel.send(f"Sorry, the command ***`{commandPrefix}{commandParent}{ctx.invoked_with}`*** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
+            await ctx.channel.send(f"Sorry, the command **`{commandPrefix}{commandParent}{ctx.invoked_with}`** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
         return
 
     elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
         return
 
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.channel.send(f'Sorry, the command ***`{commandPrefix}{ctx.invoked_with}`*** is not valid, please try again!')
+        await ctx.channel.send(f'Sorry, the command **`{commandPrefix}{ctx.invoked_with}`** is not valid, please try again!')
 
     else:
         ctx.command.reset_cooldown(ctx)
@@ -172,7 +172,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedShop.title = 'Shop Commands'
     helpEmbedShop.add_field(name=f'▫️ Buying an Item\n{commandPrefix}shop buy "character name" "item" #', value="Purchase a specified number of a single mundane item from the shop.", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Selling a Mundane Item\n{commandPrefix}shop sell "character name" "item" #', value="Sell a specified number of a single mundane item to the shop", inline=False)
-    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell" #', value="Copy a spell scroll into your character's spellbook. Limited to classes that have access to a spellbook. Some subclasses offer discounts which are applied.", inline=False)
+    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell"', value="Copy a spell scroll into your character's spellbook. Limited to classes that have access to a spellbook. Some subclasses offer discounts which are applied.", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Training Extra Competencies\n{commandPrefix}proficiency training "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on).", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Training Noodle Competencies\n{commandPrefix}proficiency noodle "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on), discounted and with extra benefits for those with a Noodle role!", inline=False)
 
@@ -193,7 +193,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedGuild.add_field(name=f'▫️ Viewing a Guild\n{commandPrefix}guild info "guild name"', value="View the specified guild's roster and the amount of reputation in its bank. If the guild has yet to be funded, it will show the amount gp required before it will open.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Joining a Guild\n{commandPrefix}guild join "character name" "guild name"', value="Join the specified guild with the specified character.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Leaving a Guild\n{commandPrefix}guild leave "character name"', value="Leave the guild which the specified character currently belongs to.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rep "character name" #', value="Upgrade the specified character's rank in the guild which they currently belong to by donating gp.", inline=False)
+    helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rankup "character name"', value="Upgrade the specified character's rank in the guild which they currently belong to by donating gp.", inline=False)
 
 
     numPages = len(helpList)

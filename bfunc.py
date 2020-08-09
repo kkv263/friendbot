@@ -55,7 +55,11 @@ async def traceBack (ctx,error,silent=False):
 
 def calculateTreasure(seconds, role):
     cp = ((seconds) // 1800) / 2
-    tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
+
+    # old rounding code 
+    # tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
+
+    tp = cp / 2
     gp = cp * 60
     role = role.lower()
 
@@ -120,22 +124,25 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         records = list(collection.find({"Name": {"$regex": query, '$options': 'i' }}))
     else:
         #search through the table for an element were the Name or Grouped property contain the query
-        filterDic = {"$or": [
-                        {
-                          "Name": {
-                            "$regex": query,
-                            #make the check case-insensitively
-                            "$options": "i"
-                          }
-                        },
-                        {
-                          "Grouped": {
-                            "$regex": query,
-                            "$options": "i"
-                          }
+        if table == "spells":
+            filterDic = {"Name": {"$regex": query, '$options': 'i' }, 'Level': {'$gt':0}}
+        else:
+            filterDic = {"$or": [
+                            {
+                              "Name": {
+                                "$regex": query,
+                                #make the check case-insensitively
+                                "$options": "i"
+                              }
+                            },
+                            {
+                              "Grouped": {
+                                "$regex": query,
+                                "$options": "i"
+                              }
+                            }
+                          ]
                         }
-                      ]
-                    }
                     
         # Here lies MSchildorfer's dignity. He copy and pasted with abandon and wondered why
         #  collection.find(collection.find(filterDic)) does not work for he could not read
@@ -188,11 +195,17 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     
     #sort all items alphabetically 
     records = sorted(records, key = sortingEntryAndList)    
-    
     #if no elements are left, return nothing
     if records == list():
         return None, apiEmbed, apiEmbedmsg
     else:
+        # if theres an exact match return
+        if 'Name' in records[0]:
+            print([r['Name'].lower() for r in records])
+            for r in records:
+                if query.lower() == r['Name'].lower():
+                    return r, apiEmbed, apiEmbedmsg
+    
         #create a string to provide information about the items to the user
         infoString = ""
         if (len(records) > 1):
@@ -205,6 +218,9 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']}): **{records[i]['TP']} TP**\n"
                 elif table == 'rit':
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']} {records[i]['Minor/Major']})\n"
+                # base spell scroll db entry should not be searched
+                elif table == 'shop' and records[i]['Type'] == "Spell Scroll":
+                    pass
                 else:
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']}\n"
             #check if the response from the user matches the limits
@@ -246,12 +262,18 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             #if only 1 item was left, simply return it
             return records[0], apiEmbed, apiEmbedmsg
 
-async def checkForChar(ctx, char, charEmbed="", mod=False):
+async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
     channel = ctx.channel
     author = ctx.author
     guild = ctx.guild
 
+    if authorCheck != None:
+        author = authorCheck
+
     playersCollection = db.players
+
+    char = char.strip()
+
     if mod == True:
         charRecords = list(playersCollection.find({"Name": {"$regex": char, '$options': 'i' }})) 
     else:
@@ -299,18 +321,58 @@ async def checkForChar(ctx, char, charEmbed="", mod=False):
 
     return charRecords[0], None
 
-async def checkForGuild(ctx, name):
+async def checkForGuild(ctx, name, guildEmbed="" ):
     channel = ctx.channel
     author = ctx.author
     guild = ctx.guild
 
-    collection = db.guilds
-    records = collection.find_one({"Name": {"$regex": name, '$options': 'i' }})
+    name = name.strip()
 
-    if not records:
-        return False
+    collection = db.guilds
+    guildRecords = list(collection.find({"Name": {"$regex": name, '$options': 'i' }}))
+
+    print(guildRecords)
+
+    if guildRecords == list():
+        await channel.send(content=f'I was not able to find a guild named `{name}`. Please check your spelling and try again.')
+        ctx.command.reset_cooldown(ctx)
+        return None, None
     else:
-        return records
+        if len(guildRecords) > 1:
+            infoString = ""
+            guildRecords = sorted(list(guildRecords), key = lambda i : i ['Name'])
+            for i in range(0, min(len(guildRecords), 9)):
+                infoString += f"{alphaEmojis[i]}: {guildRecords[i]['Name']}\n"
+            
+            def infoCharEmbedcheck(r, u):
+                sameMessage = False
+                if guildEmbedmsg.id == r.message.id:
+                    sameMessage = True
+                return ((r.emoji in alphaEmojis[:min(len(guildRecords), 9)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
+
+            guildEmbed.add_field(name=f"There seems to be multiple results for `{name}`, please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
+            guildEmbedmsg = await channel.send(embed=guildEmbed)
+            await guildEmbedmsg.add_reaction('❌')
+
+            try:
+                tReaction, tUser = await bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
+            except asyncio.TimeoutError:
+                await guildEmbedmsg.delete()
+                await channel.send('Guild command timed out! Try using the command again.')
+                ctx.command.reset_cooldown(ctx)
+                return None, None
+            else:
+                if tReaction.emoji == '❌':
+                    await guildEmbedmsg.edit(embed=None, content=f"Guild command canceled. Please use the command and try again!")
+                    await guildEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
+                    return None, None
+            guildEmbed.clear_fields()
+            await guildEmbedmsg.clear_reactions()
+            return guildRecords[alphaEmojis.index(tReaction.emoji[0])], guildEmbedmsg
+
+    return guildRecords[0], None
+
         
 def refreshKey (timeStarted):
 		if (time.time() - timeStarted > 60 * 59):

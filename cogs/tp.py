@@ -414,21 +414,27 @@ class Tp(commands.Cog):
                                 unsetTP = False
                                 # For the stat books, this will increase the characters stats permanently here.
                                 if 'Attunement' not in mRecord and 'Stat Bonuses' in mRecord:
-                                    # statSplit MAX NUM STAT +X
+                                    if 'Max Stats' not in charRecords:
+                                        charRecords['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
+
+                                    print(charRecords['Max Stats'])
+                                    # statSplit = MAX STAT +X
                                     statSplit = mRecord['Stat Bonuses'].split(' +')
                                     maxSplit = statSplit[0].split(' ')
-                                    oldStat = charRecords[maxSplit[2]]
-                                    charRecords[maxSplit[2]] += int(statSplit[1]) 
-                                    # If theres a MAX, it won't go over.
+                                    oldStat = charRecords[maxSplit[1]]
+
+                                    #Increase stats from Manual/Tome and add to max stats. 
                                     if "MAX" in statSplit[0]:
-                                        if charRecords[maxSplit[2]] > int(maxSplit[1]):
-                                            charRecords[maxSplit[2]] = maxSplit[1]
-                                    setData[maxSplit[2]] = charRecords[maxSplit[2]]
+                                        charRecords[maxSplit[1]] += int(statSplit[1]) 
+                                        charRecords['Max Stats'][maxSplit[1]] += int(statSplit[1]) 
+
+                                    setData[maxSplit[1]] = int(charRecords[maxSplit[1]])
+                                    setData['Max Stats'] = charRecords['Max Stats']                           
 
                                     # If the stat increased was con, recalc HP
                                     # The old CON is subtracted, and new CON is added.
                                     # If the player can't destroy magic items, this is done here, otherwise... it will need to be done in $info.
-                                    if 'CON' in maxSplit[2]:
+                                    if 'CON' in maxSplit[1]:
                                         charRecords['HP'] -= ((int(oldStat) - 10) // 2) * charRecords['Level']
                                         charRecords['HP'] += ((int(charRecords['CON']) - 10) // 2) * charRecords['Level']
                                         setData['HP'] = charRecords['HP']
