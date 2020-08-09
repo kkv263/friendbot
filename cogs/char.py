@@ -462,7 +462,7 @@ class Character(commands.Cog):
         if charEmbedmsg == "Fail":
             return
         if not rRecord:
-            msg += f':warning: **{race}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
+            msg += f'• {race} isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Race'] = rRecord['Name']
 
@@ -908,13 +908,13 @@ class Character(commands.Cog):
                 await charEmbedmsg.delete()
             elif charEmbedmsg == "Fail":
                 msg = ":warning: You have either canceled the command or a value was not found."
-            await ctx.channel.send(f'***{author.display_name}***, there were error(s) when creating your character:\n{msg}')
+            await ctx.channel.send(f'There were error(s) when creating your character:\n{msg}')
 
             self.bot.get_command('create').reset_cooldown(ctx)
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}): {charDict['CP']} CP"
+        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']} CP"
         charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
@@ -1124,7 +1124,7 @@ class Character(commands.Cog):
         extraCp = float(charDict['CP'].split('/')[0])
 
         if extraCp > float(charDict['CP'].split('/')[1]):
-            msg += f":warning: {oldName} needs to level up before they can respec into a new character"
+            msg += f":warning: {oldName} needs to level up before they can respec into a new character!"
 
         extraTP = extraCp / 2 
 
@@ -1136,7 +1136,7 @@ class Character(commands.Cog):
                     return
 
                 if mRecord in allMagicItemsString:
-                    msg += ':warning: You cannot spend TP on two of the same magic item.\n'
+                    msg += ':warning: You cannot spend TP on two of the same magic item!\n'
                     break 
                 if not mRecord:
                     msg += f':warning: **{m}** doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
@@ -1684,13 +1684,13 @@ class Character(commands.Cog):
                 await charEmbedmsg.delete()
             elif charEmbedmsg == "Fail":
                 msg = ":warning: You have either canceled the command or a value was not found."
-            await ctx.channel.send(f'***{author.display_name}***, there were error(s) when creating your character:\n{msg}')
+            await ctx.channel.send(f'There were error(s) when creating your character:\n{msg}')
 
             self.bot.get_command('respec').reset_cooldown(ctx)
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv.{charDict['Level']}): {charDict['CP']} CP"
+        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']} CP"
         charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
@@ -1798,13 +1798,13 @@ class Character(commands.Cog):
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=retireEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
                 await charEmbedmsg.delete()
-                await channel.send(f'Retire canceled. Try again using the same command:\n```yaml\n{commandPrefix}retire```')
+                await channel.send(f'Retire canceled. Try again using the same command:\n```yaml\n{commandPrefix}retire "character name"```')
                 self.bot.get_command('retire').reset_cooldown(ctx)
                 return
             else:
                 await charEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await charEmbedmsg.edit(embed=None, content=f"Retire canceled. Try again using the same command:\n```yaml\n{commandPrefix}retire```")
+                    await charEmbedmsg.edit(embed=None, content=f'Retire canceled. Try again using the same command:\n```yaml\n{commandPrefix}retire "character name"```')
                     await charEmbedmsg.clear_reactions()
                     self.bot.get_command('retire').reset_cooldown(ctx)
                     return
@@ -1831,9 +1831,9 @@ class Character(commands.Cog):
                         print('Success')
                         if charEmbedmsg:
                             await charEmbedmsg.clear_reactions()
-                            await charEmbedmsg.edit(embed=None, content =f"Congratulations! You have retired {charDict['Name']}. ")
+                            await charEmbedmsg.edit(embed=None, content =f"Congratulations! You have retired ***{charDict['Name']}***. ")
                         else: 
-                            charEmbedmsg = await channel.send(embed=None, content=f"Congratulations! You have retired {charDict['Name']}.")
+                            charEmbedmsg = await channel.send(embed=None, content=f"Congratulations! You have retired ***{charDict['Name']}***.")
 
         self.bot.get_command('retire').reset_cooldown(ctx)
 
@@ -2028,7 +2028,7 @@ class Character(commands.Cog):
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
-            footer = f"To view character's info: {commandPrefix}info {charDict['Name']}"
+            footer = f"To view your character's info, type the following command: `{commandPrefix}info {charDict['Name']}`"
             charLevel = charDict['Level']
             if charLevel < 5:
                 role = 1
@@ -2079,13 +2079,13 @@ class Character(commands.Cog):
 
             if mPages > 1:
                 for p in range(len(mPageStops)-1):
-                    charEmbed.add_field(name=f'Magic Items pt. {p+1}', value=miString[mPageStops[p]:mPageStops[p+1]], inline=False)
+                    charEmbed.add_field(name=f'Magic Items - p. {p+1}', value=miString[mPageStops[p]:mPageStops[p+1]], inline=False)
             else:
                 charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
 
 
             charDictAuthor = guild.get_member(int(charDict['User ID']))
-            charEmbed.title = f"{charDict['Name']} (Lv.{charLevel}): Inventory"
+            charEmbed.title = f"{charDict['Name']} (Lv {charLevel}): Inventory"
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
             if charDict['Inventory'] != 'None':
                 typeDict = {}
@@ -2191,11 +2191,11 @@ class Character(commands.Cog):
                 for charDict in charRecords:
                     totalGamesPlayed += charDict['Games'] 
                     tempCharString = charString
-                    charString += f":warning: ***{charDict['Name']}*** (Lv.{charDict['Level']}): {charDict['Race']}, {charDict['Class']}\n"
+                    charString += f"• ***{charDict['Name']}***: Lv {charDict['Level']}, {charDict['Race']}, {charDict['Class']}\n"
 
 
                     if 'Guild' in charDict:
-                        charString += f"\a\a+ Guild: {charDict['Guild']}\n"
+                        charString += f"   - Guild: ***{charDict['Guild']}***\n"
 
                     if len(charString) > (768 * pages):
                         pageStops.append(len(tempCharString))
@@ -2215,9 +2215,9 @@ class Character(commands.Cog):
                 
 
                 if 'Noodles' in userRecords:
-                    charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"
+                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"
                 else:
-                    charEmbed.description = f"Total Games Played: {totalGamesPlayed}\nNoodles: 0 (Try hosting sessions to receive Noodles!)"
+                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: 0 (Try hosting sessions to receive Noodles!)"
 
                 userEmbedList = [charEmbed]
 
@@ -2225,7 +2225,7 @@ class Character(commands.Cog):
                     for p in range(len(pageStops)-1):
                         if p != 0:
                             userEmbedList.append(discord.Embed())
-                        userEmbedList[p].add_field(name=f'Characters p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+                        userEmbedList[p].add_field(name=f'Characters - p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
 
                 else:
                     charEmbed.add_field(name=f'Characters', value=charString, inline=False)
@@ -2261,7 +2261,7 @@ class Character(commands.Cog):
 
 
         else:
-            await channel.send(f'***{author.display_name}***: you will need to play at least one game with a character before you can view your user stats.')
+            await channel.send(f'You will need to play at least one session with a character before you can view your user stats.')
             return
             
            
@@ -2278,7 +2278,7 @@ class Character(commands.Cog):
         statusEmoji = ""
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
         if charDict:
-            footer = f"To view inventory: {commandPrefix}inv {charDict['Name']}"   
+            footer = f"To view your character's inventory, type the following command: `{commandPrefix}inv {charDict['Name']}`"
             description = f"{charDict['Race']}\n{charDict['Class']}\n{charDict['Background']}\nGames Played: {charDict['Games']}\n"
             if 'Proficiency' in charDict:
                 description +=  f"Extra Training: {charDict['Proficiency']}\n"
@@ -2316,7 +2316,7 @@ class Character(commands.Cog):
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
             charEmbed.description = description
             charEmbed.clear_fields()    
-            charEmbed.title = f"{charDict['Name']} (Lv.{charLevel}) - {charDict['CP']} CP"
+            charEmbed.title = f"{charDict['Name']} (Lv {charLevel}) - {charDict['CP']} CP"
             tpString = ""
             for i in range (1,5):
                 if f"T{i} TP" in charDict:
@@ -2566,8 +2566,8 @@ class Character(commands.Cog):
                 levelUpEmbed.clear_fields()
                 lvl = charLevel
                 newLevel = charLevel + 1
-                levelUpEmbed.title = f"{charName} - Level Up! {lvl} → {newLevel}"
-                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
+                levelUpEmbed.title = f"{charName}: Level Up! {lvl} → {newLevel}"
+                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}"
                 chooseClassString = ""
                 alphaIndex = 0
                 classes = []
@@ -2619,7 +2619,7 @@ class Character(commands.Cog):
                 if chooseClassString != "":
                     levelUpEmbed.add_field(name="Would you like to choose a new multiclass?", value='✅: Yes\n\n🚫: No\n\n❌: Cancel')
                 else:
-                    levelUpEmbed.add_field(name="""~~Would you like to choose a new multiclass?~~\nThere are no classes available to multiclass into. Please react "No" to proceed""", value='~~✅: Yes~~\n\n🚫: No\n\n❌: Cancel')
+                    levelUpEmbed.add_field(name="""~~Would you like to choose a new multiclass?~~\nThere are no classes available to multiclass into. Please react with "No" to proceed.""", value='~~✅: Yes~~\n\n🚫: No\n\n❌: Cancel')
 
                 if not levelUpEmbedmsg:
                     levelUpEmbedmsg = await channel.send(embed=levelUpEmbed)
@@ -2821,7 +2821,7 @@ class Character(commands.Cog):
                                         charStats[maxSplit[0]] += int(maxSplit[1])
                                         data['Max Stats'][maxSplit[0]] += int(maxSplit[1]) 
 
-                                    specialStatStr = f"Level {s['Bonus Level']} {c['Name']} stat bonus unlocked! - {s['Stat Bonuses']}"
+                                    specialStatStr = f"Level {s['Bonus Level']} {c['Name']} stat bonus unlocked! {s['Stat Bonuses']}"
 
 
                 maxStatStr = ""
@@ -2829,14 +2829,14 @@ class Character(commands.Cog):
                     if charStats[sk] > data['Max Stats'][sk]:
                         data[sk] = charStats[sk] = data['Max Stats'][sk]
                         if charFeatsGained != "":
-                            maxStatStr += f"\n{infoRecords['Name']}'s {sk} will not increase because the MAX is {data['Max Stats'][sk]}."
+                            maxStatStr += f"\n{infoRecords['Name']}'s {sk} will not increase because their maximum is {data['Max Stats'][sk]}."
 
                 infoRecords['CON'] = charStats['CON']
                 charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
                 data['HP'] = charHP
 
-                levelUpEmbed.title = f'{charName} has leveled up to **{newCharLevel}**!\nCurrent CP: {totalCP} CP'
-                levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}" + f"\n{charFeatsGainedStr}{maxStatStr}\n{specialStatStr}"
+                levelUpEmbed.title = f'{charName} has leveled up to {newCharLevel}!\nCurrent CP: {totalCP} CP'
+                levelUpEmbed.description = f"{infoRecords['Race']} {charClass}\n**STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}" + f"\n{charFeatsGainedStr}{maxStatStr}\n{specialStatStr}"
                 levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
                 levelUpEmbed.clear_fields()
 
@@ -3558,7 +3558,7 @@ class Character(commands.Cog):
 
                     if (int(charStats[statNames[asi]]) + 1 > charStats['Max Stats'][statNames[asi]]):
                         await charEmbedmsg.delete()
-                        await channel.send(f"You cannot increase your character's {statNames[asi]} above your MAX {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
+                        await channel.send(f"You cannot increase your character's {statNames[asi]} above your maximum of {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None, None
 

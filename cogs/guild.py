@@ -24,9 +24,9 @@ class Guild(commands.Cog):
             if error.param.name == 'charName':
                 msg = "You're missing your character name in the command. "
             elif error.param.name == "guildName":
-                msg = "You're missing the guild name in the command."
+                msg = "You're missing the guild name in the command. "
             elif error.param.name == "roleName":
-                msg = "You're missing the @role for the guild you want to create"
+                msg = "You're missing the @role for the guild you want to create. "
             elif error.param.name == "channelName":
                 msg = "You're missing the #channel for the guild you want to create. "
             elif error.param.name == "gpName":
@@ -76,7 +76,7 @@ class Guild(commands.Cog):
             return 
 
         if guildRole == list() or guildChannel == list():
-            await channel.send(f"A guild role or guild channel must be supplied.")
+            await channel.send(f"You are missing the guild's role and/or guild channel.")
             return 
             
 
@@ -143,7 +143,7 @@ class Guild(commands.Cog):
                             noodleRep.remove(n)
 
                     if noodleRep == list():
-                        await channel.send(f"You have used are your noodles to fund reputation to your other guilds and won't be able to create another guild.")
+                        await channel.send(f"You can't create any more guilds because you have already used all of your Noodle roles to create guilds! Gain a new Noodle role if you want to create another guild!")
                         return
 
                     noodleRepStr = ""
@@ -157,7 +157,7 @@ class Guild(commands.Cog):
                         return (r.emoji in alphaEmojis[:len(noodleRep)] or (str(r.emoji) == '❌')) and u == author and sameMessage
 
 
-                    guildEmbed.add_field(name=f"Based on the available noodles, please choose your guild's base reputation.", value=noodleRepStr, inline=False)
+                    guildEmbed.add_field(name=f"Choose the Noodle role which you would like to use to create this guild. This will affect the amount of reputation which the guild starts with.", value=noodleRepStr, inline=False)
                     guildEmbedmsg = await channel.send(embed=guildEmbed)
                     await guildEmbedmsg.add_reaction('❌')
 
@@ -203,7 +203,7 @@ class Guild(commands.Cog):
                         print('Success')
 
                         guildEmbed.title = f"Guild Creation: {guildName}"
-                        guildEmbed.description = f"***{charDict['Name']}*** has created ***{guildName}***!\n\n6000 gp must be donated in order for the guild to officially open!\n\nOther characters, including yours, can fund the guild using the following command:\n```yaml\n{commandPrefix}guild fund \"charactername\" gp {guildName}```\nThe guild's status can be checked with the following command:\n```{commandPrefix}guild info {guildName}```\n\nCurrent Guild Funds: {gpNeeded} gp"
+                        guildEmbed.description = f"***{charDict['Name']}*** has created ***{guildName}***!\n\n6000 gp must be donated in order for the guild to officially open!\n\nAny character who is not in a guild can fund this guild using the following command:\n```yaml\n{commandPrefix}guild fund \"character name\" gp \"{guildName}\"```\nThe guild's status can be checked using the following command:\n```yaml\n{commandPrefix}guild info \"{guildName}\"```\nCurrent Guild Funds: {gpNeeded} gp"
                         if guildEmbedmsg:
                             await guildEmbedmsg.clear_reactions()
                             await guildEmbedmsg.edit(embed=guildEmbed)
@@ -240,7 +240,7 @@ class Guild(commands.Cog):
             else:
                 guildRank = "Rank 1 (Small)"
 
-            guildEmbed.title = f"{guildRecords['Name']} - {guildRank}" 
+            guildEmbed.title = f"{guildRecords['Name']}: {guildRank}" 
             # Does not list Guildmaster
             # guildEmbed.add_field (name= 'Guildmaster', value=f"{guild.get_member(int(guildRecords['Guildmaster ID'])).mention} **{guildRecords['Guildmaster']}**\n", inline=False)
 
@@ -294,7 +294,7 @@ class Guild(commands.Cog):
 
                 if 'Guild' in charRecords:
                     if charRecords['Guild'] != guildRecords['Name']:
-                        await channel.send(f"***{charRecords['Name']}*** cannot fund ***{guildRecords['Name']}*** because they belong to the guild ***{charRecords['Guild']}***.")
+                        await channel.send(f"***{charRecords['Name']}*** cannot fund ***{guildRecords['Name']}*** because they belong to ***{charRecords['Guild']}***.")
                         return
 
                 gpNeeded = 0
