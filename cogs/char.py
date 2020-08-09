@@ -700,6 +700,7 @@ class Character(commands.Cog):
 
             # TODO: make function for inputing in inventory
             # Background items: goes through each background and give extra items for inventory.
+            
             for e in bRecord['Equipment']:
                 beTopChoiceList = []
                 alphaIndexTop = 0
@@ -749,40 +750,51 @@ class Character(commands.Cog):
                     beChoiceString = ""
                     alphaIndex = 0
                     beList = []
-                    for c in beTopValues:
-                        beChoiceString += f"{alphaEmojis[alphaIndex]}: {c}\n"
-                        beList.append(c)
-                        alphaIndex += 1
 
-                    charEmbed.add_field(name=f"Your background `{bRecord['Name']}` lets you choose one {ek}.", value=beChoiceString, inline=False)
-                    if not charEmbedmsg:
-                        charEmbedmsg = await channel.send(embed=charEmbed)
+                    if 'Pack' in ek:
+                       for c in beTopValues:
+                          if charDict['Inventory'] == "None":
+                              charDict['Inventory'] = {c : 1}
+                          else:
+                              if c not in charDict['Inventory']:
+                                  charDict['Inventory'][c] = 1
+                              else:
+                                  charDict['Inventory'][c] += 1
                     else:
-                        await charEmbedmsg.edit(embed=charEmbed)
+                        for c in beTopValues:
+                            beChoiceString += f"{alphaEmojis[alphaIndex]}: {c}\n"
+                            beList.append(c)
+                            alphaIndex += 1
 
-                    await charEmbedmsg.add_reaction('❌')
-                    try:
-                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=bgItemCheck , timeout=60)
-                    except asyncio.TimeoutError:
-                        await charEmbedmsg.delete()
-                        await channel.send(f'Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
-                        self.bot.get_command('create').reset_cooldown(ctx)
-                        return
-                    else:
-                        await charEmbedmsg.clear_reactions()
-                        if tReaction.emoji == '❌':
-                            await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
-                            await charEmbedmsg.clear_reactions()
-                            self.bot.get_command('create').reset_cooldown(ctx)
-
-                        beKey = beList[alphaEmojis.index(tReaction.emoji)]
-                        if charDict['Inventory'] == "None":
-                            charDict['Inventory'] = {beKey : 1}
+                        charEmbed.add_field(name=f"Your background `{bRecord['Name']}` lets you choose one {ek}.", value=beChoiceString, inline=False)
+                        if not charEmbedmsg:
+                            charEmbedmsg = await channel.send(embed=charEmbed)
                         else:
-                            if beKey not in charDict['Inventory']:
-                                charDict['Inventory'][beKey] = 1
+                            await charEmbedmsg.edit(embed=charEmbed)
+
+                        await charEmbedmsg.add_reaction('❌')
+                        try:
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=bgItemCheck , timeout=60)
+                        except asyncio.TimeoutError:
+                            await charEmbedmsg.delete()
+                            await channel.send(f'Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                            self.bot.get_command('create').reset_cooldown(ctx)
+                            return
+                        else:
+                            await charEmbedmsg.clear_reactions()
+                            if tReaction.emoji == '❌':
+                                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
+                                await charEmbedmsg.clear_reactions()
+                                self.bot.get_command('create').reset_cooldown(ctx)
+
+                            beKey = beList[alphaEmojis.index(tReaction.emoji)]
+                            if charDict['Inventory'] == "None":
+                                charDict['Inventory'] = {beKey : 1}
                             else:
-                                charDict['Inventory'][beKey] += 1
+                                if beKey not in charDict['Inventory']:
+                                    charDict['Inventory'][beKey] = 1
+                                else:
+                                    charDict['Inventory'][beKey] += 1
 
                     charEmbed.clear_fields()
 
