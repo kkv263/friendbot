@@ -408,10 +408,27 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return  
 
+                if 'Wizard' not in bRecord['Classes']:
+                    await channel.send(f"`{bRecord['Name']}` is not a Wizard spell that can be copied into your spellbook.")
+                    ctx.command.reset_cooldown(ctx)
+                    return   
+
+                if "Chronurgy" in bRecord['Classes']:
+                    if "Chronurgy" not in charRecords['Class']:
+                        await channel.send(f"`{bRecord['Name']}` is restricted to the Chronurgy scrool and cannot be copied into your spellbook.")
+                        ctx.command.reset_cooldown(ctx)
+                        return   
+                        
+                if "Graviturgy" in bRecord['Classes']:
+                    if "Graviturgy" not in charRecords['Class']:
+                        await channel.send(f"`{bRecord['Name']}` is restricted to the Chronurgy scrool and cannot be copied into your spellbook.")
+                        ctx.command.reset_cooldown(ctx)
+                        return   
+
                 if 'Free Spells' not in charRecords:
                     spellCopied = None
                     for c in consumes:
-                        print(c)
+
                         if bRecord['Name'] in c and 'Spell Scroll' in c:
                             spellCopied = True
                             consumes.remove(c)
@@ -441,10 +458,6 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return     
 
-                    if 'Wizard' not in bRecord['Classes']:
-                        await channel.send(f"`{bRecord['Name']}` is not a Wizard spell that can be copied into your spellbook.")
-                        ctx.command.reset_cooldown(ctx)
-                        return     
                     charRecords['Free Spells'] -= 1
 
 
