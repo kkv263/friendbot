@@ -24,27 +24,27 @@ class Shop(commands.Cog):
             
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'charName':
-                msg = "You're missing your character name in the command. "
+                msg = "You're missing your character name in the command.\n"
             elif error.param.name == "buyItem":
-                msg = "You're missing the item you want to buy/sell in the command. "
+                msg = "You're missing the item you want to buy/sell in the command.\n"
             elif error.param.name == "spellName":
-                msg = "You're missing the spell you want to copy in the command. "
+                msg = "You're missing the spell you want to copy in the command.\n"
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
-            msg = "The amount you want to buy/sell must be a number. "
+            msg = "The amount you want to buy or sell must be a number.\n"
         # bot.py handles this, so we don't get traceback called.
         elif isinstance(error, commands.CommandOnCooldown):
             return
 
         if msg:
             if ctx.command.name == "buy":
-                msg += f"Please follow this format:\n`{commandPrefix}shop buy \"character name\" \"item\" amount`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}shop buy \"character name\" \"item\" #```\n"
             elif ctx.command.name == "sell":
-                msg += f"Please follow this format:\n`{commandPrefix}shop sell \"character name\" \"item\" amount`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}shop sell \"character name\" \"item\" #```\n"
             elif ctx.command.name == "copy":
-                msg += f"Please follow this format:\n`{commandPrefix}shop copy \"character name\" \"spellname\"`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}shop copy \"character name\" \"spell name\"```\n"
             elif ctx.command.name == "proficiency":
-                msg += f"Please follow this format:\n`{commandPrefix}proficiency \"character name\"`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}proficiency \"character name\"```\n"
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
@@ -73,7 +73,7 @@ class Shop(commands.Cog):
             #If player is trying to buy spell scroll, search for spell scroll in DB, and find level it can be bought at 
             if "spell scroll" in buyItem.lower():
                 if "spell scroll" == buyItem.lower().strip():
-                    await channel.send(f"""Please be more specific with the spell scroll you're purchasing. The format is `{commandPrefix}shop buy "charactername" "Spell Scroll (Spell Name)"` """)
+                    await channel.send(f"""Please be more specific with the type of spell scroll which you're purchasing. Use the following format:\n```yaml\n{commandPrefix}shop buy "character name" "Spell Scroll (spell name)"```""")
                     ctx.command.reset_cooldown(ctx)
                     return 
 
@@ -139,13 +139,13 @@ class Shop(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=shopEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
                     await shopEmbedmsg.delete()
-                    await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                    await channel.send(f'Shop canceled. Try again using the same command!')
                     ctx.command.reset_cooldown(ctx)
                     return
                 else:
                     await shopEmbedmsg.clear_reactions()
                     if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}shop buy` command and try again!")
+                        await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
                         await shopEmbedmsg.clear_reactions()
                         ctx.command.reset_cooldown(ctx)
                         return
@@ -421,7 +421,7 @@ class Shop(commands.Cog):
                         consumes = ["None"]
 
                     if not spellCopied:
-                        await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into their spellbook!")
+                        await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their spellbook!")
                         ctx.command.reset_cooldown(ctx)
                         return  
 
@@ -430,19 +430,19 @@ class Shop(commands.Cog):
                         gpNeeded = gpNeeded / 2
 
                     if gpNeeded > charRecords['GP']:
-                        await channel.send(f"{charRecords['Name']} does not have enough gp to copy `{bRecord['Name']}`.")
+                        await channel.send(f"***{charRecords['Name']}*** does not have enough gp to copy **{bRecord['Name']}**.")
                         ctx.command.reset_cooldown(ctx)
                         return
 
                 else:
                     gpNeeded = 0
                     if bRecord['Level'] > 1:
-                        await channel.send(f"`{bRecord['Name']}` is not a level 1 spell that can be copied into your spellbook.")
+                        await channel.send(f"**{bRecord['Name']}** is not a 1st-level spell that can be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return     
 
                     if 'Wizard' not in bRecord['Classes']:
-                        await channel.send(f"`{bRecord['Name']}` is not a Wizard spell that can be copied into your spellbook.")
+                        await channel.send(f"**{bRecord['Name']}** is not a Wizard spell that can be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return     
                     charRecords['Free Spells'] -= 1
@@ -470,7 +470,7 @@ class Shop(commands.Cog):
                     await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
                     shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell scroll of {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n"
+                    shopEmbed.description = f"You have copied **{bRecord['Name']} ({bRecord['Level']}th level)** into your spellbook for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n"
                     await channel.send (embed=shopEmbed)
                     ctx.command.reset_cooldown(ctx)
 
