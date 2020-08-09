@@ -415,13 +415,13 @@ class Shop(commands.Cog):
 
                 if "Chronurgy" in bRecord['Classes']:
                     if "Chronurgy" not in charRecords['Class']:
-                        await channel.send(f"`{bRecord['Name']}` is restricted to the Chronurgy scrool and cannot be copied into your spellbook.")
+                        await channel.send(f"`{bRecord['Name']}` is restricted to the `Chronurgy` school and cannot be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return   
                         
                 if "Graviturgy" in bRecord['Classes']:
                     if "Graviturgy" not in charRecords['Class']:
-                        await channel.send(f"`{bRecord['Name']}` is restricted to the Chronurgy scrool and cannot be copied into your spellbook.")
+                        await channel.send(f"`{bRecord['Name']}` is restricted to the `Graviturgy` school and cannot be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return   
 
