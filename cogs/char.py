@@ -2814,7 +2814,7 @@ class Character(commands.Cog):
                         for c in subclasses:
                             if s['Bonus Level'] == c['Level'] and s['Name'] in f"{c['Name']} ({c['Subclass']})":
                                 if 'MAX' in s['Stat Bonuses']:
-                                    statSplit = s['Stat Bonuses'].split('Maximum ')[1].split(', ')
+                                    statSplit = s['Stat Bonuses'].split('MAX ')[1].split(', ')
                                     for stat in statSplit:
                                         maxSplit = stat.split(' +')
                                         data[maxSplit[0]] += int(maxSplit[1])
