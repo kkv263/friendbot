@@ -124,16 +124,11 @@ class Tp(commands.Cog):
                         sameMessage = False
                         if apiEmbedmsg.id == r.message.id:
                             sameMessage = True
-<<<<<<< HEAD
                         return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌') or (str(r.emoji) == '⛔')) and u == author
                     #inform the user of the current information and ask for their selection of an item               
                     apiEmbed.add_field(name=f"Latest Change", value=latest, inline=False)
                     apiEmbed.add_field(name=f"Select which one to collapse.", value=infoString, inline=False)     
-=======
-                        return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌') or (str(r.emoji) == '⛔')) and u == author and sameMessage
-                    #inform the user of the current information and ask for their selection of an item
-                    apiEmbed.add_field(name=f"Select which one to collapse.", value=infoString, inline=False)
->>>>>>> pr/4
+
                     if not apiEmbedmsg or apiEmbedmsg == "Fail":
                         apiEmbedmsg = await channel.send(embed=apiEmbed)
                     else:
