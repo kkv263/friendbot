@@ -70,7 +70,7 @@ class Timer(commands.Cog):
         #the response is limited to only the embed message
         def startEmbedcheck(r, u):
             sameMessage = False
-            if timerSpendEmbedmsg.id == r.message.id:
+            if  prepEmbedMsg.id == r.message.id:
                 sameMessage = True
             return (r.emoji in numberEmojis[:5] or str(r.emoji) == '❌') and u == author and sameMessage
         #simplifying access to various variables
@@ -148,7 +148,6 @@ class Timer(commands.Cog):
             return
 
         else:
-            
             #create the role variable for future use, default it to no role
             role = ""
             #continue our Tier check from above in case it is not a campaign
@@ -168,6 +167,7 @@ class Timer(commands.Cog):
             
         #clear the embed message
         prepEmbed.clear_fields()
+        await prepEmbedMsg.clear_reactions()
         # if is not a campaign add the seleceted tier to the message title and inform the users about the possible commands (signup, add player, remove player, add guild, use guild reputation)
         if not isCampaign:
             prepEmbed.title = f"{game} (Tier {roleArray.index(role) + 1})"
