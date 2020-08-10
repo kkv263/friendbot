@@ -348,14 +348,7 @@ class Timer(commands.Cog):
 
             #the command that starts the timer, it does so by allowing the code to move past the loop
             elif (msg.content == f"{commandPrefix}timer start" or msg.content == f"{commandPrefix}t start") and (msg.author in playerRoster and msg.author == author):
-                #check if the original caller is in the list of signed up players
-                # if the modication is done to always have the DM be signed up immidiately then check can be removed
-                # signedPlayers is of the format [user, character db entry, signed up consumables, character id]
-                if author not in [a[0] for a in signedPlayers]:#IXCHECK
-                    await channel.send(f'The DM has not signed up yet! Use the following command to sign to the quest with your character before starting the timer:\n```yaml\n{commandPrefix}timer signup```') 
-                # the first half of this check is redundant since we already know it is false from the code above
-                # it seems to be legacy from when it was the only check
-                elif author in [a[0] for a in signedPlayers] and len(signedPlayers) == 1:
+                if len(signedPlayers) == 1:
                     await channel.send(f'There are no players signed up! Players, use the following command to sign up to the quest with your character before the DM starts the timer:\n```yaml\n{commandPrefix}timer signup```') 
                 else:
                     timerStarted = True
@@ -913,23 +906,13 @@ class Timer(commands.Cog):
                 startcopy = start.copy()
                 userFound = False
                 timeKey = ""
-                # WEIRD
-                # This variable gets incremented but never used
-                userCount = 0
                 
                 # if the user getting rewards is the DM we can save time by not going through the loop
-                if rewardUser == dmChar[0]:
-                    # indicate that we found the user
-                    userFound = True
-                    # the player entry of the player getting the item
-                    currentItem = dmChar
-                    # list of current consumables on the character
-                    # [1] in a player entry is
-                    charConsumableList = currentItem[1]['Consumables'].split(', ')
-                    # list of current magical items
-                    charMagicList = currentItem[1]['Magic Items'].split(', ')
-                    # character level
-                    charLevel = int(currentItem[1]['Level'])
+                if rewardUser == dmChar[0] and dmChar[1]=="No Rewards":
+                    if not resume:
+                        await ctx.channel.send(content=f"You did not sign up with a character to reward items to.") 
+                    #return the unchanged parameters
+                    return start,dmChar
                 # since this checks for multiple things, this cannot be avoided
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
@@ -942,16 +925,18 @@ class Timer(commands.Cog):
                         # WEIRD 
                         # When the dm gives themselves rewards, this step gets repeated
                         # since this sets up more information, this is the version that should be kept
-                        # ther is an issue with currentItem not having the same variables as dmChar in this case
+                        # there is an issue with currentItem not having the same variables as dmChar in this case
                         if item[0] == rewardUser:
-                            userCount += 1
                             userFound = True
                             timeKey = u
+                            # the player entry of the player getting the item
                             currentItem = oldItem = item
                             # list of current consumables on the character
-                            # [1] in a player entry is
+                            # [1] in a player entry is the DB entry of the character
                             charConsumableList = currentItem[1]['Consumables'].split(', ')
+                            # list of current magical items
                             charMagicList = currentItem[1]['Magic Items'].split(', ')
+                            # character level
                             charLevel = int(currentItem[1]['Level'])
 
                 if userFound:
@@ -1925,7 +1910,7 @@ class Timer(commands.Cog):
             stopEmbed.title = f"Timer: {game} [END] - {totalDuration}"
             stopEmbed.description = f"{datestart} to {dateend} CDT" 
             #DM REWARD MATH STARTS HERE
-            if(dmChar[1]=="No Rewards"):
+            if(dmChar[1]!="No Rewards"):
                 charLevel = int(dmChar[1]['Level'])
                 # calculate the tier of the DM character
                 if charLevel < 5:
@@ -2186,12 +2171,14 @@ class Timer(commands.Cog):
                 
                 # add the field for the DM's player rewards
                 dm_text = ""
+                dm_name_text = "**No Character**"
                 # if no character signed up then the character parts are excluded
                 # WEIRD
                 # This doesnt remove all the character elements yet
                 if(dmChar != "No Rewards"):
                     dm_text = f"| {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}"
-                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} {dm_text}\n{':star:' * noodlesGained} {noodleString}", name=f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n")
+                    dm_name_text = f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n"
+                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} {dm_text}\n{':star:' * noodlesGained} {noodleString}", name=dm_name_text)
                 
                 # if there are guild rewards then add a field with relevant information
                 if guildRewardsStr != "":
@@ -2211,10 +2198,9 @@ class Timer(commands.Cog):
                     statsRecord = {'Date': dateyear, 'DM': {}}
                 
                 # WEIRD
-                # We need 30 minutes minimum now
                 # This uses the DM reward info to check if the game reached the mimum time
                 # could just use the totalDuration instead and unlink from the DM rewards
-                # If greater than 15 mins.
+                # If greater than 30 mins.
                 if float(dmtreasureArray[0]) >= .5:
                     # increment or create the stat entry for the DM of the game
                     if str(dmChar[0].id) in statsRecord['DM']:
