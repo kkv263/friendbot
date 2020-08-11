@@ -301,7 +301,7 @@ class Shop(commands.Cog):
             elif len(sellConsumesList) == 1:
                 buyItem = sellConsumesList[0]
             else:
-                await channel.send(f'**{buyItem}** is not in your inventory to sell! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'**{buyItem}** cannot be sold because it is not in your inventory! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
@@ -398,7 +398,7 @@ class Shop(commands.Cog):
         if charRecords:
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
             if 'Wizard' not in charRecords['Class'] and 'Ritual Caster' not in charRecords['Feats']:
-                await channel.send(f"You not have the right class, subclass, or feat to copy spells!")
+                await channel.send(f"You must be a Wizard or have the Ritual Caster feat in order to copy spells into a spellbook!")
                 ctx.command.reset_cooldown(ctx)
                 return 
 
@@ -415,25 +415,25 @@ class Shop(commands.Cog):
                         return  
 
                 if 'Wizard' not in bRecord['Classes']:
-                    await channel.send(f"`{bRecord['Name']}` is not a Wizard spell that can be copied into your spellbook.")
+                    await channel.send(f"**{bRecord['Name']}** is not a Wizard spell that can be copied into your spellbook.")
                     ctx.command.reset_cooldown(ctx)
                     return   
 
                 if "Chronurgy" in bRecord['Classes'] and "Graviturgy" in bRecord['Classes']:
                     if "Chronurgy" not in charRecords['Class'] and "Graviturgy" not in charRecords['Class']:
-                        await channel.send(f"`{bRecord['Name']}` is restricted to the `Chronurgy` or `Graviturgy` school and cannot be copied into your spellbook.")
+                        await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** and **Graviturgy** schools and cannot be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return
 
                 elif "Chronurgy" in bRecord['Classes']:
                     if "Chronurgy" not in charRecords['Class']:
-                        await channel.send(f"`{bRecord['Name']}` is restricted to the `Chronurgy` school and cannot be copied into your spellbook.")
+                        await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** school and cannot be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return   
                         
                 elif "Graviturgy" in bRecord['Classes']:
                     if "Graviturgy" not in charRecords['Class']:
-                        await channel.send(f"`{bRecord['Name']}` is restricted to the `Graviturgy` school and cannot be copied into your spellbook.")
+                        await channel.send(f"**{bRecord['Name']}** is restricted to the **Graviturgy** school and cannot be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return   
 
@@ -459,14 +459,14 @@ class Shop(commands.Cog):
                         gpNeeded = gpNeeded / 2
 
                     if gpNeeded > charRecords['GP']:
-                        await channel.send(f"***{charRecords['Name']}*** does not have enough gp to copy **{bRecord['Name']}**.")
+                        await channel.send(f"***{charRecords['Name']}*** does not have enough gp to copy the **{bRecord['Name']}** spell into their spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return
 
                 else:
                     gpNeeded = 0
                     if bRecord['Level'] > 1:
-                        await channel.send(f"**{bRecord['Name']}** is not a 1st-level spell that can be copied into your spellbook.")
+                        await channel.send(f"**{bRecord['Name']}** is not a 1st-level spell that can be copied into ***{charRecords['Name']}***'s spellbook!")
                         ctx.command.reset_cooldown(ctx)
                         return     
 

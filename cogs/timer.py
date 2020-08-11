@@ -38,19 +38,19 @@ class Timer(commands.Cog):
         msg = None
 
         if isinstance(error, commands.CommandOnCooldown):
-            msg = f"You're are already prepping a timer in this channel. Please cancel the current timer and try again.\n" 
+            msg = f"You're are already prepping a timer in this channel. Please cancel the current timer and try again. " 
             await ctx.channel.send(msg)
 
         else:
             if isinstance(error, commands.MissingRequiredArgument):
                 if error.param.name == 'userList':
-                    msg = "You can't prepare a timer without any players!\n"
+                    msg = "You can't prepare a timer without any players! "
             elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
               msg = ""
 
             if msg:
                 if ctx.command.name == "prep":
-                    msg += f'Please follow this format:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, @player3..." "quest name"(*)```***** - The quest name is optional.'
+                    msg += f'Please follow this format:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, [...]" "quest name"(*)```***** - The quest name is optional.'
 
                 ctx.command.reset_cooldown(ctx)
                 await ctx.channel.send(msg)
@@ -263,7 +263,7 @@ class Timer(commands.Cog):
                 # if the message author has not been permitted to the game yet, inform them of such
                 # a continue statement could be used to skip the following if statement
                 else:
-                    await channel.send(f"***{msg.author.display_name}***, you are not on the roster to play in this quest.")
+                    await channel.send(f"***{msg.author.display_name}***, you must be on the roster in order to participate in this quest.")
                 
                 """
                 if the signup command successfuly returned a player record ([author, char, consumables, char id])
@@ -274,7 +274,7 @@ class Timer(commands.Cog):
                     # Since the DM is always the front element this check will always work and 
                     if playerRoster.index(playerChar[0]) == 0:
                         #update the the specific info about the DM sign up
-                        prepEmbed.set_field_at(0, name=f"{author.display_name} **(DM)**", value= f"***{playerChar[1]['Name']}** will receive DM rewards.", inline=False)
+                        prepEmbed.set_field_at(0, name=f"{author.display_name} **(DM)**", value= f"***{playerChar[1]['Name']}*** will receive DM rewards.", inline=False)
                         # with the dummy element can now be replaced with a more straight forward check
                         if playerChar[0] in [s[0] for s in signedPlayers]:
                             signedPlayers[0] = playerChar
@@ -354,7 +354,7 @@ class Timer(commands.Cog):
                     timerStarted = True
             #the command that cancels the timer, it does so by ending the command all together                              
             elif (msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel") and (msg.author in playerRoster and msg.author == author):
-                await channel.send(f'Timer canceled! If you would like to prep a new quest, use the following command:\n```yaml\n{commandPrefix}timer prep.```') 
+                await channel.send(f'Timer canceled! If you would like to prep a new quest, use the following command:\n```yaml\n{commandPrefix}timer prep```') 
                 # allow the call of this command again
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
@@ -813,11 +813,11 @@ class Timer(commands.Cog):
                 # WEIRD
                 # this check is superfluous 
                 if role != "":
-                    roleString = f"({role} Friend)"
+                    roleString = f"({role})"
                 # WEIRD
                 # there is no newline character, otherwise it would be identical to the else statement version
                 # Inform the user of the started timer
-                await channel.send(content=f"Timer: Starting the timer for **{game}** {roleString}." )
+                await channel.send(content=f"Starting the timer for **{game}** {roleString}." )
 
             else:
                 # add all signed up players to the timer
@@ -826,7 +826,7 @@ class Timer(commands.Cog):
                 # set up a dictionary to track player times
                 startTimes = {f"No Rewards:{startTime}":start}
                 roleString = "(Campaign)"
-                await ctx.channel.send(content=f"Timer: Starting the timer for **{game}** {roleString}.\n" )
+                await ctx.channel.send(content=f"Starting the timer for **{game}** {roleString}.\n" )
             
             # add the timer to the list of runnign timers
             currentTimers.append('#'+channel.name)
@@ -834,7 +834,7 @@ class Timer(commands.Cog):
             # set up an embed object for displaying the current duration, help info and DM data
             stampEmbed = discord.Embed()
             stampEmbed.title = f'**{game}**: 0 Hours 0 Minutes\n'
-            stampEmbed.set_footer(text=f'#{ctx.channel}\n{commandPrefix}timer help 2 for help with the timer.')
+            stampEmbed.set_footer(text=f'#{ctx.channel}\nType `{commandPrefix}help timer2` for help with a running timer.')
             stampEmbed.set_author(name=f'DM: {userName}', icon_url=author.avatar_url)
 
             print('USERLIST')
@@ -1630,9 +1630,9 @@ class Timer(commands.Cog):
             # WEIRD
             # These strings are identical
             if role != "":
-                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables\n   - "consumable"```'
+                stampHelp = f'```md\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Using Consumables\n   - "consumable"\n# Removing Yourself\n   {commandPrefix}timer removeme\n\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop```'
             else:
-                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables\n   - "consumable"```'
+                stampHelp = f'```md\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Using Consumables\n   - "consumable"\n# Removing Yourself\n   {commandPrefix}timer removeme\n\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop```'
             # check if the current message is the last message in the chat
             # this checks the 1 message after the current message, which if there is none will return an empty list therefore msgAfter remains False
             async for message in ctx.channel.history(after=embedMsg, limit=1):
@@ -1652,7 +1652,7 @@ class Timer(commands.Cog):
     async def stop(self,ctx,*,start="", role="", game="", datestart="", dmChar="", guildsList=""):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             if not self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx):
-                await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you previously had a timer, use the following command to resume the that timer:\n```yaml\n{commandPrefix}timer resume```")
+                await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you previously had a timer, use the following command to resume that timer:\n```yaml\n{commandPrefix}timer resume```")
                 return
             end = time.time()
             # get a formatted string of the endtime
@@ -2404,7 +2404,7 @@ class Timer(commands.Cog):
                 # if there was a message of a timer being started we need to simulate the runtime of the timer
                 # this if statement breaks after its execution so it only executes once
                 # the default ordering of the history is newest first so this assures that only the latest timer gets restarted
-                if "Timer: Starting the timer" in message.content:
+                if "Starting the timer." in message.content:
                     timerMessage = message
                     # get the first line of the timer by splitting at the first newline and getting the first element
                     startString = (timerMessage.content.split('\n', 1))[0]
@@ -2518,7 +2518,7 @@ class Timer(commands.Cog):
                 self.timer.get_command('resume').reset_cooldown(ctx)
                 return
             # inform the users that the timer was restarted
-            await channel.send(embed=None, content=f"Timer: I have resumed the timer for **{startGame}** {startRole}." )
+            await channel.send(embed=None, content=f"I have resumed the timer for **{startGame}** ({startRole})." )
             # add the timer to the tracker
             currentTimers.append('#'+channel.name)
             
@@ -2579,7 +2579,7 @@ class Timer(commands.Cog):
         async def permissionCheck(msg):
             # check if the person who sent the message is either the DM, a Mod or a Admin
             if not (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "A d m i n s".lower() in [r.name.lower() for r in msg.author.roles]):
-                await channel.send(f'You do not have permission to use this commad') #<-----------------------------THIS Line GHOST
+                await channel.send(f'You cannot use this command!') #<-----------------------------THIS Line GHOST
                 return False
             else: 
                 return True

@@ -264,7 +264,7 @@ class Guild(commands.Cog):
             await channel.send(embed=guildEmbed)
 
         else:
-            await channel.send(f'The guild ***{guildName}*** does not exist. Please try again.')
+            await channel.send(f'The ***{guildName}*** guild does not exist. Check to see if it is a valid guild and check your spelling.')
             return
 
     @commands.cooldown(1, 5, type=commands.BucketType.member)
