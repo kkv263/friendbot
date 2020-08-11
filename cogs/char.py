@@ -724,7 +724,7 @@ class Character(commands.Cog):
                 if len(beTopChoiceList) > 0:
                     # Lets user pick between top choices (ex. Game set or Musical Instrument. Then a followup choice.)
                     if len(beTopChoiceList) > 1:
-                        charEmbed.add_field(name=f"Your background `{bRecord['Name']}` lets you choose one type.", value=beTopChoiceString, inline=False)
+                        charEmbed.add_field(name=f"Your {bRecord['Name']} background lets you choose one type.", value=beTopChoiceString, inline=False)
                         if not charEmbedmsg:
                             charEmbedmsg = await channel.send(embed=charEmbed)
                         else:
@@ -770,7 +770,7 @@ class Character(commands.Cog):
                             beList.append(c)
                             alphaIndex += 1
 
-                        charEmbed.add_field(name=f"Your background `{bRecord['Name']}` lets you choose one {beTopKey}.", value=beChoiceString, inline=False)
+                        charEmbed.add_field(name=f"Your {bRecord['Name']} background lets you choose one {beTopKey}.", value=beChoiceString, inline=False)
                         if not charEmbedmsg:
                             charEmbedmsg = await channel.send(embed=charEmbed)
                         else:
@@ -2214,7 +2214,7 @@ class Character(commands.Cog):
 
 
                     if 'Guild' in charDict:
-                        charString += f"   - Guild: ***{charDict['Guild']}***\n"
+                        charString += f"~ Guild: *{charDict['Guild']}*\n"
 
                     if len(charString) > (768 * pages):
                         pageStops.append(len(tempCharString))
@@ -2244,7 +2244,7 @@ class Character(commands.Cog):
                     for p in range(len(pageStops)-1):
                         if p != 0:
                             userEmbedList.append(discord.Embed())
-                        userEmbedList[p].add_field(name=f'Characters - p. {p+1}', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+                        userEmbedList[p].add_field(name=f'Characters - p. {p+1}:', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
 
                 else:
                     charEmbed.add_field(name=f'Characters', value=charString, inline=False)
@@ -2942,7 +2942,7 @@ class Character(commands.Cog):
                     await author.remove_roles(roleRemove)
 
                 levelUpEmbed.clear_fields()
-                await levelUpEmbedmsg.edit(content=f":arrow_up: __**LEVEL UP!**__\n:warning: **Don't forget to spend your TP using the following command**:\n```yaml\n$tp buy \"{charName}\" \"magic item\"```", embed=levelUpEmbed)
+                await levelUpEmbedmsg.edit(content=f":arrow_up:   __**L E V E L   U P!**__\n\n:warning:   **Don't forget to spend your TP!** Use the following command to spend your TP:\n```yaml\n$tp buy \"{charName}\" \"magic item\"```", embed=levelUpEmbed)
 
                 if roleName != "":
                     levelUpEmbed.title = f":tada: {roleName} role acquired! :tada:\n" + levelUpEmbed.title
@@ -2966,7 +2966,7 @@ class Character(commands.Cog):
 
         if charRecords:
             if 'Death' in charRecords:
-                await channel.send(f"You cannot attune to items with a dead character! Use the following command to decide their fate:\n```yaml\n$death \"{charRecords['Name']}\"```")
+                await channel.send(f"You cannot attune to items while your character is dead! Use the following command to decide their fate:\n```yaml\n$death \"{charRecords['Name']}\"```")
                 return
 
             # Check number of items character can attune to. Artificer has exceptions.
@@ -3760,7 +3760,7 @@ class Character(commands.Cog):
                             try:
                                 charEmbed.clear_fields()    
                                 charEmbed.set_footer(text= charEmbed.Empty)
-                                charEmbed.add_field(name=f"The **{featPicked['Name']}** feat lets you choose between {featBonus}. React with [1-{len(featBonusList)}] below with the stat you chose.", value=featBonusString, inline=False)
+                                charEmbed.add_field(name=f"The {featPicked['Name']} feat lets you choose between {featBonus}. React with [1-{len(featBonusList)}] below with the stat you chose.", value=featBonusString, inline=False)
                                 await charEmbedmsg.edit(embed=charEmbed)
                                 for num in range(0,len(featBonusList)): await charEmbedmsg.add_reaction(numberEmojis[num])
                                 await charEmbedmsg.add_reaction('❌')

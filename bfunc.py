@@ -60,19 +60,19 @@ def calculateTreasure(seconds, role):
     # tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
 
     tp = cp / 2
-    gp = cp * 60
+    gp = cp * 50
     role = role.lower()
 
     if role == 'journey':
-      gp = cp * 120
+      gp = cp * 100
 
     if role == "elite":
       tp = cp
-      gp = cp * 180
+      gp = cp * 150
 
     if role == "true":
       tp = cp
-      gp = cp * 240
+      gp = cp * 200
 
     # refactor later
     dcp = int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
