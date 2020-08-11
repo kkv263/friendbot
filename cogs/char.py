@@ -871,6 +871,10 @@ class Character(commands.Cog):
             #HP
             hpRecords = []
             for cc in cRecord:
+                # Wizards get 2 free spells per wizard level
+                if cc['Class']['Name'] == "Wizard":
+                    charDict['Free Spells'] = (int(cc['Level']) - 1) * 2
+
                 hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
 
             if hpRecords:
@@ -936,8 +940,12 @@ class Character(commands.Cog):
         charEmbed.add_field(name='Stats', value=f"**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
 
         if 'Wizard' in charDict['Class']:
-            charDict['Free Spells'] = 6
-            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice. Please use the `{commandPrefix}shop copy` command.", inline=False)
+            if 'Free Spells' not in charDict:
+                charDict['Free Spells'] = 6
+            else:
+                charDict['Free Spells'] += 6
+
+            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command.", inline=False)
 
         
         charDictInvString = ""
@@ -1646,6 +1654,9 @@ class Character(commands.Cog):
             #HP
             hpRecords = []
             for cc in cRecord:
+                # Wizards get 2 free spells per wizard level
+                if cc['Class']['Name'] == "Wizard":
+                    charDict['Free Spells'] = (int(cc['Level']) - 1) * 2
                 hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
 
             if hpRecords:
@@ -1712,8 +1723,12 @@ class Character(commands.Cog):
         charEmbed.add_field(name='Stats', value=f"**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
 
         if 'Wizard' in charDict['Class']:
-            charDict['Free Spells'] = 6
-            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice. Please use the `{commandPrefix}shop copy` command.", inline=False)
+            if 'Free Spells' not in charDict:
+                charDict['Free Spells'] = 6
+            else:
+                charDict['Free Spells'] += 6
+
+            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command.", inline=False)
 
         
         charDictInvString = ""
@@ -2329,8 +2344,6 @@ class Character(commands.Cog):
             if 'Guild' in charDict:
                 charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\nGuild Rank: {charDict['Guild Rank']}", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
-            
-            
 
             if 'Max Stats' not in charDict:
                 maxStatDict = charDict['Max Stats'] = {'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
@@ -2364,9 +2377,6 @@ class Character(commands.Cog):
                         if '+' not in statBonus and '-' not in statBonus:
                             statSplit = statBonus.split(' ')
                             modStat = str(charDict[statSplit[0]]).replace(')', '').split(' (')[0]
-                            print(statSplit)
-                            print('===')
-                            print(modStat)
                             if '[' in modStat and ']' in modStat:
                                 oldStat = modStat[modStat.find("[")+1:modStat.find("]")] 
                                 if '+' not in modStat and '-' not in modStat:
@@ -2496,6 +2506,7 @@ class Character(commands.Cog):
         levelUpEmbed = discord.Embed ()
         characterCog = self.bot.get_cog('Character')
         infoRecords, levelUpEmbedmsg = await checkForChar(ctx, char, levelUpEmbed)
+        freeSpells = 0
         if infoRecords:
             charID = infoRecords['_id']
             charDict = {}
@@ -2687,12 +2698,18 @@ class Character(commands.Cog):
                             for c in classRecords:
                                 if c['Name'] in charClassChoice:
                                     subclasses.append({'Name': charClassChoice, 'Subclass': '', 'Level': 1, 'Hit Die Max': c['Hit Die Max'], 'Hit Die Average': c['Hit Die Average']})
+
+                            if "Wizard" in charClassChoice:
+                                freeSpells += 6
+
                             levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
                             levelUpEmbed.clear_fields()
                     elif tReaction.emoji == '🚫':
                         if '/' not in charClass:
                             lvlClass = charClass
                             subclasses[0]['Level'] += 1
+                            if 'Wizard' in charClass: 
+                                freeSpells += 2
                         else:
                             multiclassLevelString = ""
                             alphaIndex = 0
@@ -2724,6 +2741,8 @@ class Character(commands.Cog):
                                 if s['Name'] in choiceLevelClass:
                                     lvlClass = s['Name']
                                     s['Level'] += 1
+                                    if 'Wizard' in s['Name']:
+                                        freeSpells += 2
                                     break
 
                             charClass = charClass.replace(f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level'] - 1}", f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level']}")
@@ -2770,7 +2789,7 @@ class Character(commands.Cog):
 
                 if charFeatsGained != "":
                     charFeatsGainedStr = f"Feats Gained: **{charFeatsGained}**"
-                
+
                 data = {
                       'Class': charClass,
                       'Level': int(newCharLevel),
@@ -2782,6 +2801,12 @@ class Character(commands.Cog):
                       'WIS': int(charStats['WIS']),
                       'CHA': int(charStats['CHA']),
                 }
+
+                if freeSpells > 0:
+                    if 'Free Spells' in infoRecords:
+                        data['Free Spells'] = infoRecords['Free Spells'] + freeSpells
+                    else:
+                        data['Free Spells'] = freeSpells
 
                 if charFeatsGained != "":
                     if infoRecords['Feats'] == 'None':
