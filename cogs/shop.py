@@ -465,8 +465,9 @@ class Shop(commands.Cog):
 
                 else:
                     gpNeeded = 0
-                    if bRecord['Level'] > 1:
-                        await channel.send(f"**{bRecord['Name']}** is not a 1st-level spell that can be copied into ***{charRecords['Name']}***'s spellbook!")
+                    requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
+                    if int(charRecords['Level']) >= requiredSpellLevel:
+                        await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher to copy this spell.")
                         ctx.command.reset_cooldown(ctx)
                         return     
 
@@ -520,7 +521,7 @@ class Shop(commands.Cog):
                             await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
                             shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                            shopEmbed.description = f"You have copied **{bRecord['Name']} ({bRecord['Level']}th level)** into your spellbook for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n"
+                            shopEmbed.description = f"You have copied **{bRecord['Name']} ({bRecord['Level']}th level)** into your spellbook for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n**Free Spells Available to copy**: {charRecords['Free Spells']}"
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
 

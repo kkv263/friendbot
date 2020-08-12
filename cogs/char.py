@@ -945,7 +945,7 @@ class Character(commands.Cog):
             else:
                 charDict['Free Spells'] += 6
 
-            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command.", inline=False)
+            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command. **{charDict['Free Spells']} Free Spells Available**", inline=False)
 
         
         charDictInvString = ""
@@ -1728,9 +1728,8 @@ class Character(commands.Cog):
             else:
                 charDict['Free Spells'] += 6
 
-            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command.", inline=False)
+            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command. **{charDict['Free Spells']} Free Spells Available**", inline=False)
 
-        
         charDictInvString = ""
         if charDict['Inventory'] != "None":
             for k,v in charDict['Inventory'].items():
@@ -3739,7 +3738,87 @@ class Character(commands.Cog):
                     
                     featPicked = featChoices[(page * perPage) + alphaEmojis.index(react.emoji)]
                     featsPickedList.append(featPicked)
-                    
+
+                    print(featPicked)
+
+                    # Special Case of Picked Ritual Caster
+                    def ritualFeatEmbedcheck(r, u):
+                        sameMessage = False
+                        if charEmbedmsg.id == r.message.id:
+                            sameMessage = True
+                        return sameMessage and ((r.emoji in alphaEmojis[:6]) or (str(r.emoji) == '❌')) and u == author
+
+                    def ritualSpellEmbedCheck(r, u):
+                        sameMessage = False
+                        if charEmbedmsg.id == r.message.id:
+                            sameMessage = True
+
+                        if (r.emoji in alphaEmojis[:6]):
+                            ritualChoiceList.add(r.emoji)
+
+                        print(ritualChoiceList)
+
+                        return sameMessage and ((len(ritualChoiceList) == 2) or (str(r.emoji) == '❌')) and u == author
+
+                    if featPicked['Name'] == "Ritual Caster":
+                        ritualClasses = ["Bard", "Cleric", "Druid", "Sorcerer", "Warlock", "Wizard"]
+                        charEmbed.clear_fields()
+                        charEmbed.set_footer(text=charEmbed.Empty)
+                        charEmbed.add_field(name="For the feat **Ritual Caster**, please pick the spellcasting class.", value=f"{alphaEmojis[0]}: Bard\n{alphaEmojis[1]}: Cleric\n{alphaEmojis[2]}: Druid\n{alphaEmojis[3]}: Sorcerer\n{alphaEmojis[4]}: Warlock\n{alphaEmojis[5]}: Wizard\n", inline=False)
+
+                        try:
+                            await charEmbedmsg.edit(embed=charEmbed)
+                            await charEmbedmsg.add_reaction('❌')
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=ritualFeatEmbedcheck, timeout=60)
+                        except asyncio.TimeoutError:
+                            await charEmbedmsg.delete()
+                            await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                            self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                            return None, None, None
+                        else:
+                            if tReaction.emoji == '❌':
+                                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
+                                await charEmbedmsg.clear_reactions()
+                                self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                                return None, None, None
+                        await charEmbedmsg.clear_reactions()
+
+                        ritualClass = ritualClasses[alphaEmojis.index(tReaction.emoji)]
+                        featPicked['Name'] = f"{featPicked['Name']} ({ritualClass})"
+                        spellsCollection = db.spells
+                        ritualSpellsList = list(spellsCollection.find({"$and": [{"Classes": {"$regex": ritualClass, '$options': 'i' }}, {"Ritual": True}] }))
+
+                        alphaIndex = 0
+                        ritualSpellsString = ""
+                        for r in ritualSpellsList:
+                            ritualSpellsString += f"{alphaEmojis[alphaIndex]}: {r['Name']}\n"
+                            alphaIndex += 1
+
+                        charEmbed.add_field(name="Please pick two spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
+                        ritualChoiceList = set()
+                        print(ritualSpellsList)
+
+                        try:
+                            await charEmbedmsg.edit(embed=charEmbed)
+                            await charEmbedmsg.add_reaction('❌')
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=ritualSpellEmbedCheck, timeout=60)
+                        except asyncio.TimeoutError:
+                            await charEmbedmsg.delete()
+                            await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                            self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                            return None, None, None
+                        else:
+                            if tReaction.emoji == '❌':
+                                await charEmbedmsg.edit(embed=None, content=f"Character creation canceled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
+                                await charEmbedmsg.clear_reactions()
+                                self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                                return None, None, None
+                        await charEmbedmsg.clear_reactions()
+                        charStats['Spellbook'] = []
+                        for r in ritualChoiceList:
+                            rChoice = ritualSpellsList[alphaEmojis.index(r)]
+                            charStats['Spellbook'].append({'Name':rChoice['Name'], 'School':rChoice['School']})
+
                     def slashFeatEmbedcheck(r, u):
                         sameMessage = False
                         if charEmbedmsg.id == r.message.id:
