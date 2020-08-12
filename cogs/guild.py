@@ -170,7 +170,7 @@ class Guild(commands.Cog):
                         return
                     else:
                         if tReaction.emoji == '❌':
-                            await guildEmbedmsg.edit(embed=None, content=f"Guild command canceled. Please use the command and try again!")
+                            await guildEmbedmsg.edit(embed=None, content=f"Guild command cancelled. Please use the command and try again!")
                             await guildEmbedmsg.clear_reactions()
                             ctx.command.reset_cooldown(ctx)
                             return
@@ -337,12 +337,12 @@ class Guild(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
                     await guildEmbedmsg.delete()
-                    await channel.send(f'Guild canceled. Try again using the following command:\n```yaml\n{commandPrefix}guild join```')
+                    await channel.send(f'Guild cancelled. Try again using the following command:\n```yaml\n{commandPrefix}guild join```')
                     return
                 else:
                     await guildEmbedmsg.clear_reactions()
                     if tReaction.emoji == '❌':
-                        await guildEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the following command:\n```yaml\n{commandPrefix}tp buy```")
+                        await guildEmbedmsg.edit(embed=None, content=f"Shop cancelled. Try again using the following command:\n```yaml\n{commandPrefix}tp buy```")
                         await guildEmbedmsg.clear_reactions()
                         return
 
@@ -451,12 +451,12 @@ class Guild(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
                     await guildEmbedmsg.delete()
-                    await channel.send(f'Guild canceled. Try again using the following command:\n```yaml\n{commandPrefix}guild rankup```')
+                    await channel.send(f'Guild cancelled. Try again using the following command:\n```yaml\n{commandPrefix}guild rankup```')
                     return
                 else:
                     await guildEmbedmsg.clear_reactions()
                     if tReaction.emoji == '❌':
-                        await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Try again using the following command:\n```yaml\n{commandPrefix}guild rankup```")
+                        await guildEmbedmsg.edit(embed=None, content=f"Guild cancelled. Try again using the following command:\n```yaml\n{commandPrefix}guild rankup```")
                         await guildEmbedmsg.clear_reactions()
                         return
 
@@ -515,12 +515,12 @@ class Guild(commands.Cog):
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=guildEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
                 await guildEmbedmsg.delete()
-                await channel.send(f'Guild canceled. Try again using the following command:\n```yaml\n{commandPrefix}guild leave```')
+                await channel.send(f'Guild cancelled. Try again using the following command:\n```yaml\n{commandPrefix}guild leave```')
                 return
             else:
                 await guildEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await guildEmbedmsg.edit(embed=None, content=f"Guild canceled. Try again using the following command:\n```yaml\n{commandPrefix}guild leave```")
+                    await guildEmbedmsg.edit(embed=None, content=f"Guild cancelled. Try again using the following command:\n```yaml\n{commandPrefix}guild leave```")
                     await guildEmbedmsg.clear_reactions()
                     return
 

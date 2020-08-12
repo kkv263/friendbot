@@ -157,7 +157,7 @@ class Timer(commands.Cog):
                 await prepEmbedMsg.clear_reactions()
                 #cancel the command based on user desire
                 if tReaction.emoji == '❌':
-                    await prepEmbedMsg.edit(embed=None, content=f"Timer canceled. Use the following command to prepare a timer:\n```yaml\n{commandPrefix}timer prep```")
+                    await prepEmbedMsg.edit(embed=None, content=f"Timer cancelled. Use the following command to prepare a timer:\n```yaml\n{commandPrefix}timer prep```")
                     self.timer.get_command('prep').reset_cooldown(ctx)
                     return
                 # otherwise take the role based on which emoji the user reacted with
@@ -176,7 +176,7 @@ class Timer(commands.Cog):
         else:
             # otherwise give an appropriate title and inform about the limited commands list (signup, add player, remove player)
             prepEmbed.title = f"{game} (Campaign)"
-            prepEmbed.description = f"**DM Signup**: {commandPrefix}timer signup \"charactername\"\n**Player Signup**: {commandPrefix}timer signup\n**Add to roster**: {commandPrefix}timer add @player\n**Remove from roster:** {commandPrefix}timer remove @player"
+            prepEmbed.description = f"**DM Signup**: {commandPrefix}timer signup \"charactername\"\n**Player Signup**: {commandPrefix}timer signup\n**Add to roster**: {commandPrefix}timer add @player\n**Remove from roster**: {commandPrefix}timer remove @player"
         #setup a variable to store the string showing the current roster for the game
         rosterString = ""
         #now go through the list of the user/DM and the initially given player list and build a string
@@ -185,7 +185,7 @@ class Timer(commands.Cog):
             #extracting could make the code marginally faster
             if p == author:
                 #set up the special field for the DM character
-                prepEmbed.add_field(name = f"{author.display_name} **(DM)**", value = "The DM has not yet signed up a character for DM rewards.")
+                prepEmbed.add_field(name = f"{author.display_name} **(DM)**", value = "The DM has not signed up a character for DM rewards.")
             else:
                 # create a field in embed for each player and their character, they could not have signed up so the text reflects that
                 # the text differs only slightly if it is a campaign
@@ -194,7 +194,7 @@ class Timer(commands.Cog):
                 else:
                     prepEmbed.add_field(name=p.display_name, value='Has not yet signed up for the campaign.', inline=False)
         #set up a field to inform the DM on how to start the timer or how to get help with it
-        prepEmbed.set_footer(text= f"If enough players have signed up, use the following command to start the timer: {commandPrefix}timer start\nUse the following command to see a list of timer commands: {commandPrefix}timer help")
+        prepEmbed.set_footer(text= f"If enough players have signed up, use the following command to start the timer: `{commandPrefix}timer start`\nUse the following command to see a list of timer commands: `{commandPrefix}timer help`")
 
         # if it is a campaign or the previous message somehow failed then the prepEmbedMsg would not exist yet send we now send another message
         if not prepEmbedMsg:
@@ -354,7 +354,7 @@ class Timer(commands.Cog):
                     timerStarted = True
             #the command that cancels the timer, it does so by ending the command all together                              
             elif (msg.content == f"{commandPrefix}timer cancel" or msg.content == f"{commandPrefix}t cancel") and (msg.author in playerRoster and msg.author == author):
-                await channel.send(f'Timer canceled! If you would like to prep a new quest, use the following command:\n```yaml\n{commandPrefix}timer prep```') 
+                await channel.send(f'Timer cancelled! If you would like to prep a new quest, use the following command:\n```yaml\n{commandPrefix}timer prep```') 
                 # allow the call of this command again
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
@@ -447,7 +447,7 @@ class Timer(commands.Cog):
                                     break
                                 else:
                                     if tReaction.emoji == '❌':
-                                        await timerSpendEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                                        await timerSpendEmbedmsg.edit(embed=None, content=f"Command cancelled. Try using the command again.")
                                         await timerSpendEmbedmsg.clear_reactions()
                                         break
                                 await timerSpendEmbedmsg.delete()
@@ -1332,7 +1332,7 @@ class Timer(commands.Cog):
                         # cancel when the user doesnt respond within the timefram
                         except asyncio.TimeoutError:
                             await addEmbedmsg.delete()
-                            await channel.send(f'Timer addme canceled. Try again using the following command:\n```yaml\n{commandPrefix}timer addme```')
+                            await channel.send(f'Timer addme cancelled. Try again using the following command:\n```yaml\n{commandPrefix}timer addme```')
                             # cancel this command and avoid things being added to the timer
                             return start
                         else:
