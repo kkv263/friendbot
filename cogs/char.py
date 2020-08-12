@@ -2068,6 +2068,12 @@ class Character(commands.Cog):
                     spellBookString += f"• {s['Name']} ({s['School']})\n" 
                 charEmbed.add_field(name='Spellbook', value=spellBookString, inline=False)
 
+            if 'Ritual Book' in charDict:
+                ritualBookString = ""
+                for s in charDict['Ritual Book']:
+                    ritualBookString += f"• {s['Name']} ({s['School']})\n" 
+                charEmbed.add_field(name='Ritual Book', value=ritualBookString, inline=False)
+
     
             # Show Consumables in inventory.
             consumesString = ""
@@ -3814,10 +3820,10 @@ class Character(commands.Cog):
                                 self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                                 return None, None, None
                         await charEmbedmsg.clear_reactions()
-                        charStats['Spellbook'] = []
+                        charStats['Ritual Book'] = []
                         for r in ritualChoiceList:
                             rChoice = ritualSpellsList[alphaEmojis.index(r)]
-                            charStats['Spellbook'].append({'Name':rChoice['Name'], 'School':rChoice['School']})
+                            charStats['Ritual Book'].append({'Name':rChoice['Name'], 'School':rChoice['School']})
 
                     def slashFeatEmbedcheck(r, u):
                         sameMessage = False
