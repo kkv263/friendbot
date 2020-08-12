@@ -4,7 +4,7 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, commandPrefix,  alphaEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack
+from bfunc import db, commandPrefix,  alphaEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack, numberEmojis
 
 class Shop(commands.Cog):
     def __init__ (self, bot):
@@ -395,6 +395,12 @@ class Shop(commands.Cog):
                 sameMessage = True
             return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
 
+        def bookEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and ((r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌')) and u == author
+
         if charRecords:
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
             if 'Wizard' not in charRecords['Class'] and 'Ritual Caster' not in charRecords['Feats']:
@@ -407,40 +413,103 @@ class Shop(commands.Cog):
             spellItem = spellName.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'spells',spellItem)
 
+            bookChoice = 0
+            gpNeeded = 0
+            shopEmbed.title = f"{charRecords['Name']} is copying spell: {bRecord['Name']}"
+            if "Ritual Caster" in charRecords['Feats'] and 'Wizard' not in charRecords['Class']:
+                bookChoice = "Ritual Book"
+            elif "Ritual Caster" not in charRecords['Feats'] and 'Wizard' in charRecords['Class']:
+                bookChoice = "Spellbook"
+            else:
+                shopEmbed.description = f"Which book would you like to copy into?\n\n{numberEmojis[0]}: Ritual Book\n{numberEmojis[1]}: Spell Book"
+                if shopEmbedmsg:
+                    await shopEmbedmsg.edit(embed=shopEmbed)
+                else:
+                    shopEmbedmsg = await channel.send(embed=shopEmbed)
+
+                await shopEmbedmsg.add_reaction(numberEmojis[0])
+                await shopEmbedmsg.add_reaction(numberEmojis[1])
+                await shopEmbedmsg.add_reaction('❌')
+                try:
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=bookEmbedCheck , timeout=60)
+                except asyncio.TimeoutError:
+                    await shopEmbedmsg.delete()
+                    await channel.send(f'Shop canceled. Try again using the same command!')
+                    ctx.command.reset_cooldown(ctx)
+                    return
+                else:
+                    await shopEmbedmsg.clear_reactions()
+                    if tReaction.emoji == '❌':
+                        await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
+                        await shopEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
+                        return
+                    elif tReaction.emoji == numberEmojis[1]:
+                        bookChoice = "Spellbook"
+                    elif tReaction.emoji == numberEmojis[0]:
+                        bookChoice = "Ritual Book"
+
             if bRecord:
-                if 'Spellbook' in charRecords:
+                if bookChoice == "Ritual Book":
+                    ritClass = charRecords["Feats"].split("(")[1].replace(")", "")
+
+                    if ritClass not in bRecord['Classes']:
+                        await channel.send(f"**{bRecord['Name']}** is not a {ritClass} spell that can be copied into your ritual book.")
+                        ctx.command.reset_cooldown(ctx)
+                        return
+
+                    if "Ritual" not in bRecord:
+                        await channel.send(f"**{bRecord['Name']}** is not a ritual spell, therefore it cannot be copied into your ritual book.")
+                        ctx.command.reset_cooldown(ctx)
+                        return
+
+                    if bRecord['Level'] > ((charRecords['Level']) // 2 + (charRecords['Level'] % 2 > 0)):
+                        await channel.send(f"**{charRecords['Name']}** is not a high enough level to copy a {bRecord['Level']} spell, therefore it cannot be copied into your ritual book.")
+                        ctx.command.reset_cooldown(ctx)
+                        return
+                    
+
+                if 'Spellbook' in charRecords and bookChoice == "Spellbook":
                     if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
                         await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their spellbook!")
                         ctx.command.reset_cooldown(ctx)
                         return  
 
-                if 'Wizard' not in bRecord['Classes']:
-                    await channel.send(f"**{bRecord['Name']}** is not a Wizard spell that can be copied into your spellbook.")
-                    ctx.command.reset_cooldown(ctx)
-                    return   
-
-                if "Chronurgy" in bRecord['Classes'] and "Graviturgy" in bRecord['Classes']:
-                    if "Chronurgy" not in charRecords['Class'] and "Graviturgy" not in charRecords['Class']:
-                        await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** and **Graviturgy** schools and cannot be copied into your spellbook.")
-                        ctx.command.reset_cooldown(ctx)
-                        return
-
-                elif "Chronurgy" in bRecord['Classes']:
-                    if "Chronurgy" not in charRecords['Class']:
-                        await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** school and cannot be copied into your spellbook.")
-                        ctx.command.reset_cooldown(ctx)
-                        return   
-                        
-                elif "Graviturgy" in bRecord['Classes']:
-                    if "Graviturgy" not in charRecords['Class']:
-                        await channel.send(f"**{bRecord['Name']}** is restricted to the **Graviturgy** school and cannot be copied into your spellbook.")
+                    if 'Wizard' not in bRecord['Classes']:
+                        await channel.send(f"**{bRecord['Name']}** is not a Wizard spell that can be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return   
 
-                if 'Free Spells' not in charRecords:
+                    if "Chronurgy" in bRecord['Classes'] and "Graviturgy" in bRecord['Classes']:
+                        if "Chronurgy" not in charRecords['Class'] and "Graviturgy" not in charRecords['Class']:
+                            await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** and **Graviturgy** schools and cannot be copied into your spellbook.")
+                            ctx.command.reset_cooldown(ctx)
+                            return
+
+                    elif "Chronurgy" in bRecord['Classes']:
+                        if "Chronurgy" not in charRecords['Class']:
+                            await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** school and cannot be copied into your spellbook.")
+                            ctx.command.reset_cooldown(ctx)
+                            return   
+                            
+                    elif "Graviturgy" in bRecord['Classes']:
+                        if "Graviturgy" not in charRecords['Class']:
+                            await channel.send(f"**{bRecord['Name']}** is restricted to the **Graviturgy** school and cannot be copied into your spellbook.")
+                            ctx.command.reset_cooldown(ctx)
+                            return   
+
+                if 'Free Spells' in charRecords and bookChoice == "Spellbook":
+                    requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
+                    if int(charRecords['Level']) < requiredSpellLevel:
+                        await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher to copy this spell.")
+                        ctx.command.reset_cooldown(ctx)
+                        return     
+
+                    charRecords['Free Spells'] -= 1
+
+                elif 'Free Spells' not in charRecords:
                     spellCopied = None
                     for c in consumes:
-
                         if bRecord['Name'] in c and 'Spell Scroll' in c:
                             spellCopied = True
                             consumes.remove(c)
@@ -463,25 +532,14 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return
 
-                else:
-                    gpNeeded = 0
-                    requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
-                    if int(charRecords['Level']) >= requiredSpellLevel:
-                        await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher to copy this spell.")
-                        ctx.command.reset_cooldown(ctx)
-                        return     
-
-                    charRecords['Free Spells'] -= 1
-
 
                 newGP = charRecords['GP'] - gpNeeded
 
-                if 'Spellbook' not in charRecords:
-                    charRecords['Spellbook'] = [{'Name':bRecord['Name'], 'School':bRecord['School']}]
+                if bookChoice not in charRecords:
+                    charRecords[bookChoice] = [{'Name':bRecord['Name'], 'School':bRecord['School']}]
                 else:
-                    charRecords['Spellbook'].append({'Name':bRecord['Name'], 'School':bRecord['School']})
+                    charRecords[bookChoice].append({'Name':bRecord['Name'], 'School':bRecord['School']})
 
-                shopEmbed.title = f"{charRecords['Name']} is copying spell: {bRecord['Name']}"
                 shopEmbed.description = f"Are you sure you want to copy this spell?\n\n**{bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
@@ -510,18 +568,18 @@ class Shop(commands.Cog):
                             playersCollection = db.players
                             if 'Free Spells' in charRecords:
                                 if charRecords['Free Spells'] == 0:
-                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}, "$unset": {"Free Spells":1} })
+                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice]}, "$unset": {"Free Spells":1} })
                                 else:
-                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook'], 'Free Spells': charRecords['Free Spells']}}) 
+                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice], 'Free Spells': charRecords['Free Spells']}}) 
                             else:
-                                playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}})
+                                playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice]}})
 
                         except Exception as e:
                             print ('MONGO ERROR: ' + str(e))
                             await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
                             shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                            shopEmbed.description = f"You have copied **{bRecord['Name']} ({bRecord['Level']}th level)** into your spellbook for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n**Free Spells Available to copy**: {charRecords['Free Spells']}"
+                            shopEmbed.description = f"You have copied **{bRecord['Name']} ({bRecord['Level']}th level)** into your {bookChoice} for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n**Free Spells Available to copy**: {charRecords['Free Spells']}"
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
 
