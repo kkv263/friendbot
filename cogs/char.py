@@ -873,7 +873,12 @@ class Character(commands.Cog):
             for cc in cRecord:
                 # Wizards get 2 free spells per wizard level
                 if cc['Class']['Name'] == "Wizard":
-                    charDict['Free Spells'] = (int(cc['Level']) - 1) * 2
+                    charDict['Free Spells'] = [6,0,0,0,0,0,0,0,0]
+                    fsIndex = 0
+                    for i in range (2, int(cc['Level']) + 1 ):
+                        if i % 2 != 0:
+                            fsIndex += 1
+                        charDict['Free Spells'][fsIndex] += 2
 
                 hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
 
@@ -940,12 +945,17 @@ class Character(commands.Cog):
         charEmbed.add_field(name='Stats', value=f"**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
 
         if 'Wizard' in charDict['Class']:
-            if 'Free Spells' not in charDict:
-                charDict['Free Spells'] = 6
-            else:
-                charDict['Free Spells'] += 6
+            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command." , inline=False)
 
-            charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command. **{charDict['Free Spells']} Free Spells Available**", inline=False)
+            fsString = ""
+            fsIndex = 0
+            for el in charDict['Free Spells']:
+                if el > 0:
+                    fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                fsIndex += 1
+
+            if fsString:
+                charEmbed.add_field(name='Free Spellbook Copies Available', value=fsString , inline=False)
 
         
         charDictInvString = ""
@@ -1656,7 +1666,13 @@ class Character(commands.Cog):
             for cc in cRecord:
                 # Wizards get 2 free spells per wizard level
                 if cc['Class']['Name'] == "Wizard":
-                    charDict['Free Spells'] = (int(cc['Level']) - 1) * 2
+                    charDict['Free Spells'] = [6,0,0,0,0,0,0,0,0]
+                    fsIndex = 0
+                    for i in range (2, int(cc['Level']) + 1 ):
+                        if i % 2 != 0:
+                            fsIndex += 1
+                        charDict['Free Spells'][fsIndex] += 2
+
                 hpRecords.append({'Level':cc['Level'], 'Subclass': cc['Subclass'], 'Name': cc['Class']['Name'], 'Hit Die Max': cc['Class']['Hit Die Max'], 'Hit Die Average':cc['Class']['Hit Die Average']})
 
             if hpRecords:
@@ -1723,12 +1739,17 @@ class Character(commands.Cog):
         charEmbed.add_field(name='Stats', value=f"**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
 
         if 'Wizard' in charDict['Class']:
-            if 'Free Spells' not in charDict:
-                charDict['Free Spells'] = 6
-            else:
-                charDict['Free Spells'] += 6
-
             charEmbed.add_field(name='Spellbook (Wizard)', value=f"At 1st level, you have a spellbook containing six 1st-level Wizard spells of your choice (+2 free spells for each wizard level). Please use the `{commandPrefix}shop copy` command. **{charDict['Free Spells']} Free Spells Available**", inline=False)
+
+            fsString = ""
+            fsIndex = 0
+            for el in charDict['Free Spells']:
+                if el > 0:
+                    fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                fsIndex += 1
+
+            if fsString:
+                charEmbed.add_field(name='Free Spellbook Copies Available', value=fsString , inline=False)
 
         charDictInvString = ""
         if charDict['Inventory'] != "None":
@@ -2063,10 +2084,22 @@ class Character(commands.Cog):
 
             # Show Spellbook in inventory
             if 'Spellbook' in charDict:
+                sPages = 1
+                sPageStops = [0]
                 spellBookString = ""
                 for s in charDict['Spellbook']:
                     spellBookString += f"• {s['Name']} ({s['School']})\n" 
-                charEmbed.add_field(name='Spellbook', value=spellBookString, inline=False)
+                    if len(spellBookString) > (768 * sPages):
+                        sPageStops.append(len(spellBookString))
+                        sPages += 1
+
+                sPageStops.append(len(spellBookString))
+
+                if sPages > 1:
+                    for p in range(len(sPageStops)-1):
+                        charEmbed.add_field(name=f'Spellbook- p. {p+1}', value=spellBookString[sPageStops[p]:sPageStops[p+1]], inline=False)
+                else:
+                    charEmbed.add_field(name='Spellbook', value=spellBookString, inline=False)
 
             if 'Ritual Book' in charDict:
                 ritualBookString = ""
@@ -2076,6 +2109,9 @@ class Character(commands.Cog):
 
     
             # Show Consumables in inventory.
+            cPages = 1
+            cPageStops = [0]
+
             consumesString = ""
             consumesCount = collections.Counter(charDict['Consumables'].split(', '))
             for k, v in consumesCount.items():
@@ -2084,7 +2120,17 @@ class Character(commands.Cog):
                 else:
                     consumesString += f"• {k} x{v}\n"
 
-            charEmbed.add_field(name='Consumables', value=consumesString, inline=False)
+                if len(consumesString) > (768 * cPages):
+                    cPageStops.append(len(consumesString))
+                    cPages += 1
+            
+            cPageStops.append(len(consumesString))
+
+            if cPages > 1:
+                for p in range(len(cPageStops)-1):
+                    charEmbed.add_field(name=f'Consumables - p. {p+1}', value=consumesString[cPageStops[p]:cPageStops[p+1]], inline=False)
+            else:
+                charEmbed.add_field(name='Consumables', value=consumesString, inline=False)
 
             # Show Magic items in inventory.
             mPages = 1
@@ -2100,7 +2146,7 @@ class Character(commands.Cog):
                     mPageStops.append(len(miString))
                     mPages += 1
 
-
+            mPageStops.append(len(miString))
             if mPages > 1:
                 for p in range(len(mPageStops)-1):
                     charEmbed.add_field(name=f'Magic Items - p. {p+1}', value=miString[mPageStops[p]:mPageStops[p+1]], inline=False)
@@ -2350,6 +2396,17 @@ class Character(commands.Cog):
                 charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\nGuild Rank: {charDict['Guild Rank']}", inline=True)
             charEmbed.add_field(name='Feats', value=charDict['Feats'], inline=False)
 
+            if 'Free Spells' in charDict:
+                fsString = ""
+                fsIndex = 0
+                for el in charDict['Free Spells']:
+                    if el > 0:
+                        fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                    fsIndex += 1
+
+                if fsString:
+                    charEmbed.add_field(name='Free Spellbook Copies Available', value=fsString , inline=False)
+
             if 'Max Stats' not in charDict:
                 maxStatDict = charDict['Max Stats'] = {'STR': 20 ,'DEX': 20,'CON': 20, 'INT': 20, 'WIS': 20,'CHA': 20}
             else:
@@ -2511,7 +2568,6 @@ class Character(commands.Cog):
         levelUpEmbed = discord.Embed ()
         characterCog = self.bot.get_cog('Character')
         infoRecords, levelUpEmbedmsg = await checkForChar(ctx, char, levelUpEmbed)
-        freeSpells = 0
         if infoRecords:
             charID = infoRecords['_id']
             charDict = {}
@@ -2522,6 +2578,10 @@ class Character(commands.Cog):
             charStats = {'STR':infoRecords['STR'], 'DEX':infoRecords['DEX'], 'CON':infoRecords['CON'], 'INT':infoRecords['INT'], 'WIS':infoRecords['WIS'], 'CHA':infoRecords['CHA']}
             charHP = infoRecords['HP']
             charFeats = infoRecords['Feats']
+            freeSpells = [0] * 9
+
+            if 'Free Spells' in infoRecords:
+                freeSpells = infoRecords['Free Spells']
 
             if 'Death' in infoRecords.keys():
                 await channel.send(f'You cannot level up a dead character. Use the following command to decide their fate:\n```yaml\n$death "{charRecords["Name"]}"```')
@@ -2705,7 +2765,7 @@ class Character(commands.Cog):
                                     subclasses.append({'Name': charClassChoice, 'Subclass': '', 'Level': 1, 'Hit Die Max': c['Hit Die Max'], 'Hit Die Average': c['Hit Die Average']})
 
                             if "Wizard" in charClassChoice:
-                                freeSpells += 6
+                                freeSpells[0] += 6
 
                             levelUpEmbed.description = f"{infoRecords['Race']}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
                             levelUpEmbed.clear_fields()
@@ -2714,7 +2774,7 @@ class Character(commands.Cog):
                             lvlClass = charClass
                             subclasses[0]['Level'] += 1
                             if 'Wizard' in charClass: 
-                                freeSpells += 2
+                                freeSpells[(subclasses[0]['Level'] // 2) + 1] += 2
                         else:
                             multiclassLevelString = ""
                             alphaIndex = 0
@@ -2747,7 +2807,7 @@ class Character(commands.Cog):
                                     lvlClass = s['Name']
                                     s['Level'] += 1
                                     if 'Wizard' in s['Name']:
-                                        freeSpells += 2
+                                        freeSpells[(s['Level'] // 2) + 1] += 2
                                     break
 
                             charClass = charClass.replace(f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level'] - 1}", f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level']}")
@@ -2807,10 +2867,8 @@ class Character(commands.Cog):
                       'CHA': int(charStats['CHA']),
                 }
 
-                if freeSpells > 0:
-                    if 'Free Spells' in infoRecords:
-                        data['Free Spells'] = infoRecords['Free Spells'] + freeSpells
-                    else:
+                if 'Free Spells' in infoRecords:
+                    if freeSpells != ([0] * 9):
                         data['Free Spells'] = freeSpells
 
                 if charFeatsGained != "":
@@ -3759,10 +3817,8 @@ class Character(commands.Cog):
                         if charEmbedmsg.id == r.message.id:
                             sameMessage = True
 
-                        if (r.emoji in alphaEmojis[:6]):
+                        if (r.emoji in alphaEmojis[:alphaIndex]):
                             ritualChoiceList.add(r.emoji)
-
-                        print(ritualChoiceList)
 
                         return sameMessage and ((len(ritualChoiceList) == 2) or (str(r.emoji) == '❌')) and u == author
 
@@ -3792,7 +3848,7 @@ class Character(commands.Cog):
                         ritualClass = ritualClasses[alphaEmojis.index(tReaction.emoji)]
                         featPicked['Name'] = f"{featPicked['Name']} ({ritualClass})"
                         spellsCollection = db.spells
-                        ritualSpellsList = list(spellsCollection.find({"$and": [{"Classes": {"$regex": ritualClass, '$options': 'i' }}, {"Ritual": True}] }))
+                        ritualSpellsList = list(spellsCollection.find({"$and": [{"Classes": {"$regex": ritualClass, '$options': 'i' }}, {"Ritual": True}, {"Level": 1}] }))
 
                         alphaIndex = 0
                         ritualSpellsString = ""
@@ -3802,7 +3858,6 @@ class Character(commands.Cog):
 
                         charEmbed.add_field(name="Please pick two spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
                         ritualChoiceList = set()
-                        print(ritualSpellsList)
 
                         try:
                             await charEmbedmsg.edit(embed=charEmbed)

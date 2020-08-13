@@ -5,6 +5,7 @@ import re
 from discord.utils import get        
 from discord.ext import commands
 from bfunc import db, commandPrefix,  alphaEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack, numberEmojis
+from math import floor
 
 class Shop(commands.Cog):
     def __init__ (self, bot):
@@ -451,9 +452,18 @@ class Shop(commands.Cog):
                         bookChoice = "Ritual Book"
 
             if bRecord:
+                if bookChoice in charRecords:
+                        if bRecord['Name'] in [c['Name'] for c in charRecords[bookChoice]]:
+                            await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their {bookChoice}!")
+                            ctx.command.reset_cooldown(ctx)
+                            return  
+
                 if bookChoice == "Ritual Book":
                     ritClass = charRecords["Feats"].split("(")[1].replace(")", "")
-
+                    if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
+                        await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their spellbook!")
+                        ctx.command.reset_cooldown(ctx)
+                        return 
                     if ritClass not in bRecord['Classes']:
                         await channel.send(f"**{bRecord['Name']}** is not a {ritClass} spell that can be copied into your ritual book.")
                         ctx.command.reset_cooldown(ctx)
@@ -470,12 +480,7 @@ class Shop(commands.Cog):
                         return
                     
 
-                if 'Spellbook' in charRecords and bookChoice == "Spellbook":
-                    if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
-                        await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their spellbook!")
-                        ctx.command.reset_cooldown(ctx)
-                        return  
-
+                if bookChoice == "Spellbook":
                     if 'Wizard' not in bRecord['Classes']:
                         await channel.send(f"**{bRecord['Name']}** is not a Wizard spell that can be copied into your spellbook.")
                         ctx.command.reset_cooldown(ctx)
@@ -501,12 +506,12 @@ class Shop(commands.Cog):
 
                 if 'Free Spells' in charRecords and bookChoice == "Spellbook":
                     requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
-                    if int(charRecords['Level']) < requiredSpellLevel:
-                        await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher to copy this spell.")
+                    if charRecords['Free Spells'][requiredSpellLevel] <= 0:
+                        await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher, or you have no more free spells to copy this spell.")
                         ctx.command.reset_cooldown(ctx)
                         return     
 
-                    charRecords['Free Spells'] -= 1
+                    charRecords['Free Spells'][requiredSpellLevel] -= 1
 
                 elif 'Free Spells' not in charRecords:
                     spellCopied = None
@@ -569,7 +574,7 @@ class Shop(commands.Cog):
                         try:
                             playersCollection = db.players
                             if 'Free Spells' in charRecords:
-                                if charRecords['Free Spells'] == 0:
+                                if charRecords['Free Spells'] == [0] * 9:
                                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice]}, "$unset": {"Free Spells":1} })
                                 else:
                                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice], 'Free Spells': charRecords['Free Spells']}}) 
@@ -580,8 +585,21 @@ class Shop(commands.Cog):
                             print ('MONGO ERROR: ' + str(e))
                             await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
+
+                            ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(floor(n/10)%10!=1)*(n%10<4)*n%10::4])
                             shopEmbed.title = f"Shop (Copy): {charRecords['Name']}"
-                            shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({bRecord['Level']}th level) into your spellbook for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\nCurrent gp: {newGP} gp\nFree Spells available to copy: {charRecords['Free Spells']}"
+                            shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({ordinal(bRecord['Level'])} level) into your spellbook for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\nCurrent gp: {newGP} gp\n"
+                            if 'Free Spells' in charRecords:
+                                fsString = ""
+                                fsIndex = 0
+                                for el in charRecords['Free Spells']:
+                                    if el > 0:
+                                        fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                                    fsIndex += 1
+
+                                if fsString:
+                                    shopEmbed.add_field(name='Free Spellbook Copies Available', value=fsString , inline=False)
+
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
 
