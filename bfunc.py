@@ -230,7 +230,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                     sameMessage = True
                 return ((r.emoji in alphaEmojis[:min(len(records), 20)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
             #inform the user of the current information and ask for their selection of an item
-            apiEmbed.add_field(name=f"There seems to be multiple results for `{query}`, please choose the correct one.\nThe maximum results shown are 20. If the result you are looking for is not here, please react with ❌ and be more specific.", value=infoString, inline=False)
+            apiEmbed.add_field(name=f"There seems to be multiple results for \"**{query}**\"! Please choose the correct one.\nThe maximum number of results shown is 20. If the result you are looking for is not here, please react with ❌ and be more specific.", value=infoString, inline=False)
             if not apiEmbedmsg or apiEmbedmsg == "Fail":
                 apiEmbedmsg = await channel.send(embed=apiEmbed)
             else:
@@ -249,7 +249,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             else:
                 #stop if the cancel emoji was given and reenable the command
                 if tReaction.emoji == '❌':
-                    await apiEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                    await apiEmbedmsg.edit(embed=None, content=f"Command cancelled. Try using the command again.")
                     await apiEmbedmsg.clear_reactions()
                     ctx.command.reset_cooldown(ctx)
                     return None, apiEmbed, "Fail"
@@ -281,7 +281,7 @@ async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
 
     if charRecords == list():
         if not mod:
-            await channel.send(content=f'I was not able to find your character named `{char}`. Please check your spelling and try again.')
+            await channel.send(content=f'I was not able to find your character named "**{char}**". Please check your spelling and try again.')
         ctx.command.reset_cooldown(ctx)
         return None, None
 
@@ -298,7 +298,7 @@ async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
                     sameMessage = True
                 return ((r.emoji in alphaEmojis[:min(len(charRecords), 9)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
 
-            charEmbed.add_field(name=f"There seems to be multiple results for `{char}`, please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
+            charEmbed.add_field(name=f"There seems to be multiple results for \"`{char}`\"! Please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
             charEmbedmsg = await channel.send(embed=charEmbed)
             await charEmbedmsg.add_reaction('❌')
 
@@ -311,7 +311,7 @@ async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
                 return None, None
             else:
                 if tReaction.emoji == '❌':
-                    await charEmbedmsg.edit(embed=None, content=f"Character information canceled. User `{commandPrefix}char info` command and try again!")
+                    await charEmbedmsg.edit(embed=None, content=f"Character information cancelled. Try again using the same command!")
                     await charEmbedmsg.clear_reactions()
                     ctx.command.reset_cooldown(ctx)
                     return None, None
@@ -334,7 +334,7 @@ async def checkForGuild(ctx, name, guildEmbed="" ):
     print(guildRecords)
 
     if guildRecords == list():
-        await channel.send(content=f'I was not able to find a guild named `{name}`. Please check your spelling and try again.')
+        await channel.send(content=f'I was not able to find a guild named "**{name}**". Please check your spelling and try again.')
         ctx.command.reset_cooldown(ctx)
         return None, None
     else:
@@ -350,7 +350,7 @@ async def checkForGuild(ctx, name, guildEmbed="" ):
                     sameMessage = True
                 return ((r.emoji in alphaEmojis[:min(len(guildRecords), 9)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
 
-            guildEmbed.add_field(name=f"There seems to be multiple results for `{name}`, please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
+            guildEmbed.add_field(name=f"There seems to be multiple results for \"`{name}`\"! Please choose the correct character. If you do not see your character here, please react with ❌ and be more specific with your query.", value=infoString, inline=False)
             guildEmbedmsg = await channel.send(embed=guildEmbed)
             await guildEmbedmsg.add_reaction('❌')
 
@@ -358,12 +358,12 @@ async def checkForGuild(ctx, name, guildEmbed="" ):
                 tReaction, tUser = await bot.wait_for("reaction_add", check=infoCharEmbedcheck, timeout=60)
             except asyncio.TimeoutError:
                 await guildEmbedmsg.delete()
-                await channel.send('Guild command timed out! Try using the command again.')
+                await channel.send('Guild command timed out! Try again using the same command!')
                 ctx.command.reset_cooldown(ctx)
                 return None, None
             else:
                 if tReaction.emoji == '❌':
-                    await guildEmbedmsg.edit(embed=None, content=f"Guild command canceled. Please use the command and try again!")
+                    await guildEmbedmsg.edit(embed=None, content=f"Guild command cancelled. Try again using the same command!")
                     await guildEmbedmsg.clear_reactions()
                     ctx.command.reset_cooldown(ctx)
                     return None, None
