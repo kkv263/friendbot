@@ -460,8 +460,8 @@ class Shop(commands.Cog):
 
                 if bookChoice == "Ritual Book":
                     ritClass = charRecords["Feats"].split("(")[1].replace(")", "")
-                    if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
-                        await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their spellbook!")
+                    if bRecord['Name'] in [c['Name'] for c in charRecords['Ritual Book']]:
+                        await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their ritual book!")
                         ctx.command.reset_cooldown(ctx)
                         return 
                     if ritClass not in bRecord['Classes']:
@@ -474,7 +474,7 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return
 
-                    if bRecord['Level'] > ((charRecords['Level']) // 2 + (charRecords['Level'] % 2 > 0)):
+                    if bRecord['Level'] > ((charRecords['Level'] - 1) // 2):
                         await channel.send(f"**{charRecords['Name']}** is not a high enough level to copy a {bRecord['Level']} spell, therefore it cannot be copied into your ritual book.")
                         ctx.command.reset_cooldown(ctx)
                         return
@@ -506,29 +506,14 @@ class Shop(commands.Cog):
 
                 if 'Free Spells' in charRecords and bookChoice == "Spellbook":
                     requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
-                    if charRecords['Free Spells'][requiredSpellLevel] <= 0:
+                    if charRecords['Free Spells'][bRecord['Level'] - 1] <= 0 or charRecords["Level"] < requiredSpellLevel:
                         await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher, or you have no more free spells to copy this spell.")
                         ctx.command.reset_cooldown(ctx)
                         return     
 
-                    charRecords['Free Spells'][requiredSpellLevel] -= 1
+                    charRecords['Free Spells'][bRecord['Level'] - 1] -= 1
 
                 elif 'Free Spells' not in charRecords:
-                    spellCopied = None
-                    for c in consumes:
-                        if bRecord['Name'] in c and 'Spell Scroll' in c:
-                            spellCopied = True
-                            consumes.remove(c)
-                            break
-
-                    if consumes == list():
-                        consumes = ["None"]
-
-                    if not spellCopied:
-                        await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their spellbook!")
-                        ctx.command.reset_cooldown(ctx)
-                        return  
-
                     gpNeeded = bRecord['Level'] * 50
                     if charRecords['Level'] >= 2 and bRecord['School'] in charRecords['Class']:
                         gpNeeded = gpNeeded / 2
@@ -537,6 +522,21 @@ class Shop(commands.Cog):
                         await channel.send(f"***{charRecords['Name']}*** does not have enough gp to copy the **{bRecord['Name']}** spell into their spellbook.")
                         ctx.command.reset_cooldown(ctx)
                         return
+
+                spellCopied = None
+                for c in consumes:
+                    if bRecord['Name'] in c and 'Spell Scroll' in c:
+                        spellCopied = True
+                        consumes.remove(c)
+                        break
+
+                if consumes == list():
+                    consumes = ["None"]
+
+                if not spellCopied:
+                    await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their spellbook!")
+                    ctx.command.reset_cooldown(ctx)
+                    return  
 
 
                 newGP = charRecords['GP'] - gpNeeded
@@ -594,7 +594,7 @@ class Shop(commands.Cog):
                                 fsIndex = 0
                                 for el in charRecords['Free Spells']:
                                     if el > 0:
-                                        fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                                        fsString += f"Level {fsIndex+1}: {el} free spells\n"
                                     fsIndex += 1
 
                                 if fsString:

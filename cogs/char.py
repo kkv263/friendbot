@@ -951,7 +951,7 @@ class Character(commands.Cog):
             fsIndex = 0
             for el in charDict['Free Spells']:
                 if el > 0:
-                    fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                    fsString += f"Level {fsIndex+1}: {el} free spells\n"
                 fsIndex += 1
 
             if fsString:
@@ -1745,7 +1745,7 @@ class Character(commands.Cog):
             fsIndex = 0
             for el in charDict['Free Spells']:
                 if el > 0:
-                    fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                    fsString += f"Level {fsIndex+1}: {el} free spells\n"
                 fsIndex += 1
 
             if fsString:
@@ -2401,7 +2401,7 @@ class Character(commands.Cog):
                 fsIndex = 0
                 for el in charDict['Free Spells']:
                     if el > 0:
-                        fsString += f"Level {fsIndex+1}: {el} free copies\n"
+                        fsString += f"Level {fsIndex+1}: {el} free spells\n"
                     fsIndex += 1
 
                 if fsString:
@@ -2774,7 +2774,11 @@ class Character(commands.Cog):
                             lvlClass = charClass
                             subclasses[0]['Level'] += 1
                             if 'Wizard' in charClass: 
-                                freeSpells[(subclasses[0]['Level'] // 2) + 1] += 2
+                                fsLvl = (subclasses[0]['Level'] - 1) // 2
+                                if fsLvl > 8:
+                                    fsLvl = 8
+
+                                freeSpells[fsLvl] += 2
                         else:
                             multiclassLevelString = ""
                             alphaIndex = 0
@@ -2807,7 +2811,10 @@ class Character(commands.Cog):
                                     lvlClass = s['Name']
                                     s['Level'] += 1
                                     if 'Wizard' in s['Name']:
-                                        freeSpells[(s['Level'] // 2) + 1] += 2
+                                        fsLvl = (subclasses[0]['Level'] - 1) // 2
+                                        if fsLvl > 8:
+                                            fsLvl = 8
+                                        freeSpells[(s['Level'] - 1) // 2] += 2
                                     break
 
                             charClass = charClass.replace(f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level'] - 1}", f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level']}")
