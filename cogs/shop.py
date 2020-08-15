@@ -215,7 +215,7 @@ class Shop(commands.Cog):
                                 if charRecords['Inventory'] == "None":
                                     charRecords['Inventory'] = {pk : int(pv)}
                                 else:
-                                    if bRecord['Name'] not in charRecords['Inventory']:
+                                    if pk not in charRecords['Inventory']:
                                         charRecords['Inventory'][pk] = int(pv)
                                     else:
                                         charRecords['Inventory'][pk] += int(pv)
@@ -398,7 +398,7 @@ class Shop(commands.Cog):
                 gpRefund = round((bRecord['GP'] / 2) * amount, 2)
                 newGP = round(charRecords['GP'] + gpRefund,2)
 
-# {charRecords['Name']} is not bolded because [shopEmbed.title] already bolds everything in that's part of the title.
+                # {charRecords['Name']} is not bolded because [shopEmbed.title] already bolds everything in that's part of the title.
                 shopEmbed.title = f"Shop (Sell): {charRecords['Name']}"
                 shopEmbed.description = f"Are you sure you want to sell **{amount}**x **{bRecord['Name']}** for **{gpRefund} gp**?\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
@@ -464,6 +464,12 @@ class Shop(commands.Cog):
                 sameMessage = True
             return sameMessage and ((r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌')) and u == author
 
+        def scrollEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and ((r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌')) and u == author
+
         if charRecords:
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
             if 'Wizard' not in charRecords['Class'] and 'Ritual Caster' not in charRecords['Feats']:
@@ -476,43 +482,43 @@ class Shop(commands.Cog):
             spellItem = spellName.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'spells',spellItem)
 
-            bookChoice = 0
-            gpNeeded = 0
-            shopEmbed.title = f"{charRecords['Name']} is copying spell: {bRecord['Name']}"
-            if "Ritual Caster" in charRecords['Feats'] and 'Wizard' not in charRecords['Class']:
-                bookChoice = "Ritual Book"
-            elif "Ritual Caster" not in charRecords['Feats'] and 'Wizard' in charRecords['Class']:
-                bookChoice = "Spellbook"
-            else:
-                shopEmbed.description = f"Which book would you like to copy into?\n\n{numberEmojis[0]}: Ritual Book\n{numberEmojis[1]}: Spell Book"
-                if shopEmbedmsg:
-                    await shopEmbedmsg.edit(embed=shopEmbed)
+            if bRecord:
+                bookChoice = 0
+                gpNeeded = 0
+                shopEmbed.title = f"{charRecords['Name']} is copying spell: {bRecord['Name']}"
+                if "Ritual Caster" in charRecords['Feats'] and 'Wizard' not in charRecords['Class']:
+                    bookChoice = "Ritual Book"
+                elif "Ritual Caster" not in charRecords['Feats'] and 'Wizard' in charRecords['Class']:
+                    bookChoice = "Spellbook"
                 else:
-                    shopEmbedmsg = await channel.send(embed=shopEmbed)
+                    shopEmbed.description = f"Which book would you like to copy into?\n\n{numberEmojis[0]}: Ritual Book\n{numberEmojis[1]}: Spell Book"
+                    if shopEmbedmsg:
+                        await shopEmbedmsg.edit(embed=shopEmbed)
+                    else:
+                        shopEmbedmsg = await channel.send(embed=shopEmbed)
 
-                await shopEmbedmsg.add_reaction(numberEmojis[0])
-                await shopEmbedmsg.add_reaction(numberEmojis[1])
-                await shopEmbedmsg.add_reaction('❌')
-                try:
-                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=bookEmbedCheck , timeout=60)
-                except asyncio.TimeoutError:
-                    await shopEmbedmsg.delete()
-                    await channel.send(f'Shop canceled. Try again using the same command!')
-                    ctx.command.reset_cooldown(ctx)
-                    return
-                else:
-                    await shopEmbedmsg.clear_reactions()
-                    if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
-                        await shopEmbedmsg.clear_reactions()
+                    await shopEmbedmsg.add_reaction(numberEmojis[0])
+                    await shopEmbedmsg.add_reaction(numberEmojis[1])
+                    await shopEmbedmsg.add_reaction('❌')
+                    try:
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=bookEmbedCheck , timeout=60)
+                    except asyncio.TimeoutError:
+                        await shopEmbedmsg.delete()
+                        await channel.send(f'Shop canceled. Try again using the same command!')
                         ctx.command.reset_cooldown(ctx)
                         return
-                    elif tReaction.emoji == numberEmojis[1]:
-                        bookChoice = "Spellbook"
-                    elif tReaction.emoji == numberEmojis[0]:
-                        bookChoice = "Ritual Book"
-
-            if bRecord:
+                    else:
+                        await shopEmbedmsg.clear_reactions()
+                        if tReaction.emoji == '❌':
+                            await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
+                            await shopEmbedmsg.clear_reactions()
+                            ctx.command.reset_cooldown(ctx)
+                            return
+                        elif tReaction.emoji == numberEmojis[1]:
+                            bookChoice = "Spellbook"
+                        elif tReaction.emoji == numberEmojis[0]:
+                            bookChoice = "Ritual Book"
+            
                 if bookChoice in charRecords:
                         if bRecord['Name'] in [c['Name'] for c in charRecords[bookChoice]]:
                             await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their {bookChoice}!")
@@ -566,16 +572,63 @@ class Shop(commands.Cog):
                             ctx.command.reset_cooldown(ctx)
                             return   
 
-                if 'Free Spells' in charRecords and bookChoice == "Spellbook":
+                spellCopied = None
+                for c in consumes:
+                    if bRecord['Name'] in c and 'Spell Scroll' in c:
+                        spellCopied = c
+                        break
+
+                scrollChoice = "Scroll"
+
+                if 'Free Spells' in charRecords and spellCopied:
+                    shopEmbed.description = f"Would you like to copy this spell using your spell scroll or a free spell?\n\n{numberEmojis[0]}: Free Spell\n{numberEmojis[1]}: Consume Spell Scroll"
+                    if shopEmbedmsg:
+                        await shopEmbedmsg.edit(embed=shopEmbed)
+                    else:
+                        shopEmbedmsg = await channel.send(embed=shopEmbed)
+
+                    await shopEmbedmsg.add_reaction(numberEmojis[0])
+                    await shopEmbedmsg.add_reaction(numberEmojis[1])
+                    await shopEmbedmsg.add_reaction('❌')
+
+                    try:
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=scrollEmbedCheck , timeout=60)
+                    except asyncio.TimeoutError:
+                        await shopEmbedmsg.delete()
+                        await channel.send(f'Shop canceled. Try again using the same command!')
+                        ctx.command.reset_cooldown(ctx)
+                        return
+                    else:
+                        await shopEmbedmsg.clear_reactions()
+                        if tReaction.emoji == '❌':
+                            await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
+                            await shopEmbedmsg.clear_reactions()
+                            ctx.command.reset_cooldown(ctx)
+                            return
+                        elif tReaction.emoji == numberEmojis[0]:
+                            scrollChoice = "Free Spell"
+                        elif tReaction.emoji == numberEmojis[1]:
+                            scrollChoice = "Scroll"
+
+                fsIndex = 0
+                if 'Free Spells' in charRecords and bookChoice == "Spellbook" and scrollChoice == "Free Spell":
                     requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
-                    if charRecords['Free Spells'][bRecord['Level'] - 1] <= 0 or charRecords["Level"] < requiredSpellLevel:
+
+                    fsValid = False
+                    for f in range(bRecord['Level'] - 1, 9):
+                        if charRecords['Free Spells'][f] > 0:
+                            charRecords['Free Spells'][f] -= 1
+                            fsValid = True
+                            fsIndex = f + 1
+                            break
+                        
+                    if charRecords["Level"] < requiredSpellLevel or fsValid is False:
                         await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher, or you have no more free spells to copy this spell.")
                         ctx.command.reset_cooldown(ctx)
                         return     
 
-                    charRecords['Free Spells'][bRecord['Level'] - 1] -= 1
 
-                elif 'Free Spells' not in charRecords:
+                elif scrollChoice == "Scroll":
                     gpNeeded = bRecord['Level'] * 50
                     if charRecords['Level'] >= 2 and bRecord['School'] in charRecords['Class']:
                         gpNeeded = gpNeeded / 2
@@ -585,21 +638,16 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return
 
-                spellCopied = None
-                for c in consumes:
-                    if bRecord['Name'] in c and 'Spell Scroll' in c:
-                        spellCopied = True
-                        consumes.remove(c)
-                        break
 
-                if consumes == list():
-                    consumes = ["None"]
+                    if not spellCopied:
+                        await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their spellbook!")
+                        ctx.command.reset_cooldown(ctx)
+                        return  
 
-                if not spellCopied:
-                    await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their spellbook!")
-                    ctx.command.reset_cooldown(ctx)
-                    return  
-
+                    else:
+                        consumes.remove(spellCopied)
+                        if consumes == list():
+                            consumes = ["None"]
 
                 newGP = charRecords['GP'] - gpNeeded
 
@@ -609,7 +657,11 @@ class Shop(commands.Cog):
                     charRecords[bookChoice].append({'Name':bRecord['Name'], 'School':bRecord['School']})
 
                 shopEmbed.title = f"Copying a Spell: {charRecords['Name']}"
-                shopEmbed.description = f"Are you sure you want to copy the **{bRecord['Name']}** spell for **{gpNeeded} gp**?\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+
+                if fsIndex != 0:
+                    shopEmbed.description = f"""Are you sure you want to copy the **{bRecord['Name']}** spell? This will consume a **"Level {fsIndex}"** free spell.\n\n✅: Yes\n\n❌: Cancel"""
+                else:
+                    shopEmbed.description = f"Are you sure you want to copy the **{bRecord['Name']}** spell for **{gpNeeded} gp**?\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -636,10 +688,7 @@ class Shop(commands.Cog):
                         try:
                             playersCollection = db.players
                             if 'Free Spells' in charRecords:
-                                if charRecords['Free Spells'] == [0] * 9:
-                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice]}, "$unset": {"Free Spells":1} })
-                                else:
-                                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice], 'Free Spells': charRecords['Free Spells']}}) 
+                                playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice], 'Free Spells': charRecords['Free Spells']}}) 
                             else:
                                 playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice]}})
 

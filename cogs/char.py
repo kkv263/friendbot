@@ -744,6 +744,7 @@ class Character(commands.Cog):
                                 await charEmbedmsg.edit(embed=None, content=f"Character creation cancelled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
                                 await charEmbedmsg.clear_reactions()
                                 self.bot.get_command('create').reset_cooldown(ctx)
+                                return
 
                         beTopValues = beTopChoiceList[alphaEmojis.index(tReaction.emoji)]
                         beTopKey = beTopChoiceKeys[alphaEmojis.index(tReaction.emoji)]
@@ -790,7 +791,7 @@ class Character(commands.Cog):
                                 await charEmbedmsg.edit(embed=None, content=f"Character creation cancelled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
                                 await charEmbedmsg.clear_reactions()
                                 self.bot.get_command('create').reset_cooldown(ctx)
-
+                                return
                             beKey = beList[alphaEmojis.index(tReaction.emoji)]
                             if charDict['Inventory'] == "None":
                                 charDict['Inventory'] = {beKey : 1}
@@ -3809,8 +3810,6 @@ class Character(commands.Cog):
                     
                     featPicked = featChoices[(page * perPage) + alphaEmojis.index(react.emoji)]
                     featsPickedList.append(featPicked)
-
-                    print(featPicked)
 
                     # Special Case of Picked Ritual Caster
                     def ritualFeatEmbedcheck(r, u):
