@@ -125,10 +125,61 @@ class Shop(commands.Cog):
                     ctx.command.reset_cooldown(ctx)
                     return
 
-# {charRecords['Name']} is not bolded because [shopEmbed.title] already bolds everything in that's part of the title.
+                # {charRecords['Name']} is not bolded because [shopEmbed.title] already bolds everything in that's part of the title.
                 newGP = round(charRecords['GP'] - gpNeeded , 2)
                 shopEmbed.title = f"Shop (Buy): {charRecords['Name']}"
-                shopEmbed.description = f"Are you sure you want to purchase **{amount}**x **{bRecord['Name']}** for **{gpNeeded} gp**?\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+
+                # Show contents of pack
+                def unpackChoiceCheck(r, u):
+                    sameMessage = False
+                    if shopEmbedmsg.id == r.message.id:
+                        sameMessage = True
+                    return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author and sameMessage
+
+                unpackString = ""
+                if "Unpack" in bRecord:
+                    alphaIndex = 0
+                    unpackDict = []
+                    unpackChoiceString = ""
+                    unpackString = f"**Contents of {bRecord['Name']}**\n"
+                    for pk, pv in bRecord["Unpack"].items():
+                        if type(pv) == dict:
+                            for pvk, pvv in pv.items():
+                                unpackDict.append(pvk)
+                                unpackChoiceString += f"{alphaEmojis[alphaIndex]}: {pvk}\n"
+                                alphaIndex += 1
+
+                            shopEmbed.add_field(name=f"{bRecord['Name']} lets you choose one {pk}.", value=unpackChoiceString, inline=False)
+                            if shopEmbedmsg:
+                                await shopEmbedmsg.edit(embed=shopEmbed)
+                            else:
+                                shopEmbedmsg = await channel.send(embed=shopEmbed)
+                            await shopEmbedmsg.add_reaction('❌')
+                            try:
+                                tReaction, tUser = await self.bot.wait_for("reaction_add", check=unpackChoiceCheck, timeout=60)
+                            except asyncio.TimeoutError:
+                                await shopEmbedmsg.delete()
+                                await channel.send(f'Shop cancelled. Try again using the same command:\n```yaml\n{commandPrefix}shop buy \"character name\" \"item\" #```')
+                                self.bot.get_command('buy').reset_cooldown(ctx)
+                                return
+                            else:
+                                await shopEmbedmsg.clear_reactions()
+                                if tReaction.emoji == '❌':
+                                    await shopEmbedmsg.edit(embed=None, content=f"Shop cancelled. Try again using the same command:\n```yaml\n{commandPrefix}shop buy \"character name\" \"item\" #```")
+                                    await shopEmbedmsg.clear_reactions()
+                                    self.bot.get_command('buy').reset_cooldown(ctx)
+
+                            unpackChoice = unpackDict[alphaEmojis.index(tReaction.emoji)]
+                            del bRecord["Unpack"][pk]
+                            bRecord['Unpack'][unpackChoice] = pvv
+
+                            await shopEmbedmsg.clear_reactions()
+                            shopEmbed.clear_fields()
+                        else:
+                            unpackString += f"{pk} x{pv}\n"
+                    unpackString += "\n"
+
+                shopEmbed.description = f"Are you sure you want to purchase **{amount}**x **{bRecord['Name']}** for **{gpNeeded} gp**?\n\n{unpackString}Current gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -158,6 +209,16 @@ class Shop(commands.Cog):
                                 charRecords['Consumables'] += ', ' + bRecord['Name']
                             else:
                                 charRecords['Consumables'] = bRecord['Name']
+                        # Unpacks all items, ex. Dungeoneer's Pack
+                        elif "Unpack" in bRecord:
+                            for pk, pv in bRecord["Unpack"].items():
+                                if charRecords['Inventory'] == "None":
+                                    charRecords['Inventory'] = {pk : int(pv)}
+                                else:
+                                    if bRecord['Name'] not in charRecords['Inventory']:
+                                        charRecords['Inventory'][pk] = int(pv)
+                                    else:
+                                        charRecords['Inventory'][pk] += int(pv)
                         else:
                             if charRecords['Inventory'] == "None":
                                 charRecords['Inventory'] = {f"{bRecord['Name']}" : amount}
@@ -173,7 +234,7 @@ class Shop(commands.Cog):
                             print ('MONGO ERROR: ' + str(e))
                             shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
-                            shopEmbed.description = f"**{amount}**x **{bRecord['Name']}** purchased for **{gpNeeded} gp**!\n\nCurrent gp: {newGP} gp\n"
+                            shopEmbed.description = f"**{amount}**x **{bRecord['Name']}** purchased for **{gpNeeded} gp**!\n\n{unpackString}Current gp: {newGP} gp\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
 
@@ -459,11 +520,12 @@ class Shop(commands.Cog):
                             return  
 
                 if bookChoice == "Ritual Book":
-                    ritClass = charRecords["Feats"].split("(")[1].replace(")", "")
+                    ritClass = charRecords["Feats"].split('Ritual Caster (')[1].split(')')[0]
                     if bRecord['Name'] in [c['Name'] for c in charRecords['Ritual Book']]:
                         await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their ritual book!")
                         ctx.command.reset_cooldown(ctx)
                         return 
+
                     if ritClass not in bRecord['Classes']:
                         await channel.send(f"**{bRecord['Name']}** is not a {ritClass} spell that can be copied into your ritual book.")
                         ctx.command.reset_cooldown(ctx)
@@ -474,8 +536,8 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return
 
-                    if bRecord['Level'] > ((charRecords['Level'] - 1) // 2):
-                        await channel.send(f"**{charRecords['Name']}** is not a high enough level to copy a {bRecord['Level']} spell, therefore it cannot be copied into your ritual book.")
+                    if charRecords['Level'] < (int(bRecord['Level']) * 2 - 1):
+                        await channel.send(f"**{charRecords['Name']}** is not a high enough level to copy a level {bRecord['Level']} spell, therefore it cannot be copied into your ritual book.")
                         ctx.command.reset_cooldown(ctx)
                         return
                     

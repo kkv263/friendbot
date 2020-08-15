@@ -2290,7 +2290,8 @@ class Character(commands.Cog):
                     charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: 0 (Try hosting sessions to receive Noodles!)"
 
                 userEmbedList = [charEmbed]
-
+                page = 0
+                userEmbedList[0].set_footer(text=f"Page {page+1} of {pages}")
                 if pages > 1:
                     for p in range(len(pageStops)-1):
                         if p != 0:
@@ -2305,7 +2306,6 @@ class Character(commands.Cog):
                 else:
                     await charEmbedmsg.edit(embed=charEmbed)
 
-                page = 0
                 while pages > 1:
                     await charEmbedmsg.add_reaction(left) 
                     await charEmbedmsg.add_reaction(right)
@@ -2325,7 +2325,7 @@ class Character(commands.Cog):
                             page += 1
                             if page > len(userEmbedList) - 1:
                                 page = 0
-
+                        userEmbedList[page].set_footer(text=f"Page {page+1} of {pages}")
                         await charEmbedmsg.edit(embed=userEmbedList[page]) 
                         await charEmbedmsg.clear_reactions()
 
