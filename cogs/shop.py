@@ -578,7 +578,12 @@ class Shop(commands.Cog):
                         spellCopied = c
                         break
 
+                      
                 scrollChoice = "Scroll"
+                if "Free Spells" in charRecords:
+                    if charRecords["Free Spells"] != [0] * 9:
+                        scrollChoice = "Free Spell"
+
 
                 if 'Free Spells' in charRecords and spellCopied:
                     shopEmbed.description = f"Would you like to copy this spell using your spell scroll or a free spell?\n\n{numberEmojis[0]}: Free Spell\n{numberEmojis[1]}: Consume Spell Scroll"
@@ -611,7 +616,7 @@ class Shop(commands.Cog):
                             scrollChoice = "Scroll"
 
                 fsIndex = 0
-                if ('Free Spells' in charRecords and bookChoice == "Spellbook") or scrollChoice == "Free Spell":
+                if ('Free Spells' in charRecords and bookChoice == "Spellbook") and scrollChoice == "Free Spell":
                     requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
 
                     fsValid = False
