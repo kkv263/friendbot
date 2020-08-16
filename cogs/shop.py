@@ -4,7 +4,8 @@ import requests
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import db, commandPrefix,  alphaEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack
+from bfunc import db, commandPrefix,  alphaEmojis, roleArray, checkForChar, noodleRoleArray, callAPI, traceBack, numberEmojis
+from math import floor
 
 class Shop(commands.Cog):
     def __init__ (self, bot):
@@ -24,27 +25,27 @@ class Shop(commands.Cog):
             
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'charName':
-                msg = "You're missing your character name in the command. "
+                msg = "You're missing your character name in the command.\n"
             elif error.param.name == "buyItem":
-                msg = "You're missing the item you want to buy/sell in the command. "
+                msg = "You're missing the item you want to buy/sell in the command.\n"
             elif error.param.name == "spellName":
-                msg = "You're missing the spell you want to copy in the command. "
+                msg = "You're missing the spell you want to copy in the command.\n"
         elif isinstance(error, commands.BadArgument):
             # convert string to int failed
-            msg = "The amount you want to buy/sell must be a number. "
+            msg = "The amount you want to buy or sell must be a number.\n"
         # bot.py handles this, so we don't get traceback called.
         elif isinstance(error, commands.CommandOnCooldown):
             return
 
         if msg:
             if ctx.command.name == "buy":
-                msg += f"Please follow this format:\n`{commandPrefix}shop buy \"character name\" \"item\" amount`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}shop buy \"character name\" \"item\" #```\n"
             elif ctx.command.name == "sell":
-                msg += f"Please follow this format:\n`{commandPrefix}shop sell \"character name\" \"item\" amount`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}shop sell \"character name\" \"item\" #```\n"
             elif ctx.command.name == "copy":
-                msg += f"Please follow this format:\n`{commandPrefix}shop copy \"character name\" \"spellname\"`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}shop copy \"character name\" \"spell name\"```\n"
             elif ctx.command.name == "proficiency":
-                msg += f"Please follow this format:\n`{commandPrefix}proficiency \"character name\"`.\n"
+                msg += f"Please follow this format:\n```yaml\n{commandPrefix}proficiency \"character name\"```\n"
 
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
@@ -73,7 +74,7 @@ class Shop(commands.Cog):
             #If player is trying to buy spell scroll, search for spell scroll in DB, and find level it can be bought at 
             if "spell scroll" in buyItem.lower():
                 if "spell scroll" == buyItem.lower().strip():
-                    await channel.send(f"""Please be more specific with the spell scroll you're purchasing. The format is `{commandPrefix}shop buy "charactername" "Spell Scroll (Spell Name)"` """)
+                    await channel.send(f"""Please be more specific with the type of spell scroll which you're purchasing. Use the following format:\n```yaml\n{commandPrefix}shop buy "character name" "Spell Scroll (spell name)"```""")
                     ctx.command.reset_cooldown(ctx)
                     return 
 
@@ -120,13 +121,65 @@ class Shop(commands.Cog):
                     amount *= bRecord['Pack']
 
                 if float(charRecords['GP']) < gpNeeded:
-                    await channel.send(f"You do not have enough gp to purchase {amount}x **{bRecord['Name']}**!")
+                    await channel.send(f"You do not have enough gp to purchase **{amount}**x **{bRecord['Name']}**!")
                     ctx.command.reset_cooldown(ctx)
                     return
 
+                # {charRecords['Name']} is not bolded because [shopEmbed.title] already bolds everything in that's part of the title.
                 newGP = round(charRecords['GP'] - gpNeeded , 2)
-                shopEmbed.title = f"{charRecords['Name']} is purchasing: {amount}x {bRecord['Name']}"
-                shopEmbed.description = f"Are you sure you want to purchase this?\n\n**{amount}x {bRecord['Name']} ({gpNeeded} gp): ** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                shopEmbed.title = f"Shop (Buy): {charRecords['Name']}"
+
+                # Show contents of pack
+                def unpackChoiceCheck(r, u):
+                    sameMessage = False
+                    if shopEmbedmsg.id == r.message.id:
+                        sameMessage = True
+                    return ((r.emoji in alphaEmojis[:alphaIndex]) or (str(r.emoji) == '❌')) and u == author and sameMessage
+
+                unpackString = ""
+                if "Unpack" in bRecord:
+                    alphaIndex = 0
+                    unpackDict = []
+                    unpackChoiceString = ""
+                    unpackString = f"**Contents of {bRecord['Name']}**\n"
+                    for pk, pv in bRecord["Unpack"].items():
+                        if type(pv) == dict:
+                            for pvk, pvv in pv.items():
+                                unpackDict.append(pvk)
+                                unpackChoiceString += f"{alphaEmojis[alphaIndex]}: {pvk}\n"
+                                alphaIndex += 1
+
+                            shopEmbed.add_field(name=f"{bRecord['Name']} lets you choose one {pk}.", value=unpackChoiceString, inline=False)
+                            if shopEmbedmsg:
+                                await shopEmbedmsg.edit(embed=shopEmbed)
+                            else:
+                                shopEmbedmsg = await channel.send(embed=shopEmbed)
+                            await shopEmbedmsg.add_reaction('❌')
+                            try:
+                                tReaction, tUser = await self.bot.wait_for("reaction_add", check=unpackChoiceCheck, timeout=60)
+                            except asyncio.TimeoutError:
+                                await shopEmbedmsg.delete()
+                                await channel.send(f'Shop cancelled. Try again using the same command:\n```yaml\n{commandPrefix}shop buy \"character name\" \"item\" #```')
+                                self.bot.get_command('buy').reset_cooldown(ctx)
+                                return
+                            else:
+                                await shopEmbedmsg.clear_reactions()
+                                if tReaction.emoji == '❌':
+                                    await shopEmbedmsg.edit(embed=None, content=f"Shop cancelled. Try again using the same command:\n```yaml\n{commandPrefix}shop buy \"character name\" \"item\" #```")
+                                    await shopEmbedmsg.clear_reactions()
+                                    self.bot.get_command('buy').reset_cooldown(ctx)
+
+                            unpackChoice = unpackDict[alphaEmojis.index(tReaction.emoji)]
+                            del bRecord["Unpack"][pk]
+                            bRecord['Unpack'][unpackChoice] = pvv
+
+                            await shopEmbedmsg.clear_reactions()
+                            shopEmbed.clear_fields()
+                        else:
+                            unpackString += f"{pk} x{pv}\n"
+                    unpackString += "\n"
+
+                shopEmbed.description = f"Are you sure you want to purchase **{amount}**x **{bRecord['Name']}** for **{gpNeeded} gp**?\n\n{unpackString}Current gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -139,13 +192,13 @@ class Shop(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=shopEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
                     await shopEmbedmsg.delete()
-                    await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                    await channel.send(f'Shop cancelled. Try again using the same command!')
                     ctx.command.reset_cooldown(ctx)
                     return
                 else:
                     await shopEmbedmsg.clear_reactions()
                     if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}shop buy` command and try again!")
+                        await shopEmbedmsg.edit(embed=None, content=f"Shop cancelled. Try again using the same command!")
                         await shopEmbedmsg.clear_reactions()
                         ctx.command.reset_cooldown(ctx)
                         return
@@ -156,6 +209,16 @@ class Shop(commands.Cog):
                                 charRecords['Consumables'] += ', ' + bRecord['Name']
                             else:
                                 charRecords['Consumables'] = bRecord['Name']
+                        # Unpacks all items, ex. Dungeoneer's Pack
+                        elif "Unpack" in bRecord:
+                            for pk, pv in bRecord["Unpack"].items():
+                                if charRecords['Inventory'] == "None":
+                                    charRecords['Inventory'] = {pk : int(pv)}
+                                else:
+                                    if pk not in charRecords['Inventory']:
+                                        charRecords['Inventory'][pk] = int(pv)
+                                    else:
+                                        charRecords['Inventory'][pk] += int(pv)
                         else:
                             if charRecords['Inventory'] == "None":
                                 charRecords['Inventory'] = {f"{bRecord['Name']}" : amount}
@@ -171,7 +234,7 @@ class Shop(commands.Cog):
                             print ('MONGO ERROR: ' + str(e))
                             shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
-                            shopEmbed.description = f"**{bRecord['Name']} purchased! ({amount}x)**\n\n**Current gp**: {newGP} gp\n"
+                            shopEmbed.description = f"**{amount}**x **{bRecord['Name']}** purchased for **{gpNeeded} gp**!\n\n{unpackString}Current gp: {newGP} gp\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
 
@@ -246,7 +309,7 @@ class Shop(commands.Cog):
 
             # If there are multiple matches user can pick the correct one
             if (len(buyList) > 1):
-                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
+                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**! Please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
                 if not shopEmbedmsg:
                     shopEmbedmsg = await channel.send(embed=shopEmbed)
                 else:
@@ -258,12 +321,12 @@ class Shop(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
                 except asyncio.TimeoutError:
                     await shopEmbedmsg.delete()
-                    await channel.send('Timed out! Try using the command again.')
+                    await channel.send('Timed out! Try again using the command!')
                     ctx.command.reset_cooldown(ctx)
                     return None, shopEmbed, shopEmbedmsg
                 else:
                     if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                        await shopEmbedmsg.edit(embed=None, content=f"Command cancelled. Try again using the command!")
                         await shopEmbedmsg.clear_reactions()
                         ctx.command.reset_cooldown(ctx)
                         return None, shopEmbed, shopEmbedmsg
@@ -274,7 +337,7 @@ class Shop(commands.Cog):
             elif len(buyList) == 1:
                 buyItem = buyList[0]
             elif len(sellConsumesList) > 1:
-                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**, please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=sellConsumesStr, inline=False)
+                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**! Please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=sellConsumesStr, inline=False)
                 if not shopEmbedmsg:
                     shopEmbedmsg = await channel.send(embed=shopEmbed)
                 else:
@@ -286,12 +349,12 @@ class Shop(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiConsumesEmbedCheck, timeout=60)
                 except asyncio.TimeoutError:
                     await shopEmbedmsg.delete()
-                    await channel.send('Timed out! Try using the command again.')
+                    await channel.send('Timed out! Try again using the command!')
                     ctx.command.reset_cooldown(ctx)
                     return None, shopEmbed, shopEmbedmsg
                 else:
                     if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Command canceled. Try using the command again.")
+                        await shopEmbedmsg.edit(embed=None, content=f"Command cancelled. Try again using the command!")
                         await shopEmbedmsg.clear_reactions()
                         ctx.command.reset_cooldown(ctx)
                         return None, shopEmbed, shopEmbedmsg
@@ -301,7 +364,7 @@ class Shop(commands.Cog):
             elif len(sellConsumesList) == 1:
                 buyItem = sellConsumesList[0]
             else:
-                await channel.send(f'**{buyItem}** is not in your inventory to sell! Check to see if it is a valid item and check your spelling.')
+                await channel.send(f'**{buyItem}** cannot be sold because it is not in your inventory! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
@@ -324,8 +387,8 @@ class Shop(commands.Cog):
                     ctx.command.reset_cooldown(ctx)
                     return
 
-                elif charRecords['Inventory'][f"{bRecord['Name']}"] < amount:
-                    await channel.send(f"You do not have {amount}x **{bRecord['Name']}** to sell!")
+                elif int(charRecords['Inventory'][f"{bRecord['Name']}"]) < amount:
+                    await channel.send(f"You do not have **{amount}**x **{bRecord['Name']}** to sell!")
                     ctx.command.reset_cooldown(ctx)
                     return 
 
@@ -334,9 +397,10 @@ class Shop(commands.Cog):
 
                 gpRefund = round((bRecord['GP'] / 2) * amount, 2)
                 newGP = round(charRecords['GP'] + gpRefund,2)
-                    
-                shopEmbed.title = f"{charRecords['Name']} is selling: {amount}x {bRecord['Name']}"
-                shopEmbed.description = f"Are you sure you want to sell this?\n\n**{amount}x {bRecord['Name']}: ** ({gpRefund} gp)\n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+
+                # {charRecords['Name']} is not bolded because [shopEmbed.title] already bolds everything in that's part of the title.
+                shopEmbed.title = f"Shop (Sell): {charRecords['Name']}"
+                shopEmbed.description = f"Are you sure you want to sell **{amount}**x **{bRecord['Name']}** for **{gpRefund} gp**?\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if shopEmbedmsg:
                     await shopEmbedmsg.edit(embed=shopEmbed)
@@ -349,19 +413,19 @@ class Shop(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=shopEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
                     await shopEmbedmsg.delete()
-                    await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+                    await channel.send(f'Shop cancelled. Try again using the command!')
                     ctx.command.reset_cooldown(ctx)
                     return
                 else:
                     await shopEmbedmsg.clear_reactions()
                     if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}tp buy` command and try again!")
+                        await shopEmbedmsg.edit(embed=None, content=f"Shop cancelled. Try again using the command!")
                         await shopEmbedmsg.clear_reactions()
                         ctx.command.reset_cooldown(ctx)
                         return
                     elif tReaction.emoji == '✅':
                         charRecords['Inventory'][f"{bRecord['Name']}"] -= amount
-                        if charRecords['Inventory'][f"{bRecord['Name']}"] <= 0:
+                        if int(charRecords['Inventory'][f"{bRecord['Name']}"]) <= 0:
                             del charRecords['Inventory'][f"{bRecord['Name']}"]
                         try:
                             playersCollection = db.players
@@ -370,10 +434,9 @@ class Shop(commands.Cog):
                             print ('MONGO ERROR: ' + str(e))
                             shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                         else:
-                            shopEmbed.description = f"**{bRecord['Name']} sold! ({amount}x)** \n\n**Current gp**: {newGP} gp\n"
+                            shopEmbed.description = f"**{amount}**x **{bRecord['Name']}** sold for **{gpRefund} gp**! \n\nCurrent gp: {newGP} gp\n"
                             await shopEmbedmsg.edit(embed=shopEmbed)
                             ctx.command.reset_cooldown(ctx)
-
             else:
                 await channel.send(f'**{buyItem}** doesn\'t exist or is an unsellable magic item! Check to see if it is a valid item and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
@@ -389,10 +452,28 @@ class Shop(commands.Cog):
         shopCog = self.bot.get_cog('Shop')
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
 
+        def shopEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+
+        def bookEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and ((r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌')) and u == author
+
+        def scrollEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and ((r.emoji in numberEmojis[:2]) or (str(r.emoji) == '❌')) and u == author
+
         if charRecords:
             #TODO: check for warlock pact of tome and if you want (Book of Ancient Secrets invocation) too
-            if 'Wizard' not in charRecords['Class'] and 'Ritual Caster' not in charRecords['Feats'] and 'Warlock' not in charRecords['Class']:
-                await channel.send(f"You not have the right class, subclass, or feat to copy spells!")
+            if 'Wizard' not in charRecords['Class'] and 'Ritual Caster' not in charRecords['Feats']:
+                await channel.send(f"You must be a Wizard or have the Ritual Caster feat in order to copy spells into a spellbook!")
                 ctx.command.reset_cooldown(ctx)
                 return 
 
@@ -402,80 +483,243 @@ class Shop(commands.Cog):
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'spells',spellItem)
 
             if bRecord:
-                if 'Spellbook' in charRecords:
-                    if bRecord['Name'] in [c['Name'] for c in charRecords['Spellbook']]:
-                        await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their spellbook!")
-                        ctx.command.reset_cooldown(ctx)
-                        return  
+                bookChoice = 0
+                gpNeeded = 0
+                shopEmbed.title = f"{charRecords['Name']} is copying spell: {bRecord['Name']}"
+                if "Ritual Caster" in charRecords['Feats'] and 'Wizard' not in charRecords['Class']:
+                    bookChoice = "Ritual Book"
+                elif "Ritual Caster" not in charRecords['Feats'] and 'Wizard' in charRecords['Class']:
+                    bookChoice = "Spellbook"
+                else:
+                    shopEmbed.description = f"Which book would you like to copy into?\n\n{numberEmojis[0]}: Ritual Book\n{numberEmojis[1]}: Spell Book"
+                    if shopEmbedmsg:
+                        await shopEmbedmsg.edit(embed=shopEmbed)
+                    else:
+                        shopEmbedmsg = await channel.send(embed=shopEmbed)
 
-                if 'Free Spells' not in charRecords:
-                    spellCopied = None
-                    for c in consumes:
-                        print(c)
-                        if bRecord['Name'] in c and 'Spell Scroll' in c:
-                            spellCopied = True
-                            consumes.remove(c)
+                    await shopEmbedmsg.add_reaction(numberEmojis[0])
+                    await shopEmbedmsg.add_reaction(numberEmojis[1])
+                    await shopEmbedmsg.add_reaction('❌')
+                    try:
+                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=bookEmbedCheck , timeout=60)
+                    except asyncio.TimeoutError:
+                        await shopEmbedmsg.delete()
+                        await channel.send(f'Shop canceled. Try again using the same command!')
+                        ctx.command.reset_cooldown(ctx)
+                        return
+                    else:
+                        await shopEmbedmsg.clear_reactions()
+                        if tReaction.emoji == '❌':
+                            await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
+                            await shopEmbedmsg.clear_reactions()
+                            ctx.command.reset_cooldown(ctx)
+                            return
+                        elif tReaction.emoji == numberEmojis[1]:
+                            bookChoice = "Spellbook"
+                        elif tReaction.emoji == numberEmojis[0]:
+                            bookChoice = "Ritual Book"
+            
+                if bookChoice in charRecords:
+                        if bRecord['Name'] in [c['Name'] for c in charRecords[bookChoice]]:
+                            await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their {bookChoice}!")
+                            ctx.command.reset_cooldown(ctx)
+                            return  
+
+                if bookChoice == "Ritual Book":
+                    ritClass = charRecords["Feats"].split('Ritual Caster (')[1].split(')')[0]
+                    if bRecord['Name'] in [c['Name'] for c in charRecords['Ritual Book']]:
+                        await channel.send(f"***{charRecords['Name']}*** already has the **{bRecord['Name']}** spell copied in their ritual book!")
+                        ctx.command.reset_cooldown(ctx)
+                        return 
+
+                    if ritClass not in bRecord['Classes']:
+                        await channel.send(f"**{bRecord['Name']}** is not a {ritClass} spell that can be copied into your ritual book.")
+                        ctx.command.reset_cooldown(ctx)
+                        return
+
+                    if "Ritual" not in bRecord:
+                        await channel.send(f"**{bRecord['Name']}** is not a ritual spell, therefore it cannot be copied into your ritual book.")
+                        ctx.command.reset_cooldown(ctx)
+                        return
+
+                    if charRecords['Level'] < (int(bRecord['Level']) * 2 - 1):
+                        await channel.send(f"**{charRecords['Name']}** is not a high enough level to copy a level {bRecord['Level']} spell, therefore it cannot be copied into your ritual book.")
+                        ctx.command.reset_cooldown(ctx)
+                        return
+                    
+
+                if bookChoice == "Spellbook":
+                    if 'Wizard' not in bRecord['Classes']:
+                        await channel.send(f"**{bRecord['Name']}** is not a Wizard spell that can be copied into your spellbook.")
+                        ctx.command.reset_cooldown(ctx)
+                        return   
+
+                    if "Chronurgy" in bRecord['Classes'] and "Graviturgy" in bRecord['Classes']:
+                        if "Chronurgy" not in charRecords['Class'] and "Graviturgy" not in charRecords['Class']:
+                            await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** and **Graviturgy** schools and cannot be copied into your spellbook.")
+                            ctx.command.reset_cooldown(ctx)
+                            return
+
+                    elif "Chronurgy" in bRecord['Classes']:
+                        if "Chronurgy" not in charRecords['Class']:
+                            await channel.send(f"**{bRecord['Name']}** is restricted to the **Chronurgy** school and cannot be copied into your spellbook.")
+                            ctx.command.reset_cooldown(ctx)
+                            return   
+                            
+                    elif "Graviturgy" in bRecord['Classes']:
+                        if "Graviturgy" not in charRecords['Class']:
+                            await channel.send(f"**{bRecord['Name']}** is restricted to the **Graviturgy** school and cannot be copied into your spellbook.")
+                            ctx.command.reset_cooldown(ctx)
+                            return   
+
+                spellCopied = None
+                for c in consumes:
+                    if bRecord['Name'] in c and 'Spell Scroll' in c:
+                        spellCopied = c
+                        break
+
+                      
+                scrollChoice = "Scroll"
+                if "Free Spells" in charRecords:
+                    if charRecords["Free Spells"] != [0] * 9 and bookChoice == "Spellbook":
+                        scrollChoice = "Free Spell"
+
+                    if charRecords["Free Spells"] != [0] * 9 and spellCopied and bookChoice == "Spellbook":
+                        shopEmbed.description = f"Would you like to copy this spell using your spell scroll or a free spell?\n\n{numberEmojis[0]}: Free Spell\n{numberEmojis[1]}: Consume Spell Scroll"
+                        if shopEmbedmsg:
+                            await shopEmbedmsg.edit(embed=shopEmbed)
+                        else:
+                            shopEmbedmsg = await channel.send(embed=shopEmbed)
+
+                        await shopEmbedmsg.add_reaction(numberEmojis[0])
+                        await shopEmbedmsg.add_reaction(numberEmojis[1])
+                        await shopEmbedmsg.add_reaction('❌')
+
+                        try:
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=scrollEmbedCheck , timeout=60)
+                        except asyncio.TimeoutError:
+                            await shopEmbedmsg.delete()
+                            await channel.send(f'Shop canceled. Try again using the same command!')
+                            ctx.command.reset_cooldown('copy')
+                            return
+                        else:
+                            await shopEmbedmsg.clear_reactions()
+                            if tReaction.emoji == '❌':
+                                await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
+                                await shopEmbedmsg.clear_reactions()
+                                ctx.command.reset_cooldown('copy')
+                                return
+                            elif tReaction.emoji == numberEmojis[0]:
+                                scrollChoice = "Free Spell"
+                            elif tReaction.emoji == numberEmojis[1]:
+                                scrollChoice = "Scroll"
+
+                fsIndex = 0
+                if ('Free Spells' in charRecords and bookChoice == "Spellbook") and scrollChoice == "Free Spell":
+                    requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
+
+                    fsValid = False
+                    for f in range(bRecord['Level'] - 1, 9):
+                        if charRecords['Free Spells'][f] > 0:
+                            charRecords['Free Spells'][f] -= 1
+                            fsValid = True
+                            fsIndex = f + 1
                             break
-
-                    if consumes == list():
-                        consumes = ["None"]
-
-                    if not spellCopied:
-                        await channel.send(f"{charRecords['Name']} does not have the spell `{bRecord['Name']}` to copy into their spellbook!")
+                        
+                    if charRecords["Level"] < requiredSpellLevel or fsValid is False:
+                        await channel.send(f"**{bRecord['Name']}** is a level {bRecord['Level']} spell that cannot be copied into ***{charRecords['Name']}***'s spellbook! They must be level {requiredSpellLevel} or higher, or you have no more free spells to copy this spell.")
                         ctx.command.reset_cooldown(ctx)
-                        return  
+                        return     
 
+
+                elif scrollChoice == "Scroll":
                     gpNeeded = bRecord['Level'] * 50
                     if charRecords['Level'] >= 2 and bRecord['School'] in charRecords['Class']:
                         gpNeeded = gpNeeded / 2
 
                     if gpNeeded > charRecords['GP']:
-                        await channel.send(f"{charRecords['Name']} does not have enough gp to copy `{bRecord['Name']}`.")
+                        await channel.send(f"***{charRecords['Name']}*** does not have enough gp to copy the **{bRecord['Name']}** spell into their {bookChoice}.")
                         ctx.command.reset_cooldown(ctx)
                         return
 
-                else:
-                    gpNeeded = 0
-                    if bRecord['Level'] > 1:
-                        await channel.send(f"`{bRecord['Name']}` is not a level 1 spell that can be copied into your spellbook.")
-                        ctx.command.reset_cooldown(ctx)
-                        return     
 
-                    if 'Wizard' not in bRecord['Classes']:
-                        await channel.send(f"`{bRecord['Name']}` is not a Wizard spell that can be copied into your spellbook.")
+                    if not spellCopied:
+                        await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their {bookChoice}!")
                         ctx.command.reset_cooldown(ctx)
-                        return     
-                    charRecords['Free Spells'] -= 1
+                        return  
 
+                    else:
+                        consumes.remove(spellCopied)
+                        if consumes == list():
+                            consumes = ["None"]
 
                 newGP = charRecords['GP'] - gpNeeded
 
-                if 'Spellbook' not in charRecords:
-                    charRecords['Spellbook'] = [{'Name':bRecord['Name'], 'School':bRecord['School']}]
+                if bookChoice not in charRecords:
+                    charRecords[bookChoice] = [{'Name':bRecord['Name'], 'School':bRecord['School']}]
                 else:
-                    charRecords['Spellbook'].append({'Name':bRecord['Name'], 'School':bRecord['School']})
+                    charRecords[bookChoice].append({'Name':bRecord['Name'], 'School':bRecord['School']})
 
+                shopEmbed.title = f"Copying a Spell: {charRecords['Name']}"
+
+                if fsIndex != 0:
+                    shopEmbed.description = f"""Are you sure you want to copy the **{bRecord['Name']}** spell? This will consume a **"Level {fsIndex}"** free spell.\n\n✅: Yes\n\n❌: Cancel"""
+                else:
+                    shopEmbed.description = f"Are you sure you want to copy the **{bRecord['Name']}** spell for **{gpNeeded} gp**?\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+
+                if shopEmbedmsg:
+                    await shopEmbedmsg.edit(embed=shopEmbed)
+                else:
+                    shopEmbedmsg = await channel.send(embed=shopEmbed)
+
+                await shopEmbedmsg.add_reaction('✅')
+                await shopEmbedmsg.add_reaction('❌')
                 try:
-                    playersCollection = db.players
-                    if 'Free Spells' in charRecords:
-                        if charRecords['Free Spells'] == 0:
-                            playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}, "$unset": {"Free Spells":1} })
-                        else:
-                            playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook'], 'Free Spells': charRecords['Free Spells']}}) 
-                    else:
-                        playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, 'Spellbook':charRecords['Spellbook']}})
-
-                except Exception as e:
-                    print ('MONGO ERROR: ' + str(e))
-                    await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
-                else:
-                    shopEmbed.title = f"Copying Spell: {bRecord['Name']} ({charRecords['Name']})"
-                    shopEmbed.description = f"**{bRecord['Name']} (Level {bRecord['Level']})** copied into your spellbook for {gpNeeded}gp!\nIf you had a spell scroll of {bRecord['Name']}, it has been removed from your inventory. \n\n**Current gp**: {newGP} gp\n"
-                    await channel.send (embed=shopEmbed)
+                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=shopEmbedCheck , timeout=60)
+                except asyncio.TimeoutError:
+                    await shopEmbedmsg.delete()
+                    await channel.send(f'Shop cancelled. Try again using the same command!')
                     ctx.command.reset_cooldown(ctx)
+                    return
+                else:
+                    await shopEmbedmsg.clear_reactions()
+                    if tReaction.emoji == '❌':
+                        await shopEmbedmsg.edit(embed=None, content=f"Shop cancelled. Try again using the same command!")
+                        await shopEmbedmsg.clear_reactions()
+                        ctx.command.reset_cooldown(ctx)
+                        return
+                    elif tReaction.emoji == '✅':
+                        try:
+                            playersCollection = db.players
+                            if 'Free Spells' in charRecords:
+                                playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice], 'Free Spells': charRecords['Free Spells']}}) 
+                            else:
+                                playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Consumables":', '.join(consumes), 'GP':newGP, bookChoice:charRecords[bookChoice]}})
+
+                        except Exception as e:
+                            print ('MONGO ERROR: ' + str(e))
+                            await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+                        else:
+
+                            ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(floor(n/10)%10!=1)*(n%10<4)*n%10::4])
+                            shopEmbed.title = f"Shop (Copy): {charRecords['Name']}"
+                            shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({ordinal(bRecord['Level'])} level) into your {bookChoice} for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\nCurrent gp: {newGP} gp\n"
+                            if 'Free Spells' in charRecords:
+                                fsString = ""
+                                fsIndex = 0
+                                for el in charRecords['Free Spells']:
+                                    if el > 0:
+                                        fsString += f"Level {fsIndex+1}: {el} free spells\n"
+                                    fsIndex += 1
+
+                                if fsString:
+                                    shopEmbed.add_field(name='Free Spellbook Copies Available', value=fsString , inline=False)
+
+                            await shopEmbedmsg.edit(embed=shopEmbed)
+                            ctx.command.reset_cooldown(ctx)
 
             else:
-                await channel.send(f'`{spellName}` doesn\'t exist! Check to see if it is a valid spell and check your spelling.')
+                await channel.send(f'**{spellName}** doesn\'t exist! Check to see if it is a valid spell and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
                 
@@ -499,7 +743,7 @@ class Shop(commands.Cog):
     """
     async def purchaseProficiency(self, purchaseOption, specificationText, skillFloor, skillRate, gpNeeded, charRecords, shopEmbed, shopEmbedmsg, channel, author ):
         if gpNeeded > charRecords['GP']:
-            await channel.send(f"{charRecords['Name']} does not have enough gp to train a competency in this way.")
+            await channel.send(f"***{charRecords['Name']}*** does not have enough gp to train a competency in this way.")
             return
         #make sure that only the original author can interact
         def shopEmbedCheck(r, u):
@@ -521,7 +765,7 @@ class Shop(commands.Cog):
         
         #update embed text to ask for confirmation
         shopEmbed.title = f"Downtime Training: {charRecords['Name']}"
-        shopEmbed.description = f"Are you sure you want to learn your **{specificationText}** competency?\n\n**{specificationText} {purchasePossibilities} ({gpNeeded} gp):** \n {charRecords['GP']} gp → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+        shopEmbed.description = f"Are you sure you want to learn your **{specificationText}** {purchasePossibilities} for {gpNeeded} gp?\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
         
         #if a past message exists update that, otherwise send a new one
         if shopEmbedmsg:
@@ -536,13 +780,13 @@ class Shop(commands.Cog):
             tReaction, tUser = await self.bot.wait_for("reaction_add", check=shopEmbedCheck , timeout=60)
         except asyncio.TimeoutError:
             await shopEmbedmsg.delete()
-            await channel.send(f'Shop canceled. Use `{commandPrefix}shop buy` command and try again!')
+            await channel.send(f'Downtime Training cancelled. Try again using the same command!')
             return
         else:
             #respond to the user
             await shopEmbedmsg.clear_reactions()
             if tReaction.emoji == '❌':
-                await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Use `{commandPrefix}shop buy` command and try again!")
+                await shopEmbedmsg.edit(embed=None, content=f"Downtime Training cancelled. Try again using the same command!")
                 await shopEmbedmsg.clear_reactions()
                 return
             elif tReaction.emoji == '✅':
@@ -552,10 +796,10 @@ class Shop(commands.Cog):
                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {purchaseOption: charRecords[purchaseOption], 'GP':newGP}})
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
-                    await shopEmbedmsg.edit(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}proficiency again.")
+                    await shopEmbedmsg.edit(embed=None, content=f"Uh oh, looks like something went wrong. Try again using the same command!")
                 else:
                     #Inform of the purchase success
-                    shopEmbed.description = f"{charRecords['Name']} has been trained by an instructor and can learn a {purchasePossibilities} of your choice. :tada:\n\n**Current gp**: {newGP} gp\n"
+                    shopEmbed.description = f"***{charRecords['Name']}*** has been trained by an instructor and can learn a {purchasePossibilities} of your choice. :tada:\n\nCurrent gp: {newGP} gp\n"
                     await shopEmbedmsg.edit(embed=shopEmbed)
                     
     @proficiency.command()
@@ -571,7 +815,7 @@ class Shop(commands.Cog):
 
             #limit to 5 purchases
             if charRecords['Proficiency'] > 4:
-                await channel.send(f"**{author.display_name}**, {charRecords['Name']} cannot learn any more competencies.")
+                await channel.send(f"***{charRecords['Name']}*** cannot learn any more competencies.")
                 return
             
             # calculate the scaling cost
@@ -600,7 +844,7 @@ class Shop(commands.Cog):
                     break
 
             if not noodleRole:
-                await channel.send(f"{author.display_name}, you don't have any Noodle roles! A Noodle role is required in order for {charRecords['Name']} to learn a competency in this way.")
+                await channel.send(f"***{author.display_name}***, you don't have any Noodle roles! A Noodle role is required in order for ***{charRecords['Name']}*** to learn a competency in this way.")
                 return    
             
             #find which rank it is based on the positioning in the array in bfunc
@@ -612,7 +856,7 @@ class Shop(commands.Cog):
 
             #limit the purchase to only the rank
             if charRecords['NoodleTraining'] > noodleLimit:
-                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not allow {charRecords['Name']} to learn a competency in this way.")
+                await channel.send(f"**{author.display_name}**, your current **{noodleRole.name}** role does not allow ***{charRecords['Name']}*** to learn a competency in this way.")
                 return
             
             #all purchases past the 5th are free, but the formular can never go negative

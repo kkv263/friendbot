@@ -14,7 +14,7 @@ class Apps(commands.Cog):
         pass
       
     @app.command()
-    @commands.has_any_role('Mod Friend', 'Admins', 'Trial Mod Friend')
+    @commands.has_any_role('Mod Friend', 'A d m i n')
     async def edit(self, ctx, num, *, editString=""):
         # The Bot
         botUser = self.bot.get_user(566024681824452619)
@@ -30,14 +30,17 @@ class Apps(commands.Cog):
                     break 
 
         if not msgFound:
-            delMessage = await ctx.channel.send(content=f"I couldn't find message - {num}. Please try again, I will delete your message and this message in 10 seconds")
+            delMessage = await ctx.channel.send(content=f"I couldn't find message {num}. Please try again. I will delete your message and this one in 10 seconds.")
             await asyncio.sleep(10) 
             await delMessage.delete()
             await ctx.message.delete() 
             return
 
-        await editMessage.edit(content=editString)
-        delMessage = await ctx.channel.send(content=f"I have edited the message {num}.\n```{editString}```\nPlease double check that the edit is correct. I will now delete your message and this message in 30 seconds")
+        botEmbed = editMessage.embeds[0]
+        botEmbed.set_footer(text=f"Application Message ID: {editMessage.id}\nMod: {ctx.author}")
+
+        await editMessage.edit(content=editString, embed=botEmbed)
+        delMessage = await ctx.channel.send(content=f"I have edited the message {num}.\n```{editString}```\nPlease double check that the edit is correct. I will now delete your message and this one in 30 seconds.")
         await asyncio.sleep(30) 
         await delMessage.delete()
         await ctx.message.delete() 
@@ -52,7 +55,7 @@ class Apps(commands.Cog):
             if appNum in m.content:
                 sameMessage = True
 
-            return ('approve #' in m.content.lower() or 'deny #' in m.content.lower() or 'under15 #' in m.content.lower()) and sameMessage
+            return ('approve #' in m.content.lower() or 'deny #' in m.content.lower() or 'under17 #' in m.content.lower()) and sameMessage
 
         # appchannel
         channelID = 388591318814949376
@@ -71,7 +74,7 @@ class Apps(commands.Cog):
             appHash = appDiscord.split('#')[1]
             appAge = appDict['fields'][1]['value']
             appMember = guild.get_member_named(appDiscord)
-            botEmbed.set_footer(text=f"Application Message ID: {botMsg.id}")
+            botEmbed.set_footer(text=f"Application Message ID: {botMsg.id}\nMod: {mMessage.author}")
 
             if appMember is None:
                 ctx.channel.send(content=f"Something went wrong. The application could not find the discord name {appDiscord} for application {appNum}. Please delete this message once this is resolved.")
@@ -80,13 +83,13 @@ class Apps(commands.Cog):
             if 'approve' in mMessage.content:
                 # Session Channel
                 sessionChannel = self.bot.get_channel(382045698931294208)
-                await botMsg.edit(embed=botEmbed, content=f"{appNum}. {appMember.mention} #{appHash} [**Approved**]")
+                await botMsg.edit(embed=botEmbed, content=f"{appNum}. {appMember.mention} #{appHash} - **Approved**")
                 await botMsg.clear_reactions()
                 await mMessage.delete()
 
                 if int(appAge) < 18:
                     kidRole = get(guild.roles, name = 'Under-18 Friendling')
-                    await appMember.add_roles(kidRole, reason="Approved Application, the user is under 18")
+                    await appMember.add_roles(kidRole, reason="Approved application - the user is under 18.")
                 
                 limit = 100
                 playedGame = False
@@ -94,27 +97,34 @@ class Apps(commands.Cog):
                     if appMember.mentioned_in(message):
                         playedGame = True
                         juniorRole = get(guild.roles, name = 'Junior Friend')
-                        await appMember.add_roles(juniorRole, reason=f"Approved Application, the user has played at least one game. I have checked in the last {limit} session-logs")
+                        t1Role = get(guild.roles, name = 'Tier 1')
+                        t0Role = get(guild.roles, name = 'Tier 0')
+
+                        await appMember.remove_roles(t0Role)
+                        await appMember.add_roles(juniorRole, reason=f"Approved application - the user has played at least one quest. I have checked the last {limit} session logs.")
+                        await appMember.add_roles(t1Role, reason=f"Approved application - the user has played at least one quest. I have checked the last {limit} session logs.")
                         break
 
                 if not playedGame:
-                    newRole = get(guild.roles, name = 'New Friend')
-                    await appMember.add_roles(newRole, reason=f"Approved Application, The user has not played at least one game. I have checked in the last {limit} session-logs")
+                    newRole = get(guild.roles, name = 'Tier 0')
+                    await appMember.add_roles(t0Role, reason=f"Approved application - the user has not played at least one quest. I have checked the last {limit} session logs.")
                 
-                await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! The D&D Friends Mod team has approved your application and you have been assigned the appropriate roles.\n\nIf you have any further questions then please don't hesitate to ask in our #help-for-players channel or message a Mod Friend!")
+                newRole = get(guild.roles, name = 'D&D Friend')
+                await appMember.add_roles(newRole, reason=f"Approved application - the user has been given the base role.")
+
+                await appMember.send(f"Hello, {appMember.name}!\n\nThank you for applying to **D&D Friends**! The Mod team has approved your application and you have been assigned the appropriate roles.\n\nIf you have any further questions then please don't hesitate to ask in our #help-for-players channel or message a Mod Friend!")
 
             elif 'deny' in mMessage.content:
-                await botMsg.edit(embed=botEmbed, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [**DENIED** - Under 18 and not ok with explicit/adult content]")
+                await botMsg.edit(embed=botEmbed, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} - **Denied** (Did not read server rules)")
                 await botMsg.clear_reactions()
                 await mMessage.delete()
-                await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! Unfortunately, the D&D Friends Mod team has declined your application since we do not allow members under 18 years of age who are not fine with explicit/adult content (and answered 'No' on the application form). If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
+                await appMember.send(f"Hello, {appMember.name}!\n\nThank you for applying to **D&D Friends**! Unfortunately, the Mod team has declined your application since you did not read the server rules or did not agree to abide by them. If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
              
-            elif 'under15' in mMessage.content:
-                await botMsg.edit(embed=botEmbed, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} [**DENIED** - Under 15]")
+            elif 'under17' in mMessage.content:
+                await botMsg.edit(embed=botEmbed, content=f"{appNum}. {guild.get_member_named(appDiscord).mention} #{appHash} - **Denied** (Under 17)")
                 await botMsg.clear_reactions()
                 await mMessage.delete()
-                await appMember.send(f"Hello, {appMember.name}.\n\nThank you for applying to D&D Friends! Unfortunately, the D&D Friends Mod team has declined your application since you did not meet the cut-off age. If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
-                
+                await appMember.send(f"Hello, {appMember.name}!\n\nThank you for applying to **D&D Friends**! Unfortunately, the **D&D Friends** Mod team has declined your application since you did not meet the cut-off age. If you have any questions or inquiries, please direct them to our Reddit or Twitter accounts:\nReddit - <https://www.reddit.com/user/DnDFriends/>\nTwitter - <https://twitter.com/DnD_Friends>\n\nWe hope you find other like-minded people to play D&D with. Good luck!")
 
 def setup(bot):
     bot.add_cog(Apps(bot))

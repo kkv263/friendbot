@@ -23,7 +23,7 @@ class Log(commands.Cog):
 
         # Logs channel 
         # channel = self.bot.get_channel(577227687962214406) 
-        channel = self.bot.get_channel(663454980140695553) 
+        channel = self.bot.get_channel(737076677238063125) 
 
 
         limit = 100
@@ -62,7 +62,7 @@ class Log(commands.Cog):
                 charData.append({"User ID" : logItems[0].strip() , "Name": logItems[1].split('\n')[0].strip()})
 
         if int(dmID) != ctx.author.id:
-            delMessage = await ctx.channel.send(content=f"It doesn't look your you were the DM of this game. You won't be able to edit this session log. I will delete your message and this message in 10 seconds.")
+            delMessage = await ctx.channel.send(content=f"It doesn't look you were the DM of this game. You won't be able to edit this session log. I will delete your message and this one in 10 seconds.")
             await asyncio.sleep(10) 
             await delMessage.delete()
             await ctx.message.delete() 
@@ -76,7 +76,7 @@ class Log(commands.Cog):
             sessionLogEmbed.description += "\nSummary: " + editString+"\n"
 
         await editMessage.edit(embed=sessionLogEmbed)
-        delMessage = await ctx.channel.send(content=f"I've edited the summary for Game #{num}.\n```{editString}```\nPlease double-check that the edit is correct. I will now delete your message and this message in 30 seconds.")
+        delMessage = await ctx.channel.send(content=f"I've edited the summary for quest #{num}.\n```{editString}```\nPlease double-check that the edit is correct. I will now delete your message and this one in 30 seconds.")
 
         if "✅" not in sessionLogEmbed.footer.text:
 
@@ -140,7 +140,7 @@ class Log(commands.Cog):
                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the command again.")
             else:
                 print("Success")
-                sessionLogEmbed.set_footer(text=sessionLogEmbed.footer.text + "\n✅ Log complete! Players have been rewarded. The DM may still edit the summary log if they wish.")
+                sessionLogEmbed.set_footer(text=sessionLogEmbed.footer.text + "\n✅ Log complete! Players have been awarded their rewards. The DM may still edit the summary log if they wish.")
                 await editMessage.edit(embed=sessionLogEmbed)
                 await asyncio.sleep(30) 
                 await delMessage.delete()
