@@ -125,7 +125,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     else:
         #search through the table for an element were the Name or Grouped property contain the query
         if table == "spells":
-            filterDic = {"Name": {"$regex": query, '$options': 'i' }, 'Level': {'$gt':0}}
+            filterDic = {"Name": {"$regex": query, '$options': 'i' }}
         else:
             filterDic = {"$or": [
                             {

@@ -3421,9 +3421,11 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            if r.emoji in uniqueReacts or r.emoji == '❌' :
-                anyList.add(r.emoji)
-            return sameMessage and ((len(anyList) == anyCheck+1) or str(r.emoji) == '❌') and u == author
+            if (r.emoji in uniqueReacts or r.emoji == '❌') and u == author:
+                anyList[charEmbedmsg.id].add(r.emoji)
+            print(anyList)
+
+            return sameMessage and ((len(anyList[charEmbedmsg.id]) == anyCheck) or str(r.emoji) == '❌') and u == author
 
         def slashCharEmbedcheck(r, u):
             sameMessage = False
@@ -3485,8 +3487,10 @@ class Character(commands.Cog):
 
                 elif 'AOU' in s or 'ANY' in s:
                     try:
+                        anyList = dict()
                         anyCheck = int(s[len(s)-1])
-                        anyList = set()
+                        anyList = {charEmbedmsg.id:set()}
+                            
                         uniqueStatStr = ""
                         uniqueReacts = []
 
@@ -3507,25 +3511,25 @@ class Character(commands.Cog):
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=anyCharEmbedcheck, timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg.delete()
-                        await channel.send('Point buy timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                        await channel.send(f'Point buy timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None
 
                     else:
                         if tReaction.emoji == '❌':
-                            await charEmbedmsg.edit(embed=None, content=f"Point buy cancelled. Try again using the same command:\n```yaml\n{commandPrefix}char {ctx.invoked_with}```")
+                            await charEmbedmsg.edit(embed=None, content=f'Point buy timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                             await charEmbedmsg.clear_reactions()
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None 
+
                     charEmbed.clear_fields()
                     await charEmbedmsg.clear_reactions()
-                    anyList.remove('❌')
                     if 'AOU' in s:
-                        for s in anyList:
+                        for s in anyList[charEmbedmsg.id]:
                             statsArray[allStatsArray.index(uniqueArray[int(s[0]) - 1])] -= 1
                     else:
 
-                        for s in anyList:
+                        for s in anyList[charEmbedmsg.id]:
                             statsArray[(int(s[0]) - 1)] -= 1
                     
             return statsArray, charEmbedmsg
@@ -3831,10 +3835,12 @@ class Character(commands.Cog):
                         if charEmbedmsg.id == r.message.id:
                             sameMessage = True
 
-                        if (r.emoji in alphaEmojis[:alphaIndex]):
-                            ritualChoiceList.add(r.emoji)
+                        if (r.emoji in alphaEmojis[:alphaIndex]) and u == author:
+                            ritualChoiceList[charEmbedmsg.id].add(r.emoji)
 
-                        return sameMessage and ((len(ritualChoiceList) == 2) or (str(r.emoji) == '❌')) and u == author
+                        print(ritualChoiceList)
+
+                        return sameMessage and ((len(ritualChoiceList[charEmbedmsg.id]) == 2) or (str(r.emoji) == '❌')) and u == author
 
                     if featPicked['Name'] == "Ritual Caster":
                         ritualClasses = ["Bard", "Cleric", "Druid", "Sorcerer", "Warlock", "Wizard"]
@@ -3872,7 +3878,7 @@ class Character(commands.Cog):
 
                         charEmbed.set_field_at(0, name=f"For the feat **Ritual Caster**, please pick the spellcasting class.", value=f"{tReaction.emoji}: {ritualClass}", inline=False)
                         charEmbed.add_field(name=f"Please pick two {ritualClass} spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
-                        ritualChoiceList = set()
+                        ritualChoiceList = {charEmbedmsg.id:set()}
 
                         charStats['Ritual Book'] = []
                         if len(ritualSpellsList) > 2:
@@ -3892,7 +3898,7 @@ class Character(commands.Cog):
                                     self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                                     return None, None, None
                             await charEmbedmsg.clear_reactions()
-                            for r in ritualChoiceList:
+                            for r in ritualChoiceList[charEmbedmsg.id]:
                                 rChoice = ritualSpellsList[alphaEmojis.index(r)]
                                 charStats['Ritual Book'].append({'Name':rChoice['Name'], 'School':rChoice['School']})
                         else:
