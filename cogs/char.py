@@ -2815,7 +2815,7 @@ class Character(commands.Cog):
                                         fsLvl = (subclasses[0]['Level'] - 1) // 2
                                         if fsLvl > 8:
                                             fsLvl = 8
-                                        freeSpells[(s['Level'] - 1) // 2] += 2
+                                        freeSpells[fsLvl] += 2
                                     break
 
                             charClass = charClass.replace(f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level'] - 1}", f"{lvlClass} {subclasses[alphaEmojis.index(tReaction.emoji)]['Level']}")
@@ -3865,26 +3865,31 @@ class Character(commands.Cog):
                         charEmbed.add_field(name="Please pick two spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
                         ritualChoiceList = set()
 
-                        try:
-                            await charEmbedmsg.edit(embed=charEmbed)
-                            await charEmbedmsg.add_reaction('❌')
-                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=ritualSpellEmbedCheck, timeout=60)
-                        except asyncio.TimeoutError:
-                            await charEmbedmsg.delete()
-                            await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
-                            self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
-                            return None, None, None
-                        else:
-                            if tReaction.emoji == '❌':
-                                await charEmbedmsg.edit(embed=None, content=f"Character creation cancelled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
-                                await charEmbedmsg.clear_reactions()
+                        charStats['Ritual Book'] = []
+                        if len(ritualSpellsList) > 2:
+                            try:
+                                await charEmbedmsg.edit(embed=charEmbed)
+                                await charEmbedmsg.add_reaction('❌')
+                                tReaction, tUser = await self.bot.wait_for("reaction_add", check=ritualSpellEmbedCheck, timeout=60)
+                            except asyncio.TimeoutError:
+                                await charEmbedmsg.delete()
+                                await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                                 self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                                 return None, None, None
-                        await charEmbedmsg.clear_reactions()
-                        charStats['Ritual Book'] = []
-                        for r in ritualChoiceList:
-                            rChoice = ritualSpellsList[alphaEmojis.index(r)]
-                            charStats['Ritual Book'].append({'Name':rChoice['Name'], 'School':rChoice['School']})
+                            else:
+                                if tReaction.emoji == '❌':
+                                    await charEmbedmsg.edit(embed=None, content=f"Character creation cancelled. Try again using the same command:\n```yaml\n{commandPrefix}create \"character name\" level \"race\" \"class\" \"background\" STR DEX CON INT WIS CHA \"magic item1, magic item2, [...]\" \"reward item1, reward item2, [...]\"```")
+                                    await charEmbedmsg.clear_reactions()
+                                    self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                                    return None, None, None
+                            await charEmbedmsg.clear_reactions()
+                            for r in ritualChoiceList:
+                                rChoice = ritualSpellsList[alphaEmojis.index(r)]
+                                charStats['Ritual Book'].append({'Name':rChoice['Name'], 'School':rChoice['School']})
+                        else:
+                            charStats['Ritual Book'].append({'Name':ritualSpellsList[0]['Name'], 'School':ritualSpellsList[0]['School']})
+                            charStats['Ritual Book'].append({'Name':ritualSpellsList[1]['Name'], 'School':ritualSpellsList[1]['School']})
+                        
 
                     def slashFeatEmbedcheck(r, u):
                         sameMessage = False

@@ -611,7 +611,7 @@ class Shop(commands.Cog):
                             scrollChoice = "Scroll"
 
                 fsIndex = 0
-                if 'Free Spells' in charRecords and bookChoice == "Spellbook" and scrollChoice == "Free Spell":
+                if ('Free Spells' in charRecords and bookChoice == "Spellbook") or scrollChoice == "Free Spell":
                     requiredSpellLevel = (int(bRecord['Level'])* 2 - 1)
 
                     fsValid = False
