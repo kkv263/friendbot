@@ -581,39 +581,38 @@ class Shop(commands.Cog):
                       
                 scrollChoice = "Scroll"
                 if "Free Spells" in charRecords:
-                    if charRecords["Free Spells"] != [0] * 9:
+                    if charRecords["Free Spells"] != [0] * 9 and bookChoice == "Spellbook":
                         scrollChoice = "Free Spell"
 
+                    if charRecords["Free Spells"] != [0] * 9 and spellCopied and bookChoice == "Spellbook":
+                        shopEmbed.description = f"Would you like to copy this spell using your spell scroll or a free spell?\n\n{numberEmojis[0]}: Free Spell\n{numberEmojis[1]}: Consume Spell Scroll"
+                        if shopEmbedmsg:
+                            await shopEmbedmsg.edit(embed=shopEmbed)
+                        else:
+                            shopEmbedmsg = await channel.send(embed=shopEmbed)
 
-                if 'Free Spells' in charRecords and spellCopied:
-                    shopEmbed.description = f"Would you like to copy this spell using your spell scroll or a free spell?\n\n{numberEmojis[0]}: Free Spell\n{numberEmojis[1]}: Consume Spell Scroll"
-                    if shopEmbedmsg:
-                        await shopEmbedmsg.edit(embed=shopEmbed)
-                    else:
-                        shopEmbedmsg = await channel.send(embed=shopEmbed)
+                        await shopEmbedmsg.add_reaction(numberEmojis[0])
+                        await shopEmbedmsg.add_reaction(numberEmojis[1])
+                        await shopEmbedmsg.add_reaction('❌')
 
-                    await shopEmbedmsg.add_reaction(numberEmojis[0])
-                    await shopEmbedmsg.add_reaction(numberEmojis[1])
-                    await shopEmbedmsg.add_reaction('❌')
-
-                    try:
-                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=scrollEmbedCheck , timeout=60)
-                    except asyncio.TimeoutError:
-                        await shopEmbedmsg.delete()
-                        await channel.send(f'Shop canceled. Try again using the same command!')
-                        ctx.command.reset_cooldown(ctx)
-                        return
-                    else:
-                        await shopEmbedmsg.clear_reactions()
-                        if tReaction.emoji == '❌':
-                            await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
-                            await shopEmbedmsg.clear_reactions()
-                            ctx.command.reset_cooldown(ctx)
+                        try:
+                            tReaction, tUser = await self.bot.wait_for("reaction_add", check=scrollEmbedCheck , timeout=60)
+                        except asyncio.TimeoutError:
+                            await shopEmbedmsg.delete()
+                            await channel.send(f'Shop canceled. Try again using the same command!')
+                            ctx.command.reset_cooldown('copy')
                             return
-                        elif tReaction.emoji == numberEmojis[0]:
-                            scrollChoice = "Free Spell"
-                        elif tReaction.emoji == numberEmojis[1]:
-                            scrollChoice = "Scroll"
+                        else:
+                            await shopEmbedmsg.clear_reactions()
+                            if tReaction.emoji == '❌':
+                                await shopEmbedmsg.edit(embed=None, content=f"Shop canceled. Try again using the same command!")
+                                await shopEmbedmsg.clear_reactions()
+                                ctx.command.reset_cooldown('copy')
+                                return
+                            elif tReaction.emoji == numberEmojis[0]:
+                                scrollChoice = "Free Spell"
+                            elif tReaction.emoji == numberEmojis[1]:
+                                scrollChoice = "Scroll"
 
                 fsIndex = 0
                 if ('Free Spells' in charRecords and bookChoice == "Spellbook") and scrollChoice == "Free Spell":
@@ -639,13 +638,13 @@ class Shop(commands.Cog):
                         gpNeeded = gpNeeded / 2
 
                     if gpNeeded > charRecords['GP']:
-                        await channel.send(f"***{charRecords['Name']}*** does not have enough gp to copy the **{bRecord['Name']}** spell into their spellbook.")
+                        await channel.send(f"***{charRecords['Name']}*** does not have enough gp to copy the **{bRecord['Name']}** spell into their {bookChoice}.")
                         ctx.command.reset_cooldown(ctx)
                         return
 
 
                     if not spellCopied:
-                        await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their spellbook!")
+                        await channel.send(f"***{charRecords['Name']}*** does not have a spell scroll of **{bRecord['Name']}** to copy into their {bookChoice}!")
                         ctx.command.reset_cooldown(ctx)
                         return  
 
@@ -704,7 +703,7 @@ class Shop(commands.Cog):
 
                             ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(floor(n/10)%10!=1)*(n%10<4)*n%10::4])
                             shopEmbed.title = f"Shop (Copy): {charRecords['Name']}"
-                            shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({ordinal(bRecord['Level'])} level) into your spellbook for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\nCurrent gp: {newGP} gp\n"
+                            shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({ordinal(bRecord['Level'])} level) into your {bookChoice} for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\nCurrent gp: {newGP} gp\n"
                             if 'Free Spells' in charRecords:
                                 fsString = ""
                                 fsIndex = 0

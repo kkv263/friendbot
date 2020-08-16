@@ -68,6 +68,9 @@ class Character(commands.Cog):
         # bot.py handles this, so we don't get traceback called.
         elif isinstance(error, commands.CommandOnCooldown):
             return
+        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+             return
+
         # Whenever there's an error with the parameters that bot cannot deduce
         elif isinstance(error, commands.CommandInvokeError):
             msg = f'The command is not working correctly. Please try again and make sure the format is correct.'
@@ -3709,7 +3712,7 @@ class Character(commands.Cog):
                             featList = []
                             meetsRestriction = False
 
-                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats:
+                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats and 'Race Unavailable' not in feat:
                                 featChoices.append(feat)
 
                             else:
@@ -3720,6 +3723,10 @@ class Character(commands.Cog):
                                         if f in race:
                                             meetsRestriction = True
 
+                                if 'Race Unavailable' in feat:
+                                    if race not in feat['Race Unavailable']:
+                                        meetsRestriction = True
+
                                 if 'Class Restriction' in feat:
                                     featsList = [x.strip() for x in feat['Class Restriction'].split(', ')]
                                     for c in cRecord:
@@ -3729,6 +3736,7 @@ class Character(commands.Cog):
                                         else:
                                             if c['Name'] in featsList or c['Subclass'] in featsList:
                                                 meetsRestriction = True
+                                                
                                 if 'Stat Restriction' in feat:
                                     s = feat['Stat Restriction']
                                     statNumber = int(s[-2:])
@@ -3862,7 +3870,8 @@ class Character(commands.Cog):
                             ritualSpellsString += f"{alphaEmojis[alphaIndex]}: {r['Name']}\n"
                             alphaIndex += 1
 
-                        charEmbed.add_field(name="Please pick two spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
+                        charEmbed.set_field_at(0, name=f"For the feat **Ritual Caster**, please pick the spellcasting class.", value=f"{tReaction.emoji}: {ritualClass}", inline=False)
+                        charEmbed.add_field(name=f"Please pick two {ritualClass} spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
                         ritualChoiceList = set()
 
                         charStats['Ritual Book'] = []

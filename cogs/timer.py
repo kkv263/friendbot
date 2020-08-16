@@ -567,10 +567,8 @@ class Timer(commands.Cog):
                     return
             # if the last parameter is not the character name then we know that the player registered consumables
             if charList[len(charList) - 1] != charName:
-                # consumables are separated by ', ', this might cause issues if people forget a space
-                # this should be split by ',' instead and each element then stripped
                 # WEIRD
-                consumablesList = charList[len(charList) - 1].split(', ')
+                consumablesList = charList[len(charList) - 1].split(',')
 
             # use the bfunc function checkForChar to handle character selection, gives us the DB entry of the character
             cRecord, charEmbedmsg = await checkForChar(ctx, charName, charEmbed, author)
@@ -638,7 +636,14 @@ class Timer(commands.Cog):
             # there is also a special block for DMs since they can't use consumables
             if consumablesList and role != "DM":
                 #get all consumables the character has
-                charConsumables = cRecord['Consumables'].split(', ')
+                charConsumables = {}
+                for c in cRecord['Consumables'].split(', '):
+                    if c not in charConsumables:
+                        charConsumables[c] = 1
+                    else:
+                        charConsumables[c] += 1
+
+                print([j.lower().replace(" ", "") for j in charConsumables.keys()])
 
                 gameConsumables = []
                 checkedIndices = []
@@ -668,19 +673,25 @@ class Timer(commands.Cog):
                 # the else will execute if the first element of charConsumables is not the listed item
                 # this means that only that first entry can be brought as it never get to check past that
                 # this can be fixed by doing using a variable that checks if has been found and maintaining it and then doing a check after the inner loop finishes
-                for i in range(len(consumablesList)):
+
+                # consumablesList is the consumable list the player intends to bring
+                # charConsumables are the consumables that the character has available.
+                # gameConsumables are the final list of consumables characters are bringing
+                for i in consumablesList:
+                    print(i)
                     itemFound = False
-                    for j in range(len(charConsumables)):
-                        if j in checkedIndices:
-                            continue
-                        elif consumablesList[i].lower().replace(" ", "").strip() in charConsumables[j].lower().replace(" ", ""):
-                            checkedIndices.append(j)
-                            gameConsumables.append(charConsumables[j])
-                            itemFound = True
-                            break
+                    for jk, jv in charConsumables.items():
+                        if i.strip() != "" and i.lower().replace(" ", "").strip() in jk.lower().replace(" ", ""):
+                            if jv > 0 :
+                                gameConsumables.append(jk)
+                                charConsumables[jk] -= 1
+                                itemFound = True
+                                break
+
                     if not itemFound:
-                        notValidConsumables += consumablesList[i] + '\n'
-                        break 
+                        print(i)
+                        notValidConsumables += f"`• {i.strip()}`\n"
+                        
 
                 # if there were any invalid consumables, inform the user on which ones cause the issue
                 if notValidConsumables:
