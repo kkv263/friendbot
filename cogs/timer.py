@@ -59,7 +59,7 @@ class Timer(commands.Cog):
                 await traceBack(ctx,error)
 
     """
-    This is the command ment to setup a timer and allowing people to sign up. Only one of these can be active at a time in a single channel
+    This is the command meant to setup a timer and allowing people to sign up. Only one of these can be active at a time in a single channel
     The command gets passed in a list of players as a single entry userList
     the last argument passed in will be treated as the quest name
     """
@@ -68,9 +68,10 @@ class Timer(commands.Cog):
     async def prep(self, ctx, userList, *, game="D&D Quest"):
         #this checks that only the author's response with one of the Tier emojis allows Tier selection
         #the response is limited to only the embed message
+        
         def startEmbedcheck(r, u):
             sameMessage = False
-            if timerSpendEmbedmsg.id == r.message.id:
+            if  prepEmbedMsg.id == r.message.id:
                 sameMessage = True
             return (r.emoji in numberEmojis[:5] or str(r.emoji) == '❌') and u == author and sameMessage
         #simplifying access to various variables
@@ -247,7 +248,7 @@ class Timer(commands.Cog):
             The signup command has different behaviors if the signup is from the DM, a player or campaign player
             
             """
-            if f"{commandPrefix}timer signup" in msg.content or f"{commandPrefix}t signup" in msg.content:
+            if msg.content.startswith(f"{commandPrefix}timer signup") or msg.content.startswith(f"{commandPrefix}t signup"):
                 # if the message author is the one who started the timer, call signup with the special DM moniker
                 # the character is extracted from the message in the signup command 
                 # special behavior:
@@ -259,6 +260,7 @@ class Timer(commands.Cog):
                     if not isCampaign:
                         playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role=role) 
                     else:
+                        # if this is for a campaign we set char to a special value that signals signup that this is for a campaign
                         playerChar = await ctx.invoke(self.timer.get_command('signup'), char=None, author=msg.author, role=role) 
                 # if the message author has not been permitted to the game yet, inform them of such
                 # a continue statement could be used to skip the following if statement
@@ -304,13 +306,11 @@ class Timer(commands.Cog):
                 print(signedPlayers)
 
             # similar issues arise as mentioned above about wrongful calls
-            elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and msg.author == author:
+            elif (msg.content.startswith(f"{commandPrefix}timer add ") or msg.content.startswith(f"{commandPrefix}t add ")) and msg.author == author:
                 # this simply checks the message for the user that is being added, the Member object is returned
                 addUser = await ctx.invoke(self.timer.get_command('add'), msg=msg, prep=True)
                 print(addUser)
                 #failure to add a user does not have an error message if no user is being added
-                #WEIRD
-                # addUser could be "" which will cause a false response
                 if addUser is None:
                     pass
                 elif addUser not in playerRoster:
@@ -327,7 +327,7 @@ class Timer(commands.Cog):
 
             # same issues arise again
             
-            elif (f"{commandPrefix}timer remove " in msg.content or f"{commandPrefix}t remove " in msg.content) and msg.author == author:
+            elif (msg.content.startswith(f"{commandPrefix}timer remove ") or msg.content.startswith(f"{commandPrefix}t remove ")) and msg.author == author:
                 # this simply checks the message for the user that is being added, the Member object is returned
                 removeUser = await ctx.invoke(self.timer.get_command('remove'), msg=msg, prep=True)
                 print (removeUser)
@@ -359,7 +359,7 @@ class Timer(commands.Cog):
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
 
-            elif (f'{commandPrefix}timer guild' in msg.content or f'{commandPrefix}t guild' in msg.content) and msg.author == author:
+            elif (msg.content.startswith(f'{commandPrefix}timer guild') or msg.content.startswith(f'{commandPrefix}t guild' in msg.content)) and msg.author == author:
                 guildsList = []
                 guildsListStr = ""
                 # guildCategoryID = 678381362398625802
@@ -392,7 +392,7 @@ class Timer(commands.Cog):
                     await channel.send(f"I couldn't find any mention of a guild. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, [...]```") 
 
             #TODO: Gonna be an issue if two quests are spending at the same time
-            elif (f'{commandPrefix}timer spend' in msg.content or f'{commandPrefix}t spend' in msg.content) and msg.author == author:
+            elif (msg.content.startswith(f'{commandPrefix}timer spend') or msg.content.startswith(f'{commandPrefix}t spend')) and msg.author == author:
                 """
                 
                 """
@@ -510,9 +510,8 @@ class Timer(commands.Cog):
             guild = ctx.guild
             # set up the string for the consumables list
             consumablesList = ""
-            # this variable should never be None since function is invoked through a message which will be passed as char
-            # since the code in stop and duringTimer relies on the 3rd variable which this does not return this code will error out later if ever run
-            if char is None: #WEIRD
+            # This is only true if this is during a campaign, in that case there are no characters or consumables
+            if char is None: 
                 usersCollection = db.users
                 # grab the DB records of the first user with the ID of the author
                 userRecord = list(usersCollection.find({"User ID": str(author.id)}))[0]
@@ -559,18 +558,14 @@ class Timer(commands.Cog):
                     elif 't addme ' in char.content:
                         charList = shlex.split(char.content.split(f'{commandPrefix}t addme ')[1].strip())
                     charName = charList[0]
-                # WEIRD               
-                # this message should probably be adjusted by Ghost
                 else:
                     if not resume:
                         await ctx.channel.send("I wasn't able to add this character. Please check your format.")
                     return
             # if the last parameter is not the character name then we know that the player registered consumables
             if charList[len(charList) - 1] != charName:
-                # consumables are separated by ', ', this might cause issues if people forget a space
-                # this should be split by ',' instead and each element then stripped
-                # WEIRD
-                consumablesList = charList[len(charList) - 1].split(', ')
+                # consumables are separated by ','
+                consumablesList = list(map(lambda x: x.strip(), charList[len(charList) - 1].split(',')))
 
             # use the bfunc function checkForChar to handle character selection, gives us the DB entry of the character
             cRecord, charEmbedmsg = await checkForChar(ctx, charName, charEmbed, author)
@@ -643,31 +638,17 @@ class Timer(commands.Cog):
                 gameConsumables = []
                 checkedIndices = []
                 notValidConsumables = ""
-                consumableLength = 2
-                # WEIRD
                 # This sets up how many consumables are permitted based on the character level
-                # However, this is missing a check for the Ioun Stone of Mastery which allows for another consumable
-                if charLevel > 16:
-                    consumableLength = 6
-                elif charLevel > 12:
-                    consumableLength = 5
-                elif charLevel > 8:
-                    consumableLength = 4
-                elif charLevel > 4:
-                    consumableLength = 3
-                
+                consumableLength = 2 + (charLevel-1)//4
+                if("Ioun Stone of Mastery" in cRecord['Magic Items']):
+                    consumableLength += 1
                 # block the command if more consumables than allowed (limit or available) are being registed
                 if len(consumablesList) > consumableLength or len(consumablesList) > len(charConsumables):
                     if not resume:
                         await channel.send(content=f'You are trying to bring in too many consumables (**{len(consumablesList)}/{consumableLength}**)! The limit for your character is **{consumableLength}**.')
                     return False
                 
-                # WEIRD
                 #loop over all consumable pairs and check if the listed consumables are in the inventory
-                #this code is completely non-functional
-                # the else will execute if the first element of charConsumables is not the listed item
-                # this means that only that first entry can be brought as it never get to check past that
-                # this can be fixed by doing using a variable that checks if has been found and maintaining it and then doing a check after the inner loop finishes
                 for i in range(len(consumablesList)):
                     itemFound = False
                     for j in range(len(charConsumables)):
@@ -710,15 +691,10 @@ class Timer(commands.Cog):
             # extract the name of the consumable and transform it into a standardized format
             searchQuery =  msg.content.split('-')[1].strip()
             searchItem = searchQuery.lower().replace(' ', '')
-            # WEIRD
-            # this is meant to avoid changes to the original
-            # however since this is not a deep copy, changes to elements will still be reflected in the original
-            # this makes it so that the removal of items below is not functioning properly
-            startcopy = start.copy()
             timeKey = ""
             removedItem = ""
             # search through all entries for the player entry of the player
-            for u, v in startcopy.items():
+            for u, v in start.items():
                 for item in v:
                     # if the entry is the one of the invoking user
                     if item[0] == msg.author:
@@ -728,11 +704,11 @@ class Timer(commands.Cog):
                         foundItem = None
                         # search through the users list of brough consumables 
                         # could have used normal for loop, we do not use the index
-                        for j in range(len(currentItem[2])):
+                        for j in currentItem[2]:
                             # if found than we can mark it as such
-                            if searchItem == currentItem[2][j].lower().replace(" ", ""):
-                                foundItem = currentItem[2][j]
-                                # could break here
+                            if searchItem == j.lower().replace(" ", ""):
+                                foundItem = j
+                                break
                         # inform the user if we couldnt find the item
                         if not foundItem:
                             if not resume:
@@ -745,11 +721,6 @@ class Timer(commands.Cog):
                             currentItem[2].remove(foundItem) 
                             # update the characters consumables to reflect the item removal
                             currentItem[1]['Consumables'] = ', '.join(charConsumableList).strip()
-                            # update the dict entry with the updated player entry
-                            #WEIRD
-                            # Because of copy mechanics this does nothing
-                            start[timeKey].remove(item)
-                            start[timeKey].append(currentItem)
                             if not resume:
                                 await channel.send(f"The item **{foundItem}** has been removed from your inventory.")
 
@@ -810,14 +781,8 @@ class Timer(commands.Cog):
                 startTimes = {f"{role} Friend Full Rewards:{startTime}":start} 
                 
                 roleString = ""
-                # WEIRD
-                # this check is superfluous 
-                if role != "":
-                    roleString = f"({role} Friend)"
-                # WEIRD
-                # there is no newline character, otherwise it would be identical to the else statement version
-                # Inform the user of the started timer
-                await channel.send(content=f"Timer: Starting the timer for **{game}** {roleString}." )
+                
+                roleString = f"({role} Friend)"
 
             else:
                 # add all signed up players to the timer
@@ -826,8 +791,9 @@ class Timer(commands.Cog):
                 # set up a dictionary to track player times
                 startTimes = {f"No Rewards:{startTime}":start}
                 roleString = "(Campaign)"
-                await ctx.channel.send(content=f"Timer: Starting the timer for **{game}** {roleString}.\n" )
-            
+                
+            # Inform the user of the started timer
+            await channel.send(content=f"Timer: Starting the timer for **{game}** {roleString}.\n" )
             # add the timer to the list of runnign timers
             currentTimers.append('#'+channel.name)
             
@@ -913,6 +879,7 @@ class Timer(commands.Cog):
                         await ctx.channel.send(content=f"You did not sign up with a character to reward items to.") 
                     #return the unchanged parameters
                     return start,dmChar
+                rewarderdConsumables = set()
                 # since this checks for multiple things, this cannot be avoided
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
@@ -921,11 +888,9 @@ class Timer(commands.Cog):
                             if not resume:
                               await ctx.channel.send(content=f"You cannot award any reward items if the quest is under three hours.") 
                             return start, dmChar
+
                     for item in v:
-                        # WEIRD 
-                        # When the dm gives themselves rewards, this step gets repeated
-                        # since this sets up more information, this is the version that should be kept
-                        # there is an issue with currentItem not having the same variables as dmChar in this case
+                        rewarderdConsumables.update(filter(lambda x: x.startswith('+'), item[2]))
                         if item[0] == rewardUser:
                             userFound = True
                             timeKey = u
@@ -938,7 +903,7 @@ class Timer(commands.Cog):
                             charMagicList = currentItem[1]['Magic Items'].split(', ')
                             # character level
                             charLevel = int(currentItem[1]['Level'])
-
+                            
                 if userFound:
                     if '"' in msg.content:
                         consumablesList = msg.content.split('"')[1::2][0].split(', ')
@@ -1004,38 +969,47 @@ class Timer(commands.Cog):
                             # set up the total reward item limits based on noodle roles
                             # check out hosting-a-one-shot for details
                             # Minor limit is the total sum of rewards allowed
-                            # WEIRD
-                            # This is outdated, more items can now be rewarded after longer games
+                            
+                            rewardMajorLimit = 1
+                            rewardMinorLimit = 2
+                            
                             if dmChar[4][0] == 'Immortal Noodle':
                                 rewardMajorLimit = 3
                                 rewardMinorLimit = 7
-                                dmMajorLimit = 1 * totalDurationTimeMultiplier 
-                                dmMinorLimit = 2 * totalDurationTimeMultiplier 
+                                dmMajorLimit = 1
+                                dmMinorLimit = 2
                             elif dmChar[4][0] == 'Ascended Noodle':
                                 rewardMajorLimit = 3
                                 rewardMinorLimit =  6
-                                dmMajorLimit = 1 * totalDurationTimeMultiplier
-                                dmMinorLimit = 1 * totalDurationTimeMultiplier
+                                dmMajorLimit = 1
+                                dmMinorLimit = 1
                             elif dmChar[4][0] == 'True Noodle':
                                 rewardMajorLimit = 2
                                 rewardMinorLimit = 5
-                                dmMajorLimit = 1 * totalDurationTimeMultiplier
-                                dmMinorLimit = 1 * totalDurationTimeMultiplier
+                                dmMajorLimit = 1
+                                dmMinorLimit = 1
                             elif dmChar[4][0] == 'Elite Noodle':
                                 rewardMajorLimit = 2
                                 rewardMinorLimit = 4
-                                dmMajorLimit = 1 * totalDurationTimeMultiplier
-                                dmMinorLimit = 1 * totalDurationTimeMultiplier
+                                dmMajorLimit = 1
+                                dmMinorLimit = 1
                                 lowerTier = True
                                 chooseOr = True
                             elif dmChar [4][0] == 'Good Noodle':
                                 rewardMajorLimit = 1
                                 rewardMinorLimt = 3
-                                dmMajorLimit = 0 * totalDurationTimeMultiplier
-                                dmMinorLimit = 1 * totalDurationTimeMultiplier
+                                dmMajorLimit = 0
+                                dmMinorLimit = 1
                                 lowerTier = True
                             else:
                                 dmMnc = True
+                            
+                            dmMajorLimit *= totalDurationTimeMultiplier 
+                            dmMinorLimit *= totalDurationTimeMultiplier 
+                            
+                            rewardMajorLimit += floor(totalDurationTimeMultiplier / 2)
+                            rewardMinorLimit += ceil(totalDurationTimeMultiplier / 2)
+                            
                             
                             # calculate the tier of the rewards
                             if charLevel < 5:
@@ -1059,9 +1033,7 @@ class Timer(commands.Cog):
                             print(tierNum)
                             
                             # check if the item has already been rewarded to the player
-                            # WEIRD
-                            # outdated since this restriction is now player wide
-                            if '+' + rewardConsumable['Name'] in currentItem[2]:
+                            if '+' + rewardConsumable['Name'] in rewarderdConsumables:
                                 # inform the user of the issue
                                 if not resume:
                                     await ctx.channel.send(f"You cannot award the same reward item to a player. Please choose a different reward item.")
@@ -1072,13 +1044,9 @@ class Timer(commands.Cog):
                             if int(rewardConsumable['Tier']) > tierNum:
                                 if not resume:
                                     if rewardUser == dmChar[0]:
-                                        # WEIRD
-                                        # This message is misleading, the character can be same tier, but still be denied
-                                        await ctx.channel.send(f"You cannot award yourself this reward item because it is above your character's tier.")
+                                        await ctx.channel.send(f"You cannot award yourself this reward item because it is above your character's permitted tier.")
                                     else:
-                                        # WEIRD
-                                        # This message is misleading, the character does not belong to the user providing the rewards
-                                        await ctx.channel.send(f"You cannot award this reward item because it is above your character's tier.")
+                                        await ctx.channel.send(f"You cannot award this reward item because it is above the character's tier.")
                                 # return unchanged parameters
                                 return start, dmChar 
                             # if the item is rewarded to the DM and they are not allowed to pick a consumable
@@ -1101,101 +1069,37 @@ class Timer(commands.Cog):
                                 else:
                                     major += 1
                             
-                            #WEIRD
-                            # This overwrites the Noodle calculations...
-                            rewardMajorLimit = 1
-                            rewardMinorLimit = 2
                             
                             # set up error messages based with the allowed item counts inserted appropriately
                             rewardMajorErrorString = f"You cannot award any more **Major** reward items.\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards"
                             rewardMinorErrorString = f"You cannot award any more **Minor** reward items.\nTotal rewarded so far:\n({dmChar[4][1]}) Major Rewards \n**({dmChar[4][2]}) Minor Rewards"
 
                             if rewardUser == dmChar[0]:
-                                # WEIRD
-                                # This check has already been done above
-                                if totalDurationTime > 180:
-                                    if chooseOr:
-                                        if dmMajor > dmMajorLimit or dmMinor > dmMinorLimit:
-                                            if not resume:
-                                                await ctx.channel.send(f"You cannot award yourself any more Major or Minor reward items {dmChar[4][3]}.")
-                                            return start, dmChar 
-                                    else:
-                                        if dmMajor > dmMajorLimit:
-                                            if not resume:
-                                                await ctx.channel.send(f"You cannot award yourself any more Major reward items {dmChar[4][3]}.")
-                                            return start, dmChar 
-                                        elif dmMinor > dmMinorLimit:
-                                            if not resume:
-                                                await ctx.channel.send(f"You cannot award yourself any more Minor reward items {dmChar[4][4]}.")
-                                            return start, dmChar 
+                                if chooseOr:
+                                    if dmMajor > dmMajorLimit or dmMinor > dmMinorLimit:
+                                        if not resume:
+                                            await ctx.channel.send(f"You cannot award yourself any more Major or Minor reward items {dmChar[4][3]}.")
+                                        return start, dmChar 
                                 else:
-                                    if not resume:
-                                        await ctx.channel.send(f"Because you have played less than three hours, you cannot award yourself any reward items.")
-                                # return unchanged parameters
-                                #WEIRD
-                                # The entries were not updated so the DM can give themselves unlimited items
-                                return start, dmChar 
+                                    if dmMajor > dmMajorLimit:
+                                        if not resume:
+                                            await ctx.channel.send(f"You cannot award yourself any more Major reward items {dmChar[4][3]}.")
+                                        return start, dmChar 
+                                    elif dmMinor > dmMinorLimit:
+                                        if not resume:
+                                            await ctx.channel.send(f"You cannot award yourself any more Minor reward items {dmChar[4][4]}.")
+                                        return start, dmChar 
                             
                             else:
-                                # WEIRD
-                                # This code is actually hot garbage...
-                                # the current system goes through each tradeoff for major and minor items to try to limit to the max
-                                # this cumbersome and mostly unreadable and takes up a lot of space
-                                # The same logic can be achieved by doing (major > rewardMajorLimit or (major+minor)>rewardMinorLimit)
-                                if dmChar[4][0] == 'Immortal Noodle':
-                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-3) or (major == rewardMajorLimit-2 and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit))  and rewardConsumable['Minor/Major'] == 'Minor':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMinorErrorString)
-                                        return start, dmChar
-                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-2) or (minor == rewardMinorLimit-2 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-3 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
-                                        if not resume:
+                                # (major > rewardMajorLimit or (major+minor)>rewardMinorLimit)
+                                if (major > rewardMajorLimit or (major+minor)>rewardMinorLimit):
+                                    if not resume:
+                                        if rewardConsumable['Minor/Major'] == 'Major':
                                             await ctx.channel.send(rewardMajorErrorString)
-                                        return start, dmChar
-                                elif dmChar[4][0] == 'Ascended Noodle':
-                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-3) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-2 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit))  and rewardConsumable['Minor/Major'] == 'Minor':
-                                        if not resume:
+                                        else:
                                             await ctx.channel.send(rewardMinorErrorString)
                                         return start, dmChar
-                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-2) or (minor == rewardMinorLimit-2 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-3 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMajorErrorString)
-                                        return start, dmChar
-                                elif dmChar[4][0] == 'True Noodle':
-                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-2) or (major == 1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMinorErrorString)
-                                        return start, dmChar
-                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-1)  or (minor <= rewardMinorLimit-2 and major > rewardMajorLimit-2)) and rewardConsumable['Minor/Major'] == 'Major':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMajorErrorString)
-                                        return start, dmChar
-                                elif dmChar[4][0] == 'Elite Noodle':
-                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-2) or (major == rewardMajorLimit-1 and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor' :
-                                        if not resume:
-                                            await ctx.channel.send(rewardMinorErrorString)
-                                        return start, dmChar
-                                    elif ((minor == rewardMinorLimit and major > 0) or (minor == rewardMinorLimit-1 and major > rewardMajorLimit-1) or (minor <= rewardMinorLimit-2 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMajorErrorString)
-                                        return start, dmChar
-                                elif dmChar [4][0] == 'Good Noodle':
-                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit-1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMinorErrorString)
-                                        return start, dmChar
-                                    elif ((minor == rewardMinorLimit and major > 0) or (minor <= rewardMinorLimit-1 and major > rewardMajorLimit)) and rewardConsumable['Minor/Major'] == 'Major':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMajorErrorString)
-                                        return start, dmChar
-                                else:
-                                    if ((major == rewardMajorLimit and minor > rewardMinorLimit - 1) or (major == 0 and minor > rewardMinorLimit)) and rewardConsumable['Minor/Major'] == 'Minor':
-                                        if not resume:
-                                            await ctx.channel.send(rewardMinorErrorString)
-                                        return start, dmChar
-                                    elif ((minor == rewardMinorLimit and major > 0) or (rewardMinorLimit-1 <= 1 and rewardMajorLimit > 1)) and rewardConsumable['Minor/Major'] == 'Major' :
-                                        if not resume:
-                                            await ctx.channel.send(content=rewardMajorErrorString)
-                                        return start, dmChar
+                                
                             # If it is a spell scroll, since we search for spells, we need to adjust the name
                             # WEIRD
                             # query has already been adjusted to work as an appropriate name
@@ -1224,15 +1128,11 @@ class Timer(commands.Cog):
                     # update dmChar to track the rewarded item counts properly
                     if rewardUser != dmChar[0]:
                         # update the entry in the time tracker with the updated consumable list
-                        # WEIRD
-                        # Because of copy mechanics this does nothing
-                        start[timeKey].remove(oldItem)
-                        start[timeKey].append(currentItem)
-                        dmChar[4][2] = minor
                         dmChar[4][1] = major
+                        dmChar[4][2] = minor
                     else:
-                        dmChar[4][3] = dmMinor
-                        dmChar[4][4] = dmMajor
+                        dmChar[4][3] = dmMajor
+                        dmChar[4][4] = dmMinor
                     # on completion inform the users that of the success and of the current standings with rewards
                     if not resume:
                         await ctx.channel.send(content=f"You have awarded ***{rewardUser.display_name}*** the following reward item: **{rewardConsumable['Name']}**.\nTotal rewarded so far:\n({major}) Major Reward Items\n({minor}) Minor Reward Items\n({dmMajor}) DM Major Reward Items\n({dmMinor}) DM Minor Reward Items```")
@@ -1288,8 +1188,7 @@ class Timer(commands.Cog):
                         userFound = True
                         # the key of where the user was found
                         timeKey = u
-                        #WEIRD
-                        # since a player can only be in one we can break here
+                        break
             # if we didnt find the user we now need to the them to the system
             if not userFound:
                 # first we invoke the signup command
@@ -1302,9 +1201,7 @@ class Timer(commands.Cog):
                 # if a character was found we then can proceed to setup the timer tracking
                 if userInfo:
                     # if this is not during the resume phase then we cannot afford to do user interactions
-                    # WEIRD
-                    # why is the dmChar check necessary
-                    if not resume and dmChar:
+                    if not resume:
                         # check if the user being added is the dm
                         if dmChar[0] is addUser:
                             await channel.send("You cannot add any characters to your quest as the DM.") 
@@ -1346,29 +1243,17 @@ class Timer(commands.Cog):
                             await addEmbedmsg.edit(embed=None, content=f"I've added ***{addUser.display_name}*** to the timer.")
                     # since the timer has already been going when this user is added it has to be partial rewards
                     # the plus indicates that the character is added
-                    # WEIRD
-                    # If the timer is being resumed then people will be added to the timer even if they were denied
                     start[f"+Partial Rewards:{startTime}"] = [userInfo]
                 else:
                     pass
             # the following are the case where the player has already been on the timer
             # % indicates that the character died
-            elif '%' in timeKey:
-                # avoid messages if we are in the resume stage
-                if not resume:
-                    # inform the user of the character state
-                    # WEIRD
-                    # How can a player be arrived?
-                    await channel.send(content='Your character is dead and they cannot be re-added to the timer.')
             # + in a partial rewards entry means that the character is on the timer
-            # if there are no rewards, then the time doesnt matter
-            # WEIRD
-            # Campaigns are listed as no rewards, this will not allow people to add themselves are being removed
             elif '+' in timeKey or 'Full Rewards' in timeKey or 'No Rewards' in timeKey:
                 if not resume:
                     await channel.send(content='Your character has already been added to the timer.')
             # - in a partial rewards entry means that the player was removed
-            elif '-' in timeKey:
+            elif timeKey.startwith('-') or timeKey.startwith('%'):
                 # avoid messages if in resume stage
                 if not resume:
                     await channel.send(content='You have been re-added to the timer.')
@@ -1377,7 +1262,10 @@ class Timer(commands.Cog):
                 # this invariant holds because this action could not be done if a player were part of the Full Rewards section 
                 #   which is the only element where there will be multiple player entries
                 # this attaches the starting time of this readd and separates is with a ':' 
-                start[f"{timeKey.replace('-', '+')}:{startTime}"] = start[timeKey]
+                if(timeKey.startwith('%')):
+                    start[f"{timeKey.replace('%', '+')}:{startTime}"] = start[timeKey]
+                else:
+                    start[f"{timeKey.replace('-', '+')}:{startTime}"] = start[timeKey]
                 # delete the current entry
                 del start[timeKey]
             
@@ -1400,22 +1288,23 @@ class Timer(commands.Cog):
         this works because in that specific case start will be returned
     """
     @timer.command()
-    async def add(self,ctx, *, msg, role="", start="",prep=None, resume=False):
+    async def add(self,ctx, *, msg, role="", start=None,prep=None, resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             guild = ctx.guild
             #if normal mentions were used then no users would have to be gotten later
-            addList = msg.raw_mentions
-            addUser = ""
+            addList = msg.mentions
+            addUser = None
             # limit adds to only one player at a time
             if len(addList) > 1:
                 await ctx.channel.send(content=f"I cannot add more than one player! Please try the command with one player and check your format and spelling.")
                 return None
-            # WEIRD
-            # if no user was mentioned then an empty string will be returned since prep checks for None specifically this will result in a wrong message
-            # there is no error message here which is a bit confusing and it is not taken care of in prep
-            elif addList != list():
+            # if there was no player added
+            elif addList == list():
+                await ctx.channel.send(content=f"GHOST CHECK THIS IN THE ADD FUNCTION")
+                return None
+            else:
                 # get the first ( and only ) mentioned user 
-                addUser = guild.get_member(addList[0])
+                addUser = addList[0]
                 # if this was done during the prep phase then we only need to return the user
                 if prep:
                     return addUser
@@ -1423,12 +1312,32 @@ class Timer(commands.Cog):
                 # the dictionary gets manipulated directly which affects all versions
                 else:
                     #otherwise we need to add the user properly to the timer and perform the setup
-                    # WEIRD
-                    # this does not pass through the prep property because addme doesnt use it, I removed the parameter for now
                     await ctx.invoke(self.timer.get_command('addme'), role=role, start=start, msg=msg, user=addUser, resume=resume) 
             print(start)
-            # WEIRD
-            # if this is invoked outside of prep then "" is returned
+            return start
+    
+    async def addDuringTimer(self,ctx, *, msg, role="", start=None,resume=False, dmChar=None, ):
+        if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
+            guild = ctx.guild
+            #if normal mentions were used then no users would have to be gotten later
+            addList = msg.mentions
+            addUser = None
+            # limit adds to only one player at a time
+            if len(addList) > 1:
+                await ctx.channel.send(content=f"I cannot add more than one player! Please try the command with one player and check your format and spelling.")
+                return None
+            # if there was no player added
+            elif addList == list():
+                await ctx.channel.send(content=f"GHOST CHECK THIS IN THE ADD FUNCTION")
+                return None
+            else:
+                # get the first ( and only ) mentioned user 
+                addUser = addList[0]
+                # in the duringTimer stage we need to add them to the timerDictionary instead
+                # the dictionary gets manipulated directly which affects all versions
+                #otherwise we need to add the user properly to the timer and perform the setup
+                await ctx.invoke(self.timer.get_command('addme'), role=role, start=start, msg=msg, user=addUser, resume=resume) 
+            print(start)
             return start
 
     @timer.command()
@@ -1459,10 +1368,6 @@ class Timer(commands.Cog):
                 if not resume:
                     await ctx.channel.send(content=f"***{user}***, I couldn't find you on the timer to remove you.") 
                 return start
-            # separate the time based on ':' 
-            # WEIRD
-            # timeSplit is never used
-            timeSplit = (userFound + f'?{endTime}').split(':')
             # checks if the last entry was because of a death (%) or normal removal (-)
             if '-' in userFound or '%' in userFound: 
                 # since they have been removed last time, they cannot be removed again
@@ -1516,22 +1421,17 @@ class Timer(commands.Cog):
     death -> if the removal is because the character died in the game
     """
     @timer.command()
-    async def remove(self,ctx, msg, start="",role="", prep=False, resume=False, death=False):
+    async def remove(self,ctx, msg, start=None,role="", prep=False, resume=False, death=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             guild = ctx.guild
-            removeList = msg.raw_mentions
+            removeList = msg.mentions
             removeUser = ""
 
             if len(removeList) > 1:
                 await ctx.channel.send(content=f"I cannot remove more than one player! Please try the command with one player and check your format and spelling.")
                 return None
-
-            # WEIRD
-            # if no user was mentioned then an empty string will be returned
-            # Python treats "" as a false-ish value so the check in the calling functions will still work
-            # there is no error message here which is a bit confusing and it is not taken care of in prep
             elif removeList != list():
-                removeUser = guild.get_member(removeList[0])
+                removeUser = removeList[0]
                 if prep:
                     return removeUser
                 else:
@@ -1540,8 +1440,25 @@ class Timer(commands.Cog):
                 if not resume:
                     await ctx.channel.send(content=f"I cannot find any mention of the user you are trying to remove. Please check your format and spelling.")
 
-            # WEIRD
-            # if this is invoked outside of prep then no User is returned
+            return start
+            
+    @timer.command()
+    async def removeDuringTimer(self,ctx, msg, start=None,role="", resume=False, death=False):
+        if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
+            guild = ctx.guild
+            removeList = msg.mentions
+            removeUser = ""
+
+            if len(removeList) > 1:
+                await ctx.channel.send(content=f"I cannot remove more than one player! Please try the command with one player and check your format and spelling.")
+                return None
+
+            elif removeList != list():
+                removeUser = removeList[0]
+                await ctx.invoke(self.timer.get_command('removeme'), start=start, msg=msg, role=role, user=removeUser, resume=resume, death=death)
+            else:
+                if not resume:
+                    await ctx.channel.send(content=f"I cannot find any mention of the user you are trying to remove. Please check your format and spelling.")
             return start
 
     """
@@ -1582,9 +1499,8 @@ class Timer(commands.Cog):
 
                             # go over every entry in the consumables list and add them appropriately
                             # reward items are indicated by a plus
-                            # WEIRD could be startswith instead
                             for i in v[2]:
-                                if '+' in i:
+                                if i.startswith('+'):
                                     rList.append(i)
                                 else:
                                     cList.append(i)
@@ -1596,16 +1512,16 @@ class Timer(commands.Cog):
                     # create field entries for every reward entry as appropriate
                     # - indicates that the entry is for people who were removed from the timer
                     # % indicates that a character died
-                    if "Full Rewards" in key and "-" not in key and '%' not in key:
+                    if "Full Rewards" in key and not key.startswith("-") and not key.startswith("%"):
                         embed.add_field(name= f"**{v[0].display_name}**", value=f"**{v[1]['Name']}**{consumablesString}{rewardsString}", inline=False)
                     # if there are no rewards then we just need to list the player information
                     elif 'No Rewards' in key:
                         embed.add_field(name= f"**{v[0].display_name}**", value=f"{v[0].mention}", inline=False)
                     # if the player is removed from the timer we don't list them
-                    elif "-" in key:
+                    elif key.startswith("-"):
                         pass
                     # list that the character died
-                    elif '%' in key:
+                    elif key.startswith("%"):
                         embed.add_field(name= f"~~{v[0].display_name}~~", value=f"**{v[1]['Name']}** - **DEATH**{consumablesString}{rewardsString}", inline=False) 
                     else:
                         # if the player did not receive the full rewards then we need to add together all the time they have played
@@ -1627,12 +1543,10 @@ class Timer(commands.Cog):
             msgAfter = False
             
             # we need separate advice strings if there are no rewards
-            # WEIRD
-            # These strings are identical
             if role != "":
                 stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables\n   - "consumable"```'
             else:
-                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player "character name" "consumables"\n# Removing Players\n   {commandPrefix}timer remove @player\n# Awarding Reward Items\n   {commandPrefix}timer reward @player "rewards"\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n# Using Consumables\n   - "consumable"```'
+                stampHelp = f'```md\n[DM][Commands]\n# Adding Players\n   {commandPrefix}timer add @player\n# Removing Players\n   {commandPrefix}timer remove @player\n# Stopping the Timer\n   {commandPrefix}timer stop\n\n[Player][Commands]\n# Adding Yourself\n   {commandPrefix}timer addme "character name" "consumables"\n# Removing Yourself\n   {commandPrefix}timer removeme\n```'
             # check if the current message is the last message in the chat
             # this checks the 1 message after the current message, which if there is none will return an empty list therefore msgAfter remains False
             async for message in ctx.channel.history(after=embedMsg, limit=1):
@@ -1678,7 +1592,7 @@ class Timer(commands.Cog):
                 tierNum = 1
 
 
-            def updateCharDB(char, tier, cp, tp, gp, death=False, gameID=""):
+            def updateCharDB(char, tier, cp, death=False, gameID=""):
             
                 # WEIRD
                 # TP CP GP calculation to be overhauled
@@ -1694,19 +1608,13 @@ class Timer(commands.Cog):
                 
                 if settingsRecord['ddmrw'] and char == dmChar:
                     leftCP *= 2
-                    gp *= 2
-                    tp *= 2
               
                 if 'Double Rewards Buff' in char[1]:
                     if char[1]['Double Rewards Buff'] < (datetime.now() + timedelta(days=3)):
                         if settingsRecord['ddmrw'] and char == dmChar:
                             leftCP *= 3
-                            gp *= 3
-                            tp *= 3
                         else:
                             leftCP *= 2
-                            gp *= 2
-                            tp *= 2
                     unset = {'Double Rewards Buff':1}
 
                 if 'Double Items Buff' in char[1]:
@@ -1744,7 +1652,6 @@ class Timer(commands.Cog):
 
                     print(crossCP)
                     print(tp)
-                    print(crossTP)
 
 
                 totalCP = f'{leftCP}/{float(cpSplit[1])}'
@@ -1831,9 +1738,9 @@ class Timer(commands.Cog):
                     ttemp = startItemsList[1].split('?')
                     duration = (float(ttemp[1]) - float(ttemp[0]))
                 
-                # calculate the treasure
-                treasureArray = calculateTreasure(duration,role)
                 if role != "":
+                    # calculate the treasure
+                    treasureArray = calculateTreasure(duration,role)
                     # insert the rewards into a string
                     treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
                 else:
@@ -1882,8 +1789,27 @@ class Timer(commands.Cog):
                         charRewards = updateCharDB(value, tierNum, treasureArray[0], treasureArray[1], treasureArray[2], (value in deathChars), sessionMessage.id)
                         # add the records to the list of items to update
                         data["records"].append(charRewards)
-                    # add the player to the list of completed entries
-                    playerList.append(value)
+                        # if the player was not present the whole game and it was a no rewards game
+                        if "Partial Rewards" in startItemKey and role == "":
+                            # check if the reward has already been added to the reward dictionary
+                            if treasureString not in allRewardStrings:
+                                # if not, create the entry
+                                allRewardStrings[treasureString] = playerList
+                            else:
+                                # otherwise add the new players
+                                allRewardStrings[treasureString] += playerList 
+                        else:
+                            # check if the full rewards have already been added, if yes create it and add the players
+                            if f'{role} Friend Full Rewards - {treasureString}' in allRewardStrings:
+                                allRewardStrings[f'{role} Friend Full Rewards - {treasureString}'] += playerList
+                            # check if there exists an entry with the same amount of rewards, if no, create it, otherwise add the players
+                            elif f"{startItemsList[0].replace('+', '').replace('-', '').replace('%', '')} - {treasureString}" not in allRewardStrings:
+                                allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '').replace('%', '')} - {treasureString}"] = playerList
+                            else:
+                                allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '').replace('%', '')} - {treasureString}"] += playerList
+
+                            # add the player to the list of completed entries
+                            playerList.append(value)
 
                 print('playerList')
                 print(playerList)
@@ -1978,12 +1904,8 @@ class Timer(commands.Cog):
             # get the total amount of minutes played
             minutesPlayed = totalDurationTime // 60
             minutesRounded = minutesPlayed % 30
-            
-            # round up to 30 or 60 minutes
-            # WEIRD
-            # We round down now
-            if minutesRounded >= 15:
-                minutesPlayed += (30 - minutesRounded)
+            # round down to 30 or 60 minutes
+            minutesPlayed -= minutesRounded
             
             
             # calculate the hour duration and calculate how many 3h segements were played
@@ -1994,10 +1916,7 @@ class Timer(commands.Cog):
             # add the noodles to the record or start a record if needed
             if uRecord:
                 if 'Noodles' not in uRecord:
-                    # WEIRD
-                    # Noodles are not counted if the DM had none so far
-                    # this makes it so that the first game does not count
-                    uRecord['Noodles'] = 0
+                    uRecord['Noodles'] = noodlesGained
                 else:
                     noodles += uRecord['Noodles'] + noodlesGained
             #update noodle role if dm
@@ -2173,8 +2092,6 @@ class Timer(commands.Cog):
                 dm_text = ""
                 dm_name_text = "**No Character**"
                 # if no character signed up then the character parts are excluded
-                # WEIRD
-                # This doesnt remove all the character elements yet
                 if(dmChar != "No Rewards"):
                     dm_text = f"| {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}"
                     dm_name_text = f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n"
@@ -2197,10 +2114,8 @@ class Timer(commands.Cog):
                 if not statsRecord:
                     statsRecord = {'Date': dateyear, 'DM': {}}
                 
-                # WEIRD
-                # This uses the DM reward info to check if the game reached the mimum time
-                # could just use the totalDuration instead and unlink from the DM rewards
-                # If greater than 30 mins.
+                
+                # If at least the minimum rewards are given out
                 if float(dmtreasureArray[0]) >= .5:
                     # increment or create the stat entry for the DM of the game
                     if str(dmChar[0].id) in statsRecord['DM']:
@@ -2282,8 +2197,9 @@ class Timer(commands.Cog):
                         # do a bulk write for the guild data
                         guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'P-Games':item['Games'], 'P-Reputation': item['Reputation']}}, upsert=True), guildsRecordsList))
                         guildsCollection.bulk_write(guildsData)
-                # WEIRD
-                # no special information like for player collection on bulk write error
+                except BulkWriteError as bwe:
+                    print(bwe.details)
+                    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
@@ -2323,6 +2239,9 @@ class Timer(commands.Cog):
                     if(dmchar[1]!= "No Rewards"):
                         dmRecords = data['records'][0]
                         playersCollection.update_one({'_id': dmRecords['_id']},  dmRecords['fields'] , upsert=True)
+                except BulkWriteError as bwe:
+                    print(bwe.details)
+                    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 except Exception as e:
                     print ('MONGO ERROR: ' + str(e))
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
@@ -2332,9 +2251,7 @@ class Timer(commands.Cog):
                 await ctx.channel.send(embed=stopEmbed)
 
             # enable the starting timer commands
-            # WEIRD
-            # start is never set on cooldown, prep is, but that is handled in prep
-            self.timer.get_command('start').reset_cooldown(ctx)
+            self.timer.get_command('prep').reset_cooldown(ctx)
             self.timer.get_command('resume').reset_cooldown(ctx)
 
         return
@@ -2365,14 +2282,10 @@ class Timer(commands.Cog):
     @timer.command()
     #TODO: cmapaign resume timer
     async def resume(self,ctx):
-        # WEIRD
-        # This check is outdated, start does not have a cooldown, prep has
-        if not self.timer.get_command('start').is_on_cooldown(ctx):
+        if not self.timer.get_command('prep').is_on_cooldown(ctx):
             # check for messages from a bot
-            # WEIRD
-            # this is not restricted to only this bot's messages
             def predicate(message):
-                return message.author.bot
+                return message.author.bot and message.author.id == self.bot.user.id
 
             channel=ctx.channel
             # make sure that the channel is a game channel
@@ -2384,9 +2297,7 @@ class Timer(commands.Cog):
                     self.timer.get_command('resume').reset_cooldown(ctx)
                     return
             # make sure that there is no timer running right now
-            # WEIRD
-            # This check is outdated, start does not have a cooldown, prep has
-            if self.timer.get_command('start').is_on_cooldown(ctx):
+            if self.timer.get_command('prep').is_on_cooldown(ctx):
                 await channel.send(f"There is already a timer that has started in this channel! If you started this timer, use the following command to stop it:\n```yaml\n{commandPrefix}timer stop```")
                 self.timer.get_command('resume').reset_cooldown(ctx)
                 return
@@ -2579,7 +2490,7 @@ class Timer(commands.Cog):
         async def permissionCheck(msg):
             # check if the person who sent the message is either the DM, a Mod or a Admin
             if not (msg.author == author or "Mod Friend".lower() in [r.name.lower() for r in msg.author.roles] or "A d m i n s".lower() in [r.name.lower() for r in msg.author.roles]):
-                await channel.send(f'You do not have permission to use this commad') #<-----------------------------THIS Line GHOST
+                await channel.send(f'You do not have permission to use this command') #<-----------------------------THIS Line GHOST
                 return False
             else: 
                 return True
@@ -2592,7 +2503,7 @@ class Timer(commands.Cog):
                 else:
                     msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined)) and m.channel == channel)
                 #transfer ownership of the timer
-                if (f"{commandPrefix}timer transfer " in msg.content or f"{commandPrefix}t transfer " in msg.content):
+                if (msg.content.startswith(f"{commandPrefix}timer transfer ") or msg.content.startswith(f"{commandPrefix}t transfer ")):
                     # check if the author of the message has the right permissions for this command
                     if await permissionCheck(msg):
                         #if the message had any mentions we take the first mention and transfer the timer to them
@@ -2608,39 +2519,35 @@ class Timer(commands.Cog):
                 elif (msg.content == f"{commandPrefix}timer stop" or msg.content == f"{commandPrefix}timer end" or msg.content == f"{commandPrefix}t stop" or msg.content == f"{commandPrefix}t end"):
                     # check if the author of the message has the right permissions for this command
                     if await permissionCheck(msg):
-                        # WEIRD
-                        # setting this variable to true achieves nothing since we return right after
-                        timerStopped = True
                         await ctx.invoke(self.timer.get_command('stop'), start=startTimes, role=role, game=game, datestart=datestart, dmChar=dmChar, guildsList=guildsList)
                         return
+
+                # this behaves just like add above, but skips the ambiguity check of addme since only the author of the message could be added
+                elif (msg.content.startswith(f"{commandPrefix}timer addme ") or msg.content.startswith(f"{commandPrefix}t addme ")) and '@player' not in msg.content and (msg.content != f'{commandPrefix}timer addme' or msg.content != f'{commandPrefix}t addme'):
+                    startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, role=role, msg=msg, user=msg.author, dmChar=dmChar)
+                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 # this invokes the add command, since we do not pass prep = True through, the special addme command will be invoked by add
-                # WEIRD
-                # this check will execute always instead of addme because of the ordering
                 # @player is a protection from people copying the command
-                elif (f"{commandPrefix}timer add " in msg.content or f"{commandPrefix}t add " in msg.content) and '@player' not in msg.content:
+                elif (msg.content.startswith(f"{commandPrefix}timer add ") or msg.content.startswith(f"{commandPrefix}t add ")) and '@player' not in msg.content:
                     # check if the author of the message has the right permissions for this command
                     if await permissionCheck(msg):
                         # update the startTimes with the new added player
-                        startTimes = await ctx.invoke(self.timer.get_command('add'), start=startTimes, role=role, msg=msg)
+                        startTimes = await self.addDuringTimer(ctx, start=startTimes, role=role, msg=msg, dmChar = dmChar)
                         # update the msg with the new stamp
                         stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                # this behaves just like add above, but skips the ambiguity check of addme since only the author of the message could be added
-                elif (f"{commandPrefix}timer addme " in msg.content or f"{commandPrefix}t addme " in msg.content) and '@player' not in msg.content and (msg.content != f'{commandPrefix}timer addme' or msg.content != f'{commandPrefix}t addme'):
-                    startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, role=role, msg=msg, user=msg.author, dmChar=dmChar)
-                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 # this invokes the remove command, since we do not pass prep = True through, the special removeme command will be invoked by remove
                 elif msg.content == f"{commandPrefix}timer removeme" or msg.content == f"{commandPrefix}t removeme":
                     startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=msg.author)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif (f"{commandPrefix}timer remove " in msg.content or f"{commandPrefix}t remove " in msg.content): 
+                elif (msg.content.startswith(f"{commandPrefix}timer remove ") or msg.content.startswith(f"{commandPrefix}t remove ")): 
                     if await permissionCheck(msg): 
                         startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=startTimes, role=role)
                         stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif (f"{commandPrefix}timer reward" in msg.content or f"{commandPrefix}t reward" in msg.content):
+                elif (msg.content.startswith(f"{commandPrefix}timer reward") or msg.content.startswith(f"{commandPrefix}t reward")):
                     if await permissionCheck(msg):
                         startTimes,dmChar = await ctx.invoke(self.timer.get_command('reward'), msg=msg, start=startTimes,dmChar=dmChar)
                         stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-                elif (f"{commandPrefix}timer death" in msg.content or f"{commandPrefix}t death" in msg.content):
+                elif (msg.content.startswith(f"{commandPrefix}timer death") or msg.content.startswith(f"{commandPrefix}t death")):
                     if await permissionCheck(msg):
                         startTimes = await ctx.invoke(self.timer.get_command('death'), msg=msg, start=startTimes, role=role)
                         stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
