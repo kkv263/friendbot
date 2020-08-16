@@ -120,7 +120,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedChar.add_field(name=f'▫️ Character Creation\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character with the specified parameters.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Multiclass Character Creation\n{commandPrefix}create "character name" level "race" "class1 # / class2 #..." "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character as above, except with multiclassing!", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Leveling Up\n{commandPrefix}levelup "character name"\n[{commandPrefix}lvlup, {commandPrefix}lvl, {commandPrefix}lvl]', value="Level up the specified character to the next level.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Respec\n{commandPrefix}respec "character name" "new character name" level "race" "class" "background" STR DEX CON INT WIS CHA', value="Respec the specified character based on the amount of CP they have. You can choose a new name, class, race, background, and stats for them; however, TP and gp will be assigned to them based on the amount of CP they have and everything else that they had will be reset.", inline=False)
+    helpEmbedChar.add_field(name=f'▫️ Respec\n{commandPrefix}respec "character name" "new character name" "race" "class" "background" STR DEX CON INT WIS CHA', value="Respec the specified character based on the amount of CP they have. You can choose a new name, class, race, background, and stats for them; however, TP and gp will be assigned to them based on the amount of CP they have and everything else that they had will be reset.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Character Information\n{commandPrefix}info "character name"\n[{commandPrefix}char, {commandPrefix}i]', value="View the stats and general information of the specified character.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Character Inventory\n{commandPrefix}inventory "character name"\n[{commandPrefix}inv, {commandPrefix}bag]', value="View the inventory of the specified character. The inventory lists mundane items, consumables, and magic items.", inline=False)
     helpEmbedChar.add_field(name=f'▫️ Character Image\n{commandPrefix}image "character name" "URL"\n[{commandPrefix}img]', value="Add an image to the specified character's information page (`$info` command) using a URL. Please keep images SFW!", inline=False)
@@ -154,7 +154,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the timer with their character and consumables.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the timer.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Awarding Reward Items (DM)\n{commandPrefix}timer reward @player "reward item 1, reward item 2, [...]"', value="Reward the mentioned player one or more reward item(s) from the Reward Item Table.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Killing a Character (DM)\n{commandPrefix}timer death @player', value="Remove the mentioned player from the timer when their character has died during the quest. The player can choose if their character is permanently retired, survives the quest with no rewards, or is revived afterwards at the cost of some gp in order to receive rewards.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Character Death (DM)\n{commandPrefix}timer death @player', value="Remove the mentioned player from the timer when their character has died during the quest. The player can choose if their character is permanently retired, survives the quest with no rewards, or is revived afterwards at the cost of some gp in order to receive rewards.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Transferring the Timer (DM)\n{commandPrefix}timer transfer @player', value="Transfer the timer from yourself to the mentioned user who will become the timer's new owner. They will have full control over the timer.", inline=False)
     helpEmbedTimerTwo.add_field(name=f'▫️ Stopping the Timer (DM)\n{commandPrefix}timer stop', value="Stop the timer and immediately display how much CP, TP, and gp each player earned. Players who joined late or left early will have their rewards displayed separately. The timer can only be stopped by its owner or a Mod.", inline=False)
 
@@ -170,9 +170,9 @@ async def help(ctx, *, pageString=''):
 # SHOP COMMANDS MENU ($help shop)
 
     helpEmbedShop.title = 'Shop Commands'
-    helpEmbedShop.add_field(name=f'▫️ Buying an Item\n{commandPrefix}shop buy "character name" "item" #', value="Purchase a specified number of a single mundane item from the shop.", inline=False)
+    helpEmbedShop.add_field(name=f'▫️ Buying an Item\n{commandPrefix}shop buy "character name" "item" #', value="Purchase a specified number of a single mundane item from the shop. If purchasing a spell scroll, you must use the following format: \"Spell Scroll (spell name)\"", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Selling a Mundane Item\n{commandPrefix}shop sell "character name" "item" #', value="Sell a specified number of a single mundane item to the shop", inline=False)
-    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell"', value="Copy a spell scroll into your character's spellbook. Limited to classes that have access to a spellbook. Some subclasses offer discounts which are applied.", inline=False)
+    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell name"', value="Copy a spell scroll into your character's spellbook. Limited to classes that have access to a spellbook. Some subclasses offer discounts which are applied.", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Training Extra Competencies\n{commandPrefix}proficiency training "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on).", inline=False)
     helpEmbedShop.add_field(name=f'▫️ Training Noodle Competencies\n{commandPrefix}proficiency noodle "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on), discounted and with extra benefits for those with a Noodle role!", inline=False)
 
@@ -188,12 +188,13 @@ async def help(ctx, *, pageString=''):
 # GUILD COMMANDS MENU ($help guild)
 
     helpEmbedGuild.title = 'Guild Commands'
-    helpEmbedGuild.add_field(name=f'▫️ Creating a Guild\n{commandPrefix}guild create "character name" "guild name" @role #channel', value="Create a guild after the role and channel have been designated. It will require funding before it is officially opened.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" gp "guild name"', value="Fund the establishment of the specified guild. A character who donates the minimum amount of funding required will immediately join the guild's roster.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Viewing a Guild\n{commandPrefix}guild info "guild name"', value="View the specified guild's roster and the amount of reputation in its bank. If the guild has yet to be funded, it will show the amount gp required before it will open.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Joining a Guild\n{commandPrefix}guild join "character name" "guild name"', value="Join the specified guild with the specified character.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Leaving a Guild\n{commandPrefix}guild leave "character name"', value="Leave the guild which the specified character currently belongs to.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rankup "character name"', value="Upgrade the specified character's rank in the guild which they currently belong to by donating gp.", inline=False)
+    helpEmbedGuild.add_field(name=f'▫️ Leaving a Guild\n{commandPrefix}guild leave "character name"', value="Leave the guild which the specified character currently belongs to.", inline=False)
+    helpEmbedGuild.add_field(name=f'▫️ Creating a Guild\n{commandPrefix}guild create "character name" "guild name" @role #channel', value="Create a guild after the role and channel have been designated. It will require funding before it is officially opened.", inline=False)
+    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" gp "guild name"', value="Fund the establishment of the specified guild. A character who donates the minimum amount of funding required will immediately join the guild's roster.", inline=False)
+
 
 
     numPages = len(helpList)

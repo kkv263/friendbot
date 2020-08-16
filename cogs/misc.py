@@ -75,11 +75,11 @@ class Misc(commands.Cog):
             if payload.emoji.name == "1️⃣":
                 name = 'Tier 1' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Junior Friend', 'Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "2️⃣":
                 name = 'Tier 2' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "3️⃣":
                 name = 'Tier 3' 
                 role = get(guild.roles, name = name)
@@ -98,7 +98,7 @@ class Misc(commands.Cog):
                     channel = guild.get_channel(payload.channel_id)
                     if any(role in roles for role in validRoles):
                         await member.remove_roles(role)
-                        successMsg = await channel.send(f":tada: {member.display_name}, I have removed the ***{name}*** from you! You will no longer be pinged for quests of this tier. React to the same emoji if you would like to be pinged for quests of this tier again!")
+                        successMsg = await channel.send(f":tada: ***{member.display_name}***, I have removed the ***{name}*** from you! You will no longer be pinged for quests of this tier. React to the same emoji if you would like to be pinged for quests of this tier again!")
                         await asyncio.sleep(15) 
                         await successMsg.delete()
 
@@ -117,11 +117,11 @@ class Misc(commands.Cog):
             if payload.emoji.name == "1️⃣":
                 name = 'Tier 1' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Junior Friend', 'Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Junior Friend', 'Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "2️⃣":
                 name = 'Tier 2' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Journey Friend', 'Elite Friend', 'True Friend']
+                validRoles = ['Journeyfriend', 'Elite Friend', 'True Friend']
             elif payload.emoji.name == "3️⃣":
                 name = 'Tier 3' 
                 role = get(guild.roles, name = name)
@@ -142,12 +142,12 @@ class Misc(commands.Cog):
 
                     if any(role in roles for role in validRoles):    
                         await member.add_roles(role)
-                        successMsg = await channel.send(f":tada: {member.display_name}, I have given you the ***{name}*** role! You will be pinged for quests of this tier. React to the same emoji if you would not like to be pinged for quests of this tier!")
+                        successMsg = await channel.send(f":tada: ***{member.display_name}**, I have given you the ***{name}*** role! You will be pinged for quests of this tier. React to the same emoji if you would not like to be pinged for quests of this tier!")
                         await asyncio.sleep(15) 
                         await successMsg.delete()
                     else:
                         channel = guild.get_channel(payload.channel_id)
-                        errorMsg = await channel.send(f"❗ {member.display_name}, I can't give you the ***{name}*** because you don't have the required roles ({', '.join(validRoles)})!")
+                        errorMsg = await channel.send(f"❗ ***{member.display_name}***, I can't give you the ***{name}*** because you don't have the required roles ({', '.join(validRoles)})!")
                         originalMessage = await channel.fetch_message(tMessage)
                         await originalMessage.remove_reaction(payload.emoji,member)
                         await asyncio.sleep(15) 
@@ -260,7 +260,7 @@ class Misc(commands.Cog):
         #check if any tier boost was done and react
         elif(7 < msg.type.value and msg.type.value < 12):
             await msg.add_reaction('<:boost:585637770970660876>')
-        elif any(word in msg.content.lower() for word in ['thank', 'thanks', 'thank you', 'thx', 'gracias', 'danke']) and 'bot friend' in msg.content.lower():
+        elif any(word in msg.content.lower() for word in ['thank', 'thanks', 'thank you', 'thx', 'gracias', 'danke', 'arigato', 'xie xie', 'merci']) and 'bot friend' in msg.content.lower():
             await msg.add_reaction('❤️')
             await msg.channel.send("You're welcome friend!")
         elif msg.channel.id == tChannel and msg.author.id != self.bot.user.id:

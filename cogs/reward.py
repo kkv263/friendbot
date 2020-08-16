@@ -11,7 +11,7 @@ class Reward(commands.Cog):
     @commands.command()
 
     async def reward(self,ctx, timeString=None, tier=None):
-        rewardCommand = f"\nPlease follow this format:\n`{commandPrefix}reward [XhYm] [tier]`.\n"
+        rewardCommand = f"\nPlease follow this format:\n```yaml\n{commandPrefix}reward \"#h#m\" \"tier\"```\n"
 
         def convert_to_seconds(s):
             return int(s[:-1]) * seconds_per_unit[s[-1]]
@@ -22,14 +22,14 @@ class Reward(commands.Cog):
             return
 
         if tier is None:
-            await channel.send(content="Woops, you're forgetting the tier for the command. Please try again with 1,2,3, or 4 or (Junior, Journey, Elite, or True) as the tier, and" + rewardCommand)
+            await channel.send(content="Woops, you're forgetting the tier for the command. Please try again with 1, 2, 3, or 4 or Junior, Journey, Elite, or True as the tier, and" + rewardCommand)
             return
 
         seconds_per_unit = { "m": 60, "h": 3600 }
         lowerTimeString = timeString.lower()
 
         if tier not in ('1','2','3','4') and tier.lower() not in [r.lower() for r in roleArray]:
-            await channel.send(f"`{tier}` is not a valid tier. Please try again with 1,2,3, or 4 or (Junior, Journey, Elite, or True).")
+            await channel.send(f"`{tier}` is not a valid tier. Please try again with 1, 2, 3, or 4 or Junior, Journey, Elite, or True.")
             return
 
         tierName = ""

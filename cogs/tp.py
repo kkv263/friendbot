@@ -36,6 +36,9 @@ class Tp(commands.Cog):
         # bot.py handles this, so we don't get traceback called.
         elif isinstance(error, commands.CommandOnCooldown):
             return
+        elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+             return
+             
         if msg:
             if ctx.command.name == "buy":
                 msg += f"Please follow this format:\n```yaml\n{commandPrefix}tp buy \"character name\" \"magic item\"```\n"
@@ -158,7 +161,7 @@ class Tp(commands.Cog):
                         elif tReaction.emoji == '✅':
                             collapseList.append(rec)
                         else:
-                            tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process cancelled")
+                            tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process cancelled.")
                             return
                     #return the selected item indexed by the emoji given by the user
                     apiEmbed.clear_fields()
@@ -171,12 +174,12 @@ class Tp(commands.Cog):
                 collection.insert_one(charDict)
                 for entry in collapseList:
                     collection.delete_one({'_id': entry['_id']})
-                tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process finished. These items have been grouped\n"+"\n".join(name_list))
+                tpEmbedmsg = await channel.send(embed=None, content=f"Grouping process finished. These items have been grouped.\n"+"\n".join(name_list))
                 return
             except Exception as e:
                 print ('MONGO ERROR: ' + str(e))
                 traces.print_exc()
-                tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
+                tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try again using the same command.")
 
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @tp.command()
@@ -226,12 +229,12 @@ class Tp(commands.Cog):
                         group_name_split = groupName.split(":")
                         if(mRecord["Grouped"] == group_name_split[0].strip() and mRecord["Name"] != group_name_split[1].strip()):
                             #inform the user that they already have an item from this group
-                            await channel.send(f"***{mRecord['Name']}*** is a variant of the ***{mRecord['Grouped']}*** item and ***{charRecords['Name']}*** already owns a variant of the that item.")
+                            await channel.send(f"**{mRecord['Name']}** is a variant of the **{mRecord['Grouped']}** item and ***{charRecords['Name']}*** already owns a variant of the that item.")
                             ctx.command.reset_cooldown(ctx)
                             return 
                 # check if the requested item is already in the inventory
                 if(mRecord['Name'] in [name.strip() for name in charRecords['Magic Items'].split(",")]): 
-                    await channel.send(f"You already have ***{mRecord['Name']}*** and cannot spend TP or gp on another one.")
+                    await channel.send(f"You already have **{mRecord['Name']}** and cannot spend TP or gp on another one.")
                     ctx.command.reset_cooldown(ctx)
                     return 
                 
@@ -260,26 +263,26 @@ class Tp(commands.Cog):
                         break
 
                 # display the cost of the item to the user
-                tpEmbed.title = f"{mRecord['Name']}\nTier {mRecord['Tier']} - {mRecord['TP']} TP / {mRecord['GP']} gp"
+                tpEmbed.title = f"Acquiring a Magic Item: {charRecords['Name']}"
                 
                 # if the user doesnt have the resources for the purchases, inform them and cancel
                 if not haveTP and float(charRecords['GP']) < gpNeeded:
-                    await channel.send(f"You do not have Tier {tierNum} TP or gp to acquire `{mRecord['Name']}`.")
+                    await channel.send(f"You do not have enough Tier {tierNum} TP or gp to acquire **{mRecord['Name']}**!")
                     ctx.command.reset_cooldown(ctx)
                     return
                   
                 # get confirmation from the user for the purchase
                 elif not haveTP:
                     if tpBank == [0] * 4:
-                        tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **no TP** and **{charRecords[f'GP']} gp.**\n\n1️⃣: ~~{mRecord['TP']} TP (Treasure Points)~~ You do not have enough TP.\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
+                        tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **no TP** and **{charRecords[f'GP']} gp**.\n\n1️⃣: ~~{mRecord['TP']} TP (Treasure Points)~~ You do not have enough TP.\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
                     else:
-                        tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp.**\n\n1️⃣: ~~{mRecord['TP']} TP (Treasure Points)~~ You do not have enough TP.\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
+                        tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**.\n\n1️⃣: ~~{mRecord['TP']} TP (Treasure Points)~~ You do not have enough TP.\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
 
                 elif float(charRecords['GP']) < gpNeeded:
-                    tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp.**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: ~~{mRecord['GP']} gp (gold pieces)~~ You do not have enough gp.\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**.\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: ~~{mRecord['GP']} gp (gold pieces)~~ You do not have enough gp.\n\n❌: Cancel"                 
 
                 else:
-                    tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp.**\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
+                    tpEmbed.description = f"Do you want to acquire **{mRecord['Name']}** with TP or gp?\n\n You have **{tpBankString}** and **{charRecords[f'GP']} gp**.\n\n1️⃣: {mRecord['TP']} TP (Treasure Points)\n2️⃣: {mRecord['GP']} gp (gold pieces)\n\n❌: Cancel"                 
                 
                 if tpEmbedmsg:
                     await tpEmbedmsg.edit(embed=tpEmbed)
@@ -296,7 +299,7 @@ class Tp(commands.Cog):
                 except asyncio.TimeoutError:
                     #cancel if the user didnt respond within the timeframe
                     await tpEmbedmsg.delete()
-                    await channel.send(f'TP canceled. Use `{commandPrefix}tp buy` command and try again!')
+                    await channel.send(f'TP cancelled. Try again using the same command!')
                     ctx.command.reset_cooldown(ctx)
                     return
                 else:
@@ -306,7 +309,7 @@ class Tp(commands.Cog):
                     refundTP = 0.0
                     #cancel if the user decided to cancel the purchase
                     if tReaction.emoji == '❌':
-                        await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp buy` command and try again!")
+                        await tpEmbedmsg.edit(embed=None, content=f"TP cancelled. Try again using the same command!")
                         await tpEmbedmsg.clear_reactions()
                         ctx.command.reset_cooldown(ctx)
                         return
@@ -322,9 +325,9 @@ class Tp(commands.Cog):
                             refundTP = float(tpSplit[0])
                             charRecords['Current Item'] = "None"
                             #confirm with the user on the purchase
-                            tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {charRecords['GP']} → {newGP} gp\nYou will be refunded the TP you have already spent on this item ({refundTP} TP). \n\n✅: Yes\n\n❌: Cancel"
+                            tpEmbed.description = f"Are you sure you want to acquire **{mRecord['Name']}** for **{mRecord['GP']} gp**?\n\nCurrent gp: {charRecords['GP']}\nNew gp: {newGP} gp\n\nNote: you will be refunded the TP you have already spent on this item ({refundTP} TP). \n\n✅: Yes\n\n❌: Cancel"
                         else:
-                            tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {charRecords['GP']} → {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                            tpEmbed.description = f"Are you sure you want to acquire **{mRecord['Name']}** for **{mRecord['GP']} gp**?\n\nCurrent gp: {charRecords['GP']}\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                     # If user decides to buy item with TP:
                     elif tReaction.emoji == '1️⃣':
@@ -364,8 +367,7 @@ class Tp(commands.Cog):
                                 if currentMagicItems == list():
                                     charRecords['Current Item'] = 'None'
 
-                        tpEmbed.description = f"Are you sure you want to acquire this?\n\n**{mRecord['Name']}**: {tpSplit[0]}/{tpSplit[1]} → {newTP}\n**Leftover T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
-
+                        tpEmbed.description = f"Are you sure you want to acquire **{mRecord['Name']}** for **{mRecord['TP']} TP**?\n\n{tpSplit[0]}/{tpSplit[1]} → {newTP}\n\nLeftover T{tierNum} TP: {charRecords[f'T{tierNum} TP']}\n\n✅: Yes\n\n❌: Cancel"
 
                     # If not complete, leave in current items, otherwise add to magic item list / consuambles
                     if 'Complete' not in newTP and tReaction.emoji == '1️⃣':
@@ -386,13 +388,13 @@ class Tp(commands.Cog):
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=tpEmbedCheck , timeout=60)
                     except asyncio.TimeoutError:
                         await tpEmbedmsg.delete()
-                        await channel.send(f'TP canceled. Use `{commandPrefix}tp buy` command and try again!')
+                        await channel.send(f'TP cancelled. Try again using the same command!')
                         ctx.command.reset_cooldown(ctx)
                         return
                     else:
                         await tpEmbedmsg.clear_reactions()
                         if tReaction.emoji == '❌':
-                            await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp buy` command and try again!")
+                            await tpEmbedmsg.edit(embed=None, content=f"TP cancelled. Try again using the same command!")
                             await tpEmbedmsg.clear_reactions()
                             ctx.command.reset_cooldown(ctx)
                             return
@@ -457,24 +459,23 @@ class Tp(commands.Cog):
                                 
                             except Exception as e:
                                 print ('MONGO ERROR: ' + str(e))
-                                tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
+                                tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Try again using the same command!")
                             else:
                                 if newTP:
                                     if "Complete" in newTP:
-                                        tpEmbed.description = f"**TP spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**: {newTP}\n\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
+                                        tpEmbed.description = f"You have acquired **{mRecord['Name']}** for {mRecord['TP']} TP! :tada:\n\nCurrent T{tierNum} TP: {charRecords[f'T{tierNum} TP']}\n\n"
                                     else:
-                                        tpEmbed.description = f"**TP spent!** Your character still needs to spend more TP to complete the item.\n\n**{mRecord['Name']}**: {newTP}\n\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP']}\n\n"
+                                        tpEmbed.description = f"You have put TP towards **{mRecord['Name']}** but still need to spend more TP in order to complete it!\n\nCurrent progress: {newTP}\n\nCurrent T{tierNum} TP: {charRecords[f'T{tierNum} TP']}\n\n"
                                 elif newGP:
                                     if refundTP:
-                                        tpEmbed.description = f"**gp spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**\n\n**Current gp**: {newGP}\n**Current T{tierNum} TP**: {charRecords[f'T{tierNum} TP'] + refundTP} (Refunded {refundTP})"
+                                        tpEmbed.description = f"You have acquired **{mRecord['Name']}** for {mRecord['GP']} gp! :tada:\n\nCurrent gp: {newGP}\n\nCurrent T{tierNum} TP: {charRecords[f'T{tierNum} TP'] + refundTP} (refunded {refundTP})"
                                     else:
-                                        tpEmbed.description = f"**gp spent!** Check out what you got! :tada:\n\n**{mRecord['Name']}**\n\n**Current gp**: {newGP}\n"
+                                        tpEmbed.description = f"You have acquired **{mRecord['Name']}** for {mRecord['GP']} gp! :tada:\n\nCurrent gp: {newGP}\n"
                                 await tpEmbedmsg.edit(embed=tpEmbed)
                                 ctx.command.reset_cooldown(ctx)
-                                    
-                
+
             else:
-                await channel.send(f'`{mItem}` doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.')
+                await channel.send(f'**{mItem}** doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
@@ -532,7 +533,7 @@ class Tp(commands.Cog):
                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=discardEmbedCheck , timeout=60)
                 except asyncio.TimeoutError:
                     await tpEmbedmsg.delete()
-                    await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
+                    await channel.send(f'TP cancelled. Try again using the same command!')
                     ctx.command.reset_cooldown(ctx)
                     return
                 await tpEmbedmsg.clear_reactions()
@@ -546,8 +547,8 @@ class Tp(commands.Cog):
             currentItem = currentItem.split('(')[0].strip()
 
             # Item has been chosen, prompt user to be sure.
-            tpEmbed.title = f'Discard - {currentItem}'
-            tpEmbed.description = f"Are you sure you want to discard this magic item? **You will not be refunded any TP which you have put towards it.**\n\nDiscard **{currentItemStr}**? \n\n✅: Yes\n\n❌: Cancel"
+            tpEmbed.title = f"Discarding a Magic Item: {charRecords['Name']}"
+            tpEmbed.description = f"Are you sure you want to discard **{currentItemStr}**?\n\n**Note: you will not be refunded any TP which you have put towards it.**\n\n✅: Yes\n\n❌: Cancel"
             tpEmbed.set_footer(text=tpEmbed.Empty)
             if tpEmbedmsg:
                 await tpEmbedmsg.edit(embed=tpEmbed)
@@ -561,13 +562,13 @@ class Tp(commands.Cog):
             except asyncio.TimeoutError:
                 #cancel if no response was given within the timeframe
                 await tpEmbedmsg.delete()
-                await channel.send(f'TP canceled. Use `{commandPrefix}tp discard` command and try again!')
+                await channel.send(f'TP cancelled. Try again using the same command!')
                 ctx.command.reset_cooldown(ctx)
                 return
             else:
                 await tpEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp discard` command and try again!")
+                    await tpEmbedmsg.edit(embed=None, content=f"TP cancelled. Try again using the same command!")
                     await tpEmbedmsg.clear_reactions()
                     ctx.command.reset_cooldown(ctx)
                     return
@@ -585,9 +586,9 @@ class Tp(commands.Cog):
                         playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Current Item":', '.join(currentItemList), "Grouped":filtered_grouped}})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
-                        tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
+                        tpEmbedmsg = await channel.send(embed=None, content=f"Uh oh, looks like something went wrong. Try again using the same command!")
                     else:
-                        tpEmbed.description = f"{currentItem} has been discarded!\n\nCurrent Item(s): {', '.join(currentItemList)}"
+                        tpEmbed.description = f"**{currentItem}** has been discarded!\n\nCurrent Item(s): {', '.join(currentItemList)}"
                         await tpEmbedmsg.edit(embed=tpEmbed)
                         ctx.command.reset_cooldown(ctx)
 
@@ -601,7 +602,7 @@ class Tp(commands.Cog):
 
 
         if tierNum not in ('1','2','3','4') and tierNum.lower() not in [r.lower() for r in roleArray]:
-            await channel.send(f"`{tierNum}` is not a valid tier. Please try again with `1`, `2`, `3`, or `4`. Alternatively, type `Junior`, `Journey`, `Elite`, or `True`.")
+            await channel.send(f"**{tierNum}** is not a valid tier. Please try again with **1**, **2**, **3**, or **4**. Alternatively, type **Junior**, **Journey**, **Elite**, or **True**.")
             ctx.command.reset_cooldown(ctx)
             return
 
@@ -626,8 +627,8 @@ class Tp(commands.Cog):
                 return
             
 
-            tpEmbed.title = f'Abandon - Tier {role} TP'  
-            tpEmbed.description = f"Are you sure you want to abandon your Tier {role} TP? You currently have {charRecords[f'T{role} TP']} Tier {role} TP.\n\n**Note: this action is permanent and cannot be reversed.**\n\n✅: Yes\n\n❌: Cancel"
+            tpEmbed.title = f"Abandoning a Magic Item: {charRecords['Name']}"  
+            tpEmbed.description = f"Are you sure you want to abandon your Tier {role} TP?\n\nYou currently have {charRecords[f'T{role} TP']} Tier {role} TP.\n\n**Note: this action is permanent and cannot be reversed.**\n\n✅: Yes\n\n❌: Cancel"
             tpEmbed.set_footer(text=tpEmbed.Empty)
             if tpEmbedmsg:
                 await tpEmbedmsg.edit(embed=tpEmbed)
@@ -639,13 +640,13 @@ class Tp(commands.Cog):
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=tpEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
                 await tpEmbedmsg.delete()
-                await channel.send(f'TP canceled. Use `{commandPrefix}tp abandon` command and try again!')
+                await channel.send(f'TP cancelled. Try again using the same command!')
                 ctx.command.reset_cooldown(ctx)
                 return
             else:
                 await tpEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await tpEmbedmsg.edit(embed=None, content=f"TP canceled. Use `{commandPrefix}tp abandon` command and try again!")
+                    await tpEmbedmsg.edit(embed=None, content=f"TP cancelled. Try again using the same command!")
                     await tpEmbedmsg.clear_reactions()
                     ctx.command.reset_cooldown(ctx)
                     return
@@ -656,7 +657,7 @@ class Tp(commands.Cog):
                         playersCollection.update_one({'_id': charRecords['_id']}, {"$unset": {f"T{role} TP":1}})
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
-                        tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try `{commandPrefix}tp buy` again.")
+                        tpEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Try again using the same command!")
                     else:
                         tpEmbed.description = f"You have abandoned {charRecords[f'T{role} TP']} T{role} TP!"
                         await tpEmbedmsg.edit(embed=tpEmbed)
