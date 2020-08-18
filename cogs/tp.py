@@ -53,13 +53,13 @@ class Tp(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
     @tp.command()
-    async def createGroup(self, ctx, query, group):
+    async def createGroup(self, ctx, table, query, group):
     
         #channel and author of the original message creating this call
         channel = ctx.channel
         author = ctx.author
         
-        collection = db["mit"]
+        collection = db[table]
         apiEmbedmsg = None
         apiEmbed = discord.Embed()
         #get the entire table if no query is given
@@ -122,7 +122,7 @@ class Tp(commands.Cog):
                 infoString = ""
                 collapseList=[]
                 for rec in records:
-                    infoString = f"{rec['Name']} (Tier {rec['Tier']}): **{rec['TP']} TP: **{rec['GP']} GP**\n"
+                    infoString = f"{rec['Name']} (Tier {rec['Tier']})**\n"
                     def apiEmbedCheck(r, u):
                         sameMessage = False
                         if apiEmbedmsg.id == r.message.id:

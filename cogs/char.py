@@ -2633,7 +2633,7 @@ class Character(commands.Cog):
                 subclasses = sorted(subclasses, key = lambda i: i['Level'], reverse=True)
 
                 if newCharLevel > 4:
-                    totalCP = f'{leftCP}/8.0'
+                    totalCP = f'{leftCP}/10.0'
 
                 def multiclassEmbedCheck(r, u):
                         sameMessage = False
