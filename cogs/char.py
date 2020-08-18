@@ -2140,11 +2140,14 @@ class Character(commands.Cog):
             mPages = 1
             mPageStops = [0]
 
-            miString = "• "
-            miArray = charDict['Magic Items'].replace(', ', '\n• ').split('\n')
+            miString = ""
+            miArray = collections.Counter(charDict['Magic Items'].split(', '))
 
-            for m in miArray:
-                miString += m + "\n"
+            for m,v in miArray.items():
+                if v == 1:
+                    miString += f"• {m}\n"
+                else:
+                    miString += f"• {m} x{v}\n"
 
                 if len(miString) > (768 * mPages):
                     mPageStops.append(len(miString))
@@ -2155,7 +2158,7 @@ class Character(commands.Cog):
                 for p in range(len(mPageStops)-1):
                     charEmbed.add_field(name=f'Magic Items - p. {p+1}', value=miString[mPageStops[p]:mPageStops[p+1]], inline=False)
             else:
-                charEmbed.add_field(name='Magic Items', value='• ' + charDict['Magic Items'].replace(', ', '\n• '), inline=False)
+                charEmbed.add_field(name='Magic Items', value=miString, inline=False)
 
 
             charDictAuthor = guild.get_member(int(charDict['User ID']))
@@ -2173,10 +2176,16 @@ class Character(commands.Cog):
                         iType[1] = '(' + iType[1]
                   
                     iType[0] = iType[0].strip()
-                    if iType[0] not in typeDict:
-                        typeDict[iType[0]] = [f"• {i['Name']} {iType[1]} x{charDict['Inventory'][i['Name']]}\n"]
+                    amt = charDict['Inventory'][i['Name']]
+                    if amt == 1:
+                        amt = ""
                     else:
-                        typeDict[iType[0]].append(f"• {i['Name']} {iType[1]} x{charDict['Inventory'][i['Name']]}\n")
+                        amt = f"x{amt}"
+
+                    if iType[0] not in typeDict:
+                        typeDict[iType[0]] = [f"• {i['Name']} {iType[1]} {amt}\n"]
+                    else:
+                        typeDict[iType[0]].append(f"• {i['Name']} {iType[1]} {amt}\n")
 
                 for k, v in typeDict.items():
                     v.sort()
@@ -2572,6 +2581,7 @@ class Character(commands.Cog):
         levelUpEmbed = discord.Embed ()
         characterCog = self.bot.get_cog('Character')
         infoRecords, levelUpEmbedmsg = await checkForChar(ctx, char, levelUpEmbed)
+        charClassChoice = ""
         if infoRecords:
             charID = infoRecords['_id']
             charDict = {}
@@ -2940,6 +2950,8 @@ class Character(commands.Cog):
 
                 levelUpEmbed.title = f'{charName} has leveled up to {newCharLevel}!\nCurrent CP: {totalCP} CP'
                 levelUpEmbed.description = f"{infoRecords['Race']} {charClass}\n**STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}" + f"\n{charFeatsGainedStr}{maxStatStr}\n{specialStatStr}"
+                if charClassChoice != "":
+                    levelUpEmbed.description += f"Multiclass into: **{charClassChoice}**"
                 levelUpEmbed.set_footer(text= levelUpEmbed.Empty)
                 levelUpEmbed.clear_fields()
 
@@ -3590,13 +3602,13 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and ((r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((r.emoji in alphaEmojis[:asiIndex]) or (str(r.emoji) == '❌')) and u == author
 
         def asiCharEmbedCheck2(r, u):
             sameMessage = False
             if charEmbedmsg2.id == r.message.id:
                 sameMessage = True
-            return sameMessage and ((r.emoji in numberEmojis[:6]) or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((r.emoji in alphaEmojis[:asiIndex]) or (str(r.emoji) == '❌')) and u == author
 
 
         featChoices = []
@@ -3643,11 +3655,20 @@ class Character(commands.Cog):
                     try:
                         charEmbed.clear_fields()    
                         statsString = ""
+                        asiString = ""
+                        asiList = []
+                        asiIndex = 0
                         for n in range(0,6):
-                            statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** "
-                        charEmbed.add_field(name=f"{statsString}\nReact with [1-6] to choose your first stat for your ASI:", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
+                            if (int(charStats[statNames[n]]) + 1 <= charStats['Max Stats'][statNames[n]]):
+                                statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** "
+                                asiString += f"{alphaEmojis[asiIndex]}: {statNames[n]}\n"
+                                asiList.append(statNames[n])
+                                asiIndex += 1
+                            else:
+                                statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** (MAX) "
+
+                        charEmbed.add_field(name=f"{statsString}\nReact to choose your first stat for your ASI:", value=asiString, inline=False)
                         await charEmbedmsg.edit(embed=charEmbed)
-                        for num in range(0,6): await charEmbedmsg.add_reaction(numberEmojis[num])
                         await charEmbedmsg.add_reaction('❌')
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=asiCharEmbedCheck, timeout=60)
                     except asyncio.TimeoutError:
@@ -3661,26 +3682,36 @@ class Character(commands.Cog):
                             await charEmbedmsg.clear_reactions()
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None, None
-                    asi = int(tReaction.emoji[0]) - 1
+                    asi = alphaEmojis.index(tReaction.emoji)
 
-                    if (int(charStats[statNames[asi]]) + 1 > charStats['Max Stats'][statNames[asi]]):
-                        await charEmbedmsg.delete()
-                        await channel.send(f"You cannot increase your character's {statNames[asi]} above your maximum of {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
-                        self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
-                        return None, None, None
+                    # May not need this at all due to choice omitting maxes
+                    # if (int(charStats[statNames[asi]]) + 1 > charStats['Max Stats'][statNames[asi]]):
+                    #     await charEmbedmsg.delete()
+                    #     await channel.send(f"You cannot increase your character's {statNames[asi]} above your maximum of {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
+                    #     self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                    #     return None, None, None
 
-                    charStats[statNames[asi]] = int(charStats[statNames[asi]]) + 1
-                    charEmbed.set_field_at(0,name=f"ASI First Stat", value=f"{numberEmojis[asi]}: {statNames[asi]}", inline=False)
+                    charStats[asiList[asi]] = int(charStats[asiList[asi]]) + 1
+                    charEmbed.set_field_at(0,name=f"ASI First Stat", value=f"{alphaEmojis[asi]}: {statNames[asi]}", inline=False)
                     if ctx.invoked_with == "levelup":
                          charEmbed.description = f"{race}: {charClass}\n**STR**:{charStats['STR']} **DEX**:{charStats['DEX']} **CON**:{charStats['CON']} **INT**:{charStats['INT']} **WIS**:{charStats['WIS']} **CHA**:{charStats['CHA']}"
 
                     try:
                         statsString = ""
+                        asiString = ""
+                        asiIndex = 0
+                        asiList = []
                         for n in range(0,6):
-                            statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** "
-                        charEmbed.add_field(name=f"{statsString}\nReact with [1-6] to choose your second stat for your ASI:", value=f"{numberEmojis[0]}: STR\n{numberEmojis[1]}: DEX\n{numberEmojis[2]}: CON\n{numberEmojis[3]}: INT\n{numberEmojis[4]}: WIS\n{numberEmojis[5]}: CHA", inline=False)
+                            if (int(charStats[statNames[n]]) + 1 <= charStats['Max Stats'][statNames[n]]):
+                                statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** "
+                                asiString += f"{alphaEmojis[asiIndex]}: {statNames[n]}\n"
+                                asiList.append(statNames[n])
+                                asiIndex += 1
+                            else:
+                                statsString += f"{statNames[n]}: **{charStats[statNames[n]]}** (MAX) "
+                            
+                        charEmbed.add_field(name=f"{statsString}\nReact to choose your second stat for your ASI:", value=asiString, inline=False)
                         charEmbedmsg2 = await channel.send(embed=charEmbed)
-                        for num in range(0,6): await charEmbedmsg2.add_reaction(numberEmojis[num])
                         await charEmbedmsg2.add_reaction('❌')
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=asiCharEmbedCheck2, timeout=60)
                     except asyncio.TimeoutError:
@@ -3695,14 +3726,15 @@ class Character(commands.Cog):
                             await charEmbedmsg2.delete()
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None, None
-                    asi = int(tReaction.emoji[0]) - 1
+                    asi = alphaEmojis.index(tReaction.emoji)
 
-                    if (int(charStats[statNames[asi]]) + 1 > charStats['Max Stats'][statNames[asi]]):
-                        await channel.send(f"You cannot increase your character's {statNames[asi]} above your MAX {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
-                        self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
-                        return None, None, None
+                    # May not need this at all due to choice omitting maxes
+                    # if (int(charStats[statNames[asi]]) + 1 > charStats['Max Stats'][statNames[asi]]):
+                    #     await channel.send(f"You cannot increase your character's {statNames[asi]} above your MAX {charStats['Max Stats'][statNames[asi]]}. Please try creating your character again.")
+                    #     self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+                    #     return None, None, None
 
-                    charStats[statNames[asi]] = int(charStats[statNames[asi]]) + 1
+                    charStats[asiList[asi]] = int(charStats[asiList[asi]]) + 1
                     if ctx.invoked_with == "levelup":
                          charEmbed.description = f"{race}: {charClass}\n**STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}"
                     await charEmbedmsg2.delete()

@@ -327,8 +327,9 @@ class Guild(commands.Cog):
                     return
 
                         
+                newGP = (charRecords['GP'] - float(gpFund)) + refundGP
                 guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
-                guildEmbed.description = f"Are you sure you want to fund ***{guildRecords['Name']}***?\n:warning: ***{charRecords['Name']}* will automatically join *{guildRecords['Name']}* after funding the guild.**\n\n✅: Yes\n\n❌: Cancel"
+                guildEmbed.description = f"Are you sure you want to fund ***{guildRecords['Name']}***?\n:warning: ***{charRecords['Name']}* will automatically join *{guildRecords['Name']}* after funding the guild.**\n\nCurrent gp: {charRecords['GP']}gp → New gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
 
                 if guildEmbedmsg:
@@ -356,7 +357,6 @@ class Guild(commands.Cog):
                 if  guildRecords['Funds'] + gpNeeded >= 6000  and oldFundGP < 6000:
                     refundGP = guildRecords['Funds'] - (6000 + gpNeeded)
 
-                newGP = (charRecords['GP'] - float(gpFund)) + refundGP
                 await author.add_roles(guild.get_role(int(guildRecords['Role ID'])), reason=f"Funded guild {guildRecords['Name']}")
 
 
