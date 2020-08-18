@@ -388,7 +388,7 @@ class Shop(commands.Cog):
                     return
 
                 elif int(charRecords['Inventory'][f"{bRecord['Name']}"]) < amount:
-                    await channel.send(f"You do not have **{amount}**x **{bRecord['Name']}** to sell!")
+                    await channel.send(f"""You do not have **{amount}**x **{bRecord['Name']}** to sell! Currently you only have **{charRecords['Inventory'][f"{bRecord['Name']}"]}**x of **{bRecord['Name']}**.""")
                     ctx.command.reset_cooldown(ctx)
                     return 
 
@@ -483,6 +483,11 @@ class Shop(commands.Cog):
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'spells',spellItem)
 
             if bRecord:
+                if bRecord["Level"] == 0:
+                    await channel.send(f"**{bRecord['Name']}** is a cantrip and cannot be copied into your spellbook!")
+                    ctx.command.reset_cooldown(ctx)
+                    return 
+                    
                 bookChoice = 0
                 gpNeeded = 0
                 shopEmbed.title = f"{charRecords['Name']} is copying spell: {bRecord['Name']}"
