@@ -11,6 +11,7 @@ def admin_or_owner():
         output = (role in ctx.message.author.roles) or ctx.message.author.id in [220742049631174656, 203948352973438995]
         return  output
     return commands.check(predicate)
+
 class Misc(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot

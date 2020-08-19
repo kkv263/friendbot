@@ -35,12 +35,14 @@ async def on_command_error(ctx,error):
     print(ctx.invoked_with)
     print(ctx.command.parent)
     print(error)
-
+    
     if isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
         await ctx.channel.send("There seems to be an unexpected or a missing closing quote mark somewhere, please check your format and retry the command. ")
         bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
         return
-
+    elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
+        return
+        
     elif isinstance(error, commands.CommandOnCooldown):
         commandParent = ctx.command.parent
         if commandParent is None:
@@ -54,8 +56,7 @@ async def on_command_error(ctx,error):
             await ctx.channel.send(f"Sorry, the command **`{commandPrefix}{commandParent}{ctx.invoked_with}`** is on cooldown for you! Try the command in the next " + "{:.1f}seconds".format(error.retry_after))
         return
 
-    elif ctx.cog is not None and ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
-        return
+
 
     elif isinstance(error, commands.CommandNotFound):
         await ctx.channel.send(f'Sorry, the command **`{commandPrefix}{ctx.invoked_with}`** is not valid, please try again!')

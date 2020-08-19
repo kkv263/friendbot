@@ -53,33 +53,123 @@ async def traceBack (ctx,error,silent=False):
         await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(220742049631174656).mention} has been notified.")
     raise error
 
-def calculateTreasure(seconds, role):
+def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
+    # calculate the CP gained during the game
     cp = ((seconds) // 1800) / 2
+    cp_multiplier = 1
+    # if the game was during the DM double rewards weekend and it is the DM character, increase the multiplier
+    if settingsRecord['ddmrw'] and char[0] == dmChar[0]:
+            cp_multiplier += 1
+            
+    unset = {}
+    crossTier = None
+    # if the character had the Double Rewards Buff applied
+    if 'Double Rewards Buff' in char[1]:
+        # and it was within the appropriate timeframe
+        if char[1]['Double Rewards Buff'] < (datetime.now() + timedelta(days=3)):
+            # increase the multiplier
+            cp_multiplier += 1
+        # remove the buff from the character
+        unset['Double Rewards Buff'] = 1
+    
+    # if the character had the Double Items Buff, remove it
+    if 'Double Items Buff' in char[1]:
+        unset['Double Items Buff'] = 1
+    
+    # calculate the CP with the bonuses included
+    cp *= cp_multiplier
+    
+    #######role = role.lower()
+    
+    # create a string representing which tier the character is in in order to create/manipulate the appropriate TP entry in the DB
+    tierTP = f"T{tier} TP"
+    # Level 20 characters haves access to exclusive items
+    if char[1]['Level'] >= 20:
+        tierTP = "T5 TP"
+    # get the current CP amount in terms of the current level (eg. 5 CP/10 CP)
+    cpSplit= char[1]['CP'].split('/')
+    # calculate how far into the current level CP the character is after the game
+    leftCP = (float(cp) + float(cpSplit[0])) 
 
-    # old rounding code 
-    # tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
+    
+    
+    # the Total CP limit of a Tier
+    cpThreshHold = 0
+    # the level of the character
+    charLevel = char[1]['Level']
+    crossCP = 0
+    crossTP = 0
+    crossGP = 0
+    cross_tp_multiplier = 0
+    cross_gp_multiplier = 0
+    totalCP = (((charLevel-5) * 10) + leftCP + 16)
+    
+    if charLevel < 5:
+        cpThreshHold = 16
+        totalCP = ((charLevel -1) * 4) + leftCP
+        crossTier = 'T2 TP'
+        cross_gp_multiplier = tier_reward_dictionary[1][0]
+        cross_tp_multiplier = tier_reward_dictionary[1][1]
+    elif charLevel < 11:
+        cpThreshHold = 60 + 16
+        crossTier = 'T3 TP'
+        cross_gp_multiplier = tier_reward_dictionary[2][0]
+        cross_tp_multiplier = tier_reward_dictionary[2][1]
+    elif charLevel < 17:
+        cpThreshHold = 60 + 60 + 16
+        crossTier = 'T4 TP'
+        cross_gp_multiplier = tier_reward_dictionary[3][0]
+        cross_tp_multiplier = tier_reward_dictionary[3][1]
+    elif charLevel < 20:
+        cpThreshHold = 30 + 60 + 60 + 16
+        crossTier = 'T5 TP'
+        cross_gp_multiplier = tier_reward_dictionary[3][0]
+        cross_tp_multiplier = tier_reward_dictionary[3][1]
 
-    tp = cp / 2
-    gp = cp * 50
-    role = role.lower()
+    if totalCP > cpThreshHold:
+        crossCP += totalCP - cpThreshHold
+        crossTP = crossCP * cross_tp_multiplier
+        crossGP = crossCP * cross_gp_multiplier
+            
+    cp -= crossCP
+    tp = cp * tier_reward_dictionary[tier-1][1]
+    gp = cp * tier_reward_dictionary[tier-1][0] + crossGP
+ 
+    finalCPString = f'{leftCP}/{float(cpSplit[1])}'
+    charEndConsumables = char[1]['Consumables']
+    charEndMagicList = char[1]['Magic Items']
+    if charEndConsumables == '':
+        charEndConsumables = 'None'
+    if charEndMagicList == '':
+        charEndMagicList = 'None'
 
-    if role == 'journey':
-      gp = cp * 100
+    if tierTP not in char[1]:
+        tpAdd = 0
+    else:
+        tpAdd = char[1][tierTP]
 
-    if role == "elite":
-      tp = cp
-      gp = cp * 150
+    if float(cp) >= .5:
+        char[1]['Games'] += 1
 
-    if role == "true":
-      tp = cp
-      gp = cp * 200
+    if gameID is None:
+        returnData = {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp, 'CP': finalCPString, 'Games':char[1]['Games']}}}
+    else:
+        returnData = {'_id': char[3],  "fields": {"$set": {f"GID{str(gameID)}" : f'{{"GP": {char[1]["GP"] + gp}, "{tierTP}": {tpAdd + tp},"Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": "{totalCP}", "Games":{char[1]["Games"]}}}'}}}
 
-    # refactor later
-    dcp = int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-    dtp = int(decimal.Decimal((tp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-    dgp = int(decimal.Decimal((gp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-
-    return [cp, tp, gp, dcp, dtp, dgp]
+    if death:
+        returnData =  {'_id': char[3], "fields": {"$set": {'Death': f'{{"GP": {gp}, "{tierTP}": {tp}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {cp+crossCP}}}'}}}
+    
+    elif unset:
+        returnData['fields']['$unset'] = unset
+    
+    if crossTier:
+        returnData['fields']['$set'][crossTier] = crossTP 
+    print("Tier", tier)
+    print("crossCP", crossCP)
+    print("crossGP", crossGP)
+    print("mult", cross_gp_multiplier)
+    print([cp+crossCP, tp+crossTP, gp], returnData)
+    return [cp+crossCP, tp+crossTP, gp], returnData
     
 
     
@@ -93,7 +183,7 @@ table -> the table in the database that should be searched in, most common table
 query -> the word which will be searched for in the "Name" property of elements, adjustments were made so that also a special property "Grouped" also gets searched
 singleItem -> if only one item should be returned
 """
-async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False):
+async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False, tier=4):
     
     #channel and author of the original message creating this call
     channel = ctx.channel
@@ -125,7 +215,24 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     else:
         #search through the table for an element were the Name or Grouped property contain the query
         if table == "spells":
-            filterDic = {"Name": {"$regex": query, '$options': 'i' }}
+            filterDic = {"Name": {"$regex": query, '$options': 'i' }, 'Level': {'$gt':0}}
+        elif table == "rit":
+            filterDic = {"$or": [
+                            {
+                              "Name": {
+                                "$regex": query,
+                                #make the check case-insensitively
+                                "$options": "i"
+                              }
+                            },
+                            {
+                              "Grouped": {
+                                "$regex": query,
+                                "$options": "i"
+                              }
+                            }
+                          ],
+                          'Tier': {'$lt':tier+1}}
         else:
             filterDic = {"$or": [
                             {
@@ -262,7 +369,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             #if only 1 item was left, simply return it
             return records[0], apiEmbed, apiEmbedmsg
 
-async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
+async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False, customError=False):
     channel = ctx.channel
     author = ctx.author
     guild = ctx.guild
@@ -280,7 +387,7 @@ async def checkForChar(ctx, char, charEmbed="", authorCheck=None, mod=False):
         charRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": char, '$options': 'i' }}))
 
     if charRecords == list():
-        if not mod:
+        if not mod and not customError:
             await channel.send(content=f'I was not able to find your character named "**{char}**". Please check your spelling and try again.')
         ctx.command.reset_cooldown(ctx)
         return None, None
@@ -426,6 +533,8 @@ timezoneVar = 'US/Central'
 
 # ritTierArray = getTiers(ritSheet.row_values(2))
 # ritSubArray = ritSheet.row_values(3)
+
+tier_reward_dictionary = [[50, 0.5], [100, 0.5], [150, 1], [200, 1]]
 
 # Quest Buffs - 2x Rewards, 2x Items, Recruitment Drive
 questBuffsDict = {'2xRewards': [20, "2x CP,TP, and gp"], 
