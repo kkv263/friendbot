@@ -2289,6 +2289,12 @@ class Character(commands.Cog):
                 if 'Games' in userRecords:
                     totalGamesPlayed += userRecords['Games']
 
+                if "Guilds" in userRecords:
+                    guildNoodles = "• "
+                    guildNoodles += "\n• ".join(userRecords["Guilds"])
+                    charEmbed.add_field(name="Guilds", value=f"""You have created **{len(userRecords["Guilds"])}** guilds using the noodles:\n {guildNoodles}""")
+                guildNoodles = "\n".join(userRecords["Guilds"])
+
                 if "Campaigns" in userRecords:
                     campaignString = ""
                     for u, v in userRecords['Campaigns'].items():
@@ -3614,11 +3620,12 @@ class Character(commands.Cog):
         featChoices = []
         featsPickedList = []
         featsChosen = ""
-
+        featsCollection = db.feats
 
         if 'Max Stats' not in charStats:
             charStats['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
 
+        spellcasting = False
         for f in featLevels:
                 charEmbed.clear_fields()
                 if f != 'Human (Variant)':
@@ -3743,12 +3750,11 @@ class Character(commands.Cog):
                 elif choice == 2:
                     if featChoices == list():
                         fRecords, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'feats')
-
                         for feat in fRecords:
                             featList = []
                             meetsRestriction = False
 
-                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats and 'Race Unavailable' not in feat:
+                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats and 'Race Unavailable' not in feat and 'Require Spellcasting' not in feat:
                                 featChoices.append(feat)
 
                             else:
@@ -3786,8 +3792,25 @@ class Character(commands.Cog):
                                         if int(charStats[stat]) >= statNumber:
                                             meetsRestriction = True
 
+                                if "Require Spellcasting" in feat:
+                                    for c in cRecord:
+                                        if "Spellcasting" in c["Class"]:
+                                            if c["Class"]["Spellcasting"] == True or c["Class"]["Spellcasting"] in charClass:
+                                                meetsRestriction = True
+                                    
+                                    spellcastingFeats = list(featsCollection.find({"Spellcasting": True}))
+                                    for f in spellcastingFeats:
+                                        if f["Name"] in charFeats:
+                                             meetsRestriction = True
+
                                 if meetsRestriction:
                                     featChoices.append(feat)
+
+                    # Whenever a feat that grants spellcasting gets picked.
+                    elif spellcasting == True:
+                        spellcastingFeats = list(featsCollection.find({"Require Spellcasting": True}))
+                        for f in spellcastingFeats:
+                            featChoices.append(f)
                     else:
                         featChoices.remove(featPicked)
 
@@ -3853,6 +3876,11 @@ class Character(commands.Cog):
                             await charEmbedmsg.clear_reactions()
                     
                     featPicked = featChoices[(page * perPage) + alphaEmojis.index(react.emoji)]
+
+                    # If feat picked grants spellcasting
+                    if "Spellcasting" in featPicked:
+                        spellcasting = True
+
                     featsPickedList.append(featPicked)
 
                     # Special Case of Picked Ritual Caster

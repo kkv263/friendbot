@@ -578,10 +578,11 @@ class Shop(commands.Cog):
                             return   
 
                 spellCopied = None
+                spellScrollAmount = 0
                 for c in consumes:
                     if bRecord['Name'] in c and 'Spell Scroll' in c:
                         spellCopied = c
-                        break
+                        spellScrollAmount += 1
 
                       
                 scrollChoice = "Scroll"
@@ -638,6 +639,7 @@ class Shop(commands.Cog):
 
 
                 elif scrollChoice == "Scroll":
+                    spellScrollAmount -= 1
                     gpNeeded = bRecord['Level'] * 50
                     if charRecords['Level'] >= 2 and bRecord['School'] in charRecords['Class']:
                         gpNeeded = gpNeeded / 2
@@ -708,7 +710,12 @@ class Shop(commands.Cog):
 
                             ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(floor(n/10)%10!=1)*(n%10<4)*n%10::4])
                             shopEmbed.title = f"Shop (Copy): {charRecords['Name']}"
-                            shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({ordinal(bRecord['Level'])} level) into your {bookChoice} for {gpNeeded} gp!\nIf you had a spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\nCurrent gp: {newGP} gp\n"
+
+                            if spellScrollAmount == 0:
+                                shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({ordinal(bRecord['Level'])} level) into your {bookChoice} for {gpNeeded} gp!\nYou copied your last spell scroll of **{bRecord['Name']}**, it has been removed from your inventory. \n\nCurrent gp: {newGP} gp\n"
+                            else:
+                                shopEmbed.description = f"You have copied the **{bRecord['Name']}** spell ({ordinal(bRecord['Level'])} level) into your {bookChoice} for {gpNeeded} gp!\nAfter copying the spell scroll of **{bRecord['Name']}**, you have {spellScrollAmount} spell scroll(s) of **{bRecord['Name']}** left. \n\nCurrent gp: {newGP} gp\n"
+
                             if 'Free Spells' in charRecords:
                                 fsString = ""
                                 fsIndex = 0
