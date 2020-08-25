@@ -2274,7 +2274,7 @@ class Character(commands.Cog):
                 for charDict in charRecords:
                     totalGamesPlayed += charDict['Games'] 
                     tempCharString = charString
-                    charString += f"• ***{charDict['Name']}***: Lv {charDict['Level']}, {charDict['Race']}, {charDict['Class']}\n"
+                    charString += f"• **{charDict['Name']}**: Lv {charDict['Level']}, {charDict['Race']}, {charDict['Class']}\n"
 
 
                     if 'Guild' in charDict:
@@ -2292,7 +2292,7 @@ class Character(commands.Cog):
                 if "Guilds" in userRecords:
                     guildNoodles = "• "
                     guildNoodles += "\n• ".join(userRecords["Guilds"])
-                    charEmbed.add_field(name="Guilds", value=f"""You have created **{len(userRecords["Guilds"])}** guilds using the noodles:\n {guildNoodles}""")
+                    charEmbed.add_field(name="Guilds", value=f"""You have created **{len(userRecords["Guilds"])}** guilds:\n {guildNoodles}""")
                 guildNoodles = "\n".join(userRecords["Guilds"])
 
                 if "Campaigns" in userRecords:
@@ -2390,11 +2390,11 @@ class Character(commands.Cog):
 
             cpSplit = charDict['CP'].split('/')
             if float(cpSplit[0]) >= float(cpSplit[1]):
-                footer += f'\n:warning: You need to level up! Use `{commandPrefix}levelup` before playing in another quest.'
+                footer += f'\nYou need to level up! Use `{commandPrefix}levelup "character name"` before playing in another quest.'
 
 
             if charLevel == 4 or charLevel == 10 or charLevel == 16:
-                footer += f'\n:warning: You will no longer receive Tier {role} TP the next time you level up! Please plan accordingly.'
+                footer += f'\nYou will no longer receive Tier {role} TP the next time you level up! Please plan accordingly.'
 
             if 'Death' in charDict:
                 statusEmoji = "⚰️"
@@ -2609,7 +2609,7 @@ class Character(commands.Cog):
                 return
 
             if charLevel > 19:
-                await channel.send(f"{infoRecords['Name']} is level 20 and cannot level up anymore.")
+                await channel.send(f"***{infoRecords['Name']}*** is level 20 and cannot level up anymore.")
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
                 
@@ -3906,7 +3906,7 @@ class Character(commands.Cog):
                         ritualClasses = ["Bard", "Cleric", "Druid", "Sorcerer", "Warlock", "Wizard"]
                         charEmbed.clear_fields()
                         charEmbed.set_footer(text=charEmbed.Empty)
-                        charEmbed.add_field(name="For the feat **Ritual Caster**, please pick the spellcasting class.", value=f"{alphaEmojis[0]}: Bard\n{alphaEmojis[1]}: Cleric\n{alphaEmojis[2]}: Druid\n{alphaEmojis[3]}: Sorcerer\n{alphaEmojis[4]}: Warlock\n{alphaEmojis[5]}: Wizard\n", inline=False)
+                        charEmbed.add_field(name="For the **Ritual Caster** feat, please pick the spellcasting class.", value=f"{alphaEmojis[0]}: Bard\n{alphaEmojis[1]}: Cleric\n{alphaEmojis[2]}: Druid\n{alphaEmojis[3]}: Sorcerer\n{alphaEmojis[4]}: Warlock\n{alphaEmojis[5]}: Wizard\n", inline=False)
 
                         try:
                             await charEmbedmsg.edit(embed=charEmbed)
@@ -3936,7 +3936,7 @@ class Character(commands.Cog):
                             ritualSpellsString += f"{alphaEmojis[alphaIndex]}: {r['Name']}\n"
                             alphaIndex += 1
 
-                        charEmbed.set_field_at(0, name=f"For the feat **Ritual Caster**, please pick the spellcasting class.", value=f"{tReaction.emoji}: {ritualClass}", inline=False)
+                        charEmbed.set_field_at(0, name=f"For the **Ritual Caster** feat, please pick the spellcasting class.", value=f"{tReaction.emoji}: {ritualClass}", inline=False)
                         charEmbed.add_field(name=f"Please pick two {ritualClass} spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
                         ritualChoiceList = {charEmbedmsg.id:set()}
 
