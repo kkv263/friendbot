@@ -2274,7 +2274,7 @@ class Character(commands.Cog):
                 for charDict in charRecords:
                     totalGamesPlayed += charDict['Games'] 
                     tempCharString = charString
-                    charString += f"• ***{charDict['Name']}***: Lv {charDict['Level']}, {charDict['Race']}, {charDict['Class']}\n"
+                    charString += f"• **{charDict['Name']}**: Lv {charDict['Level']}, {charDict['Race']}, {charDict['Class']}\n"
 
 
                     if 'Guild' in charDict:
@@ -2288,6 +2288,12 @@ class Character(commands.Cog):
 
                 if 'Games' in userRecords:
                     totalGamesPlayed += userRecords['Games']
+
+                if "Guilds" in userRecords:
+                    guildNoodles = "• "
+                    guildNoodles += "\n• ".join(userRecords["Guilds"])
+                    charEmbed.add_field(name="Guilds", value=f"""You have created **{len(userRecords["Guilds"])}** guilds:\n {guildNoodles}""")
+                guildNoodles = "\n".join(userRecords["Guilds"])
 
                 if "Campaigns" in userRecords:
                     campaignString = ""
@@ -2384,11 +2390,11 @@ class Character(commands.Cog):
 
             cpSplit = charDict['CP'].split('/')
             if float(cpSplit[0]) >= float(cpSplit[1]):
-                footer += f'\n:warning: You need to level up! Use `{commandPrefix}levelup` before playing in another quest.'
+                footer += f'\nYou need to level up! Use `{commandPrefix}levelup "character name"` before playing in another quest.'
 
 
             if charLevel == 4 or charLevel == 10 or charLevel == 16:
-                footer += f'\n:warning: You will no longer receive Tier {role} TP the next time you level up! Please plan accordingly.'
+                footer += f'\nYou will no longer receive Tier {role} TP the next time you level up! Please plan accordingly.'
 
             if 'Death' in charDict:
                 statusEmoji = "⚰️"
@@ -2603,7 +2609,7 @@ class Character(commands.Cog):
                 return
 
             if charLevel > 19:
-                await channel.send(f"{infoRecords['Name']} is level 20 and cannot level up anymore.")
+                await channel.send(f"***{infoRecords['Name']}*** is level 20 and cannot level up anymore.")
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
                 
@@ -3614,11 +3620,12 @@ class Character(commands.Cog):
         featChoices = []
         featsPickedList = []
         featsChosen = ""
-
+        featsCollection = db.feats
 
         if 'Max Stats' not in charStats:
             charStats['Max Stats'] = {'STR':20, 'DEX':20, 'CON':20, 'INT':20, 'WIS':20, 'CHA':20}
 
+        spellcasting = False
         for f in featLevels:
                 charEmbed.clear_fields()
                 if f != 'Human (Variant)':
@@ -3743,12 +3750,11 @@ class Character(commands.Cog):
                 elif choice == 2:
                     if featChoices == list():
                         fRecords, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'feats')
-
                         for feat in fRecords:
                             featList = []
                             meetsRestriction = False
 
-                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats and 'Race Unavailable' not in feat:
+                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats and 'Race Unavailable' not in feat and 'Require Spellcasting' not in feat:
                                 featChoices.append(feat)
 
                             else:
@@ -3786,8 +3792,25 @@ class Character(commands.Cog):
                                         if int(charStats[stat]) >= statNumber:
                                             meetsRestriction = True
 
+                                if "Require Spellcasting" in feat:
+                                    for c in cRecord:
+                                        if "Spellcasting" in c["Class"]:
+                                            if c["Class"]["Spellcasting"] == True or c["Class"]["Spellcasting"] in charClass:
+                                                meetsRestriction = True
+                                    
+                                    spellcastingFeats = list(featsCollection.find({"Spellcasting": True}))
+                                    for f in spellcastingFeats:
+                                        if f["Name"] in charFeats:
+                                             meetsRestriction = True
+
                                 if meetsRestriction:
                                     featChoices.append(feat)
+
+                    # Whenever a feat that grants spellcasting gets picked.
+                    elif spellcasting == True:
+                        spellcastingFeats = list(featsCollection.find({"Require Spellcasting": True}))
+                        for f in spellcastingFeats:
+                            featChoices.append(f)
                     else:
                         featChoices.remove(featPicked)
 
@@ -3853,6 +3876,11 @@ class Character(commands.Cog):
                             await charEmbedmsg.clear_reactions()
                     
                     featPicked = featChoices[(page * perPage) + alphaEmojis.index(react.emoji)]
+
+                    # If feat picked grants spellcasting
+                    if "Spellcasting" in featPicked:
+                        spellcasting = True
+
                     featsPickedList.append(featPicked)
 
                     # Special Case of Picked Ritual Caster
@@ -3878,7 +3906,7 @@ class Character(commands.Cog):
                         ritualClasses = ["Bard", "Cleric", "Druid", "Sorcerer", "Warlock", "Wizard"]
                         charEmbed.clear_fields()
                         charEmbed.set_footer(text=charEmbed.Empty)
-                        charEmbed.add_field(name="For the feat **Ritual Caster**, please pick the spellcasting class.", value=f"{alphaEmojis[0]}: Bard\n{alphaEmojis[1]}: Cleric\n{alphaEmojis[2]}: Druid\n{alphaEmojis[3]}: Sorcerer\n{alphaEmojis[4]}: Warlock\n{alphaEmojis[5]}: Wizard\n", inline=False)
+                        charEmbed.add_field(name="For the **Ritual Caster** feat, please pick the spellcasting class.", value=f"{alphaEmojis[0]}: Bard\n{alphaEmojis[1]}: Cleric\n{alphaEmojis[2]}: Druid\n{alphaEmojis[3]}: Sorcerer\n{alphaEmojis[4]}: Warlock\n{alphaEmojis[5]}: Wizard\n", inline=False)
 
                         try:
                             await charEmbedmsg.edit(embed=charEmbed)
@@ -3908,7 +3936,7 @@ class Character(commands.Cog):
                             ritualSpellsString += f"{alphaEmojis[alphaIndex]}: {r['Name']}\n"
                             alphaIndex += 1
 
-                        charEmbed.set_field_at(0, name=f"For the feat **Ritual Caster**, please pick the spellcasting class.", value=f"{tReaction.emoji}: {ritualClass}", inline=False)
+                        charEmbed.set_field_at(0, name=f"For the **Ritual Caster** feat, please pick the spellcasting class.", value=f"{tReaction.emoji}: {ritualClass}", inline=False)
                         charEmbed.add_field(name=f"Please pick two {ritualClass} spells from this list to add to your ritual book.", value=ritualSpellsString, inline=False)
                         ritualChoiceList = {charEmbedmsg.id:set()}
 
