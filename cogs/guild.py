@@ -329,7 +329,7 @@ class Guild(commands.Cog):
                         
                 newGP = (charRecords['GP'] - float(gpFund)) + refundGP
                 guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
-                guildEmbed.description = f"Are you sure you want to fund ***{guildRecords['Name']}***?\n:warning: ***{charRecords['Name']}* will automatically join *{guildRecords['Name']}* after funding the guild.**\n\nCurrent gp: {charRecords['GP']}gp → New gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                guildEmbed.description = f"Are you sure you want to fund ***{guildRecords['Name']}***?\n:warning: ***{charRecords['Name']}* will automatically join *{guildRecords['Name']}* after funding the guild.**\n\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
 
                 if guildEmbedmsg:
