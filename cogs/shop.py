@@ -53,14 +53,16 @@ class Shop(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
 
+
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @shop.command()
-    async def buy(self, ctx, charName, buyItem, amount=1):
+    async def buy(self, ctx, charName, buyItem, amount=1.0):
         channel = ctx.channel
         author = ctx.author
         shopEmbed = discord.Embed()
         shopCog = self.bot.get_cog('Shop')
-
+        if  isinstance(amount, float) and not ("misc" == buyItem.lower() or "miscellaneous" == buyItem.lower()):
+            raise commands.BadArgument()
         # Check if character exists
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
 
@@ -94,21 +96,14 @@ class Shop(commands.Cog):
 
                 bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', 'spell scroll') 
                 bRecord['Name'] = f"Spell Scroll ({sRecord['Name']})"
-    
                 # GP Prices for Spell Scrolls
-                if sRecord['Level'] == 0:
-                    bRecord['GP'] = 25
-                elif sRecord['Level'] == 1:
-                    bRecord['GP'] = 75
-                elif sRecord['Level'] == 2:
-                    bRecord['GP'] = 150
-                elif sRecord['Level'] == 3:
-                    bRecord['GP'] = 300
-                elif sRecord['Level'] == 4:
-                    bRecord['GP'] = 500
-                elif sRecord['Level'] == 5:
-                    bRecord['GP'] = 1000
+                spell_scroll_costs = [25, 75, 150, 300, 500, 1000]
+                
+                bRecord['GP'] = spell_scroll_costs[sRecord['Level']]
 
+            elif "misc" == buyItem.lower() or "miscellaneous" == buyItem.lower():
+                bRecord= {"GP" : amount, "Misc" : True, "Name": "Miscellaneous"}
+                amount = 1
             # If it's anything else, see if it exists
             else:
                 bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop',buyItem) 
@@ -203,8 +198,10 @@ class Shop(commands.Cog):
                         ctx.command.reset_cooldown(ctx)
                         return
                     elif tReaction.emoji == '✅':
+                        if "Misc" in bRecord:
+                            pass
                         # If it's a consumable, throw it in consumables, otherwise magic item list
-                        if "Consumable" in bRecord:
+                        elif "Consumable" in bRecord:
                             if charRecords['Consumables'] != "None":
                                 charRecords['Consumables'] += ', ' + bRecord['Name']
                             else:

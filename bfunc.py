@@ -257,7 +257,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         records = list(collection.find(filterDic))
     
     #turn the query into a regex expression
-    r = re.compile(query)
+    r = re.compile(query, re.IGNORECASE)
     #restore the original query
     query = query.replace("\\", "")
     #sort elements by either the name, or the first element of the name list in case it is a list

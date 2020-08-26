@@ -210,7 +210,7 @@ class Character(commands.Cog):
         if lvl < 5:
             maxCP = 4
         else:
-            maxCP = 8
+            maxCP = 10
         charDict['CP'] = f"0/{maxCP}"
         
         
@@ -569,7 +569,7 @@ class Character(commands.Cog):
                             tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
                         except asyncio.TimeoutError:
                             await charEmbedmsg.delete()
-                            await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                            await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                             self.bot.get_command('create').reset_cooldown(ctx)
                             return 
                         else:
@@ -625,7 +625,7 @@ class Character(commands.Cog):
                                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
                                 except asyncio.TimeoutError:
                                     await charEmbedmsg.delete()
-                                    await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                                    await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                                     self.bot.get_command('create').reset_cooldown(ctx)
                                     return 
                                 else:
@@ -1481,7 +1481,7 @@ class Character(commands.Cog):
                             tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
                         except asyncio.TimeoutError:
                             await charEmbedmsg.delete()
-                            await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                            await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                             self.bot.get_command('respec').reset_cooldown(ctx)
                             return 
                         else:
@@ -1537,7 +1537,7 @@ class Character(commands.Cog):
                                     tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
                                 except asyncio.TimeoutError:
                                     await charEmbedmsg.delete()
-                                    await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                                    await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                                     self.bot.get_command('respec').reset_cooldown(ctx)
                                     return 
                                 else:
@@ -2807,7 +2807,7 @@ class Character(commands.Cog):
                                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=alphaEmbedCheck, timeout=60)
                             except asyncio.TimeoutError:
                                 await levelUpEmbedmsg.delete()
-                                await channel.send('Level up timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                                await channel.send(f'Level up timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                                 self.bot.get_command('levelup').reset_cooldown(ctx)
                                 return
                             else:
@@ -3466,7 +3466,7 @@ class Character(commands.Cog):
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=slashCharEmbedcheck, timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg.delete()
-                        await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                        await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None
                     else:
@@ -3571,7 +3571,7 @@ class Character(commands.Cog):
             tReaction, tUser = await self.bot.wait_for("reaction_add", check=classEmbedCheck, timeout=60)
         except asyncio.TimeoutError:
             await charEmbedmsg.delete()
-            await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+            await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
             return None, None
         else:
@@ -3635,7 +3635,7 @@ class Character(commands.Cog):
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=featCharEmbedCheck, timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg.delete()
-                        await channel.send('Feat selection timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                        await channel.send(f'Feat selection timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None, None
                     else:
@@ -3673,7 +3673,7 @@ class Character(commands.Cog):
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=asiCharEmbedCheck, timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg.delete()
-                        await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                        await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None, None
                     else:
@@ -3716,7 +3716,7 @@ class Character(commands.Cog):
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=asiCharEmbedCheck2, timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg2.delete()
-                        await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                        await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                         self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                         return None, None, None
                     else:
@@ -3886,7 +3886,7 @@ class Character(commands.Cog):
                             tReaction, tUser = await self.bot.wait_for("reaction_add", check=ritualFeatEmbedcheck, timeout=60)
                         except asyncio.TimeoutError:
                             await charEmbedmsg.delete()
-                            await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                            await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                             self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                             return None, None, None
                         else:
@@ -3920,7 +3920,7 @@ class Character(commands.Cog):
                                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=ritualSpellEmbedCheck, timeout=60)
                             except asyncio.TimeoutError:
                                 await charEmbedmsg.delete()
-                                await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                                await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                                 self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                                 return None, None, None
                             else:
@@ -3965,7 +3965,7 @@ class Character(commands.Cog):
                                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=slashFeatEmbedcheck, timeout=60)
                             except asyncio.TimeoutError:
                                 await charEmbedmsg.delete()
-                                await channel.send('Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
+                                await channel.send(f'Character creation timed out! Try again using the same command:\n```yaml\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"```')
                                 self.bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
                                 return None, None, None
                             else:
