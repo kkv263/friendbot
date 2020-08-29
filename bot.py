@@ -194,7 +194,7 @@ async def help(ctx, *, pageString=''):
     helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rankup "character name"', value="Upgrade the specified character's rank in the guild which they currently belong to by donating gp.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Leaving a Guild\n{commandPrefix}guild leave "character name"', value="Leave the guild which the specified character currently belongs to.", inline=False)
     helpEmbedGuild.add_field(name=f'▫️ Creating a Guild\n{commandPrefix}guild create "character name" "guild name" @role #channel', value="Create a guild after the role and channel have been designated. It will require funding before it is officially opened.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" gp "guild name"', value="Fund the establishment of the specified guild. A character who donates the minimum amount of funding required will immediately join the guild's roster.", inline=False)
+    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" "guild name" gp', value="Fund the establishment of the specified guild. A character who donates the minimum amount of funding required will immediately join the guild's roster.", inline=False)
 
 
 
