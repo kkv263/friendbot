@@ -225,9 +225,9 @@ class Timer(commands.Cog):
         # the DM entry will always be the front entry, this property is maintained by the code
         signedPlayers = [[author,"No Rewards",['None'],"None"]]
         
-        signedPlayers = [[author,"No Rewards",['None'],"None"], 
-                            [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc", "Level": 4, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/4", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-                            [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc", "Level": 4, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "3/4", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
+        #signedPlayers = [[author,"No Rewards",['None'],"None"], 
+        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc", "Level": 4, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/4", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
+        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc", "Level": 4, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "3/4", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
         #set up a variable for the current state of the timer
         timerStarted = False
         
@@ -1671,7 +1671,7 @@ class Timer(commands.Cog):
             deathChars = []
             data = {"records":[]}
             # Session Log Channel
-            logChannel = self.bot.get_channel(728456783466725427)  # 728456783466725427 737076677238063125
+            logChannel = self.bot.get_channel(737076677238063125)  # 728456783466725427 737076677238063125
             # logChannel = self.bot.get_channel(577227687962214406)
             
             # check if the game has rewards

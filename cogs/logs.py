@@ -44,7 +44,7 @@ class Log(commands.Cog):
 
         # Logs channel 
         # channel = self.bot.get_channel(577227687962214406) 
-        channel = self.bot.get_channel(728456783466725427) # 728456783466725427 737076677238063125
+        channel = self.bot.get_channel(737076677238063125) # 728456783466725427 737076677238063125
 
 
         limit = 100
