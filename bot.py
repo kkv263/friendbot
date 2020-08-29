@@ -106,8 +106,8 @@ async def help(ctx, *, pageString=''):
     helpEmbedMenu.title = 'Bot Friend Commands - Table of Contents'
     helpEmbedMenu.description = 'Please react to the group of commands you would like to see and gain more knowledge about.'
     helpEmbedMenu.add_field(name=f"1️⃣ Character Commands\n{commandPrefix}help char", value="Manage all facets of your character(s).", inline=False)
-    helpEmbedMenu.add_field(name=f"2️⃣ Timer (Pre/Post-Game) Commands\n{commandPrefix}help timer1", value="Prepare and manage the timer before and after the quest.", inline=False)
-    helpEmbedMenu.add_field(name=f"3️⃣ Timer (During Game) Commands\n{commandPrefix}help timer2", value="Manage the timer during a quest.", inline=False)
+    helpEmbedMenu.add_field(name=f"2️⃣ Timer (Pre/Post-Quest) Commands\n{commandPrefix}help timer1", value="Prepare and manage the timer before and after the quest.", inline=False)
+    helpEmbedMenu.add_field(name=f"3️⃣ Timer (During Quest) Commands\n{commandPrefix}help timer2", value="Manage the timer during a quest.", inline=False)
     helpEmbedMenu.add_field(name=f"4️⃣ Item Table Commands\n{commandPrefix}help itemtable", value="Look up items on the Magic Item Table (MIT) and Reward Item Table (RIT).", inline=False)
     helpEmbedMenu.add_field(name=f"5️⃣ Shop Commands\n{commandPrefix}help shop", value="Purchase or sell items.", inline=False)
     helpEmbedMenu.add_field(name=f"6️⃣ TP Commands\n{commandPrefix}help tp", value="Acquire magic items.", inline=False)
@@ -117,47 +117,78 @@ async def help(ctx, *, pageString=''):
 # CHARACTER COMMANDS MENU ($help char)
 
     helpEmbedChar.title = 'Character Commands'
-    helpEmbedChar.add_field(name=f'▫️ User Information\n{commandPrefix}user', value="View your total quests played with all of your characters, your Noodles, and a list of your characters.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ User Information\n{commandPrefix}user', value="View the total number of one-shots that you’ve played in, the number of Noodles you have, the guilds you’ve created, and a list of your characters.", inline=False)
+
     helpEmbedChar.add_field(name=f'▫️ Character Creation\n{commandPrefix}create "character name" level "race" "class" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character with the specified parameters.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Multiclass Character Creation\n{commandPrefix}create "character name" level "race" "class1 # / class2 #..." "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a character as above, except with multiclassing!", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Leveling Up\n{commandPrefix}levelup "character name"\n[{commandPrefix}lvlup, {commandPrefix}lvl, {commandPrefix}lvl]', value="Level up the specified character to the next level.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Respec\n{commandPrefix}respec "character name" "new character name" "race" "class" "background" STR DEX CON INT WIS CHA', value="Respec the specified character based on the amount of CP they have. You can choose a new name, class, race, background, and stats for them; however, TP and gp will be assigned to them based on the amount of CP they have and everything else that they had will be reset.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Multiclass Character Creation\n{commandPrefix}create "character name" total level "race" "class1 level / class2 level, [...]" "background" STR DEX CON INT WIS CHA "magic item1, magic item2, [...]" "reward item1, reward item2, [...]"', value="Create a multiclass character with the specified parameters.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Leveling Up\n{commandPrefix}levelup "character name"\n[{commandPrefix}lvlup, {commandPrefix}lvl, {commandPrefix}lv]', value="Level up the specified character to the next level (if possible).", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Respec\n{commandPrefix}respec "character name" "new character name" "race" "class" "background" STR DEX CON INT WIS CHA', value="Respec the specified character into a single class if they are under level 5. TP and gp will be assigned to them based on the amount of CP they have and their entire inventory will be reset.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Multiclass Respec\n{commandPrefix}respec "character name" "new character name" "race" "class1 level / class2 level / [...]" "background" STR DEX CON INT WIS CHA', value="Respec the specified character into a multiclass if they are under level 5.", inline=False)
+
     helpEmbedChar.add_field(name=f'▫️ Character Information\n{commandPrefix}info "character name"\n[{commandPrefix}char, {commandPrefix}i]', value="View the stats and general information of the specified character.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Inventory\n{commandPrefix}inventory "character name"\n[{commandPrefix}inv, {commandPrefix}bag]', value="View the inventory of the specified character. The inventory lists mundane items, consumables, and magic items.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Character Image\n{commandPrefix}image "character name" "URL"\n[{commandPrefix}img]', value="Add an image to the specified character's information page (`$info` command) using a URL. Please keep images SFW!", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Attunement\n{commandPrefix}attune "character name" "magic item"\n[{commandPrefix}att]', value="Attune to a magic item with the specified character. Stat bonuses from magic items are applied to the character's stats when attuned to the item.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Unattunement\n{commandPrefix}unattune "character name" "magic item"\n[{commandPrefix}unatt, {commandPrefix}uatt]', value="Unattune from a magic item with the specified character. Stat bonuses from magic items are removed from the character's stats when unattuned from the item.", inline=False)
-    helpEmbedChar.add_field(name=f'▫️ Retire\n{commandPrefix}retire "character name"', value="Retire the specified character. They will no longer be accessible.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Character Inventory\n{commandPrefix}inventory "character name"\n[{commandPrefix}inv, {commandPrefix}bag]', value="View the inventory of the specified character.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Character Image\n{commandPrefix}image "character name" "URL"\n[{commandPrefix}img]', value="Add an image to the specified character's information page using a URL. Images must be SFW (Safe For Work)!", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Attunement\n{commandPrefix}attune "character name" "magic item"\n[{commandPrefix}att]', value="Attune to the specified magic item with the specified character.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Unattunement\n{commandPrefix}unattune "character name" "magic item"\n[{commandPrefix}unatt, {commandPrefix}uatt]', value="Unattune from the specified magic item with the specified character.", inline=False)
+
+    helpEmbedChar.add_field(name=f'▫️ Retire\n{commandPrefix}retire "character name"', value="Permanently retire the specified character. You will not be able to access them.", inline=False)
+
     helpEmbedChar.add_field(name=f'▫️ Death Options\n{commandPrefix}death "character name"', value=f"Decide the fate of the specified character who died during a quest.", inline=False)
 
 
-# TIMER COMMANDS (PRE/POST-QUEST) MENU ($help timer1)
+# PRE-QUEST TIMER COMMANDS MENU ($help timer1)
 
-    helpEmbedTimerOne.title = f"Timer Commands (Pre/Post-Quest)\n{commandPrefix}timer, {commandPrefix}t"
-    helpEmbedTimerOne.add_field(name=f'▫️ Preparing the Timer (DM)\n{commandPrefix}timer prep "@player1, @player2, @player3, [...]" questname(*)', value="Prepare the timer to receive signups from the mentioned players and the DM. (*) You can also name your quest (optional).", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Signing Up (Player)\n{commandPrefix}timer signup "charactername" "consumable list"', value="Sign your character up to the quest.", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Adding Guilds (DM)\n{commandPrefix}timer guild #guild1, #guild2, [...]', value="Add guilds to the timer. Guild rewards will apply if appropriate.", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player', value="Add the mentioned player to the roster after the timer has already been prepared so they can sign up with one of their characters.", inline=False)
+    helpEmbedTimerOne.title = f"Pre-Quest Timer Commands\n{commandPrefix}timer, {commandPrefix}t"
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Preparing the Timer (DM)\n{commandPrefix}timer prep "@player1, @player2, @player3, [...]" quest name', value="Prepare a timer with a list of mentioned players so they can sign up with their characters. The DM can also sign up with a character.", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Signing Up (Player)\n{commandPrefix}timer signup "character name" "consumable1, consumable2, [...]"', value="Sign up with a character and their consumables if the player was mentioned when the timer was prepared.", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player', value="Add the mentioned player to the roster after the DM has already prepared the timer so they can sign up.", inline=False)
+
     helpEmbedTimerOne.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove a player from the roster.", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Cancelling the Timer (DM)\n{commandPrefix}timer cancel', value="Cancel a prepared timer.", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Starting the Timer (DM)\n{commandPrefix}timer start', value="Start the timer which tracks the time played and calculates rewards for your quest. Only one timer can be active per channel at once and the timer can only be stopped by its owner or a Mod.", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Resuming the Timer (DM)\n{commandPrefix}timer resume', value="Resume the timer which was started but not stopped.", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Submitting a Session Log (DM)\n{commandPrefix}session log gameid summary', value="Submit your session log with a summary for approval by the Mods. The summary must include how it fulfilled two of the three pillars of D&D and how it involved any listed guilds.", inline=False)
-    helpEmbedTimerOne.add_field(name=f'▫️ Calculating Rewards (Misc.)\n{commandPrefix}reward [XhYm] [tier]', value=f"Calculate player and DM rewards based on the time and tier you type in. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: {commandPrefix}reward 3h30m Elite", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Adding Guilds (DM)\n{commandPrefix}timer guild #guild1, #guild2, [...]', value="Add a maximum of three guilds to their quest.", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Cancelling the Timer (DM)\n{commandPrefix}timer cancel', value="Cancel the prepared timer.", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Starting the Timer (DM)\n{commandPrefix}timer start', value="Start the prepared timer.", inline=False)
 
 
-# TIMER COMMANDS (DURING A QUEST) MENU ($help timer2)
+# DURING AND POST-QUEST TIMER COMMANDS MENU ($help timer2)
 
     helpEmbedTimerTwo.title = f"Timer Commands (During a Quest)\n{commandPrefix}timer, {commandPrefix}t"
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Yourself (Player)\n{commandPrefix}timer addme "charactername" "consumables"', value="Add yourself to the timer with the consumables that your character is bringing with them.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Using Consumables (Player)\n- "consumable"', value="Use the specified consumable that your character brought with them. This will immediately delete it from their inventory.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself (Player)\n{commandPrefix}timer removeme', value="Remove yourself from the timer.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the timer with their character and consumables.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the timer.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Awarding Reward Items (DM)\n{commandPrefix}timer reward @player "reward item 1, reward item 2, [...]"', value="Reward the mentioned player one or more reward item(s) from the Reward Item Table.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Character Death (DM)\n{commandPrefix}timer death @player', value="Remove the mentioned player from the timer when their character has died during the quest. The player can choose if their character is permanently retired, survives the quest with no rewards, or is revived afterwards at the cost of some gp in order to receive rewards.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Transferring the Timer (DM)\n{commandPrefix}timer transfer @player', value="Transfer the timer from yourself to the mentioned user who will become the timer's new owner. They will have full control over the timer.", inline=False)
-    helpEmbedTimerTwo.add_field(name=f'▫️ Stopping the Timer (DM)\n{commandPrefix}timer stop', value="Stop the timer and immediately display how much CP, TP, and gp each player earned. Players who joined late or left early will have their rewards displayed separately. The timer can only be stopped by its owner or a Mod.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Yourself (Player)\n{commandPrefix}timer addme "character name" "consumable1, consumable2, [...]"', value="Add yourself to the running timer with the specified character and their consumables. The DM must approve this command.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Using Consumables (Player)\n- "consumable"', value="Use one of the consumables that their character brought into the quest.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself (Player)\n{commandPrefix}timer removeme', value="Remove yourself from the running timer.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the running timer with the specified character and their consumables.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the running timer.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Awarding Reward Items (DM)\n{commandPrefix}timer reward @player "reward item1, reward item2, [...]"', value="Award one or more reward item from the Reward Item Table to the mentioned player.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Character Death (DM)\n{commandPrefix}timer death @player', value="Mark the mentioned player as dead.", inline=False)
+
+    helpEmbedTimerTwo.add_field(name=f'▫️ Stopping the Timer (DM)\n{commandPrefix}timer stop', value="Stop the running timer.", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Resuming the Timer (DM)\n{commandPrefix}timer resume', value="Resume the timer if it was interrupted for any reason.", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Submitting a Session Log (DM)\n{commandPrefix}session log questid summary', value="Submit a session log with a summary for the running timer which the DM just stopped. The quest ID is an 18-digit code. The summary must include how it fulfilled two of the three pillars of D&D and how it involved any listed guilds. It will also require approval by the Mods.", inline=False)
+
+    helpEmbedTimerOne.add_field(name=f'▫️ Calculating Rewards (Misc.)\n{commandPrefix}reward [XhYm] [tier]', value=f"Look up the rewards that a specified amount of time would give for the specified tier. The tier names are **Junior**, **Journey**, **Elite**, and **True**. Example: {commandPrefix}reward 3h30m Elite", inline=False)
 
 
 # ITEM TABLE CCOMMANDS MENU ($help itemtable)
@@ -171,30 +202,44 @@ async def help(ctx, *, pageString=''):
 # SHOP COMMANDS MENU ($help shop)
 
     helpEmbedShop.title = 'Shop Commands'
-    helpEmbedShop.add_field(name=f'▫️ Buying an Item\n{commandPrefix}shop buy "character name" "item" #', value="Purchase a specified number of a single mundane item from the shop. If purchasing a spell scroll, you must use the following format: \"Spell Scroll (spell name)\"", inline=False)
+
+    helpEmbedShop.add_field(name=f'▫️ Buying an Item\n{commandPrefix}shop buy "character name" "item" #', value="Purchase a specified number of a single item from the shop. Purchasing a spell scroll uses the following format: \"Spell Scroll (spell name)\"", inline=False)
+
     helpEmbedShop.add_field(name=f'▫️ Selling a Mundane Item\n{commandPrefix}shop sell "character name" "item" #', value="Sell a specified number of a single mundane item to the shop", inline=False)
-    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell name"', value="Copy a spell scroll into your character's spellbook. Limited to classes that have access to a spellbook. Some subclasses offer discounts which are applied.", inline=False)
+
+    helpEmbedShop.add_field(name=f'▫️ Copying a Spell Scroll\n{commandPrefix}shop copy "character name" "spell name"', value="Copy a spell scroll into your character's spellbook if they have access to one.", inline=False)
+
     helpEmbedShop.add_field(name=f'▫️ Training Extra Competencies\n{commandPrefix}proficiency training "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on).", inline=False)
-    helpEmbedShop.add_field(name=f'▫️ Training Noodle Competencies\n{commandPrefix}proficiency noodle "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on), discounted and with extra benefits for those with a Noodle role!", inline=False)
+
+    helpEmbedShop.add_field(name=f'▫️ Training Noodle Competencies\n{commandPrefix}proficiency noodle "character name"\n[{commandPrefix}prof]', value="Learn a language or gain proficiency in a tool (or a skill later on) but with a discount and extra benefits due to your Noodle role!", inline=False)
 
 
 # TP COMMANDS MENU ($help tp)
 
     helpEmbedTp.title = 'TP Commands'
+
     helpEmbedTp.add_field(name=f'▫️ Acquiring a Magic Item\n{commandPrefix}tp buy "character name" "magic item"', value="Put TP towards a magic item or acquire it with gp.", inline=False)
-    helpEmbedTp.add_field(name=f'▫️ Discarding an Incomplete Magic Item\n{commandPrefix}tp discard "character name"', value="Discard an incomplete magic item as well as all TP that has been put towards it.", inline=False)
+
+    helpEmbedTp.add_field(name=f'▫️ Discarding an Incomplete Magic Item\n{commandPrefix}tp discard "character name"', value="Discard an incomplete magic item with partial TP towards it in addition to all TP that has been put towards it.", inline=False)
+
     helpEmbedTp.add_field(name=f'▫️ Abandoning Leftover TP\n{commandPrefix}tp abandon "character name" tier', value="Abandon leftover TP in the tier of your choosing.", inline=False)
 
 
 # GUILD COMMANDS MENU ($help guild)
 
     helpEmbedGuild.title = 'Guild Commands'
-    helpEmbedGuild.add_field(name=f'▫️ Viewing a Guild\n{commandPrefix}guild info "guild name"', value="View the specified guild's roster and the amount of reputation in its bank. If the guild has yet to be funded, it will show the amount gp required before it will open.", inline=False)
+
+    helpEmbedGuild.add_field(name=f'▫️ Viewing a Guild\n{commandPrefix}guild info "guild name"', value="View the specified guild's roster and reputation in its bank. If the guild has yet to be funded, it will instead show the amount gp that it requires before it will be officially opened.", inline=False)
+
     helpEmbedGuild.add_field(name=f'▫️ Joining a Guild\n{commandPrefix}guild join "character name" "guild name"', value="Join the specified guild with the specified character.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rankup "character name"', value="Upgrade the specified character's rank in the guild which they currently belong to by donating gp.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Leaving a Guild\n{commandPrefix}guild leave "character name"', value="Leave the guild which the specified character currently belongs to.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Creating a Guild\n{commandPrefix}guild create "character name" "guild name" @role #channel', value="Create a guild after the role and channel have been designated. It will require funding before it is officially opened.", inline=False)
-    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" "guild name" gp', value="Fund the establishment of the specified guild. A character who donates the minimum amount of funding required will immediately join the guild's roster.", inline=False)
+
+    helpEmbedGuild.add_field(name=f'▫️ Upgrading Your Rank\n{commandPrefix}guild rankup "character name"', value="Upgrade the specified character's rank in the guild that they are a member of.", inline=False)
+
+    helpEmbedGuild.add_field(name=f'▫️ Leaving a Guild\n{commandPrefix}guild leave "character name"', value="Leave the guild which the specified character is a member of.", inline=False)
+
+    helpEmbedGuild.add_field(name=f'▫️ Creating a Guild\n{commandPrefix}guild create "character name" "guild name" @role #channel', value="Create a guild which will require funding in order to officially open.", inline=False)
+
+    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" "guild name" gp', value="Fund and join a newly-created guild which still requires funding in order to officially open.", inline=False)
 
 
 
