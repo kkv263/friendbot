@@ -6,6 +6,8 @@ from discord.utils import get
 from discord.ext import commands
 import sys
 import traceback
+from bfunc import db, callAPI, traceBack
+
 
 def admin_or_owner():
     async def predicate(ctx):
@@ -59,7 +61,21 @@ class Admin(commands.Cog, name="Admin"):
         message = await ch.fetch_message(msg)
         await message.remove_reaction(emote, self.bot.user)
         await ctx.message.delete()
+
+
+    @commands.command()
+    @admin_or_owner()
+    async def goldupdate(self, ctx, tier: int, tp: int, gp: int):
+        try:
+            db.mit.update_many(
+               {"Tier": tier, "TP": tp},
+               {"$set" : {"GP" : gp}},
+            )
+            await ctx.channel.send(content=f"Successfully updated the GP cost of all T{tier} items costing {tp} TP to {gp} GP.")
     
+        except Exception as e:
+            traceback.print_exc()
+        
     @commands.command()
     @admin_or_owner()
     async def killbot(self, ctx):

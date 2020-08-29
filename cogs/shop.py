@@ -31,6 +31,7 @@ class Shop(commands.Cog):
             elif error.param.name == "spellName":
                 msg = "You're missing the spell you want to copy in the command.\n"
         elif isinstance(error, commands.BadArgument):
+            print(error)
             # convert string to int failed
             msg = "The amount you want to buy or sell must be a number.\n"
         # bot.py handles this, so we don't get traceback called.
@@ -61,8 +62,8 @@ class Shop(commands.Cog):
         author = ctx.author
         shopEmbed = discord.Embed()
         shopCog = self.bot.get_cog('Shop')
-        if  isinstance(amount, float) and not ("misc" == buyItem.lower() or "miscellaneous" == buyItem.lower()):
-            raise commands.BadArgument()
+        if ("misc" == buyItem.lower() or "miscellaneous" == buyItem.lower()):
+            amount = int(amount)
         # Check if character exists
         charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
 
@@ -241,6 +242,288 @@ class Shop(commands.Cog):
                 ctx.command.reset_cooldown(ctx)
                 return
 
+    """
+    Function extracted from sell in order to use it in adamantine and silver
+    Checks the player inventory of mundane items to check for the query buyItem
+    """
+    async def checkInventory(self, ctx, buyItem, charRecords, shopEmbed, shopEmbedmsg):
+    
+        channel = ctx.channel
+        author = ctx.author
+        # get the user selection of which item to interact with
+        def apiEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and (r.emoji in alphaEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
+        
+        # create a setup for disambiguation
+        buyList = []
+        buyString=""
+        numI = 0
+        if charRecords['Inventory'] == "None":
+            await channel.send(f'You do not have any valid items in your inventory. Please try again with an item.')
+            ctx.command.reset_cooldown(ctx)
+            return False
+
+        # Iterate through character's inventory to see which items would match the query
+        else:
+            for k in charRecords['Inventory'].keys():
+                print(k)
+                if buyItem.lower() in k.lower():
+                    # update the disambiguation trackers
+                    buyList.append(k)
+                    buyString += f"{alphaEmojis[numI]} {k} \n"
+                    numI += 1
+
+
+        # If there are multiple matches user can pick the correct one
+        if (len(buyList) > 1):
+            # setup messages for the user interaction
+            # on a failed interaction, reset the cooldown on the called command
+            shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**! Please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
+            if not shopEmbedmsg:
+                shopEmbedmsg = await channel.send(embed=shopEmbed)
+            else:
+                await shopEmbedmsg.edit(embed=shopEmbed)
+
+            await shopEmbedmsg.add_reaction('❌')
+
+            try:
+                tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
+            except asyncio.TimeoutError:
+                await shopEmbedmsg.delete()
+                await channel.send('Timed out! Try again using the command!')
+                ctx.command.reset_cooldown(ctx)
+                return False
+            else:
+                if tReaction.emoji == '❌':
+                    await shopEmbedmsg.edit(embed=None, content=f"Command cancelled. Try again using the command!")
+                    await shopEmbedmsg.clear_reactions()
+                    ctx.command.reset_cooldown(ctx)
+                    return False
+            shopEmbed.clear_fields()
+            await shopEmbedmsg.clear_reactions()
+            buyItem = buyList[alphaEmojis.index(tReaction.emoji)]
+        # if there only was one item, select it
+        elif len(buyList) == 1:
+            buyItem = buyList[0]
+        else:
+            # inform the user if the query couldnt be found
+            await channel.send(f'**{buyItem}** could not be found in {charRecords["Name"]}\'s inventory! Check to see if it is a valid item and check your spelling.')
+            ctx.command.reset_cooldown(ctx)
+            return False
+        
+        return buyItem
+            
+    """
+    This command is used to coat a mundane weapon in silver
+    charName -> which character of the user to coat for
+    buyItem -> query string of which item to coat
+    amount -> how many instances to coat
+    """
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
+    @shop.command()
+    async def silver(self, ctx, charName, buyItem, amount=1):
+        channel = ctx.channel
+        author = ctx.author
+        shopEmbed = discord.Embed()
+        shopCog = self.bot.get_cog('Shop')
+        # Check if character exists
+        charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
+
+        if charRecords:
+            # if the character exists, check for the item in the inventory and disambiguate
+            buyItem = await self.checkInventory(ctx, buyItem, charRecords, shopEmbed, shopEmbedmsg)
+            # if the item couldnt be found, end
+            if not buyItem:
+                return
+            
+            # check for the additional adamantine modifer and remove it to just get the DB entry name
+            searchItem = buyItem.lower()
+            # if the item was already silvered, remove it 
+            if(searchItem.startswith("silvered ")):
+                await channel.send(f'**{buyItem}** is already silvered!')
+                ctx.command.reset_cooldown(ctx)
+            elif( searchItem.startswith("adamantine ")):
+                searchItem = searchItem.replace("adamantine ", "", 1) return
+            # since the order is always Silvered Adamantine Weapon, we can use startswith for these checks
+            
+            # search for the item in the DB to find which type it is
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', searchItem) 
+        
+            if bRecord:
+                # if it is not a weapon, cancel
+                if not("Type" in bRecord and bRecord["Type"].startswith("Weapon")):
+                    await channel.send(f"**{bRecord['Name']} is not a weapon**!")
+                    ctx.command.reset_cooldown(ctx)
+                    return
+                # if they do not have enough instances of the item, cancel
+                if (charRecords['Inventory'][f"{buyItem}"] < amount):
+                    await channel.send(f"You do not have enough **{buyItem}s** to coat!")
+                    ctx.command.reset_cooldown(ctx)
+                    return
+                # create the resulting item name
+                fullItemName = "Silvered " + buyItem
+                # call the function that handles the purchase calculations
+                await self.coat(ctx, 100, "silver", buyItem, amount, fullItemName, charRecords, bRecord, shopEmbed, shopEmbedmsg)
+                
+            # if the item couldnt be found in the DB, cancel
+            else:
+                if shopEmbedmsg != "Fail":
+                    await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
+                return
+
+    """
+    This command is used to coat a mundane weapon in adamantine
+    charName -> which character of the user to coat for
+    buyItem -> query string of which item to coat
+    amount -> how many instances to coat
+    """
+    @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
+    @shop.command()
+    async def adamantine(self, ctx, charName, buyItem, amount=1):
+        channel = ctx.channel
+        author = ctx.author
+        shopEmbed = discord.Embed()
+        shopCog = self.bot.get_cog('Shop')
+        # Check if character exists
+        charRecords, shopEmbedmsg = await checkForChar(ctx, charName, shopEmbed)
+
+        if charRecords:
+            # if the character exists, check for the item in the inventory and disambiguate
+            buyItem = await self.checkInventory(ctx, buyItem, charRecords, shopEmbed, shopEmbedmsg)
+            # if the item couldnt be found, end
+            if not buyItem:
+                return
+            
+            # check for the additional Silvered modifer and remove it to just get the DB entry name
+            searchItem = buyItem.lower()
+            # if the item was already adamantine, cancel
+            if( "adamantine " in searchItem):
+                await channel.send(f'**{buyItem}** is already adamantine!')
+                ctx.command.reset_cooldown(ctx)
+                return
+            
+            # extract the DB name by removing the silvered property
+            elif(searchItem.startswith("silvered ")):
+                searchItem = searchItem.replace("silvered ", "", 1)
+                silvered = True
+            
+            # search for the item in the DB
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', searchItem) 
+        
+            if bRecord:
+                # if it is not a weapon, canel
+                if not("Type" in bRecord and bRecord["Type"].startswith("Weapon")):
+                    await channel.send(f"**{bRecord['Name']} is not a weapon**!")
+                    ctx.command.reset_cooldown(ctx)
+                    return
+                
+                if (charRecords['Inventory'][f"{buyItem}"] < amount):
+                    await channel.send(f"You do not have enough **{buyItem}s** to coat!")
+                    ctx.command.reset_cooldown(ctx)
+                    return
+                
+                # create the final name of the item
+                # in order to properly maintain the naming convention we build it from the base up
+                fullItemName = "Adamantine " + bRecord['Name']
+                if(silvered):
+                    fullItemName = "Silvered " + fullItemName
+                # call the function handling the purchase and DB updateing
+                await self.coat(ctx, 500, "adamantine", buyItem, amount, fullItemName, charRecords, bRecord, shopEmbed, shopEmbedmsg)
+                
+
+            else:
+                if shopEmbedmsg != "Fail":
+                    await channel.send(f'**{buyItem}** doesn\'t exist or is an unbuyable item! Check to see if it is a valid item and check your spelling.')
+                ctx.command.reset_cooldown(ctx)
+                return
+
+    """
+    This function handles the DB entry manipulation of the coating process and is called by silver and adamantine
+    cost -> cost per item being coated
+    coatType -> string name of the process
+    amount -> how many items are being coated
+    fullItemName -> the final name of the item, used to create the dictionary entry
+    charRecords -> DB entry of the character
+    bRecord -> DB entry of the base item being covered
+    """
+    async def coat(self, ctx, cost, coatType, targetItem, amount, fullItemName, charRecords, bRecord, shopEmbed, shopEmbedmsg):
+        channel = ctx.channel
+        author = ctx.author
+        # total cost of the process
+        gpNeeded = (cost * amount)
+        # function to check for confirmation
+        def shopEmbedCheck(r, u):
+            sameMessage = False
+            if shopEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
+            
+        # if they do not have enough gold, cancel
+        if float(charRecords['GP']) < gpNeeded:
+            await channel.send(f"You do not have enough gp to {coatType} {amount}x **{bRecord['Name']}**!")
+            ctx.command.reset_cooldown(ctx)
+            return
+
+        # {charRecords['Name']} is not bolded because [shopEmbed.title] already bolds everything in that's part of the title.
+        newGP = round(charRecords['GP'] - gpNeeded , 2)
+        shopEmbed.title = f"Shop (Buy): {charRecords['Name']}"
+
+        
+        shopEmbed.description = f"Are you sure you want to {coatType} {amount}x **{targetItem}** for **{gpNeeded} gp**?\n\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+        # get confirmation of the purchase from the user
+        if shopEmbedmsg:
+            await shopEmbedmsg.edit(embed=shopEmbed)
+        else:
+            shopEmbedmsg = await channel.send(embed=shopEmbed)
+
+        await shopEmbedmsg.add_reaction('✅')
+        await shopEmbedmsg.add_reaction('❌')
+        try:
+            tReaction, tUser = await self.bot.wait_for("reaction_add", check=shopEmbedCheck , timeout=60)
+        except asyncio.TimeoutError:
+            await shopEmbedmsg.delete()
+            await channel.send(f'Shop cancelled. Try again using the same command!')
+            ctx.command.reset_cooldown(ctx)
+            return
+        else:
+            await shopEmbedmsg.clear_reactions()
+            if tReaction.emoji == '❌':
+                await shopEmbedmsg.edit(embed=None, content=f"Shop cancelled. Try again using the same command!")
+                await shopEmbedmsg.clear_reactions()
+                ctx.command.reset_cooldown(ctx)
+                return
+            elif tReaction.emoji == '✅':
+                # deduct the amount from the item entry being coated
+                charRecords['Inventory'][f"{targetItem}"] -= amount
+                # if all are used, remove the entry
+                if int(charRecords['Inventory'][f"{targetItem}"]) <= 0:
+                    del charRecords['Inventory'][f"{targetItem}"]
+                # if the resulting item is already in the inventory, increment
+                if(fullItemName in charRecords['Inventory']):
+                    charRecords['Inventory'][fullItemName] += amount
+                else:
+                    # otherwise create it
+                    charRecords['Inventory'][fullItemName] = amount
+
+                try:
+                    # update the character entry with the new inventory and gold
+                    playersCollection = db.players
+                    playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {"Inventory": charRecords['Inventory'], 'GP': newGP}})
+                except Exception as e:
+                    print ('MONGO ERROR: ' + str(e))
+                    shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
+                else:
+                    shopEmbed.description = f"{amount}x **{targetItem}** coated for **{gpNeeded} gp**! \n\nCurrent gp: {newGP} gp\n"
+                    await shopEmbedmsg.edit(embed=shopEmbed)
+                    ctx.command.reset_cooldown(ctx)
+       
+
+    
+    
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @shop.command()
     async def sell(self, ctx , charName, buyItem, amount=1):
@@ -258,113 +541,15 @@ class Shop(commands.Cog):
                     sameMessage = True
                 return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
             
-            def apiEmbedCheck(r, u):
-                sameMessage = False
-                if shopEmbedmsg.id == r.message.id:
-                    sameMessage = True
-                return sameMessage and (r.emoji in alphaEmojis[:min(len(buyList), 9)]) or (str(r.emoji) == '❌') and u == author
-
-            def apiConsumesEmbedCheck(r, u):
-                sameMessage = False
-                if shopEmbedmsg.id == r.message.id:
-                    sameMessage = True
-                return sameMessage and (r.emoji in alphaEmojis[:min(len(sellConsumesList), 9)]) or (str(r.emoji) == '❌') and u == author
-
-            buyList = []
-            buyString = ""
-            numI = 0
-
             # Check if the item being sold is a spell scroll, if it is... reject it
             if "spell scroll" in buyItem.lower():
                 await channel.send(f'You cannot sell spell scrolls to the shop. Please try again with a different item.')
                 ctx.command.reset_cooldown(ctx)
                 return
 
-            if charRecords['Inventory'] == "None":
-                await channel.send(f'You do not have any items to sell. Please try again with an item.')
-                ctx.command.reset_cooldown(ctx)
+            buyItem = await self.checkInventory(ctx, buyItem, charRecords, shopEmbed, shopEmbedmsg)
+            if not buyItem:
                 return
-
-            # Iterate through character's inventory to see if item is sellable
-            if charRecords['Inventory'] != "None":
-                for k in charRecords['Inventory'].keys():
-                    print(k)
-                    if buyItem.lower() in k.lower():
-                        buyList.append(k)
-                        buyString += f"{alphaEmojis[numI]} {k} \n"
-                        numI += 1
-
-            # If the query is in the character's consumables, reject it.
-            sellConsumesList = []
-            sellConsumesStr = ""
-            numJ = 0
-            for c in charRecords['Consumables'].split(', '):
-                if buyItem.lower() in c.lower():
-                    sellConsumesStr += f"{alphaEmojis[numJ]} {c} \n"
-                    numJ += 1
-                    sellConsumesList.append(c)
-
-            # If there are multiple matches user can pick the correct one
-            if (len(buyList) > 1):
-                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**! Please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=buyString, inline=False)
-                if not shopEmbedmsg:
-                    shopEmbedmsg = await channel.send(embed=shopEmbed)
-                else:
-                    await shopEmbedmsg.edit(embed=shopEmbed)
-
-                await shopEmbedmsg.add_reaction('❌')
-
-                try:
-                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiEmbedCheck, timeout=60)
-                except asyncio.TimeoutError:
-                    await shopEmbedmsg.delete()
-                    await channel.send('Timed out! Try again using the command!')
-                    ctx.command.reset_cooldown(ctx)
-                    return None, shopEmbed, shopEmbedmsg
-                else:
-                    if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Command cancelled. Try again using the command!")
-                        await shopEmbedmsg.clear_reactions()
-                        ctx.command.reset_cooldown(ctx)
-                        return None, shopEmbed, shopEmbedmsg
-                shopEmbed.clear_fields()
-                await shopEmbedmsg.clear_reactions()
-                buyItem = buyList[alphaEmojis.index(tReaction.emoji)]
-
-            elif len(buyList) == 1:
-                buyItem = buyList[0]
-            elif len(sellConsumesList) > 1:
-                shopEmbed.add_field(name=f"There seems to be multiple results for **{buyItem}**! Please choose the correct one.\nIf the result you are looking for is not here, please cancel the command with ❌ and be more specific.", value=sellConsumesStr, inline=False)
-                if not shopEmbedmsg:
-                    shopEmbedmsg = await channel.send(embed=shopEmbed)
-                else:
-                    await shopEmbedmsg.edit(embed=shopEmbed)
-
-                await shopEmbedmsg.add_reaction('❌')
-
-                try:
-                    tReaction, tUser = await self.bot.wait_for("reaction_add", check=apiConsumesEmbedCheck, timeout=60)
-                except asyncio.TimeoutError:
-                    await shopEmbedmsg.delete()
-                    await channel.send('Timed out! Try again using the command!')
-                    ctx.command.reset_cooldown(ctx)
-                    return None, shopEmbed, shopEmbedmsg
-                else:
-                    if tReaction.emoji == '❌':
-                        await shopEmbedmsg.edit(embed=None, content=f"Command cancelled. Try again using the command!")
-                        await shopEmbedmsg.clear_reactions()
-                        ctx.command.reset_cooldown(ctx)
-                        return None, shopEmbed, shopEmbedmsg
-                shopEmbed.clear_fields()
-                await shopEmbedmsg.clear_reactions()
-                buyItem = sellConsumesList[alphaEmojis.index(tReaction.emoji)]
-            elif len(sellConsumesList) == 1:
-                buyItem = sellConsumesList[0]
-            else:
-                await channel.send(f'**{buyItem}** cannot be sold because it is not in your inventory! Check to see if it is a valid item and check your spelling.')
-                ctx.command.reset_cooldown(ctx)
-                return
-
             bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg,'shop', buyItem, True) 
         
             if bRecord:

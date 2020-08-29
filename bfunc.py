@@ -307,11 +307,11 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         return None, apiEmbed, apiEmbedmsg
     else:
         # if theres an exact match return
-        if 'Name' in records[0]:
-            print([r['Name'].lower() for r in records])
-            for r in records:
-                if query.lower() == r['Name'].lower():
-                    return r, apiEmbed, apiEmbedmsg
+        # if 'Name' in records[0]:
+            # print([r['Name'].lower() for r in records])
+            # for r in records:
+                # if query.lower() == r['Name'].lower():
+                    # return r, apiEmbed, apiEmbedmsg
     
         #create a string to provide information about the items to the user
         infoString = ""

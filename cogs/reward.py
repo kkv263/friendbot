@@ -1,7 +1,7 @@
 import discord
 import re
 from discord.ext import commands
-from bfunc import roleArray, calculateTreasure, timeConversion, commandPrefix, 
+from bfunc import roleArray, calculateTreasure, timeConversion, commandPrefix, tier_reward_dictionary
 
 class Reward(commands.Cog):
     def __init__ (self, bot):
@@ -48,30 +48,23 @@ class Reward(commands.Cog):
             return
 
         cp = ((totalTime) // 1800) / 2
-        tp = .5 if cp == .5 else int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-        gp = cp * 60
         tier = tier.lower()
-
+        t = 0
         if tier == 'journey':
-          gp = cp * 120
+          t = 1
+        elif tier == "elite":
+          t = 2
+        elif tier == "true":
+          t = 3
+        
+        gp = cp* tier_reward_dictionary[t][0]
+        tp = cp* tier_reward_dictionary[t][1]
+        
 
-        if tier == "elite":
-          tp = cp
-          gp = cp * 180
-
-        if tier == "true":
-          tp = cp
-          gp = cp * 240
-
-        # refactor later
-        dcp = int(decimal.Decimal((cp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-        dtp = int(decimal.Decimal((tp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-        dgp = int(decimal.Decimal((gp / 2) * 2).quantize(0, rounding=decimal.ROUND_HALF_UP )) / 2
-
-        treasureArray = [cp, tp, gp, dcp, dtp, dgp]
+        treasureArray = [cp, tp, gp]
         durationString = timeConversion(totalTime)
         treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-		await channel.send(content= f"A {durationString} game would give a **{tierName}** Friend\n{treasureString}")
+        await channel.send(content=f"A {durationString} game would give a **{tierName}** Friend\n{treasureString}")
         return
 
 def setup(bot):

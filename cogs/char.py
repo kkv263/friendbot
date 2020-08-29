@@ -2167,25 +2167,41 @@ class Character(commands.Cog):
             if charDict['Inventory'] != 'None':
                 typeDict = {}
                 invCollection = db.shop
-                charInv = list(invCollection.find({"Name": {'$in': list(charDict['Inventory'].keys())}}))
+                namingDict = {}
+                searchList = []
+                keys = charDict['Inventory'].keys()
+                for dbEntry in keys:
+                    searchTerm = dbEntry
+                    if(searchTerm.startswith("Silvered ")):
+                        searchTerm=searchTerm.replace("Silvered ", "", 1)
+                    if(searchTerm.startswith("Adamantine ")):
+                        searchTerm= searchTerm.replace("Adamantine ", "", 1)
+                    if(searchTerm in namingDict):
+                        namingDict[searchTerm].append(dbEntry)
+                    else:
+                        namingDict[searchTerm] = [dbEntry]
+                    searchList.append(searchTerm)
+                print(namingDict)
+                charInv = list(invCollection.find({"Name": {'$in': searchList}}))
                 for i in charInv:
                     iType = i['Type'].split('(')
                     if len(iType) == 1:
                         iType.append("")
                     else:
                         iType[1] = '(' + iType[1]
-                  
+                
                     iType[0] = iType[0].strip()
-                    amt = charDict['Inventory'][i['Name']]
-                    if amt == 1:
-                        amt = ""
-                    else:
-                        amt = f"x{amt}"
-
-                    if iType[0] not in typeDict:
-                        typeDict[iType[0]] = [f"• {i['Name']} {iType[1]} {amt}\n"]
-                    else:
-                        typeDict[iType[0]].append(f"• {i['Name']} {iType[1]} {amt}\n")
+                    for entry in namingDict[i['Name']]:
+                        amt = charDict['Inventory'][entry]
+                        if amt == 1:
+                            amt = ""
+                        else:
+                            amt = f"x{amt}"
+                        
+                        if iType[0] not in typeDict:
+                            typeDict[iType[0]] = [f"• {entry} {iType[1]} {amt}\n"]
+                        else:
+                            typeDict[iType[0]].append(f"• {entry} {iType[1]} {amt}\n")
 
                 for k, v in typeDict.items():
                     v.sort()
@@ -2389,7 +2405,7 @@ class Character(commands.Cog):
                 charEmbed.colour = (roleColors['True Friend'])
 
             cpSplit = charDict['CP'].split('/')
-            if float(cpSplit[0]) >= float(cpSplit[1]):
+            if charLevel < 20 and float(cpSplit[0]) >= float(cpSplit[1]):
                 footer += f'\nYou need to level up! Use `{commandPrefix}levelup "character name"` before playing in another quest.'
 
 

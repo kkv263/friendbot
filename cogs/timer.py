@@ -36,7 +36,6 @@ class Timer(commands.Cog):
 
     async def cog_command_error(self, ctx, error):
         msg = None
-
         if isinstance(error, commands.CommandOnCooldown):
             msg = f"You are already preparing a timer in this channel. Please cancel the current timer and try again." 
             await ctx.channel.send(msg)
@@ -46,17 +45,23 @@ class Timer(commands.Cog):
             return
         else:
             if isinstance(error, commands.MissingRequiredArgument):
+                print(error.param.name)
                 if error.param.name == 'userList':
-                    msg = "You can't prepare a timer without any players! "
+                    msg = "You can't prepare a timer without any players! \n"
+                elif error.param.name == 'game':
+                    msg = "You can't prepare a timer without a game name! \n"
+                else:
+                    msg = "Your command was missing an argument! "
             elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
               msg = ""
-
+            
             if msg:
                 if ctx.command.name == "prep":
-                    msg += f'Please follow this format:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, [...]" "quest name"(*)```***** - The quest name is optional.'
-
+                    msg += f'Please follow this format:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, [...]" "quest name"(*)```'
+                
                 ctx.command.reset_cooldown(ctx)
-                await ctx.channel.send(msg)
+                await ctx.channel.send(content=msg)
+                await traceBack(ctx,error)
             else:
                 ctx.command.reset_cooldown(ctx)
                 await traceBack(ctx,error)
@@ -161,7 +166,7 @@ class Timer(commands.Cog):
                 await prepEmbedMsg.clear_reactions()
                 #cancel the command based on user desire
                 if tReaction.emoji == '❌':
-                    await prepEmbedMsg.edit(embed=None, content=f"Timer cancelled. Use the following command to prepare a timer:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, @player3, [...]" quest name```")
+                    await prepEmbedMsg.edit(embed=None, content=f"""Timer cancelled. Use the following command to prepare a timer:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, @player3, [...]" quest name```""")
                     self.timer.get_command('prep').reset_cooldown(ctx)
                     return
                 # otherwise take the role based on which emoji the user reacted with
@@ -378,16 +383,17 @@ class Timer(commands.Cog):
                     guildCategoryID = 452704598440804375
 
                     if (len(msg.channel_mentions) > 3):
-                        await channel.send(f"The number of guilds exceeds three. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, [...]```") 
+                        await channel.send(f"The number of guilds exceeds three. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, #guild3```") 
                     elif msg.channel_mentions != list():
                         guildsList = msg.channel_mentions
                         invalidChannel = False
+                        guildRecordsList = []
                         guildsListStr = "Guilds: " 
                         # TODO: Guilds on DM
                         for g in guildsList:
                             if g.category_id != guildCategoryID:
                                 invalidChannel = True
-                                await channel.send(f"***{g}*** is not a guild channel. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, [...]```") 
+                                await channel.send(f"***{g}*** is not a guild channel. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, #guild3```") 
                                 guildsList = []
                                 break
                             guildRecords = guildsCollection.find_one({"Channel ID": str(g.id) })
@@ -957,7 +963,7 @@ class Timer(commands.Cog):
                     # if the DM has to choose between major and minor
                     chooseOr = False
 
-                    totalDurationTimeMultiplier = totalDurationTime // 180
+                    totalDurationTimeMultiplier = int(totalDurationTime // 180)
                     # set up the total reward item limits based on noodle roles
                     # check out hosting-a-one-shot for details
                     # Minor limit is the total sum of rewards allowed
@@ -1022,8 +1028,8 @@ class Timer(commands.Cog):
                     dmMajorLimit *= totalDurationTimeMultiplier 
                     dmMinorLimit *= totalDurationTimeMultiplier 
                     
-                    rewardMajorLimit += floor(totalDurationTimeMultiplier -1 / 2)
-                    rewardMinorLimit += ceil(totalDurationTimeMultiplier -1 / 2)
+                    rewardMajorLimit += floor((totalDurationTimeMultiplier -1) / 2)
+                    rewardMinorLimit += ceil((totalDurationTimeMultiplier -1) / 2)
                     
                     print("Major Limit", rewardMajorLimit)
                     print("Minor Limit", rewardMinorLimit)
@@ -1122,25 +1128,24 @@ class Timer(commands.Cog):
                                 else:
                                     major += 1
                             
-                            print("Them:", major, minor)
                             # set up error messages based on the allowed item counts inserted appropriately
-                            rewardMajorErrorString = f"You cannot award any more **Major** reward items.\nTotal rewarded so far:\n**({major-len(blocking_list_additions['Major'])})** Major Rewards \n**({minor})** Minor Rewards"
-                            rewardMinorErrorString = f"You cannot award any more **Minor** reward items.\nTotal rewarded so far:\n**({major})** Major Rewards \n**({minor-len(blocking_list_additions['Minor'])})** Minor Rewards"
+                            rewardMajorErrorString = f"You cannot award any more **Major** reward items.\nTotal rewarded so far:\n**({major-len(blocking_list_additions['Major'])-1}/{rewardMajorLimit})** Major Rewards \n**({minor-len(blocking_list_additions['Minor'])}/{rewardMinorLimit})** Minor Rewards"
+                            rewardMinorErrorString = f"You cannot award any more **Minor** reward items.\nTotal rewarded so far:\n**({major-len(blocking_list_additions['Major'])}/{rewardMajorLimit})** Major Rewards \n**({minor-len(blocking_list_additions['Minor'])-1}/{rewardMinorLimit})** Minor Rewards"
 
                             if rewardUser == dmChar[0]:
                                 if chooseOr:
                                     if dmMajor > dmMajorLimit or dmMinor > dmMinorLimit:
                                         if not resume:
-                                            await ctx.channel.send(f"You cannot award yourself any more Major or Minor reward items {dmMajor- len(blocking_list_additions['Major'])}.")
+                                            await ctx.channel.send(f"You cannot award yourself any more Major or Minor reward items {dmMajor- len(blocking_list_additions['Major'])}/{dmMajorLimit}.")
                                         return start, dmChar 
                                 else:
                                     if dmMajor > dmMajorLimit:
                                         if not resume:
-                                            await ctx.channel.send(f"You cannot award yourself any more Major reward items {dmMajor - len(blocking_list_additions['Major'])}.")
+                                            await ctx.channel.send(f"You cannot award yourself any more Major reward items {dmMajor - len(blocking_list_additions['Major'])}/{dmMajorLimit}.")
                                         return start, dmChar 
                                     elif dmMinor > dmMinorLimit:
                                         if not resume:
-                                            await ctx.channel.send(f"You cannot award yourself any more Minor reward items {dmMinor - len(blocking_list_additions['Minor'])}.")
+                                            await ctx.channel.send(f"You cannot award yourself any more Minor reward items {dmMinor - len(blocking_list_additions['Minor'])}/{dmMinorLimit}.")
                                         return start, dmChar 
                             
                             else:
@@ -1169,9 +1174,7 @@ class Timer(commands.Cog):
                                 awarded_minors.append(rewardConsumable['Name'])
                             blocking_list_additions[rewardConsumable['Minor/Major']].append(rewardConsumable[rewardConsumable_group_type])
                     
-                    
-                    print("X:", charConsumableList)
-                    print("Y:", charMagicList)
+
                     # update the players consumable/item list with the rewarded consumable/item respectively
                     if 'Consumable' in rewardConsumable:
                         if currentItem[1]['Consumables'] == "None":
@@ -1193,19 +1196,15 @@ class Timer(commands.Cog):
                         currentItem[2] = item_list_with_pluses
                     else:
                         currentItem[2] += item_list_with_pluses
-                    print("Character:", currentItem)
-                    print("X2:", charConsumableList)
-                    print("Y2:", charMagicList)
+
                     # update dmChar to track the rewarded item counts properly
-                    print("DM REWARDS",dmChar)
                     
                     dmChar[4][1][player_type]["Major"] += blocking_list_additions["Major"]
                     dmChar[4][1][player_type]["Minor"] += blocking_list_additions["Minor"]
                     # on completion inform the users that of the success and of the current standings with rewards
                     if not resume:
-                        await ctx.channel.send(content=f"You have awarded ***{rewardUser.display_name}*** the following reward items: **{item_list_string}**.\n```Total rewarded so far:\n({major}) Major Reward Items\n({minor}) Minor Reward Items\n({dmMajor}) DM Major Reward Items\n({dmMinor}) DM Minor Reward Items```")
+                        await ctx.channel.send(content=f"You have awarded ***{rewardUser.display_name}*** the following reward items: **{item_list_string}**.\n```Total rewarded so far:\n({major}/{rewardMajorLimit}) Major Reward Items\n({minor}/{rewardMinorLimit-rewardMajorLimit}) Minor Reward Items\n({dmMajor}/{dmMajorLimit}) DM Major Reward Items\n({dmMinor}/{dmMinorLimit-dmMajorLimit}) DM Minor Reward Items```")
                     
-                    print("After:", dmChar)
                 else:
                     if not resume:
                         await ctx.channel.send(content=f"***{rewardUser}*** is not on the timer to receive rewards.")
@@ -2050,13 +2049,13 @@ class Timer(commands.Cog):
                 stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
                 
                 # add the field for the DM's player rewards
-                dm_text = ""
-                dm_name_text = "**No Character**"
+                dm_text = "**No Character**"
+                dm_name_text = "**No Rewards**"
                 # if no character signed up then the character parts are excluded
                 if(dmChar[1] != "No Rewards"):
                     dm_text = f"| {dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}"
                     dm_name_text = f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n"
-                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} {dm_text}\n{':star:' * noodlesGained} {noodleString}", name=dm_name_text)
+                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dm_text}\n{':star:' * noodlesGained} {noodleString}", name=dm_name_text)
                 
                 # if there are guild rewards then add a field with relevant information
                 if guildRewardsStr != "":
