@@ -387,7 +387,7 @@ class Guild(commands.Cog):
                         guildEmbed.description = f"***{charRecords['Name']}*** has joined ***{guildRecords['Name']}***\n\n**Current gp**: {newGP}\n"
                         guildEmbed.description += f"Congratulations! :tada: ***{guildRecords['Name']}***  is officially open!"
                         if refundGP:
-                            guildEmbed.description += f"\n\n Because you funded the guild over 6000gp, you have been refunded {abs(refundGP) gp}"
+                            guildEmbed.description += f"\n\n Because you funded the guild over 6000gp, you have been refunded {abs(refundGP)} gp"
 
                     else:
                         guildEmbed.description = f"***{charRecords['Name']}*** has joined ***{guildRecords['Name']}***\n\n**Current gp**: {newGP}\n"
