@@ -257,7 +257,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         records = list(collection.find(filterDic))
     
     #turn the query into a regex expression
-    r = re.compile(query)
+    r = re.compile(query, re.IGNORECASE)
     #restore the original query
     query = query.replace("\\", "")
     #sort elements by either the name, or the first element of the name list in case it is a list
@@ -307,11 +307,11 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         return None, apiEmbed, apiEmbedmsg
     else:
         # if theres an exact match return
-        if 'Name' in records[0]:
-            print([r['Name'].lower() for r in records])
-            for r in records:
-                if query.lower() == r['Name'].lower():
-                    return r, apiEmbed, apiEmbedmsg
+        # if 'Name' in records[0]:
+            # print([r['Name'].lower() for r in records])
+            # for r in records:
+                # if query.lower() == r['Name'].lower():
+                    # return r, apiEmbed, apiEmbedmsg
     
         #create a string to provide information about the items to the user
         infoString = ""

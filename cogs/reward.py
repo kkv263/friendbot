@@ -1,7 +1,7 @@
 import discord
 import re
 from discord.ext import commands
-from bfunc import roleArray, calculateTreasure, timeConversion, commandPrefix
+from bfunc import roleArray, calculateTreasure, timeConversion, commandPrefix, tier_reward_dictionary
 
 class Reward(commands.Cog):
     def __init__ (self, bot):
@@ -47,10 +47,24 @@ class Reward(commands.Cog):
             await channel.send(content="You may have formatted the time incorrectly or calculated for 0. Try again with the correct format." + rewardCommand)
             return
 
-        treasureArray = calculateTreasure(totalTime, tier)
+        cp = ((totalTime) // 1800) / 2
+        tier = tier.lower()
+        t = 0
+        if tier == 'journey':
+          t = 1
+        elif tier == "elite":
+          t = 2
+        elif tier == "true":
+          t = 3
+        
+        gp = cp* tier_reward_dictionary[t][0]
+        tp = cp* tier_reward_dictionary[t][1]
+        
+
+        treasureArray = [cp, tp, gp]
         durationString = timeConversion(totalTime)
         treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-        await channel.send(content= f"A {durationString} game would give a {tierName} Friend\n\n**Player:** {treasureString} \n**DM:** {dmTreasureString}")
+        await channel.send(content=f"A {durationString} game would give a **{tierName}** Friend\n{treasureString}")
         return
 
 def setup(bot):

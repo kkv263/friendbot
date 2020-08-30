@@ -3,7 +3,7 @@ import asyncio
 import re
 from discord.utils import get        
 from discord.ext import commands
-from bfunc import callAPI, db
+from bfunc import callAPI, db, traceBack
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -14,22 +14,45 @@ class Log(commands.Cog):
     @commands.group()
     async def session(self, ctx):	
         pass
-      
+        
+    async def cog_command_error(self, ctx, error):
+        msg = None
+
+        if isinstance(error, commands.MissingAnyRole):
+            await ctx.channel.send("You do not have the required permissions for this command.")
+            bot.get_command(ctx.invoked_with).reset_cooldown(ctx)
+            return
+        else:
+            if isinstance(error, commands.MissingRequiredArgument):
+                msg = "Your command was missing an argument! "
+            elif isinstance(error, commands.UnexpectedQuoteError) or isinstance(error, commands.ExpectedClosingQuoteError) or isinstance(error, commands.InvalidEndOfQuotedStringError):
+              msg = ""
+
+            if msg:
+                ctx.command.reset_cooldown(ctx)
+                await ctx.channel.send(msg)
+                await traceBack(ctx,error)
+            else:
+                ctx.command.reset_cooldown(ctx)
+                await traceBack(ctx,error)
+                
     @session.command()
     async def log(self, ctx, num, *, editString=""):
         # The real Bot
-        botUser = self.bot.get_user(502967681956446209)
+        botUser = self.bot.user
         # botUser = self.bot.get_user(650734548077772831)
 
         # Logs channel 
         # channel = self.bot.get_channel(577227687962214406) 
-        channel = self.bot.get_channel(737076677238063125) 
+        channel = self.bot.get_channel(737076677238063125) # 728456783466725427 737076677238063125
 
 
         limit = 100
         msgFound = False
         async with channel.typing():
             async for message in channel.history(oldest_first=False, limit=limit):
+                print("ID:", message.id)
+                print("USer:",message.author)
                 if int(num) == message.id and message.author == botUser:
                     editMessage = message
                     msgFound = True
@@ -51,15 +74,18 @@ class Log(commands.Cog):
             if 'Guild Rewards' not in log.name:
                 for i in "\<>@#&!:":
                     log.value = log.value.replace(i, "")
-
-                logItems = log.value.split(' | ')
+                
+                logItems = v.split(' | ')
 
                 if "DM" in logItems[0]:
                     for i in "*DM":
                         logItems[0] = logItems[0].replace(i, "")
-                        dmID = logItems[0].strip()
+                    dmID = logItems[0].strip()
                 
-                charData.append({"User ID" : logItems[0].strip() , "Name": logItems[1].split('\n')[0].strip()})
+                # if no character was listed then there will be 2 entries
+                # since there is no character to update we block the charData
+                if len(logItems)>1:
+                    charData.append({"User ID" : logItems[0].strip() , "Name": logItems[1].split('\n')[0].strip()})
 
         if int(dmID) != ctx.author.id:
             delMessage = await ctx.channel.send(content=f"It doesn't look you were the DM of this game. You won't be able to edit this session log. I will delete your message and this one in 10 seconds.")
@@ -100,7 +126,7 @@ class Log(commands.Cog):
 
             usersCollection = db.users
             playersCollection = db.players
-            uRecord = usersCollection.find_one({"User ID": dmID}, {'P-Noodles': 1})
+            uRecord = usersCollection.find_one({"User ID": dmID}, {"P-Noodles": {'$exists' : True}})
             charRecordsList = list(playersCollection.find({"$or": charData }))
 
 

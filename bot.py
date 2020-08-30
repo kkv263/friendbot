@@ -149,7 +149,7 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedTimerOne.title = f"Pre-Quest Timer Commands\n{commandPrefix}timer, {commandPrefix}t"
 
-    helpEmbedTimerOne.add_field(name=f'▫️ Preparing the Timer (DM)\n{commandPrefix}timer prep "@player1, @player2, @player3, [...]" quest name', value="Prepare a timer with a list of mentioned players so they can sign up with their characters. The DM can also sign up with a character.", inline=False)
+    helpEmbedTimerOne.add_field(name=f'▫️ Preparing the Timer (DM)\n{commandPrefix}timer prep "@player1, @player2, [...]" quest name', value="Prepare a timer with a list of mentioned players so they can sign up with their characters. The DM can also sign up with a character.", inline=False)
 
     helpEmbedTimerOne.add_field(name=f'▫️ Signing Up (Player)\n{commandPrefix}timer signup "character name" "consumable1, consumable2, [...]"', value="Sign up with a character and their consumables if the player was mentioned when the timer was prepared.", inline=False)
 
@@ -157,7 +157,7 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedTimerOne.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove a player from the roster.", inline=False)
 
-    helpEmbedTimerOne.add_field(name=f'▫️ Adding Guilds (DM)\n{commandPrefix}timer guild #guild1, #guild2, [...]', value="Add a maximum of three guilds to their quest.", inline=False)
+    helpEmbedTimerOne.add_field(name=f'▫️ Adding Guilds (DM)\n{commandPrefix}timer guild #guild1, #guild2, #guild3', value="Add a maximum of three guilds to their quest.", inline=False)
 
     helpEmbedTimerOne.add_field(name=f'▫️ Cancelling the Timer (DM)\n{commandPrefix}timer cancel', value="Cancel the prepared timer.", inline=False)
 
@@ -174,7 +174,7 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedTimerTwo.add_field(name=f'▫️ Removing Yourself (Player)\n{commandPrefix}timer removeme', value="Remove yourself from the running timer.", inline=False)
 
-    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumables"', value="Add the mentioned player to the running timer with the specified character and their consumables.", inline=False)
+    helpEmbedTimerTwo.add_field(name=f'▫️ Adding Players (DM)\n{commandPrefix}timer add @player "charactername" "consumable1, consumable2, [...]"', value="Add the mentioned player to the running timer with the specified character and their consumables.", inline=False)
 
     helpEmbedTimerTwo.add_field(name=f'▫️ Removing Players (DM)\n{commandPrefix}timer remove @player', value="Remove the mentioned player from the running timer.", inline=False)
 
