@@ -346,7 +346,8 @@ class Shop(commands.Cog):
                 await channel.send(f'**{buyItem}** is already silvered!')
                 ctx.command.reset_cooldown(ctx)
             elif( searchItem.startswith("adamantine ")):
-                searchItem = searchItem.replace("adamantine ", "", 1) return
+                searchItem = searchItem.replace("adamantine ", "", 1) 
+                return
             # since the order is always Silvered Adamantine Weapon, we can use startswith for these checks
             
             # search for the item in the DB to find which type it is
