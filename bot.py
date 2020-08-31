@@ -239,7 +239,7 @@ async def help(ctx, *, pageString=''):
 
     helpEmbedGuild.add_field(name=f'▫️ Creating a Guild\n{commandPrefix}guild create "character name" "guild name" @role #channel', value="Create a guild which will require funding in order to officially open.", inline=False)
 
-    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" gp "guild name"', value="Fund and join a newly-created guild which still requires funding in order to officially open.", inline=False)
+    helpEmbedGuild.add_field(name=f'▫️ Funding a Guild\n{commandPrefix}guild fund "character name" "guild name" gp', value="Fund and join a newly-created guild which still requires funding in order to officially open.", inline=False)
 
 
 

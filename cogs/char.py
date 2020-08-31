@@ -6,6 +6,7 @@ import requests
 import asyncio
 import collections
 from discord.utils import get        
+from math import floor
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
 from urllib.parse import urlparse 
@@ -657,6 +658,8 @@ class Character(commands.Cog):
                 else:
                     className = f'{m["Class"]["Name"]}'
 
+                classStatName = f'{m["Class"]["Name"]}'
+
                 if int(m['Class']['Subclass Level']) <= int(m['Level']) and msg == "":
                     subclassesList = m['Class']['Subclasses'].split(',')
                     subclass, charEmbedmsg = await characterCog.chooseSubclass(ctx, subclassesList, m['Class']['Name'], charEmbed, charEmbedmsg)
@@ -664,7 +667,7 @@ class Character(commands.Cog):
                         return
 
                     m['Subclass'] = f'{className} ({subclass})' 
-                    classStat.append(f'{className}-{subclass}')
+                    classStat.append(f'{classStatName}-{subclass}')
 
 
                     if charDict['Class'] == "": 
@@ -672,7 +675,7 @@ class Character(commands.Cog):
                     else:
                         charDict['Class'] += f' / {className} ({subclass})'
                 else:
-                    classStat.append(className)
+                    classStat.append(classStatName)
                     if charDict['Class'] == "": 
                         charDict['Class'] = className
                     else:
@@ -1002,6 +1005,7 @@ class Character(commands.Cog):
         statsCollection = db.stats
         statsRecord  = statsCollection.find_one({'Life': 1})
 
+        print(classStat)
         for c in classStat:
             char = c.split('-')
             if char[0] in statsRecord['Class']:
@@ -1569,6 +1573,8 @@ class Character(commands.Cog):
                 else:
                     className = f'{m["Class"]["Name"]}'
 
+                classStatName = f'{m["Class"]["Name"]}'
+
                 if int(m['Class']['Subclass Level']) <= int(m['Level']) and msg == "":
                     subclassesList = m['Class']['Subclasses'].split(',')
                     subclass, charEmbedmsg = await characterCog.chooseSubclass(ctx, subclassesList, m['Class']['Name'], charEmbed, charEmbedmsg)
@@ -1576,7 +1582,7 @@ class Character(commands.Cog):
                         return
 
                     m['Subclass'] = f'{className} ({subclass})' 
-                    classStat.append(f'{className}-{subclass}')
+                    classStat.append(f'{classStatName}-{subclass}')
 
 
                     if charDict['Class'] == "": 
@@ -1584,7 +1590,7 @@ class Character(commands.Cog):
                     else:
                         charDict['Class'] += f' / {className} ({subclass})'
                 else:
-                    classStat.append(className)
+                    classStat.append(classStatName)
                     if charDict['Class'] == "": 
                         charDict['Class'] = className
                     else:
@@ -3330,8 +3336,8 @@ class Character(commands.Cog):
         guild=ctx.guild
 
         statsEmbed = discord.Embed()
-
-        statsEmbed.title = f'Stats for {currentDate}' 
+        statsEmbedmsg = None
+        statsEmbed.title = f'Stats' 
 
         statsTotalString = ""
         guildsString = ""
@@ -3341,86 +3347,171 @@ class Character(commands.Cog):
         charString = ""
         raceString = ""
         bgString = ""
+        author = ctx.author
 
-        for k,v in statRecords['DM'].items():
-            statsString += guild.get_member(int(k)).display_name + " - "
-            for i in range (1,5):
-                if f'T{i}' not in v:
-                    statsString += f"T{i}:0 / "
+        def statsEmbedCheck(r, u):
+            sameMessage = False
+            if statsEmbedmsg.id == r.message.id:
+                sameMessage = True
+            return sameMessage and ((r.emoji in alphaEmojis[:4]) or (str(r.emoji) == '❌')) and u == author
+
+        statsEmbed.description = f"Please choose a category:\n{alphaEmojis[0]}: Monthly Stats\n{alphaEmojis[1]}: Lifetime Class Stats\n{alphaEmojis[2]}: Lifetime Race Stats\n{alphaEmojis[3]}: Lifetime Background Stats"
+        statsEmbedmsg = await ctx.channel.send(embed=statsEmbed)
+        for num in range(0,4): await statsEmbedmsg.add_reaction(alphaEmojis[num])
+        try:
+            tReaction, tUser = await self.bot.wait_for("reaction_add", check=statsEmbedCheck , timeout=60)
+        except asyncio.TimeoutError:
+            await statsEmbedmsg.delete()
+            await channel.send(f'Stats cancelled. Try again using the same command!')
+            ctx.command.reset_cooldown(ctx)
+            return
+        else:
+            statsEmbed.description = ""
+
+        if tReaction.emoji == alphaEmojis[0]:
+            if statRecords is None:
+                statsEmbed.add_field(name="Monthly Stats", value="There have been 0 games played this month. Check back later!", inline=False)
+            else:
+                for k,v in statRecords['DM'].items():
+                    dmMember = guild.get_member(int(k))
+                    if dmMember is None:
+                        continue
+                    statsString += dmMember.mention + " - "
+                    for i in range (1,5):
+                        if f'T{i}' not in v:
+                            statsString += f"T{i}:0 | "
+                        else:
+                            statsString += f"T{i}:{v[f'T{i}']} | " 
+                    totalGames = 0
+                    for vk, vv in v.items():
+                        totalGames += vv
+                        superTotal += totalGames
+                    
+                    statsString += f"Total:{totalGames}\n"
+
+                if 'GQ' in statRecords:
+                    guildsString += f'Guild quests out of total quests: {round((statRecords["GQ"] / superTotal),2) * 100}%\n'
+                    guildsString += f"Guild Quests: {statRecords['GQ']}\n"
                 else:
-                    statsString += f"T{i}:{v[f'T{i}']} / " 
-            for vk, vv in v.items():
-                totalGames = 0
-                totalGames += vv
-                statsString += f"Total:{totalGames}\n"
-                superTotal += totalGames
+                    guildsString += f"Guild Quests: 0\n"
 
-        if 'GQ' in statRecords:
-            guildsString += f'Guild quests out of total quests: {round((statRecords["GQ"] / superTotal),2) * 100}%\n'
-            guildsString += f"Guild Quests: {statRecords['GQ']}\n"
-        else:
-            guildsString += f"Guild Quests: 0\n"
+                if 'GQM' in statRecords:
+                    guildsString += f"Guild Quests with Members: {statRecords['GQM']}\n"
 
-        if 'GQM' in statRecords:
-            guildsString += f"Guild Quests with Members: {statRecords['GQM']}\n"
-
-        else:
-            guildsString += f"Guild Quests with Members: 0\n"
+                else:
+                    guildsString += f"Guild Quests with Members: 0\n"
 
 
-        if 'GQNM' in statRecords:
-            guildsString += f"Guild Quests with no Members: {statRecords['GQNM']}\n"
-        else:
-            guildsString += f"Guild Quests with no Members: 0\n"
-            
+                if 'GQNM' in statRecords:
+                    guildsString += f"Guild Quests with no Members: {statRecords['GQNM']}\n"
+                else:
+                    guildsString += f"Guild Quests with no Members: 0\n"
+                    
 
-        if guildsString:
-            statsEmbed.add_field(name="Guild Games", value=guildsString, inline=False) 
+                if guildsString:
+                    statsEmbed.add_field(name="Guild Games", value=guildsString, inline=False) 
 
-        if 'Players' in statRecords and 'Playtime' in statRecords:
-            avgString += f"Average Number of Player per Game: {sum(statRecords['Players']) / len(statRecords['Players'])}\n" 
-            avgString += f"Average Game Time: {timeConversion(sum(statRecords['Playtime']) / len(statRecords['Playtime']))}\n"
-            statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
+                if 'Players' in statRecords and 'Playtime' in statRecords:
+                    avgString += f"Average Number of Player per Game: {floor(sum(statRecords['Players']) / len(statRecords['Players']))}\n" 
+                    avgString += f"Average Game Time: {timeConversion(sum(statRecords['Playtime']) / len(statRecords['Playtime']))}\n"
+                    statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
 
-        if statsString:
-            statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
+                if statsString:
+                    statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
 
-        for k, v in statRecordsLife['Class'].items():
-            charString += f"{k}:{v['Count']}\n"
-            for vk, vv in v.items():
-                if vk != 'Count':
-                    charString += f"• {vk}:{vv}\n"
-            charString += f"━━━━━\n"
-
-        for k, v in statRecordsLife['Race'].items():
-            raceString += f"{k}:{v}\n"
-
-        for k, v in statRecordsLife['Background'].items():
-            bgString += f"{k}:{v}\n"
-            
-
-        statsEmbed.add_field(name="Character Class Stats (Lifetime)", value=charString, inline=False)  
-        statsEmbed.add_field(name="Character Race Stats (Lifetime)", value=raceString, inline=False)  
-        statsEmbed.add_field(name="Character Background Stats (Lifetime)", value=bgString, inline=False)  
+                statsTotalString += f"**Monthly Stats**\nTotal Games for the Month: {superTotal}\n"
+                for i in range (1,5):
+                    if f'T{i}' not in statRecords:
+                        statsTotalString += f"Tier {i} Games for the Month: 0\n"
+                    else: 
+                        statsTotalString += f"Tier {i} Games for the Month: {statRecords[f'T{i}']}\n"
 
 
-        statsTotalString += f"Total Games for the Month: {superTotal}\n"
-        for i in range (1,5):
-            if f'T{i}' not in statRecords:
-                statsTotalString += f"Tier {i} Games for the Month: 0\n"
-            else: 
-                statsTotalString += f"Tier {i} Games for the Month: {statRecords[f'T{i}']}\n"
+                if 'Players' in statRecords and 'Playtime' in statRecords:
+                    statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
+                    statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
+                if 'Unique Players' in statRecords and 'Playtime' in statRecords:
+                    statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
+                statsEmbed.description = statsTotalString
+          
+        # Below are lifetime stats which consists of character data
+        # Lifetime Class Stats
+        if tReaction.emoji == alphaEmojis[1]: 
+            cPages = 1
+            cPageStops = [0]
+            charString = ""
+            for k, v in statRecordsLife['Class'].items():
+                charString += f"{k}:{v['Count']}\n"
+                for vk, vv in v.items():
+                    if vk != 'Count':
+                        charString += f"• {vk}:{vv}\n"
+                charString += f"━━━━━\n"
+                if len(charString) > (768 * cPages):
+                    cPageStops.append(len(charString))
+                    cPages += 1
+
+            if cPages > 1:
+                for p in range(len(cPageStops)-1):
+                    statsEmbed.add_field(name=f"Character Class Stats (Lifetime) p. {p+1}", value=charString[cPageStops[p]:cPageStops[p+1]], inline=False)  
+            else:
+                statsEmbed.add_field(name="Character Class Stats (Lifetime)", value=charString, inline=False)  
+
+        # Lifetime race stats
+        if tReaction.emoji == alphaEmojis[2]:
+            rPages = 1
+            rPageStops = [0]
+            raceString = ""
+            for k, v in statRecordsLife['Race'].items():
+                raceString += f"{k}: {v}\n"
+                if len(raceString) > (768 * rPages):
+                    rPageStops.append(len(raceString))
+                    rPages += 1
+
+            rPageStops.append(len(raceString))
+
+            if rPages > 1:
+                for p in range(len(rPageStops)-1):
+                    statsEmbed.add_field(name=f"Character Race Stats (Lifetime) p. {p+1}", value=raceString[rPageStops[p]:rPageStops[p+1]], inline=False)  
+            else:
+                statsEmbed.add_field(name="Character Race Stats (Lifetime)", value=raceString, inline=True)  
+
+        # Lifetime background Stats
+        if tReaction.emoji == alphaEmojis[3]:
+            bPages = 1
+            bPageStops = [0]
+            bgString = ""
+            for k, v in statRecordsLife['Background'].items():
+                bgString += f"{k}:{v}\n"
+                if len(bgString) > (768 * bPages):
+                    bPageStops.append(len(bgString))
+                    bPages += 1
+
+            bPageStops.append(len(bgString))
+
+            if bPages > 1:
+                for p in range(len(bPageStops)-1):
+                    statsEmbed.add_field(name=f"Character Background Stats (Lifetime) p. {p+1}", value=bgString[bPageStops[p]:bPageStops[p+1]], inline=False)  
+            else:
+                statsEmbed.add_field(name="Character Background Stats (Lifetime)", value=bgString, inline=False)  
+
+        # if tReaction.emoji == alphaEmojis[1]:
+        #     statsTotalString += f"**Lifetime Stats**\nTotal Games for the Month: {superTotal}\n"
+        #     for i in range (1,5):
+        #         if f'T{i}' not in statRecords:
+        #             statsTotalString += f"Tier {i} Games for the Month: 0\n"
+        #         else: 
+        #             statsTotalString += f"Tier {i} Games for the Month: {statRecords[f'T{i}']}\n"
 
 
-        if 'Players' in statRecords and 'Playtime' in statRecords:
-            statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
-            statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
-        if 'Unique Players' in statRecords and 'Playtime' in statRecords:
-            statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
+        #     if 'Players' in statRecords and 'Playtime' in statRecords:
+        #         statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
+        #         statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
+        #     if 'Unique Players' in statRecords and 'Playtime' in statRecords:
+        #         statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
 
-        statsEmbed.description = statsTotalString
-
-        await ctx.channel.send(embed=statsEmbed)
+        await statsEmbedmsg.clear_reactions()
+        await statsEmbedmsg.edit(embed=statsEmbed)
+        # await ctx.channel.send(embed=statsEmbed)
 
     async def calcHP (self, ctx, classes, charDict, lvl):
         # classes = sorted(classes, key = lambda i: i['Hit Die Max'],reverse=True) 
