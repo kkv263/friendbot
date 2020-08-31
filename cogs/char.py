@@ -3376,17 +3376,18 @@ class Character(commands.Cog):
                     dmMember = guild.get_member(int(k))
                     if dmMember is None:
                         continue
-                    statsString += dmMember.display_name + " - "
+                    statsString += dmMember.mention + " - "
                     for i in range (1,5):
                         if f'T{i}' not in v:
-                            statsString += f"T{i}:0 / "
+                            statsString += f"T{i}:0 | "
                         else:
-                            statsString += f"T{i}:{v[f'T{i}']} / " 
+                            statsString += f"T{i}:{v[f'T{i}']} | " 
+                    totalGames = 0
                     for vk, vv in v.items():
-                        totalGames = 0
                         totalGames += vv
-                        statsString += f"Total:{totalGames}\n"
                         superTotal += totalGames
+                    
+                    statsString += f"Total:{totalGames}\n"
 
                 if 'GQ' in statRecords:
                     guildsString += f'Guild quests out of total quests: {round((statRecords["GQ"] / superTotal),2) * 100}%\n'
