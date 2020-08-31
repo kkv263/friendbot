@@ -75,7 +75,7 @@ class Log(commands.Cog):
                 for i in "\<>@#&!:":
                     log.value = log.value.replace(i, "")
                 
-                logItems = v.split(' | ')
+                logItems = log.value.split(' | ')
 
                 if "DM" in logItems[0]:
                     for i in "*DM":
@@ -126,7 +126,7 @@ class Log(commands.Cog):
 
             usersCollection = db.users
             playersCollection = db.players
-            uRecord = usersCollection.find_one({"User ID": dmID}, {"P-Noodles": {'$exists' : True}})
+            uRecord = usersCollection.find_one({"User ID": dmID}, {"P-Noodles": 1})
             charRecordsList = list(playersCollection.find({"$or": charData }))
 
 
