@@ -208,6 +208,13 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     query = query.replace('(', '\\(')
     query = query.replace(')', '\\)')
     query = query.replace('+', '\\+')
+
+    invalidChars = ["[", "]", "?", ".", '"', "\\", "*", "$", "{", "}", "," "^"]
+
+    for i in invalidChars:
+        if i in query:
+            await channel.send(f":warning: Please do not use `{i}` in your query. Revise your query and retry the command.\n")
+            return None, apiEmbed, apiEmbedmsg
     
     #I am not sure of the difference in behavior beside the extended Grouped search
     if singleItem:
