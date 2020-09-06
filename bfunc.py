@@ -209,7 +209,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     query = query.replace(')', '\\)')
     query = query.replace('+', '\\+')
 
-    invalidChars = ["[", "]", "?", ".", '"', "\\", "*", "$", "{", "}", ",", "^", ">", "<", "|"]
+    invalidChars = ["[", "]", "?", ".", '"', "\\", "*", "$", "{", "}", "^", ">", "<", "|"]
 
     for i in invalidChars:
         if i in query:
