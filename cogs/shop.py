@@ -401,9 +401,9 @@ class Shop(commands.Cog):
             
             # check for the additional Silvered modifer and remove it to just get the DB entry name
             searchItem = buyItem.lower()
-            # if the item was already adamantine, cancel
-            
             silvered = False
+            # if the item was already adamantine, cancel
+
             if( "adamantine " in searchItem):
                 await channel.send(f'**{buyItem}** is already adamantine!')
                 ctx.command.reset_cooldown(ctx)

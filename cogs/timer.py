@@ -71,6 +71,7 @@ class Timer(commands.Cog):
     the last argument passed in will be treated as the quest name
     """
     @commands.cooldown(1, float('inf'), type=commands.BucketType.channel) 
+    @commands.has_any_role('D&D Friend', 'Campaign Friend')
     @timer.command()
     async def prep(self, ctx, userList, *, game):
         #this checks that only the author's response with one of the Tier emojis allows Tier selection
@@ -228,6 +229,7 @@ class Timer(commands.Cog):
         #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
         #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "9/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
         #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "1/--", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
+
         #set up a variable for the current state of the timer
         timerStarted = False
         
@@ -1025,11 +1027,11 @@ class Timer(commands.Cog):
                     print('tierNum')
                     print(tierNum)
                     
-                    
                     dmMajorLimit += floor((totalDurationTimeMultiplier -1) / 2)
-                    dmMinorLimit += ceil((totalDurationTimeMultiplier -1) / 2)
+                    dmMinorLimit += (totalDurationTimeMultiplier -1)
+                    
                     rewardMajorLimit += floor((totalDurationTimeMultiplier -1) / 2)
-                    rewardMinorLimit += ceil((totalDurationTimeMultiplier -1) / 2)
+                    rewardMinorLimit += (totalDurationTimeMultiplier -1)
                     
                     print("Major Limit", rewardMajorLimit)
                     print("Minor Limit", rewardMinorLimit)
@@ -1143,7 +1145,7 @@ class Timer(commands.Cog):
                                         if not resume:
                                             await ctx.channel.send(f"You cannot award yourself any more Major reward items {dmMajor - len(blocking_list_additions['Major'])}/{dmMajorLimit}.")
                                         return start, dmChar 
-                                    elif dmMinor > dmMinorLimit:
+                                    elif dmMinor+dmMajor > dmMinorLimit:
                                         if not resume:
                                             await ctx.channel.send(f"You cannot award yourself any more Minor reward items {dmMinor - len(blocking_list_additions['Minor'])}/{dmMinorLimit}.")
                                         return start, dmChar 
@@ -1643,9 +1645,6 @@ class Timer(commands.Cog):
     @timer.command(aliases=['end'])
     async def stop(self,ctx,*,start="", role="", game="", datestart="", dmChar="", guildsList=""):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
-            if not self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx):
-                await ctx.channel.send(content=f"There is no timer to stop or something went wrong with the timer! If you previously had a timer, use the following command to resume that timer:\n```yaml\n{commandPrefix}timer resume```")
-                return
             end = time.time() + 3600 * 3
             # get a formatted string of the endtime
             dateend=(datetime.now(pytz.timezone(timezoneVar))).strftime("%I:%M %p")
@@ -2233,7 +2232,7 @@ class Timer(commands.Cog):
     @timer.command()
     @commands.has_any_role('Mod Friend', 'A d m i n')
     async def resetcooldown(self,ctx):
-        self.timer.get_command('start').reset_cooldown(ctx)
+        self.timer.get_command('prep').reset_cooldown(ctx)
         self.timer.get_command('resume').reset_cooldown(ctx)
         await ctx.channel.send(f"Timer has been reset in #{ctx.channel}")
     
@@ -2462,10 +2461,11 @@ class Timer(commands.Cog):
         
         #repeat this entire chunk until the stop command is given
         while not timerStopped:
+            print("On Cooldown Before Command:", self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx))
             try:
                 if role != "":
                     #the additional check for  '-' being only in games with a tier allows for consumables to be used only in proper games
-                    msg = await self.bot.wait_for('message', timeout=60.0*15, check=lambda m: (any(x in m.content for x in timerCombined) or m.content.startswith('-')) and m.channel == channel)
+                    msg = await self.bot.wait_for('message', timeout=60.0, check=lambda m: (any(x in m.content for x in timerCombined) or m.content.startswith('-')) and m.channel == channel)
                 else:
                     msg = await self.bot.wait_for('message', timeout=60.0*15, check=lambda m: (any(x in m.content for x in timerCombined)) and m.channel == channel)
                 #transfer ownership of the timer
@@ -2522,12 +2522,14 @@ class Timer(commands.Cog):
                 elif msg.content.startswith('-') and msg.author != dmChar[0]:
                     startTimes = await ctx.invoke(self.timer.get_command('deductConsumables'), msg=msg, start=startTimes)
                     stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
-
+                
 
             except asyncio.TimeoutError:
                 stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
             else:
                 pass
+            print("On Cooldown After Command:", self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx))
+                
 
 def setup(bot):
     bot.add_cog(Timer(bot))

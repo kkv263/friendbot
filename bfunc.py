@@ -125,7 +125,10 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
         crossTier = 'T5 TP'
         cross_gp_multiplier = tier_reward_dictionary[3][0]
         cross_tp_multiplier = tier_reward_dictionary[3][1]
+
+
     if cpThreshHold> 0 and totalCP > cpThreshHold:
+
         crossCP += totalCP - cpThreshHold
         crossTP = crossCP * cross_tp_multiplier
         crossGP = crossCP * cross_gp_multiplier
@@ -183,7 +186,7 @@ table -> the table in the database that should be searched in, most common table
 query -> the word which will be searched for in the "Name" property of elements, adjustments were made so that also a special property "Grouped" also gets searched
 singleItem -> if only one item should be returned
 """
-async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False, tier=4):
+async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False, tier=4, exact=False):
     
     #channel and author of the original message creating this call
     channel = ctx.channel

@@ -2233,7 +2233,6 @@ class Character(commands.Cog):
                                     typeDict[iType[0]] = [f"• {k} {iType[1]} {amt}\n"]
                                 else:
                                     typeDict[iType[0]].append(f"• {k} {iType[1]} {amt}\n")
-                                
 
                 for k, v in typeDict.items():
                     v.sort()

@@ -204,9 +204,9 @@ class Tp(commands.Cog):
                 sameMessage = False
                 if tpEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author and sameMessage
-                
+                return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author and sameMessage           
             # calculate the tier of the character to limit which items they can purchase
+
             cLevel = charRecords["Level"]
             tier = 5
             if(cLevel < 5):
