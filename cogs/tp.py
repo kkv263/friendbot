@@ -205,9 +205,20 @@ class Tp(commands.Cog):
                 if tpEmbedmsg.id == r.message.id:
                     sameMessage = True
                 return ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author and sameMessage
-
+                
+            # calculate the tier of the character to limit which items they can purchase
+            cLevel = charRecords["Level"]
+            tier = 5
+            if(cLevel < 5):
+                tier= 1
+            elif(cLevel < 11):
+                tier= 2
+            elif(cLevel < 17):
+                tier= 3
+            elif(cLevel < 20):
+                tier= 4
             #make the call to the bfunc function to retrieve an item matching with mItem
-            mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem) 
+            mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem, tier) 
             #if an item was found
             if mRecord:
                 """

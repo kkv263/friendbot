@@ -81,11 +81,11 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
     
     #######role = role.lower()
     
-    # create a string representing which tier the character is in in order to create/manipulate the appropriate TP entry in the DB
-    tierTP = f"T{tier} TP"
     # Level 20 characters haves access to exclusive items
     if char[1]['Level'] >= 20:
-        tierTP = "T5 TP"
+        tier = 5
+    # create a string representing which tier the character is in in order to create/manipulate the appropriate TP entry in the DB
+    tierTP = f"T{tier} TP"
     # get the current CP amount in terms of the current level (eg. 5 CP/10 CP)
     cpSplit= char[1]['CP'].split('/')
     # calculate how far into the current level CP the character is after the game
@@ -125,17 +125,17 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
         crossTier = 'T5 TP'
         cross_gp_multiplier = tier_reward_dictionary[3][0]
         cross_tp_multiplier = tier_reward_dictionary[3][1]
-
-    if totalCP > cpThreshHold:
+    if cpThreshHold> 0 and totalCP > cpThreshHold:
         crossCP += totalCP - cpThreshHold
         crossTP = crossCP * cross_tp_multiplier
         crossGP = crossCP * cross_gp_multiplier
+        cp -= crossCP
             
-    cp -= crossCP
+    print("Left:", leftCP, crossTier, totalCP, cpThreshHold)
     tp = cp * tier_reward_dictionary[tier-1][1]
     gp = cp * tier_reward_dictionary[tier-1][0] + crossGP
  
-    finalCPString = f'{leftCP}/{float(cpSplit[1])}'
+    finalCPString = f'{leftCP}/{(cpSplit[1])}'
     charEndConsumables = char[1]['Consumables']
     charEndMagicList = char[1]['Magic Items']
     if charEndConsumables == '':
@@ -163,7 +163,7 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
         returnData['fields']['$unset'] = unset
     
     if crossTier:
-        returnData['fields']['$set'][crossTier] = crossTP 
+        returnData['fields']['$set'][f"GID{str(gameID)}"]+=f", T {crossTier}: {crossTP}"
     print("Tier", tier)
     print("crossCP", crossCP)
     print("crossGP", crossGP)
@@ -542,7 +542,7 @@ timezoneVar = 'US/Central'
 # ritTierArray = getTiers(ritSheet.row_values(2))
 # ritSubArray = ritSheet.row_values(3)
 
-tier_reward_dictionary = [[50, 0.5], [100, 0.5], [150, 1], [200, 1]]
+tier_reward_dictionary = [[50, 0.5], [100, 0.5], [150, 1], [200, 1], [200, 1]]
 
 # Quest Buffs - 2x Rewards, 2x Items, Recruitment Drive
 questBuffsDict = {'2xRewards': [20, "2x CP,TP, and gp"], 

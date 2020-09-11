@@ -225,8 +225,9 @@ class Timer(commands.Cog):
         signedPlayers = [[author,"No Rewards",['None'],"None"]]
         
         #signedPlayers = [[author,"No Rewards",['None'],"None"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc", "Level": 4, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/4", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc", "Level": 4, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "3/4", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
+        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
+        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "9/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
+        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "1/--", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
         #set up a variable for the current state of the timer
         timerStarted = False
         
@@ -996,7 +997,7 @@ class Timer(commands.Cog):
                         chooseOr = True
                     elif dmChar [4][0] == 'Good Noodle':
                         rewardMajorLimit = 1
-                        rewardMinorLimt = 3
+                        rewardMinorLimit = 3
                         dmMajorLimit = 0
                         dmMinorLimit = 1
                         lowerTier = True
@@ -1024,9 +1025,9 @@ class Timer(commands.Cog):
                     print('tierNum')
                     print(tierNum)
                     
-                    dmMajorLimit *= totalDurationTimeMultiplier 
-                    dmMinorLimit *= totalDurationTimeMultiplier 
                     
+                    dmMajorLimit += floor((totalDurationTimeMultiplier -1) / 2)
+                    dmMinorLimit += ceil((totalDurationTimeMultiplier -1) / 2)
                     rewardMajorLimit += floor((totalDurationTimeMultiplier -1) / 2)
                     rewardMinorLimit += ceil((totalDurationTimeMultiplier -1) / 2)
                     

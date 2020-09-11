@@ -402,11 +402,12 @@ class Shop(commands.Cog):
             # check for the additional Silvered modifer and remove it to just get the DB entry name
             searchItem = buyItem.lower()
             # if the item was already adamantine, cancel
+            
+            silvered = False
             if( "adamantine " in searchItem):
                 await channel.send(f'**{buyItem}** is already adamantine!')
                 ctx.command.reset_cooldown(ctx)
                 return
-            
             # extract the DB name by removing the silvered property
             elif(searchItem.startswith("silvered ")):
                 searchItem = searchItem.replace("silvered ", "", 1)
@@ -518,7 +519,7 @@ class Shop(commands.Cog):
                     print ('MONGO ERROR: ' + str(e))
                     shopEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try shop buy again.")
                 else:
-                    shopEmbed.description = f"{amount}x **{targetItem}** coated for **{gpNeeded} gp**! \n\nCurrent gp: {newGP} gp\n"
+                    shopEmbed.description = f"{amount}x **{targetItem}** coated in {coatType} for **{gpNeeded} gp**! \n\nCurrent gp: {newGP} gp\n"
                     await shopEmbedmsg.edit(embed=shopEmbed)
                     ctx.command.reset_cooldown(ctx)
        
