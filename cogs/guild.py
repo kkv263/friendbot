@@ -445,9 +445,11 @@ class Guild(commands.Cog):
                 if gpNeeded > charRecords['GP']:
                     await channel.send(f"***{charRecords['Name']}*** does not have the minimum {gpNeeded}gp to join ***{guildRecords['Name']}***.")
                     return
+
+                newGP = (charRecords['GP'] - float(gpNeeded)) 
                         
                 guildEmbed.title = f"Joining Guild: {guildRecords['Name']}"
-                guildEmbed.description = f"Are you sure you want to join ***{guildRecords['Name']}***?\n\n✅: Yes\n\n❌: Cancel"
+                guildEmbed.description = f"Are you sure you want to join ***{guildRecords['Name']}*** (Cost to join: {gpNeeded}gp)? \n\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
                 if guildEmbedmsg:
                     await guildEmbedmsg.edit(embed=guildEmbed)
@@ -469,7 +471,6 @@ class Guild(commands.Cog):
                         await guildEmbedmsg.clear_reactions()
                         return
 
-                newGP = (charRecords['GP'] - float(gpNeeded)) 
                 await author.add_roles(guild.get_role(int(guildRecords['Role ID'])), reason=f"Joined guild {guildName}")
 
                 try:

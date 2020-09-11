@@ -2207,17 +2207,33 @@ class Character(commands.Cog):
                         iType[1] = '(' + iType[1]
                 
                     iType[0] = iType[0].strip()
-                    for entry in namingDict[i['Name']]:
-                        amt = charDict['Inventory'][entry]
-                        if amt == 1:
-                            amt = ""
-                        else:
-                            amt = f"x{amt}"
-                        
-                        if iType[0] not in typeDict:
-                            typeDict[iType[0]] = [f"• {entry} {iType[1]} {amt}\n"]
-                        else:
-                            typeDict[iType[0]].append(f"• {entry} {iType[1]} {amt}\n")
+
+                    if isinstance(i['Name'], str):
+                        for entry in namingDict[i['Name']]:
+                            amt = charDict['Inventory'][entry]
+                            if amt == 1:
+                                amt = ""
+                            else:
+                                amt = f"x{amt}"
+                            
+                            if iType[0] not in typeDict:
+                                typeDict[iType[0]] = [f"• {entry} {iType[1]} {amt}\n"]
+                            else:
+                                typeDict[iType[0]].append(f"• {entry} {iType[1]} {amt}\n")
+                    else:
+                        for k,v in charDict['Inventory'].items():
+                            if k in i['Name']:
+                                amt = v
+                                if amt == 1:
+                                    amt = ""
+                                else:
+                                    amt = f"x{amt}"
+                                
+                                if iType[0] not in typeDict:
+                                    typeDict[iType[0]] = [f"• {k} {iType[1]} {amt}\n"]
+                                else:
+                                    typeDict[iType[0]].append(f"• {k} {iType[1]} {amt}\n")
+                                
 
                 for k, v in typeDict.items():
                     v.sort()
