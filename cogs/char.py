@@ -10,7 +10,7 @@ from math import floor
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
 from urllib.parse import urlparse 
-from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack
+from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack, tier_reward_dictionary
 
 class Character(commands.Cog):
     def __init__ (self, bot):
@@ -265,7 +265,7 @@ class Character(commands.Cog):
                     highestTier = 1
                 elif lvl > 5:
                     bankTP1 = 8
-                    bankTP2 = (lvl-5) * 4
+                    bankTP2 = (lvl-5) * 5
                     highestTier = 2
 
                 magicItemsTier2 = []
@@ -359,7 +359,7 @@ class Character(commands.Cog):
                 bankTP1 = (lvl-1) * 2 
             elif lvl > 5:
                 bankTP1 = 8
-                bankTP2 = (lvl-5) * 4
+                bankTP2 = (lvl-5) * 5
         elif lvl == 1 and magicItems != ['']:
             msg += '• You cannot purchase magic items at Level 1.\n'
 

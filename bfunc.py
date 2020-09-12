@@ -213,7 +213,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
     query = query.replace('+', '\\+')
     query = query.replace('.', '\\.')
 
-    invalidChars = ["[", "]", "?", '"', "\\", "*", "$", "{", "}", "^", ">", "<", "|"]
+    invalidChars = ["[", "]", "?", '"', "*", "$", "{", "}", "^", ">", "<", "|"]
 
     for i in invalidChars:
         if i in query:
@@ -330,8 +330,9 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             #sort items by tier if the magic item tables were requested
             if table == 'mit' or table == 'rit':
                 records = sorted(records, key = lambda i : i ['Tier'])
-            #limit items to 20
-            for i in range(0, min(len(records), 20)):
+            queryLimit = 15
+            #limit items to queryLimit
+            for i in range(0, min(len(records), queryLimit)):
                 if table == 'mit':
                     infoString += f"{alphaEmojis[i]}: {records[i]['Name']} (Tier {records[i]['Tier']}): **{records[i]['TP']} TP**\n"
                 elif table == 'rit':
@@ -346,9 +347,9 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                 sameMessage = False
                 if apiEmbedmsg.id == r.message.id:
                     sameMessage = True
-                return ((r.emoji in alphaEmojis[:min(len(records), 20)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
+                return ((r.emoji in alphaEmojis[:min(len(records), queryLimit)]) or (str(r.emoji) == '❌')) and u == author and sameMessage
             #inform the user of the current information and ask for their selection of an item
-            apiEmbed.add_field(name=f"There seems to be multiple results for \"**{query}**\"! Please choose the correct one.\nThe maximum number of results shown is 20. If the result you are looking for is not here, please react with ❌ and be more specific.", value=infoString, inline=False)
+            apiEmbed.add_field(name=f"There seems to be multiple results for \"**{query}**\"! Please choose the correct one.\nThe maximum number of results shown is {queryLimit}. If the result you are looking for is not here, please react with ❌ and be more specific.", value=infoString, inline=False)
             if not apiEmbedmsg or apiEmbedmsg == "Fail":
                 apiEmbedmsg = await channel.send(embed=apiEmbed)
             else:
