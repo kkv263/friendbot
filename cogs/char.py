@@ -2326,7 +2326,22 @@ class Character(commands.Cog):
         if userRecords: 
             playersCollection = db.players
             charRecords = list(playersCollection.find({"User ID": str(author.id)}))
+
             if charRecords:
+                charRecords = sorted(charRecords, key=lambda k: k['Name']) 
+
+                charDictTiers = [[],[],[],[]]
+
+                for c in charRecords:
+                    if c["Level"] < 5:
+                        charDictTiers[0].append(c)
+                    elif c["Level"] < 11:
+                        charDictTiers[1].append(c)
+                    elif c["Level"] < 17:
+                        charDictTiers[2].append(c)
+                    else:
+                        charDictTiers[3].append(c)
+
                 charEmbed.set_author(name=author, icon_url=author.avatar_url)
                 charEmbed.title = f"{author.display_name}"
 
@@ -2337,18 +2352,19 @@ class Character(commands.Cog):
                 pages = 1
                 pageStops = [0]
 
-                for charDict in charRecords:
-                    totalGamesPlayed += charDict['Games'] 
-                    tempCharString = charString
-                    charString += f"• **{charDict['Name']}**: Lv {charDict['Level']}, {charDict['Race']}, {charDict['Class']}\n"
+                for n in range(0,len(charDictTiers)):
+                    charString += f"\n———**Tier {n+1} Characters:**———\n"
+                    for charDict in charDictTiers[n]:
+                        totalGamesPlayed += charDict['Games'] 
+                        tempCharString = charString
+                        charString += f"• **{charDict['Name']}**: Lv {charDict['Level']}, {charDict['Race']}, {charDict['Class']}\n"
 
+                        if 'Guild' in charDict:
+                            charString += f"~ Guild: *{charDict['Guild']}*\n"
 
-                    if 'Guild' in charDict:
-                        charString += f"~ Guild: *{charDict['Guild']}*\n"
-
-                    if len(charString) > (768 * pages):
-                        pageStops.append(len(tempCharString))
-                        pages += 1
+                        if len(charString) > (768 * pages):
+                            pageStops.append(len(tempCharString))
+                            pages += 1
 
                 pageStops.append(len(charString))
 
@@ -2370,9 +2386,11 @@ class Character(commands.Cog):
                 
 
                 if 'Noodles' in userRecords:
-                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}"
+                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}\n"
                 else:
-                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: 0 (Try hosting sessions to receive Noodles!)"
+                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: 0 (Try hosting sessions to receive Noodles!)\n"
+
+                charEmbed.description += f"Total Number of Characters: {len(charRecords)}\nTier 1: {len(charDictTiers[0])}\nTier 2: {len(charDictTiers[1])}\nTier 3: {len(charDictTiers[2])}\nTier 4: {len(charDictTiers[3])}"
 
                 userEmbedList = [charEmbed]
                 page = 0
