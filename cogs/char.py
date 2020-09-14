@@ -10,7 +10,7 @@ from math import floor
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
 from urllib.parse import urlparse 
-from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack
+from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack, tier_reward_dictionary
 
 class Character(commands.Cog):
     def __init__ (self, bot):
@@ -819,12 +819,12 @@ class Character(commands.Cog):
                                         charDict['Inventory'][beKey] += 1
 
                         charEmbed.clear_fields()
-
+                
                 totalGP = 0
                 if lvl > 1 and lvl < 6: 
-                    totalGP = (lvl-1) * 240
+                    totalGP = (lvl-1) * tier_reward_dictionary[0][0]*4
                 if lvl > 5:
-                    totalGP = (lvl-6) * 960 + 1920
+                    totalGP = (lvl-6) * tier_reward_dictionary[1][0]*10 + tier_reward_dictionary[0][0]*4*4
 
                 charDict['GP'] = int(bRecord['GP']) + totalGP
         
@@ -1616,11 +1616,10 @@ class Character(commands.Cog):
             charDict['Background'] = bRecord['Name']
             totalGP = 0
             if lvl > 1 and lvl < 6: 
-                totalGP = (lvl-1) * 240
+                totalGP = (lvl-1) * tier_reward_dictionary[0][0]*4
             if lvl > 5:
-                totalGP = (lvl-6) * 960 + 1920
-
-            totalGP += extraCp * 60
+                totalGP = (lvl-6) * tier_reward_dictionary[1][0]*10 + tier_reward_dictionary[0][0]*4*4
+            totalGP += extraCp * tier_reward_dictionary[0][0]
             charDict['GP'] = int(bRecord['GP']) + totalGP
 
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
