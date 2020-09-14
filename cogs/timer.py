@@ -1602,7 +1602,7 @@ class Timer(commands.Cog):
                         pass
                     # list that the character died
                     elif key.startswith("%"):
-                        embed.add_field(name= f"~~{v[0].display_name}~~", value=f"**{v[1]['Name']}** - **DEATH**{consumablesString}{rewardsString}", inline=False) 
+                        embed.add_field(name= f"~~{v[0].display_name}~~", value=f"{v[1]['Name']} - **DEATH**{consumablesString}{rewardsString}", inline=False) 
                     else:
                         # if the player did not receive the full rewards then we need to add together all the time they have played
                         # these times are separated by : and formated as 'add time ? remove time'
@@ -1614,7 +1614,7 @@ class Timer(commands.Cog):
                             durationEach += (float(ttemp[1]) - float(ttemp[0]))
 
                         if role != "":
-                            embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=f"**{v[1]['Name']}**{consumablesString}{rewardsString}", inline=False)
+                            embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=f"{v[1]['Name']}{consumablesString}{rewardsString}", inline=False)
                         else:
                             # if it is a no rewards game then there is no character to list
                             embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=v[0].mention, inline=False)

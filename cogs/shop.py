@@ -351,7 +351,7 @@ class Shop(commands.Cog):
             # since the order is always Silvered Adamantine Weapon, we can use startswith for these checks
             
             # search for the item in the DB to find which type it is
-            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', searchItem) 
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', searchItem, exact=True) 
         
             if bRecord:
                 # if it is not a weapon, cancel
