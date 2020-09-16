@@ -379,7 +379,27 @@ class Character(commands.Cog):
             msg += f"• Your role does not allow you to create a character with reward items. Please try again."
         elif rewardItems != ['']:
             for r in rewardItems:
-                reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
+                if "spell scroll" in r.lower():
+                    if "spell scroll" == r.lower().strip():
+                        msg += f"""Please be more specific with the type of spell scroll which you're purchasing. You can format spell scrolls like "`Spell Scroll (spell name)`.\n"""
+                        break 
+                        
+                    spellItem = r.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
+                    sRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'spells', spellItem) 
+
+                    if sRecord["Level"] > 3:
+                        msg += f"""The spell scroll {sRecord['Name']} cannot be a reward item because the level is too high.\n"""
+                        break
+
+                    elif sRecord["Level"] == 3:
+                        sTier = 2
+                    else:
+                        sTier = 1
+
+                    reRecord = {"Name": f"Spell Scroll ({sRecord['Name']})", "Consumable": True, "Magic Item": True, "Tier": sTier, "Minor/Major" : "Minor"}
+                else:
+                    reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
+
                 if charEmbedmsg == "Fail":
                     return
                 if not reRecord:
@@ -423,6 +443,7 @@ class Character(commands.Cog):
             startt2 = tier2Count
 
             for item in allRewardItemsString:
+                print(item['Tier'])
                 if int(item['Tier']) > 2:
                     msg += ":warning: One or more of these reward items cannot be acquired at Level " + str(lvl) + ".\n"
                     break
@@ -1315,14 +1336,32 @@ class Character(commands.Cog):
             msg += f"• Your role does not allow you to create a character with reward items. Please try again."
         elif rewardItems != ['']:
             for r in rewardItems:
-                reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
+                if "spell scroll" in r.lower():
+                    if "spell scroll" == r.lower().strip():
+                        msg += f"""Please be more specific with the type of spell scroll which you're purchasing. You can format spell scrolls like "`Spell Scroll (spell name)`.\n"""
+                        break 
+                        
+                    spellItem = r.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
+                    sRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'spells', spellItem) 
+
+                    if sRecord["Level"] > 3:
+                        msg += f"""The spell scroll {sRecord['Name']} cannot be a reward item because the level is too high.\n"""
+                        break
+
+                    elif sRecord["Level"] == 3:
+                        sTier = 2
+                    else:
+                        sTier = 1
+
+                    reRecord = {"Name": f"Spell Scroll ({sRecord['Name']})", "Consumable": True, "Magic Item": True, "Tier": sTier, "Minor/Major" : "Minor"}
+                else:
+                    reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
+
                 if charEmbedmsg == "Fail":
                     return
                 if not reRecord:
                     msg += f' {r} doesn\'t exist! Check to see if it\'s on the Reward Item Table and check your spelling.\n'
                     break
-                else:
-                    allRewardItemsString.append(reRecord)
 
             tier1CountMNC = 0
             tier1Count = 0
