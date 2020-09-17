@@ -186,7 +186,7 @@ class Guild(commands.Cog):
                     await guildEmbedmsg.clear_reactions()
                     baseRep = int(noodleRep[alphaEmojis.index(tReaction.emoji[0])].split(' (')[1].replace(')',""))
                     noodleRepUsed = noodleRep[alphaEmojis.index(tReaction.emoji[0])]
-                    userRecords['Guilds'].append(noodleRepUsed)
+                    userRecords['Guilds'].append(f"{guildName}: {noodleRepUsed}")
 
                     # Quick check to see if guild already exists
                     guildsCollection = db.guilds
