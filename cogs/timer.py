@@ -131,6 +131,15 @@ class Timer(commands.Cog):
         # create a list of all expected players for the game so far, including the user who will always be the first 
         # element creating an invariant of the DM being the first element
         playerRoster = [author] + ctx.message.mentions
+
+        # player limit + 1 (includes DM)
+        playerLimit = 7 + 1 
+
+        if len(playerRoster) > playerLimit:
+            await channel.send(f'You cannot start a timer with more than {playerLimit - 1} players. Please try again.')
+            self.timer.get_command('prep').reset_cooldown(ctx)
+            return
+
         # set up the user communication for tier selection, this is done even if norewards is selected
         prepEmbed.add_field(name=f"React with [1-4] for the tier of your quest: **{game}**.\n", value=f"{numberEmojis[0]} New / Junior Friend (Level 1-4)\n{numberEmojis[1]} Journeyfriend (Level 5-10)\n{numberEmojis[2]} Elite Friend (Level 11-16)\n{numberEmojis[3]} True Friend (Level 17-20)", inline=False)
         # the discord name is used for listing the owner of the timer
@@ -321,23 +330,25 @@ class Timer(commands.Cog):
             # similar issues arise as mentioned above about wrongful calls
             elif (msg.content.startswith(f"{commandPrefix}timer add ") or msg.content.startswith(f"{commandPrefix}t add ")):
                 if await self.permissionCheck(msg, author):
-                    # this simply checks the message for the user that is being added, the Member object is returned
-                    addUser = await ctx.invoke(self.timer.get_command('add'), msg=msg, prep=True)
-                    print(addUser)
-                    #failure to add a user does not have an error message if no user is being added
-                    if addUser is None:
-                        pass
-                    elif addUser not in playerRoster:
-                        # set up the embed fields for the new user if they arent in the roster yet
-                        if not isCampaign:
-                            prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up a character to play.', inline=False)
-                        else:
-                            prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up for the campaign.', inline=False)
-                        # add them to the roster
-                        playerRoster.append(addUser)
+                    if len(playerRoster) + 1 > playerLimit:
+                        await channel.send(f'You cannot add more than {playerLimit - 1} players to the timer.')
                     else:
-                        #otherwise inform the user of the failed add
-                        await channel.send(f'***{addUser.display_name}*** is already on the timer.')
+                        # this simply checks the message for the user that is being added, the Member object is returned
+                        addUser = await ctx.invoke(self.timer.get_command('add'), msg=msg, prep=True)
+                        #failure to add a user does not have an error message if no user is being added
+                        if addUser is None:
+                            pass
+                        elif addUser not in playerRoster:
+                            # set up the embed fields for the new user if they arent in the roster yet
+                            if not isCampaign:
+                                prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up a character to play.', inline=False)
+                            else:
+                                prepEmbed.add_field(name=addUser.display_name, value='Has not yet signed up for the campaign.', inline=False)
+                            # add them to the roster
+                            playerRoster.append(addUser)
+                        else:
+                            #otherwise inform the user of the failed add
+                            await channel.send(f'***{addUser.display_name}*** is already on the timer.')
 
             # same issues arise again
             
@@ -1234,7 +1245,18 @@ class Timer(commands.Cog):
             # the user to add
             addUser = user
             channel = ctx.channel
-            
+
+            # Check if the player that will be added will exceed the player limit
+            playerCount = 0
+            playerLimit = 7
+            for sk, sv in startcopy.items():
+                if '+' in sk or 'Full Rewards' in sk:
+                    playerCount += len(sv)
+
+            if playerCount + 1 > playerLimit:
+                await channel.send(f'You cannot add more than {playerLimit} players to the timer.')
+                return start
+                
             # make sure that only the the relevant user can respond
             def addMeEmbedCheck(r, u):
                 sameMessage = False
@@ -1249,8 +1271,6 @@ class Timer(commands.Cog):
                 startTime = time.time()
             else:
                 startTime = msg.created_at.replace(tzinfo=timezone.utc).timestamp()
-            
-                
             
             
             # we go over every key value pair in the start dictionary
@@ -2072,9 +2092,31 @@ class Timer(commands.Cog):
                 statsCollection = db.stats
 
                 statsRecord  = statsCollection.find_one({'Date': dateyear})
+                statsRecordLife  = statsCollection.find_one({'Life': 1})
                 # get the stats for the month and create an entry if it doesnt exist yet
                 if not statsRecord:
                     statsRecord = {'Date': dateyear, 'DM': {}}
+
+                # Total Number of Games for the Month / Life
+                if "Games" in statsRecord:
+                    statsRecord["Games"] += 1
+                else:
+                    statsRecord["Games"] = 1
+
+                if "Games" in statsRecordLife:
+                    statsRecordLife["Games"] += 1
+                else:
+                    statsRecordLife["Games"] = 1
+
+                # List of Guilds followed by the number of game for that guild this month
+                if "Guild Games" not in statsRecord:
+                    statsRecord["Guild Games"] = {}
+                    
+                for g in guildsRecordsList:
+                    if g["Name"] not in statsRecord["Guild Games"].keys():
+                        statsRecord["Guild Games"][g["Name"]] = 1
+                    else:
+                        statsRecord["Guild Games"][g["Name"]] += 1
                 
                 
                 # If at least the minimum rewards are given out
@@ -2149,6 +2191,7 @@ class Timer(commands.Cog):
                     # update all the other data entries
                     # update the DB stats
                     statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
+                    statsCollection.update_one({'Life':1}, {"$set": statsRecordLife}, upsert=True)
                     # update the DM' stats
                     usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodles}}, upsert=True)
                     # create a bulk write entry for the players

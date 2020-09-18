@@ -1037,7 +1037,6 @@ class Character(commands.Cog):
         statsCollection = db.stats
         statsRecord  = statsCollection.find_one({'Life': 1})
 
-        print(classStat)
         for c in classStat:
             char = c.split('-')
             if char[0] in statsRecord['Class']:
@@ -1945,6 +1944,7 @@ class Character(commands.Cog):
         charEmbedmsg = None
         charDict, charEmbedmsg = await checkForChar(ctx, char, charEmbed)
 
+
         def retireEmbedCheck(r, u):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
@@ -1955,7 +1955,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and ((str(r.emoji) == '1️⃣') or (str(r.emoji) == '2️⃣') or (charDict['GP'] >= gpNeeded and str(r.emoji) == '3️⃣') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '1️⃣') or (str(r.emoji) == '2️⃣') or (charDict['GP'] + deathDict['GP']  >= gpNeeded and str(r.emoji) == '3️⃣') or (str(r.emoji) == '❌')) and u == author
 
         if charDict:
             if 'Death' not in charDict:
@@ -1963,6 +1963,7 @@ class Character(commands.Cog):
                 self.bot.get_command('death').reset_cooldown(ctx)
                 return
             
+            deathDict = eval(charDict['Death'])
             charID = charDict['_id']
             charLevel = charDict['Level']
             if charLevel < 5:
@@ -1981,8 +1982,8 @@ class Character(commands.Cog):
             charEmbed.title = f"Character Death - {charDict['Name']}"
             charEmbed.set_footer(text= "React with ❌ to cancel.\nPlease react with a choice even if no reactions appear.")
 
-            if charDict['GP'] < gpNeeded:
-                charEmbed.description = f"Please choose between these three options for {charDict['Name']}:\n\n1️⃣: Death - Retires your character.\n2️⃣: Survival - Forfeit rewards and survive.\n3️⃣: ~~Revival~~ - You currently have {charDict['GP']} gp but need {gpNeeded} gp to be revived."
+            if charDict['GP'] + deathDict['GP'] < gpNeeded:
+                charEmbed.description = f"Please choose between these three options for {charDict['Name']}:\n\n1️⃣: Death - Retires your character.\n2️⃣: Survival - Forfeit rewards and survive.\n3️⃣: ~~Revival~~ - You currently have {charDict['GP'] + deathDict['GP']} gp but need {gpNeeded} gp to be revived."
             else:
                 charEmbed.description = f"Please choose between these three options for {charDict['Name']}:\n\n1️⃣: Death - Retires your character.\n2️⃣: Survival - Forfeit rewards and survive.\n3️⃣: Revival - Revives your character for {gpNeeded} gp."
             if not charEmbedmsg:
@@ -1992,20 +1993,20 @@ class Character(commands.Cog):
 
             await charEmbedmsg.add_reaction('1️⃣')
             await charEmbedmsg.add_reaction('2️⃣')
-            if charDict['GP'] >= gpNeeded:
+            if charDict['GP'] + deathDict['GP']  >= gpNeeded:
                 await charEmbedmsg.add_reaction('3️⃣')
             await charEmbedmsg.add_reaction('❌')
             try:
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=deathEmbedCheck , timeout=60)
             except asyncio.TimeoutError:
                 await charEmbedmsg.delete()
-                await channel.send(f'Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death```')
+                await channel.send(f'Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death "charactername"```')
                 self.bot.get_command('death').reset_cooldown(ctx)
                 return
             else:
                 await charEmbedmsg.clear_reactions()
                 if tReaction.emoji == '❌':
-                    await charEmbedmsg.edit(embed=None, content=f"Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death```")
+                    await charEmbedmsg.edit(embed=None, content=f'Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death "charactername"```')
                     await charEmbedmsg.clear_reactions()
                     self.bot.get_command('death').reset_cooldown(ctx)
 
@@ -2021,13 +2022,13 @@ class Character(commands.Cog):
                         tReaction, tUser = await self.bot.wait_for("reaction_add", check=retireEmbedCheck , timeout=60)
                     except asyncio.TimeoutError:
                         await charEmbedmsg.delete()
-                        await channel.send(f'Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death```')
+                        await channel.send(f'Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death "charactername"```')
                         self.bot.get_command('death').reset_cooldown(ctx)
                         return
                     else:
                         await charEmbedmsg.clear_reactions()
                         if tReaction.emoji == '❌':
-                            await charEmbedmsg.edit(embed=None, content=f"Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death```")
+                            await charEmbedmsg.edit(embed=None, content=f'Death cancelled. Try again using the same command:\n```yaml\n{commandPrefix}death "charactername" "charactername"```')
                             await charEmbedmsg.clear_reactions()
                             self.bot.get_command('death').reset_cooldown(ctx)
                             return
@@ -2038,7 +2039,8 @@ class Character(commands.Cog):
                                 deadCollection = db.dead
                                 deadCollection.insert_one(charDict)
                                 playersCollection.delete_one({'_id': charID})
-                                usersRecord = list(collection.find({"User ID": charDict['User ID']}))[0]
+                                usersCollection = db.users
+                                usersRecord = list(usersCollection.find({"User ID": charDict['User ID']}))[0]
 
                                 if 'Games' not in usersRecord:
                                     usersRecord['Games'] = 1
@@ -2060,7 +2062,6 @@ class Character(commands.Cog):
                                     charEmbedmsg = await channel.send(embed=None, content="Congratulations! You have retired your character.")
                     
                 elif tReaction.emoji == '2️⃣' or tReaction.emoji == '3️⃣':
-                    deathDict = eval(charDict['Death'])
                     charEmbed.clear_fields()
                     charDict['Death'] = ''
                     data = {
@@ -2086,7 +2087,8 @@ class Character(commands.Cog):
                     try:
                         playersCollection = db.players
                         playersCollection.update_one({'_id': charID}, {"$set": data, "$unset": {"Death":1}})
-                        usersRecord = list(collection.find({"User ID": charDict['User ID']}))[0]
+                        usersCollection = db.users
+                        usersRecord = list(usersCollection.find({"User ID": charDict['User ID']}))[0]
 
                         if 'Games' not in usersRecord:
                             usersRecord['Games'] = 1
@@ -2096,7 +2098,7 @@ class Character(commands.Cog):
                         usersCollection.update_one({'User ID': charDict['User ID']}, {"$set": {'Games': usersRecord['Games']}}, upsert=True)
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
-                        charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try creating your character again.")
+                        charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the command again.")
                     else:
                         print("Success")
                         if charEmbedmsg:
@@ -3469,10 +3471,12 @@ class Character(commands.Cog):
         else:
             statsEmbed.description = ""
 
+        # Lets the user choose a category to view stats
         if tReaction.emoji == alphaEmojis[0]:
             if statRecords is None:
-                statsEmbed.add_field(name="Monthly Stats", value="There have been 0 games played this month. Check back later!", inline=False)
+                statsEmbed.add_field(name="Monthly Quest Stats", value="There have been 0 games played this month. Check back later!", inline=False)
             else:
+                # Iterate through each DM and track tiers + total
                 for k,v in statRecords['DM'].items():
                     dmMember = guild.get_member(int(k))
                     if dmMember is None:
@@ -3486,23 +3490,49 @@ class Character(commands.Cog):
                     totalGames = 0
                     for vk, vv in v.items():
                         totalGames += vv
-                        superTotal += totalGames
                     
+                    # Total Number of Games per DM
                     statsString += f"Total:{totalGames}\n"
 
+              
+                # Total number of Games for the month
+                superTotal += statRecords["Games"]
+
+                # Total number of guild quests
                 if 'GQ' in statRecords:
                     guildsString += f'Guild quests out of total quests: {round((statRecords["GQ"] / superTotal),2) * 100}%\n'
                     guildsString += f"Guild Quests: {statRecords['GQ']}\n"
                 else:
                     guildsString += f"Guild Quests: 0\n"
 
+                # Total number of guild quests with a guild member who got rewards
                 if 'GQM' in statRecords:
                     guildsString += f"Guild Quests with Members: {statRecords['GQM']}\n"
 
                 else:
                     guildsString += f"Guild Quests with Members: 0\n"
 
+                
+                # Games By Guild
+                if "Guild Games" in statRecords:
+                    gPages = 1
+                    gPageStops = [0]
+                    guildGamesString = ""
+                    for gk, gv in statRecords["Guild Games"].items():
+                        guildGamesString += f"• {gk}: {gv}\n"
+                        if len(guildGamesString) > (768 * gPages):
+                            gPageStops.append(len(guildGamesString))
+                            gPages += 1
+                    gPageStops.append(len(guildGamesString))
 
+                    if gPages > 1:
+                        for p in range(len(gPageStops)-1):
+                            statsEmbed.add_field(name=f'Games by Guild - p. {p+1}', value=guildGamesString[gPageStops[p]:gPageStops[p+1]], inline=False)
+                    else:
+                        statsEmbed.add_field(name='Games by Guild', value=guildGamesString, inline=False)
+
+
+                # Total number of guild quests with no guild members who got rewards
                 if 'GQNM' in statRecords:
                     guildsString += f"Guild Quests with no Members: {statRecords['GQNM']}\n"
                 else:
@@ -3512,6 +3542,7 @@ class Character(commands.Cog):
                 if guildsString:
                     statsEmbed.add_field(name="Guild Games", value=guildsString, inline=False) 
 
+                # Stat for average player and average play time
                 if 'Players' in statRecords and 'Playtime' in statRecords:
                     avgString += f"Average Number of Player per Game: {floor(sum(statRecords['Players']) / len(statRecords['Players']))}\n" 
                     avgString += f"Average Game Time: {timeConversion(sum(statRecords['Playtime']) / len(statRecords['Playtime']))}\n"
@@ -3520,6 +3551,8 @@ class Character(commands.Cog):
                 if statsString:
                     statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
 
+                # Number of games by total and by tier
+                statsTotalString += f"**Lifetime Games**: {statRecordsLife['Games']}\n\n"
                 statsTotalString += f"**Monthly Stats**\nTotal Games for the Month: {superTotal}\n"
                 for i in range (1,5):
                     if f'T{i}' not in statRecords:
