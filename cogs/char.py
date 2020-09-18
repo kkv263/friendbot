@@ -211,8 +211,6 @@ class Character(commands.Cog):
         if ("Bean Friend" in roles) and lvl < 11:
             roleSet = roleSet.union(set(map(lambda x: x+1,roleSet.copy())))
           
-        print (roleSet)
-
         if lvl not in roleSet:
             msg += f":warning: You cannot create a character of **{lvl}**! You do not have the correct role!\n"
         
@@ -2769,6 +2767,8 @@ class Character(commands.Cog):
                         if c['Name'] in s['Name']:
                             s['Hit Die Max'] = c['Hit Die Max']
                             s['Hit Die Average'] = c['Hit Die Average']
+                            if "Spellcasting" in c:
+                                s["Spellcasting"] = True
 
                 subclasses = sorted(subclasses, key = lambda i: i['Level'], reverse=True)
 
@@ -2907,6 +2907,8 @@ class Character(commands.Cog):
                             for c in classRecords:
                                 if c['Name'] in charClassChoice:
                                     subclasses.append({'Name': charClassChoice, 'Subclass': '', 'Level': 1, 'Hit Die Max': c['Hit Die Max'], 'Hit Die Average': c['Hit Die Average']})
+                                    if "Spellcasting" in c:
+                                        subclasses["Spellcasting"] = True
 
                             if "Wizard" in charClassChoice:
                                 freeSpells[0] += 6
@@ -3999,10 +4001,17 @@ class Character(commands.Cog):
                             featList = []
                             meetsRestriction = False
 
-                            if 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and feat['Name'] not in charFeats and 'Race Unavailable' not in feat and 'Require Spellcasting' not in feat:
+                            if 'Feat Restriction' not in feat and 'Race Restriction' not in feat and 'Class Restriction' not in feat and 'Stat Restriction' not in feat and (feat['Name'] not in charFeats) and 'Race Unavailable' not in feat and 'Require Spellcasting' not in feat:
                                 featChoices.append(feat)
 
                             else:
+                                if 'Feat Restriction' in feat and feat["Name"] not in charFeats:
+                                    featsList = [x.strip() for x in feat['Feat Restriction'].split(', ')]
+
+                                    for f in featsList:
+                                        if f in charFeats or f in featsChosen:
+                                            meetsRestriction = True
+                                            
                                 if 'Race Restriction' in feat:
                                     featsList = [x.strip() for x in feat['Race Restriction'].split(', ')]
 
@@ -4039,9 +4048,15 @@ class Character(commands.Cog):
 
                                 if "Require Spellcasting" in feat:
                                     for c in cRecord:
-                                        if "Spellcasting" in c["Class"]:
-                                            if c["Class"]["Spellcasting"] == True or c["Class"]["Spellcasting"] in charClass:
-                                                meetsRestriction = True
+                                        if "Class" in c:
+                                            if "Spellcasting" in c["Class"]:
+                                                if c["Class"]["Spellcasting"] == True or c["Class"]["Spellcasting"] in charClass:
+                                                    meetsRestriction = True
+                                        else:
+                                            if "Spellcasting" in c:
+                                                if c["Spellcasting"] == True or c["Spellcasting"] in charClass:
+                                                    meetsRestriction = True
+
                                     
                                     spellcastingFeats = list(featsCollection.find({"Spellcasting": True}))
                                     for f in spellcastingFeats:
@@ -4051,12 +4066,18 @@ class Character(commands.Cog):
                                 if meetsRestriction:
                                     featChoices.append(feat)
 
-                    # Whenever a feat that grants spellcasting gets picked.
-                    elif spellcasting == True:
-                        spellcastingFeats = list(featsCollection.find({"Require Spellcasting": True}))
-                        for f in spellcastingFeats:
-                            featChoices.append(f)
+
                     else:
+                        # Whenever a feat that grants spellcasting gets picked.
+                        if spellcasting == True:
+                            spellcastingFeats = list(featsCollection.find({"Require Spellcasting": True}))
+                            for f in spellcastingFeats:
+                                featChoices.append(f)
+
+                        featRestrictRecords = list(featsCollection.find({"Feat Restriction": {"$regex": featPicked["Name"], "$options": 'i' }}))
+                        for f in featRestrictRecords:
+                            if f not in featChoices:
+                                featChoices.append(f)
                         featChoices.remove(featPicked)
 
                     def featChoiceCheck(r, u):
@@ -4142,8 +4163,6 @@ class Character(commands.Cog):
 
                         if (r.emoji in alphaEmojis[:alphaIndex]) and u == author:
                             ritualChoiceList[charEmbedmsg.id].add(r.emoji)
-
-                        print(ritualChoiceList)
 
                         return sameMessage and ((len(ritualChoiceList[charEmbedmsg.id]) == 2) or (str(r.emoji) == '❌')) and u == author
 
