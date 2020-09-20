@@ -891,7 +891,7 @@ class Timer(commands.Cog):
     dmChar -> the player entry (format [member object, char DB entry, brought consumables, char id]) of the DM with an added entry [4] as [Noodle Role Name, majors  = 0, minors = 0, dmMajors = 0,dmMinors = 0]
     """    
     @timer.command()
-    async def reward(self,ctx,msg, start="",resume=False, dmChar="", ):
+    async def reward(self,ctx,msg, start="", dmChar="", resume=False):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             guild = ctx.guild
             # get the list of people receiving rewards
@@ -1250,8 +1250,7 @@ class Timer(commands.Cog):
             playerCount = 0
             playerLimit = 7
             for sk, sv in startcopy.items():
-                if '+' in sk or 'Full Rewards' in sk:
-                    playerCount += len(sv)
+                playerCount += len(sv)
 
             if playerCount + 1 > playerLimit:
                 await channel.send(f'You cannot add more than {playerLimit} players to the timer.')
