@@ -10,6 +10,7 @@ from pymongo.errors import BulkWriteError
 class Log(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
+        self.logChannel = 728456783466725427 # 728456783466725427 73707667723806312
     
     @commands.group()
     async def session(self, ctx):	
@@ -35,7 +36,24 @@ class Log(commands.Cog):
             else:
                 ctx.command.reset_cooldown(ctx)
                 await traceBack(ctx,error)
-                
+        
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self,payload):
+    
+        pass
+
+        
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self,payload):
+        pass
+        
+    
+
+    @session.command()
+    async def denyGuild(self, ctx, num):
+        log = self.bot.get_guild(self.logChannel)
+        
     @session.command()
     async def log(self, ctx, num, *, editString=""):
         # The real Bot
