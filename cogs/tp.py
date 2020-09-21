@@ -218,7 +218,8 @@ class Tp(commands.Cog):
             elif(cLevel < 20):
                 tier= 4
             #make the call to the bfunc function to retrieve an item matching with mItem
-            mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit',mItem,  tier=tier) 
+            print(tier)
+            mRecord, tpEmbed, tpEmbedmsg = await callAPI(ctx, tpEmbed, tpEmbedmsg, 'mit', mItem,  tier=tier) 
             #if an item was found
             if mRecord:
                 """

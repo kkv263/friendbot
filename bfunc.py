@@ -186,7 +186,7 @@ table -> the table in the database that should be searched in, most common table
 query -> the word which will be searched for in the "Name" property of elements, adjustments were made so that also a special property "Grouped" also gets searched
 singleItem -> if only one item should be returned
 """
-async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False, tier=4, exact=False):
+async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, singleItem=False, tier=5, exact=False):
     
     #channel and author of the original message creating this call
     channel = ctx.channel
@@ -248,16 +248,13 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
             if(exact):
                 filterDic = {"$or": [
                                 {
-                                  "Name": {
-                                    "$regex": query,
-                                  }
+                                  "Name": query
                                 },
                                 {
-                                  "Grouped": {
-                                    "$regex": query,
-                                  }
+                                  "Grouped": query
                                 }
-                              ]
+                              ],
+                              'Tier': {'$lt':tier+1}
                             }
             else:
                 filterDic = {"$or": [
@@ -274,9 +271,11 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                                     "$options": "i"
                                   }
                                 }
-                              ]
+                              ],
+                              'Tier': {'$lt':tier+1}
                             }
-                    
+         
+        print(filterDic)           
         # Here lies MSchildorfer's dignity. He copy and pasted with abandon and wondered why
         #  collection.find(collection.find(filterDic)) does not work for he could not read
         # https://cdn.discordapp.com/attachments/663504216135958558/735695855667118080/New_Project_-_2020-07-22T231158.186.png

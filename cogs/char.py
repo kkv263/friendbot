@@ -843,7 +843,7 @@ class Character(commands.Cog):
                 if lvl > 1 and lvl < 6: 
                     totalGP = (lvl-1) * tier_reward_dictionary[0][0]*4
                 if lvl > 5:
-                    totalGP = (lvl-6) * tier_reward_dictionary[1][0]*10 + tier_reward_dictionary[0][0]*4*4
+                    totalGP = (lvl-5) * tier_reward_dictionary[1][0]*10 + tier_reward_dictionary[0][0]*4*4
 
                 charDict['GP'] = int(bRecord['GP']) + totalGP
         
@@ -3158,7 +3158,16 @@ class Character(commands.Cog):
                     await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 17!")
                     await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 17!")
                     await author.remove_roles(roleRemove)
-
+                if 'True Friend' not in roles and 'Elite Friend' in roles and newCharLevel > 19:
+                    roleName = 'Ascended Friend'
+                    tierRoleStr = 'Tier 5'
+                    roleRemoveStr = 'True Friend'
+                    levelRole = get(guild.roles, name = roleName)
+                    tierRole = get(guild.roles, name = tierRoleStr)
+                    roleRemove = get(guild.roles, name = roleRemoveStr)
+                    await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 20!")
+                    await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 29!")
+                    await author.remove_roles(roleRemove)
                 levelUpEmbed.clear_fields()
                 await levelUpEmbedmsg.edit(content=f":arrow_up:   __**L E V E L   U P!**__\n\n:warning:   **Don't forget to spend your TP!** Use the following command to spend your TP:\n```yaml\n$tp buy \"{charName}\" \"magic item\"```", embed=levelUpEmbed)
 

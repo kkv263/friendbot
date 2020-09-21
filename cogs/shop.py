@@ -340,14 +340,14 @@ class Shop(commands.Cog):
                 return
             
             # check for the additional adamantine modifer and remove it to just get the DB entry name
-            searchItem = buyItem.lower()
+            searchItem = buyItem
             # if the item was already silvered, remove it 
-            if(searchItem.startswith("silvered ")):
+            if(searchItem.startswith("Silvered ")):
                 await channel.send(f'**{buyItem}** is already silvered!')
                 ctx.command.reset_cooldown(ctx)
                 return
-            elif( searchItem.startswith("adamantine ")):
-                searchItem = searchItem.replace("adamantine ", "", 1) 
+            elif( searchItem.startswith("Adamantine ")):
+                searchItem = searchItem.replace("Adamantine ", "", 1) 
             # since the order is always Silvered Adamantine Weapon, we can use startswith for these checks
             
             # search for the item in the DB to find which type it is
@@ -400,21 +400,21 @@ class Shop(commands.Cog):
                 return
             
             # check for the additional Silvered modifer and remove it to just get the DB entry name
-            searchItem = buyItem.lower()
+            searchItem = buyItem
             silvered = False
             # if the item was already adamantine, cancel
 
-            if( "adamantine " in searchItem):
+            if( "Adamantine " in searchItem):
                 await channel.send(f'**{buyItem}** is already adamantine!')
                 ctx.command.reset_cooldown(ctx)
                 return
             # extract the DB name by removing the silvered property
-            elif(searchItem.startswith("silvered ")):
-                searchItem = searchItem.replace("silvered ", "", 1)
+            elif(searchItem.startswith("Silvered ")):
+                searchItem = searchItem.replace("Silvered ", "", 1)
                 silvered = True
             
             # search for the item in the DB
-            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', searchItem) 
+            bRecord, shopEmbed, shopEmbedmsg = await callAPI(ctx, shopEmbed, shopEmbedmsg, 'shop', searchItem, exact= True) 
         
             if bRecord:
                 # if it is not a weapon, canel
