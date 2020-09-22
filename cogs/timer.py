@@ -234,10 +234,10 @@ class Timer(commands.Cog):
         # the DM entry will always be the front entry, this property is maintained by the code
         signedPlayers = [[author,"No Rewards",['None'],"None"]]
         
-        #signedPlayers = [[author,"No Rewards",['None'],"None"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "9/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "1/--", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
+        # signedPlayers = [[author,"No Rewards",['None'],"None"], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "9/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "1/--", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
 
         #set up a variable for the current state of the timer
         timerStarted = False
@@ -1693,7 +1693,7 @@ class Timer(commands.Cog):
             deathChars = []
             data = {"records":[]}
             # Session Log Channel
-            logChannel = self.bot.get_channel(728456783466725427)  # 728456783466725427 737076677238063125
+            logChannel = self.bot.get_channel(737076677238063125)  # 728456783466725427 737076677238063125
             # logChannel = self.bot.get_channel(577227687962214406)
             
             # check if the game has rewards
@@ -1779,7 +1779,7 @@ class Timer(commands.Cog):
                                 else:
                                     value[2] = ['(DI)+'+ randomItem['Name']]
                         # create an updated database entry with the records of the game
-                        treasureArray, charRewards = calculateTreasure(value, tierNum, duration, (value in deathChars), sessionMessage.id)
+                        treasureArray, charRewards = calculateTreasure(value, tierNum, duration, (value in deathChars), dmChar, sessionMessage.id)
                         # insert the rewards into a string
                         treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
                         # add the records to the list of items to update
@@ -1831,9 +1831,9 @@ class Timer(commands.Cog):
                     dmRole = 'True'
                 
                 if role != "":
-                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, sessionMessage.id )
+                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, dmChar, sessionMessage.id )
                 else:
-                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, None )
+                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, dmChar, None )
                 # perform the same calculations as for normal players, but with the DM character's tier  
                 # DM update
                 if 'Double Items Buff' in dmChar[1]: 

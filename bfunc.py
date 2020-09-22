@@ -153,7 +153,7 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
 
     if float(cp) >= .5:
         char[1]['Games'] += 1
-
+    print("Game ID", gameID)
     if gameID is None:
         returnData = {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp, 'CP': finalCPString, 'Games':char[1]['Games']}}}
     else:
@@ -166,7 +166,7 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
         returnData['fields']['$unset'] = unset
     
     if crossTier:
-        returnData['fields']['$set'][f"GID{str(gameID)}"]+=f", T {crossTier}: {crossTP}"
+        returnData['fields']['$set'][f"GID{str(gameID)}"]+=f", {crossTier}: {crossTP}"
     print("Tier", tier)
     print("crossCP", crossCP)
     print("crossGP", crossGP)
