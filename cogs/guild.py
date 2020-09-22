@@ -126,7 +126,7 @@ class Guild(commands.Cog):
                         await channel.send(f"***{charDict['Name']}*** does not have at least {gpNeeded} gp in order to fund ***{guildName}***.")
                         return
 
-                    charDict['GP'] -= gpNeeded
+                    charDict['GP'] -= float(gpNeeded)
 
                     noodleRep = ["Elite Noodle (0)", "True Noodle (10)", "Ascended Noodle (20)", "Immortal Noodle (30)"]
                     charID = charDict['_id']
@@ -162,7 +162,11 @@ class Guild(commands.Cog):
 
 
                     guildEmbed.add_field(name=f"Choose the Noodle role which you would like to use to create this guild. This will affect the amount of reputation which the guild starts with.", value=noodleRepStr, inline=False)
-                    guildEmbedmsg = await channel.send(embed=guildEmbed)
+                    if guildEmbedmsg:
+                        await guildEmbedmsg.edit(embed=guildEmbed)
+                    else: 
+                        guildEmbedmsg = await channel.send(embed=guildEmbed)
+
                     await guildEmbedmsg.add_reaction('❌')
 
                     try:
@@ -181,7 +185,8 @@ class Guild(commands.Cog):
                     guildEmbed.clear_fields()
                     await guildEmbedmsg.clear_reactions()
                     baseRep = int(noodleRep[alphaEmojis.index(tReaction.emoji[0])].split(' (')[1].replace(')',""))
-                    userRecords['Guilds'].append(noodleRep[alphaEmojis.index(tReaction.emoji[0])])
+                    noodleRepUsed = noodleRep[alphaEmojis.index(tReaction.emoji[0])]
+                    userRecords['Guilds'].append(f"{guildName}: {noodleRepUsed}")
 
                     # Quick check to see if guild already exists
                     guildsCollection = db.guilds
@@ -192,7 +197,7 @@ class Guild(commands.Cog):
                         await channel.send(f"There is already a guild by the name of ***{guildName}***. Please try creating a guild with a different name.")
                         return
 
-                    guildsDict = {'Role ID': str(guildRole[0].id), 'Channel ID': str(guildChannel[0].id), 'Name': guildName, 'Funds': gpNeeded, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': baseRep, 'Total Reputation': baseRep}
+                    guildsDict = {'Role ID': str(guildRole[0].id), 'Channel ID': str(guildChannel[0].id), 'Name': guildName, 'Funds': gpNeeded, 'Guildmaster': charDict['Name'], 'Guildmaster ID': str(author.id), 'Reputation': baseRep, 'Total Reputation': baseRep, 'Noodle Used': noodleRepUsed}
                     await author.add_roles(guildRole[0], reason=f"Created guild {guildName}")
 
                     try:
@@ -334,9 +339,21 @@ class Guild(commands.Cog):
                     return
 
                         
+                oldFundGP = guildRecords['Funds']
+                guildRecords['Funds'] += float(gpFund) 
+
+                if  (guildRecords['Funds'] + gpNeeded >= 6000)  and (oldFundGP < 6000):
+                    refundGP = gpFund - (6000 - oldFundGP)
+
                 newGP = (charRecords['GP'] - float(gpFund)) + refundGP
+
+                maxGP = guildRecords['Funds']
+                
+                if maxGP > 6000:
+                    maxGP = 6000
+
                 guildEmbed.title = f"Fund Guild: {guildRecords['Name']}"
-                guildEmbed.description = f"Are you sure you want to fund ***{guildRecords['Name']}***?\n:warning: ***{charRecords['Name']}* will automatically join *{guildRecords['Name']}* after funding the guild.**\n\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
+                guildEmbed.description = f"Are you sure you want to fund ***{guildRecords['Name']}***?\n:warning: ***{charRecords['Name']}* will automatically join *{guildRecords['Name']}* after funding the guild.**\n\n**Current Guild Funds**: {oldFundGP}gp / 6000gp → {maxGP}gp / 6000gp \n\nCurrent gp: {charRecords['GP']} gp\nNew gp: {newGP} gp\n\n✅: Yes\n\n❌: Cancel"
 
 
                 if guildEmbedmsg:
@@ -358,12 +375,6 @@ class Guild(commands.Cog):
                         await guildEmbedmsg.clear_reactions()
                         return
 
-                oldFundGP = guildRecords['Funds']
-                guildRecords['Funds'] += float(gpFund) 
-
-                if  guildRecords['Funds'] + gpNeeded >= 6000  and oldFundGP < 6000:
-                    refundGP = guildRecords['Funds'] - (6000 + gpNeeded)
-
                 await author.add_roles(guild.get_role(int(guildRecords['Role ID'])), reason=f"Funded guild {guildRecords['Name']}")
 
 
@@ -382,7 +393,7 @@ class Guild(commands.Cog):
 
 
                     if guildRecords['Funds'] < 6000:
-                        guildEmbed.description = f"***{charRecords['Name']}*** has funded ***{guildRecords['Name']}*** with {gpFund} gp.\nIf this amount puts the guild's funds over 6000 gp, the leftover is given back to the character.\n\n**Current Guild Funds**: {guildRecords['Funds']} gp / 6000 gp\n\n**Current gp**: {newGP}\n"
+                        guildEmbed.description = f"***{charRecords['Name']}*** has funded ***{guildRecords['Name']}*** with {gpFund} gp.\nIf this amount puts the guild's funds over 6000 gp, the leftover is given back to the character.\n\n**Current Guild Funds**: {maxGP} gp / 6000 gp\n\n**Current gp**: {newGP}\n"
                     elif guildRecords['Funds'] >= 6000 and oldFundGP < 6000:
                         guildEmbed.description = f"***{charRecords['Name']}*** has joined ***{guildRecords['Name']}***\n\n**Current gp**: {newGP}\n"
                         guildEmbed.description += f"Congratulations! :tada: ***{guildRecords['Name']}***  is officially open!"
