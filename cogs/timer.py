@@ -97,7 +97,7 @@ class Timer(commands.Cog):
         #prevent the command if not in a proper channel (game/campaign)
         if str(channel.category.id) != settingsRecord['Game Category ID'] and str(channel.category.id) != settingsRecord['Campaign Category ID']:
             #exception to the check above in case it is a testing channel
-            if str(channel.id) in settingsRecord['Test Channel IDs'] or channel.id in [728456736956088420]:
+            if str(channel.id) in settingsRecord['Test Channel IDs'] or channel.id in [728456736956088420, 757685149461774477, 757685177907413092]:
                 pass
             else: 
                 #inform the user of the correct location to use the command and how to use it
@@ -234,10 +234,10 @@ class Timer(commands.Cog):
         # the DM entry will always be the front entry, this property is maintained by the code
         signedPlayers = [[author,"No Rewards",['None'],"None"]]
         
-        #signedPlayers = [[author,"No Rewards",['None'],"None"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "9/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-        #                    [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "1/--", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
+        # signedPlayers = [[author,"No Rewards",['None'],"None"], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "9/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "1/--", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
 
         #set up a variable for the current state of the timer
         timerStarted = False
@@ -890,8 +890,9 @@ class Timer(commands.Cog):
     resume -> if this is during the resume process
     dmChar -> the player entry (format [member object, char DB entry, brought consumables, char id]) of the DM with an added entry [4] as [Noodle Role Name, majors  = 0, minors = 0, dmMajors = 0,dmMinors = 0]
     """    
-    @timer.command()
-    async def reward(self,ctx,msg, start="", dmChar="", resume=False):
+
+    async def reward(self,ctx,msg, start="",resume=False, dmChar="", ):
+
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             guild = ctx.guild
             # get the list of people receiving rewards
@@ -933,7 +934,7 @@ class Timer(commands.Cog):
                 # since this checks for multiple things, this cannot be avoided
                 for u, v in startcopy.items():
                     if 'Full Rewards' in u:
-                        totalDurationTime = (time.time() - float(u.split(':')[1]) + 3600 *3) // 60 #FIX TIME WEIRD
+                        totalDurationTime = (time.time() - float(u.split(':')[1]) + 3600 *6) // 60 #FIX TIME WEIRD
                         if totalDurationTime < 180:
                             if not resume:
                               await ctx.channel.send(content=f"You cannot award any reward items if the quest is under three hours.") 
@@ -1016,7 +1017,7 @@ class Timer(commands.Cog):
                         lowerTier = True
                     else:
                         dmMnc = True
-                    
+                    tierNum=5
                     # calculate the tier of the rewards
                     if charLevel < 5:
                         tierNum = 1
@@ -1024,7 +1025,7 @@ class Timer(commands.Cog):
                         tierNum = 2
                     elif charLevel < 17:
                         tierNum = 3
-                    elif charLevel < 21:
+                    elif charLevel < 20:
                         tierNum = 4
                         
                     # make adjustments to the tier number if it is the DM character and the role needs tier lowering
@@ -1070,7 +1071,7 @@ class Timer(commands.Cog):
                             
                             # if no spell was found then we inform the user of the failure and stop the command
                             if not sRecord and not resume:
-                                await ctx.channel.send(f'**{query}** does not seem to be a valid reward item.')
+                                await ctx.channel.send(f'''**{query}** belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Reward Item Table, what tier it is, and your spelling.''')
                                 return start, dmChar
 
                             else:
@@ -1778,7 +1779,7 @@ class Timer(commands.Cog):
                                 else:
                                     value[2] = ['(DI)+'+ randomItem['Name']]
                         # create an updated database entry with the records of the game
-                        treasureArray, charRewards = calculateTreasure(value, tierNum, duration, (value in deathChars), sessionMessage.id)
+                        treasureArray, charRewards = calculateTreasure(value, tierNum, duration, (value in deathChars), dmChar, sessionMessage.id)
                         # insert the rewards into a string
                         treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
                         # add the records to the list of items to update
@@ -1830,9 +1831,9 @@ class Timer(commands.Cog):
                     dmRole = 'True'
                 
                 if role != "":
-                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, sessionMessage.id )
+                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, dmChar, sessionMessage.id )
                 else:
-                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, None )
+                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, dmChar, None )
                 # perform the same calculations as for normal players, but with the DM character's tier  
                 # DM update
                 if 'Double Items Buff' in dmChar[1]: 
@@ -2419,7 +2420,7 @@ class Timer(commands.Cog):
                         elif message.content.startswith('-') and message.author != dmChar[0]: 
                             resumeTimes = await ctx.invoke(self.timer.get_command('deductConsumables'), msg=message, start=resumeTimes, resume=True)
                         elif (f"{commandPrefix}timer reward" in message.content or f"{commandPrefix}t reward" in message.content) and (message.author == author):
-                            resumeTimes,dmChar = await ctx.invoke(self.timer.get_command('reward'), msg=message, start=resumeTimes, dmChar=dmChar, resume=True)
+                            resumeTimes,dmChar = await self.reward(ctx, msg=message, start=resumeTimes, dmChar=dmChar, resume=True)
                         elif ("Timer has been stopped!" in message.content) and message.author.bot:
                             await channel.send("There doesn't seem to be a timer to resume here... Please start a new timer!")
                             self.timer.get_command('resume').reset_cooldown(ctx)
@@ -2556,7 +2557,7 @@ class Timer(commands.Cog):
                         stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif (msg.content.startswith(f"{commandPrefix}timer reward") or msg.content.startswith(f"{commandPrefix}t reward")):
                     if await self.permissionCheck(msg, author):
-                        startTimes,dmChar = await ctx.invoke(self.timer.get_command('reward'), msg=msg, start=startTimes,dmChar=dmChar)
+                        startTimes,dmChar = await self.reward(ctx, msg=msg, start=startTimes,dmChar=dmChar)
                 elif (msg.content.startswith(f"{commandPrefix}timer death") or msg.content.startswith(f"{commandPrefix}t death")):
                     if await self.permissionCheck(msg, author):
                         startTimes = await ctx.invoke(self.timer.get_command('death'), msg=msg, start=startTimes, role=role)

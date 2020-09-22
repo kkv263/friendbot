@@ -153,7 +153,7 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
 
     if float(cp) >= .5:
         char[1]['Games'] += 1
-
+    print("Game ID", gameID)
     if gameID is None:
         returnData = {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp, 'CP': finalCPString, 'Games':char[1]['Games']}}}
     else:
@@ -166,7 +166,7 @@ def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
         returnData['fields']['$unset'] = unset
     
     if crossTier:
-        returnData['fields']['$set'][f"GID{str(gameID)}"]+=f", T {crossTier}: {crossTP}"
+        returnData['fields']['$set'][f"GID{str(gameID)}"]+=f", {crossTier}: {crossTP}"
     print("Tier", tier)
     print("crossCP", crossCP)
     print("crossGP", crossGP)
@@ -207,18 +207,23 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         return None, apiEmbed, apiEmbedmsg
 
     #restructure the query to be more regEx friendly
+  
+    print(query)
+    
+    invalidChars = ["[", "]", "?", '"', "\\", "*", "$", "{", "}", "^", ">", "<", "|"]
+
+    for i in invalidChars:
+        if i in query:
+            await channel.send(f":warning: Please do not use `{i}` in your query. Revise your query and retry the command.\n")
+            return None, apiEmbed, apiEmbedmsg
+            
     query = query.strip()
     query = query.replace('(', '\\(')
     query = query.replace(')', '\\)')
     query = query.replace('+', '\\+')
     query = query.replace('.', '\\.')
 
-    invalidChars = ["[", "]", "?", '"', "*", "$", "{", "}", "^", ">", "<", "|"]
-
-    for i in invalidChars:
-        if i in query:
-            await channel.send(f":warning: Please do not use `{i}` in your query. Revise your query and retry the command.\n")
-            return None, apiEmbed, apiEmbedmsg
+    print(query)
     
     #I am not sure of the difference in behavior beside the extended Grouped search
     if singleItem:
@@ -227,7 +232,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         #search through the table for an element were the Name or Grouped property contain the query
         if table == "spells":
             filterDic = {"Name": {"$regex": query, '$options': 'i' }, 'Level': {'$gt':0}}
-        elif table == "rit":
+        elif table == "rit" or table == "mit":
             filterDic = {"$or": [
                             {
                               "Name": {
@@ -254,7 +259,6 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                                   "Grouped": query
                                 }
                               ],
-                              'Tier': {'$lt':tier+1}
                             }
             else:
                 filterDic = {"$or": [
@@ -272,7 +276,6 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                                   }
                                 }
                               ],
-                              'Tier': {'$lt':tier+1}
                             }
          
         print(filterDic)           
