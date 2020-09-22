@@ -246,7 +246,7 @@ class Character(commands.Cog):
                     msg += ':warning: You cannot spend TP on two of the same magic item.\n'
                     break 
                 if not mRecord:
-                    msg += f':warning: **{m}** doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
+                    msg += f":warning: **{m}** belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic Item Table, what tier it is, and your spelling.\n"
                     break
                 else:
                     allMagicItemsString.append(mRecord)
@@ -383,7 +383,7 @@ class Character(commands.Cog):
                 if charEmbedmsg == "Fail":
                     return
                 if not reRecord:
-                    msg += f' {r} doesn\'t exist! Check to see if it\'s on the Reward Item Table and check your spelling.\n'
+                    msg += f" {r} belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Reward Item Table, what tier it is, and your spelling.\n"
                     break
                 else:
                     allRewardItemsString.append(reRecord)
@@ -1180,7 +1180,7 @@ class Character(commands.Cog):
                     msg += ':warning: You cannot spend TP on two of the same magic item!\n'
                     break 
                 if not mRecord:
-                    msg += f':warning: **{m}** doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.\n'
+                    msg += f":warning: **{m}** belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic Item Table, what tier it is, and your spelling.\n"
                     break
                 else:
                     allMagicItemsString.append(mRecord)
@@ -3216,7 +3216,7 @@ class Character(commands.Cog):
             if not mRecord:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m, True)
                 if not mRecord:
-                    await channel.send(f"`{m}` does not exist on the Magic Item Table or Reward Item Table.")
+                    await channel.send(f"`{m}`belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic or Reward Item Table, what tier it is, and your spelling.\n"")
                     return
                 elif mRecord['Name'].lower() not in [x.lower() for x in charRecordMagicItems]:
                     await channel.send(f"You don't have the **{mRecord['Name']}** item in your inventory to attune to.")
@@ -3344,7 +3344,7 @@ class Character(commands.Cog):
             if not mRecord:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m, True)
                 if not mRecord:
-                    await channel.send(f"`{m}` does not exist on the Magic Item Table.")
+                    await channel.send(f"`{m}` belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic or Reward Item Table, what tier it is, and your spelling."")
                     return
 
             if mRecord['Name'] not in [a.split(' [')[0] for a in attuned]:

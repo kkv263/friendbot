@@ -227,7 +227,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         #search through the table for an element were the Name or Grouped property contain the query
         if table == "spells":
             filterDic = {"Name": {"$regex": query, '$options': 'i' }, 'Level': {'$gt':0}}
-        elif table == "rit":
+        elif table == "rit" or table == "mit":
             filterDic = {"$or": [
                             {
                               "Name": {
@@ -254,7 +254,7 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                                   "Grouped": query
                                 }
                               ],
-                              'Tier': {'$lt':tier+1}
+                             'Tier': {'$lt':tier+1}
                             }
             else:
                 filterDic = {"$or": [
@@ -272,7 +272,6 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                                   }
                                 }
                               ],
-                              'Tier': {'$lt':tier+1}
                             }
          
         print(filterDic)           

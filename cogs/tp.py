@@ -208,6 +208,7 @@ class Tp(commands.Cog):
             # calculate the tier of the character to limit which items they can purchase
 
             cLevel = charRecords["Level"]
+            print(cLevel)
             tier = 5
             if(cLevel < 5):
                 tier= 1
@@ -487,7 +488,7 @@ class Tp(commands.Cog):
                                 ctx.command.reset_cooldown(ctx)
 
             else:
-                await channel.send(f'**{mItem}** doesn\'t exist! Check to see if it\'s on the Magic Item Table and check your spelling.')
+                await channel.send(f'''**{mItem}** belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic Item Table, what tier it is, and your spelling.''')
                 ctx.command.reset_cooldown(ctx)
                 return
 
