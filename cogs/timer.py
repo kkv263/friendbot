@@ -974,12 +974,12 @@ class Timer(commands.Cog):
                     dmMajorLimit = 0
                     dmMinorLimit = 1
                     
-                    if dmChar[4][0] == 'Ascended Noodle':
+                    if dmChar[4][0] == 'Immortal Noodle':
                         rewardMajorLimit = 3
                         rewardMinorLimit = 7
                         dmMajorLimit = 1
                         dmMinorLimit = 3
-                    elif dmChar[4][0] == 'Immortal Noodle':
+                    elif dmChar[4][0] == 'Ascended Noodle':
                         rewardMajorLimit = 3
                         rewardMinorLimit =  6
                         dmMajorLimit = 1

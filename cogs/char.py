@@ -3216,7 +3216,7 @@ class Character(commands.Cog):
             if not mRecord:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m, True)
                 if not mRecord:
-                    await channel.send(f"`{m}`belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic or Reward Item Table, what tier it is, and your spelling.\n"")
+                    await channel.send(f"`{m}`belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic or Reward Item Table, what tier it is, and your spelling.\n")
                     return
                 elif mRecord['Name'].lower() not in [x.lower() for x in charRecordMagicItems]:
                     await channel.send(f"You don't have the **{mRecord['Name']}** item in your inventory to attune to.")
@@ -3344,7 +3344,7 @@ class Character(commands.Cog):
             if not mRecord:
                 mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg,'rit', m, True)
                 if not mRecord:
-                    await channel.send(f"`{m}` belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic or Reward Item Table, what tier it is, and your spelling."")
+                    await channel.send(f"`{m}` belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic or Reward Item Table, what tier it is, and your spelling.")
                     return
 
             if mRecord['Name'] not in [a.split(' [')[0] for a in attuned]:

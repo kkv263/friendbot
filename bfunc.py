@@ -207,18 +207,23 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
         return None, apiEmbed, apiEmbedmsg
 
     #restructure the query to be more regEx friendly
-    query = query.strip()
-    query = query.replace('(', '\\(')
-    query = query.replace(')', '\\)')
-    query = query.replace('+', '\\+')
-    query = query.replace('.', '\\.')
-
+    
+    print(query)
+    
     invalidChars = ["[", "]", "?", '"', "\\", "*", "$", "{", "}", "^", ">", "<", "|"]
 
     for i in invalidChars:
         if i in query:
             await channel.send(f":warning: Please do not use `{i}` in your query. Revise your query and retry the command.\n")
             return None, apiEmbed, apiEmbedmsg
+            
+    query = query.strip()
+    query = query.replace('(', '\\(')
+    query = query.replace(')', '\\)')
+    query = query.replace('+', '\\+')
+    query = query.replace('.', '\\.')
+
+    print(query)
     
     #I am not sure of the difference in behavior beside the extended Grouped search
     if singleItem:
@@ -254,7 +259,6 @@ async def callAPI(ctx, apiEmbed="", apiEmbedmsg=None, table=None, query=None, si
                                   "Grouped": query
                                 }
                               ],
-                             'Tier': {'$lt':tier+1}
                             }
             else:
                 filterDic = {"$or": [
