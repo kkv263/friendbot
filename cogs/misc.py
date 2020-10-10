@@ -18,8 +18,9 @@ class Misc(commands.Cog, name='Misc'):
 
     #https://discordapp.com/channels/382025597041246210/432358370578530310/733403065251528795 nice comments that make it worth it <3
     @commands.cooldown(1, 60, type=commands.BucketType.member)
+    @commands.has_any_role('A d m i n')
     @commands.command()
-    async def uwu(self,ctx):
+    async def uwuize(self,ctx):
         channel = ctx.channel
         vowels = ['a','e','i','o','u']
         faces = ['rawr XD', 'OwO', 'owo', 'UwU', 'uwu']
