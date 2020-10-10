@@ -3158,7 +3158,7 @@ class Character(commands.Cog):
                     await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 17!")
                     await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 17!")
                     await author.remove_roles(roleRemove)
-                if 'True Friend' not in roles and 'Elite Friend' in roles and newCharLevel > 19:
+                if 'Ascended Friend' not in roles and 'True Friend' in roles and newCharLevel > 19:
                     roleName = 'Ascended Friend'
                     tierRoleStr = 'Tier 5'
                     roleRemoveStr = 'True Friend'
@@ -3166,7 +3166,7 @@ class Character(commands.Cog):
                     tierRole = get(guild.roles, name = tierRoleStr)
                     roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 20!")
-                    await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 29!")
+                    await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 20!")
                     await author.remove_roles(roleRemove)
                 levelUpEmbed.clear_fields()
                 await levelUpEmbedmsg.edit(content=f":arrow_up:   __**L E V E L   U P!**__\n\n:warning:   **Don't forget to spend your TP!** Use the following command to spend your TP:\n```yaml\n$tp buy \"{charName}\" \"magic item\"```", embed=levelUpEmbed)

@@ -68,14 +68,14 @@ class Misc(commands.Cog):
     
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self,payload):
-        tMessage = 650482015342166036
+        tMessage = 758144721423433728 #650482015342166036
         guild = self.bot.get_guild(payload.guild_id)
 
         if payload.message_id == tMessage:
             if payload.emoji.name == "1️⃣":
                 name = 'Tier 1' 
                 role = get(guild.roles, name = name)
-                validRoles = ['Junior Friend', 'Journeyfriend', 'Elite Friend', 'True Friend', 'Ascended Friend']
+                validRoles = ['Junior Friends', 'Journeyfriend', 'Elite Friend', 'True Friend', 'Ascended Friend']
             elif payload.emoji.name == "2️⃣":
                 name = 'Tier 2' 
                 role = get(guild.roles, name = name)
@@ -106,9 +106,7 @@ class Misc(commands.Cog):
                     channel = guild.get_channel(payload.channel_id)
                     if any(role in roles for role in validRoles):
                         await member.remove_roles(role)
-                        successMsg = await channel.send(f":tada: ***{member.display_name}***, I have removed the ***{name}*** from you! You will no longer be pinged for quests of this tier. React to the same emoji if you would like to be pinged for quests of this tier again!")
-                        await asyncio.sleep(15) 
-                        await successMsg.delete()
+                        successMsg = await member.send(f":tada: ***{member.display_name}***, I have removed the ***{name}*** from you! You will no longer be pinged for quests of this tier. React to the same emoji if you would like to be pinged for quests of this tier again!")
 
                 else:
                     print('member not found')
@@ -117,7 +115,7 @@ class Misc(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self,payload):
-        tMessage = 650482015342166036
+        tMessage = 758144721423433728 #650482015342166036
         guild = self.bot.get_guild(payload.guild_id)
         validRoles = []
 
@@ -158,16 +156,11 @@ class Misc(commands.Cog):
 
                     if any(role in roles for role in validRoles):    
                         await member.add_roles(role)
-                        successMsg = await channel.send(f":tada: ***{member.display_name}**, I have given you the ***{name}*** role! You will be pinged for quests of this tier. React to the same emoji if you would not like to be pinged for quests of this tier!")
-                        await asyncio.sleep(15) 
-                        await successMsg.delete()
+                        successMsg = await member.send(f":tada: ***{member.display_name}***, I have given you the ***{name}*** role! You will be pinged for quests of this tier. React to the same emoji if you would not like to be pinged for quests of this tier!")
                     else:
                         channel = guild.get_channel(payload.channel_id)
-                        errorMsg = await channel.send(f"❗ ***{member.display_name}***, I can't give you the ***{name}*** because you don't have the required roles ({', '.join(validRoles)})!")
+                        errorMsg = await member.send(f"❗ ***{member.display_name}***, I can't give you the ***{name}*** because you don't have the required roles ({', '.join(validRoles)})!")
                         originalMessage = await channel.fetch_message(tMessage)
-                        await originalMessage.remove_reaction(payload.emoji,member)
-                        await asyncio.sleep(15) 
-                        await errorMsg.delete()
 
                         
                 else:

@@ -53,129 +53,67 @@ async def traceBack (ctx,error,silent=False):
         await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(220742049631174656).mention} has been notified.")
     raise error
 
-def calculateTreasure(char, tier, seconds, death=False,dmChar=None, gameID=""):
+
+def calculateTreasure(level, charcp, tier, seconds, death=False, gameID="", guildDouble=False, playerDouble=False, dmDouble=False):
+
     # calculate the CP gained during the game
     cp = ((seconds) // 1800) / 2
-    cp_multiplier = 1
-    # if the game was during the DM double rewards weekend and it is the DM character, increase the multiplier
-    if settingsRecord['ddmrw'] and char[0] == dmChar[0]:
-            cp_multiplier += 1
-            
-    unset = {}
+    cp_multiplier = 1 + guildDouble + playerDouble + dmDouble
+       
+        
     crossTier = None
-    # if the character had the Double Rewards Buff applied
-    if 'Double Rewards Buff' in char[1]:
-        # and it was within the appropriate timeframe
-        if char[1]['Double Rewards Buff'] < (datetime.now() + timedelta(days=3)):
-            # increase the multiplier
-            cp_multiplier += 1
-        # remove the buff from the character
-        unset['Double Rewards Buff'] = 1
-    
-    # if the character had the Double Items Buff, remove it
-    if 'Double Items Buff' in char[1]:
-        unset['Double Items Buff'] = 1
     
     # calculate the CP with the bonuses included
     cp *= cp_multiplier
     
+    gainedCP = cp
+    
     #######role = role.lower()
     
-    # Level 20 characters haves access to exclusive items
-    if char[1]['Level'] >= 20:
+    if level >= 20:
         tier = 5
-    # create a string representing which tier the character is in in order to create/manipulate the appropriate TP entry in the DB
-    tierTP = f"T{tier} TP"
-    # get the current CP amount in terms of the current level (eg. 5 CP/10 CP)
-    cpSplit= char[1]['CP'].split('/')
+    #unreasonably large number as a cap
+    cpThreshHoldArray = [16, 16+60, 16+60+60, 16+60+60+30, 90000000]
     # calculate how far into the current level CP the character is after the game
-    leftCP = (float(cp) + float(cpSplit[0])) 
-
-    
-    
-    # the Total CP limit of a Tier
-    cpThreshHold = 0
-    # the level of the character
-    charLevel = char[1]['Level']
-    crossCP = 0
-    crossTP = 0
-    crossGP = 0
-    cross_tp_multiplier = 0
-    cross_gp_multiplier = 0
-    totalCP = (((charLevel-5) * 10) + leftCP + 16)
-    
-    if charLevel < 5:
-        cpThreshHold = 16
-        totalCP = ((charLevel -1) * 4) + leftCP
-        crossTier = 'T2 TP'
-        cross_gp_multiplier = tier_reward_dictionary[1][0]
-        cross_tp_multiplier = tier_reward_dictionary[1][1]
-    elif charLevel < 11:
-        cpThreshHold = 60 + 16
-        crossTier = 'T3 TP'
-        cross_gp_multiplier = tier_reward_dictionary[2][0]
-        cross_tp_multiplier = tier_reward_dictionary[2][1]
-    elif charLevel < 17:
-        cpThreshHold = 60 + 60 + 16
-        crossTier = 'T4 TP'
-        cross_gp_multiplier = tier_reward_dictionary[3][0]
-        cross_tp_multiplier = tier_reward_dictionary[3][1]
-    elif charLevel < 20:
-        cpThreshHold = 30 + 60 + 60 + 16
-        crossTier = 'T5 TP'
-        cross_gp_multiplier = tier_reward_dictionary[3][0]
-        cross_tp_multiplier = tier_reward_dictionary[3][1]
+    leftCP = charcp
+    gp= 0
+    tp = {}
+    charLevel = level
+    while(cp>0):
+        
+        print("CP",cp)
+        # Level 20 characters haves access to exclusive items
+        # create a string representing which tier the character is in in order to create/manipulate the appropriate TP entry in the DB
+        tierTP = f"T{tier} TP"
+        # the level of the character
+        
+        levelCP = (((charLevel-5) * 10) + 16)
+        print("l   CP", levelCP)
+        if charLevel < 5:
+            charLevel = 5
+            levelCP = ((charLevel -1) * 4)
+        elif charLevel < 11:
+            charLevel = 11
+        elif charLevel < 17:
+            charLevel = 17
+        elif charLevel < 20:
+            charLevel = 20
 
 
-    if cpThreshHold> 0 and totalCP > cpThreshHold:
-
-        crossCP += totalCP - cpThreshHold
-        crossTP = crossCP * cross_tp_multiplier
-        crossGP = crossCP * cross_gp_multiplier
-        cp -= crossCP
+        if levelCP + leftCP + cp > cpThreshHoldArray[tier-1]:
+            print("TH", cpThreshHoldArray[tier-1])
+            consideredCP = cpThreshHoldArray[tier-1] - (levelCP + leftCP)
+            leftCP = 0
+        else:
+            consideredCP = cp
+        print("con ",consideredCP)
+        cp -=  consideredCP
+        tp[tierTP] = consideredCP * tier_reward_dictionary[tier-1][1]
+        gp += consideredCP * tier_reward_dictionary[tier-1][0]
+        tier += 1
             
-    print("Left:", leftCP, crossTier, totalCP, cpThreshHold)
-    tp = cp * tier_reward_dictionary[tier-1][1]
-    gp = cp * tier_reward_dictionary[tier-1][0] + crossGP
- 
-    finalCPString = f'{leftCP}/{(cpSplit[1])}'
-    charEndConsumables = char[1]['Consumables']
-    charEndMagicList = char[1]['Magic Items']
-    if charEndConsumables == '':
-        charEndConsumables = 'None'
-    if charEndMagicList == '':
-        charEndMagicList = 'None'
-
-    if tierTP not in char[1]:
-        tpAdd = 0
-    else:
-        tpAdd = char[1][tierTP]
-
-    if float(cp) >= .5:
-        char[1]['Games'] += 1
-    print("Game ID", gameID)
-    if gameID is None:
-        returnData = {'_id': char[3],  "fields": {"$set": {'GP': char[1]['GP'] + gp, tierTP: tpAdd + tp, 'CP': finalCPString, 'Games':char[1]['Games']}}}
-    else:
-        returnData = {'_id': char[3],  "fields": {"$set": {f"GID{str(gameID)}" : f'{{"GP": {char[1]["GP"] + gp}, "{tierTP}": {tpAdd + tp},"Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": "{totalCP}", "Games":{char[1]["Games"]}}}'}}}
-
-    if death:
-        returnData =  {'_id': char[3], "fields": {"$set": {'Death': f'{{"GP": {gp}, "{tierTP}": {tp}, "Consumables": "{charEndConsumables}", "Magic Items": "{charEndMagicList}", "CP": {cp+crossCP}}}'}}}
-    
-    elif unset:
-        returnData['fields']['$unset'] = unset
-    
-    if crossTier:
-        returnData['fields']['$set'][f"GID{str(gameID)}"]+=f", {crossTier}: {crossTP}"
-    print("Tier", tier)
-    print("crossCP", crossCP)
-    print("crossGP", crossGP)
-    print("mult", cross_gp_multiplier)
-    print([cp+crossCP, tp+crossTP, gp], returnData)
-    return [cp+crossCP, tp+crossTP, gp], returnData
-    
-
-    
+    print([gainedCP, tp, gp])
+    return [gainedCP, tp, gp]
     
     
 """

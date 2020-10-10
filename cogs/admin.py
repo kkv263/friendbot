@@ -108,24 +108,25 @@ class Admin(commands.Cog, name="Admin"):
             count = db.players.delete_many(
                {}
             )
-            await msg.edit(content=f"Successfully deleted {count} characters.")
+            await msg.edit(content=f"Successfully deleted {count.deletedCount} characters.")
     
         except Exception as e:
             traceback.print_exc()
-            
+      
+    @commands.command()      
     @admin_or_owner()
     async def removeUserCharacters(self, ctx, userID):
-        msg = ctx.channel.send("Are you sure you want to remove every character in the database?\n No: ❌\n Yes: ✅")
+        msg = await ctx.channel.send("Are you sure you want to remove every character in the database?\n No: ❌\n Yes: ✅")
         author = ctx.author
         
-        if(not self.doubleVerify(ctx, msg)):
+        if(not await self.doubleVerify(ctx, msg)):
             return
         
         try:
             count = db.players.delete_many(
                {"User ID": userID}
             )
-            await msg.edit(content=f"Successfully deleted {count} characters.")
+            await msg.edit(content=f"Successfully deleted {count.deletedCount} characters.")
     
         except Exception as e:
             traceback.print_exc()        
@@ -144,7 +145,7 @@ class Admin(commands.Cog, name="Admin"):
         else:
             moveEmbedmsg = await  ctx.channel.send(content=f"Are you sure you want to move and refund {rRecord['Name']}?\n No: ❌\n Yes: ✅")
         author = ctx.author
-        refundTier = f'TP {rRecord["Tier"]}'
+        refundTier = f'T{rRecord["Tier"]} TP'
         
         if(not await self.doubleVerify(ctx, moveEmbedmsg)):
             return
@@ -156,7 +157,7 @@ class Admin(commands.Cog, name="Admin"):
             if(targetTierInfoItem):
                 updatedGP = targetTierInfoItem["GP"]
                 
-            returnData = self.characterEntryItemRemovalUpdate(ctx, rRecord, "Magic Items")
+            returnData = self.characterEntryItemRemovalUpdate(ctx, rRecord, "Current Item", refundTier, tp)
                                                         
             db.mit.update_one( {"_id": rRecord["_id"]},
                                 {"$set" : {"Tier" : tier, "TP" : tp, "GP": updatedGP}})
@@ -179,7 +180,7 @@ class Admin(commands.Cog, name="Admin"):
             return
         await moveEmbedmsg.edit(content="Completed")
     
-    def characterEntryItemRemovalUpdate(self, ctx, rRecord, category):
+    def characterEntryItemRemovalUpdate(self, ctx, rRecord, category, refundTier, tp):
         characters = list( db.players.find({"Current Item": {"$regex": f".*?{rRecord['Name']}"}}))
         returnData = []
         print(rRecord)
@@ -269,7 +270,7 @@ class Admin(commands.Cog, name="Admin"):
     
     @commands.command()
     @admin_or_owner()
-    async def removeItem(self, ctx, item, tier: int, tp: int):
+    async def removeItem(self, ctx, item):
         
         removeEmbed = discord.Embed()
         removeEmbedmsg = None
