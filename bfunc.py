@@ -112,8 +112,8 @@ def calculateTreasure(level, charcp, tier, seconds, death=False, gameID="", guil
         gp += consideredCP * tier_reward_dictionary[tier-1][0]
         tier += 1
             
-    print([gainedCP, tp, gp])
-    return [gainedCP, tp, gp]
+    print([gainedCP, tp, int(gp)])
+    return [gainedCP, tp, int(gp)]
     
     
 """

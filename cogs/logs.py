@@ -4,7 +4,7 @@ import re
 from discord.utils import get        
 from discord.ext import commands
 from datetime import datetime, timezone,timedelta
-from bfunc import callAPI, db, traceBack, timeConversion, calculateTreasure
+from bfunc import callAPI, db, traceBack, timeConversion, calculateTreasure, roleArray,timeConversion
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
@@ -54,7 +54,7 @@ class Log(commands.Cog):
     async def generateLog(self,ctx, num):
         channel = self.bot.get_channel
         logData =db.logdata
-        sessionInfo = logData.findOne({"_id": num})
+        sessionInfo = logData.find_one({"Log ID": num})
         
         channel = self.bot.get_channel(self.logChannel) # 728456783466725427 737076677238063125
         
@@ -67,12 +67,13 @@ class Log(commands.Cog):
 
         sessionLogEmbed = editMessage.embeds[0]
         summaryIndex = sessionLogEmbed.description.find('Summary:')
-        description = sessionLogEmbed.description[:summaryIndex] + "Summary: " + editString+"\n"
+        description = sessionLogEmbed.description[summaryIndex:]+"\n"
         
         role = sessionInfo["Role"]
-        game = sessionInfo["Name"]
+        game = sessionInfo["Game"]
         start = sessionInfo["Start"] 
         end = sessionInfo["End"] 
+        tierNum = sessionInfo["Tier"]
         
         guilds = sessionInfo["Guilds"]
         
@@ -86,7 +87,7 @@ class Log(commands.Cog):
         maximumCP = dm["CP"]
         
         deathChars = []
-        allRewardStrings = []
+        allRewardStrings = {}
                     
         
         
@@ -96,7 +97,7 @@ class Log(commands.Cog):
             if player["Status"] == "Dead":
                 deathChars.append(player)
             
-            duration = player["CP"] * 60
+            duration = player["CP"] * 3600
             
             guildDouble = False
             playerDouble = False
@@ -111,7 +112,7 @@ class Log(commands.Cog):
                 
                 
                 treasureArray  = calculateTreasure(player["Level"], player["Character CP"], tierNum, duration, (player in deathChars), num, guildDouble, playerDouble, dmDouble)
-                treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, {treasureArray[2]} GP"
+                treasureString = f"{treasureArray[0]} CP, {sum(treasureArray[1].values())} TP, {treasureArray[2]} GP"
 
                     
             else:
@@ -121,7 +122,7 @@ class Log(commands.Cog):
             groupString += guildDouble * "Guild "
             groupString += playerDouble * "Fanatic "
                 
-            groupString += f'{role} Friend {"Full"*player["Full"]+"Partial"*(not player["Full"])} Rewards - {treasureString}'
+            groupString += f'{role} Friend {"Full"*player["Full"]+"Partial"*(not player["Full"])} Rewards\n - {treasureString}'
             
             # if the player was not present the whole game and it was a no rewards game
             if role == "" and not player["Full"]:
@@ -133,23 +134,25 @@ class Log(commands.Cog):
                     # otherwise add the new players
                     allRewardStrings[treasureString] += [player] 
             else:
+                print(groupString, "\n", allRewardStrings)
                 # check if the full rewards have already been added, if yes create it and add the players
-                if f'{role} Friend Full Rewards - {treasureString}' in allRewardStrings:
+                if groupString in allRewardStrings:
                     allRewardStrings[groupString] += [player]
                 else:
-                    allRewardStrings[groupString] += [player]
+                    allRewardStrings[groupString] = [player]
 
  
         datestart = datetime.fromtimestamp(start).strftime("%b-%d-%y %I:%M %p")
         dateend = datetime.fromtimestamp(end).strftime("%b-%d-%y %I:%M %p")
         totalDuration = timeConversion(end - start)
         sessionLogEmbed.title = f"Timer: {game} [END] - {totalDuration}"
-        sessionLogEmbed.description = f"{start} to {end} CDT" 
+        sessionLogEmbed.description = f"{datestart} to {dateend} CDT" 
         
         dmRewardsList = []
         #DM REWARD MATH STARTS HERE
         if("Character ID" in dm):
             charLevel = int(dm['Level'])
+            player = dm
             # calculate the tier of the DM character
             if charLevel < 5:
                 dmRole = 'Junior'
@@ -159,7 +162,8 @@ class Log(commands.Cog):
                 dmRole = 'Elite'
             elif charLevel < 21:
                 dmRole = 'True'
-            
+            duration = player["CP"]*3600
+            print(duration)
             if role != "":
                 guildDouble = guilds[player["Guild"]]["Status"] == True and guilds[player["Guild"]]["Rewards"] == True
                 
@@ -168,12 +172,12 @@ class Log(commands.Cog):
                 dmDouble = False
                 
                 
-                treasureArray  = calculateTreasure(player["Level"], tierNum, duration, (player in deathChars), num, guildDouble, playerDouble, dmDouble)
+                dmtreasureArray  = calculateTreasure(player["Level"], player["CP"], tierNum, duration, (player in deathChars), num, guildDouble, playerDouble, dmDouble)
                 
             
             # add the items that the DM awarded themselves to the items list
             for d in dm["Magic Items"]+dm["Consumables"]["Add"]+dm["Inventory"]["Add"]:
-                dmRewardsList.append(d)
+                dmRewardsList.append("+"+d)
         
         # get the collections of characters
         playersCollection = db.players
@@ -204,13 +208,13 @@ class Log(commands.Cog):
                     # for every brough consumable for the character
                     for r in  v["Magic Items"]+ v["Consumables"]["Add"]+ v["Inventory"]["Add"]:
                         # add the awarded items to the list of rewards
-                        vRewardList.append(r)
+                        vRewardList.append("+"+r)
                     # if the character was not dead at the end of the game
                     if v not in deathChars:
-                        temp += f"{v['Mention']} | {v['Name']} {', '.join(vRewardList).strip()}\n"
+                        temp += f"{v['Mention']} | {v['Character Name']} {', '.join(vRewardList).strip()}\n"
                     else:
                         # if they were dead, include that death
-                        temp += f"~~{v['Mention']} | {v['Name']}~~ **DEATH** {', '.join(vRewardList).strip()}\n"
+                        temp += f"~~{v['Mention']} | {v['Character Name']}~~ **DEATH** {', '.join(vRewardList).strip()}\n"
                 
                 # since if there is a player for this reward, temp will have text since every case above results in changes to temp
                 # this informs us that there were no players
@@ -224,35 +228,36 @@ class Log(commands.Cog):
             guildsListStr = ""
             
             guildRewardsStr = ""
-            
+            players[dm["ID"]] = dm
             # passed in parameter, check if there were guilds involved
             if guilds != list():
                 guildsListStr = "Guilds: "
                 # for every guild in the game
-                for g in guilds:
+                for name, g in guilds.items():
                     # get the DB record of the guild
                     #filter player list by guild
-                    gPlayers = [p for p in players if p["Guild"]==g["Name"]]
-                    if(len(gPlayers)>0):
-                        guildsRecordsList.append[[g, sparklesGained*len(gPlayers)]]
-                        guildRewardsStr += f"{g['Name']}: +{sparklesGained} :sparkles:"
+                    print(players.values())
+                    gPlayers = [p for p in players.values() if p["Guild"]==name]
+                    if(len(gPlayers)>0): 
+                        gain = sparklesGained*len(gPlayers) + int(dm["Guild"]==name)
+                        guildRewardsStr += f"{g['Name']}: +{gain} :sparkles:\n"
 
-            sessionLogEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
-            sessionLogEmbed.description = f"{guildsListStr}{', '.join([g['Mention'] for g in guilds])}\n{start} to {end} CDT ({totalDuration})\n"+description
+            sessionLogEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{sessionInfo['Channel']}"
+            sessionLogEmbed.description = f"{guildsListStr}{', '.join([g['Mention'] for g in guilds.values()])}\n{datestart} to {dateend} CDT ({totalDuration})\n"+description
             
             # add the field for the DM's player rewards
             dm_text = "**No Character**"
             dm_name_text = "**No Rewards**"
             # if no character signed up then the character parts are excluded
             if("Character ID" in dm):
-                dm_text = f"{dm['Name']} {', '.join(dmRewardsList)}"
-                dm_name_text = f"DM Rewards: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n"
+                dm_text = f"{dm['Character Name']} {', '.join(dmRewardsList)}"
+                dm_name_text = f"DM Rewards: (Tier {roleArray.index(dmRole) + 1})\n - **{dmtreasureArray[0]} CP, {sum(dmtreasureArray[1].values())} TP, {dmtreasureArray[2]} GP**\n"
             sessionLogEmbed.add_field(value=f"**DM:** {dm['Mention']} | {dm_text}\n{':star:' * noodlesGained} {noodleString}", name=dm_name_text)
             
             # if there are guild rewards then add a field with relevant information
             if guildRewardsStr != "":
                 sessionLogEmbed.add_field(value=guildRewardsStr, name=f"Guild Rewards", inline=False)
-            
+            await editMessage.edit(embed=sessionLogEmbed)
         
         pass
     
@@ -584,9 +589,33 @@ class Log(commands.Cog):
             print('Success')
         pass
     @session.command()
-    async def denyGuild(self, ctx, num):
-        log = self.bot.get_channel(self.logChannel)
-        
+    async def denyGuild(self, ctx, num, guild):
+        logData =db.logdata
+        sessionInfo = logData.find_one({"Log ID": num})
+        # make a guild selection system.
+        try:
+            db.logdata.update_one({"Log ID": num}, {"$set": {"Guilds."+guild+".Status": False}})
+        except Error as e:
+            print(e)
+            
+    @session.command()
+    async def optout(self, ctx, num):
+        await self.opt(ctx, num, False)
+    @session.command()
+    async def optin(self, ctx, num):
+        await self.opt(ctx, num, True)
+    
+    # allows DMs to opt in or out of DDMRW
+    async def opt(self, ctx, num, goal):
+        logData =db.logdata
+        sessionInfo = logData.find_one({"Log ID": num})
+        if (ctx.author.id = sessionInfo["DM"]["ID"] or "Mod Friend" in [r.name for r in ctx.author.roles] and sessionInfo("DDMRW"))
+            try:
+                db.logdata.update_one({"Log ID": num}, {"$set": {"DM.DM Double": goal}})
+            except Error as e:
+                print(e)
+        else:
+            ctx.channel.send("You were not the DM of that session or it was not DDMRW.")
     @session.command()
     async def log(self, ctx, num, *, editString=""):
         # The real Bot
