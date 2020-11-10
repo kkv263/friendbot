@@ -449,12 +449,12 @@ async def checkForGuild(ctx, name, guildEmbed="" ):
 
         
 def refreshKey (timeStarted):
-		if (time.time() - timeStarted > 60 * 59):
-				gClient.login()
-				print("Sucessfully refreshed OAuth")
-				global refreshTime
-				refreshTime = time.time()
-		return
+    if (time.time() - timeStarted > 60 * 59):
+            gClient.login()
+            print("Sucessfully refreshed OAuth")
+            global refreshTime
+            refreshTime = time.time()
+    return
 
 # use creds to create a client to interact with the Google Drive API
 # gSecret = {
@@ -491,7 +491,7 @@ def refreshKey (timeStarted):
 currentTimers = []
 
 gameCategory = ["🎲 game rooms", "🐉 campaigns", "mod friends"]
-roleArray = ['Junior', 'Journey', 'Elite', 'True', '']
+roleArray = ['Junior', 'Journey', 'Elite', 'True', 'Ascended', '']
 noodleRoleArray = ['Good Noodle', 'Elite Noodle', 'True Noodle', 'Ascended Noodle', 'Immortal Noodle']
 # tierArray = getTiers(sheet.row_values(2))
 # tpArray = sheet.row_values(3)
@@ -502,6 +502,8 @@ timezoneVar = 'US/Central'
 # ritSubArray = ritSheet.row_values(3)
 
 tier_reward_dictionary = [[50, 0.5], [100, 0.5], [150, 1], [200, 1], [200, 1]]
+
+cp_bound_array = [[4, "4"], [10, "10"], [10, "10"], [10, "10"], [9999999999, "∞"]]
 
 # Quest Buffs - 2x Rewards, 2x Items, Recruitment Drive
 questBuffsDict = {'2xRewards': [20, "2x CP,TP, and gp"], 

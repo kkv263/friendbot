@@ -122,10 +122,10 @@ class Log(commands.Cog):
             groupString += guildDouble * "Guild "
             groupString += playerDouble * "Fanatic "
                 
-            groupString += f'{role} Friend {"Full"*player["Full"]+"Partial"*(not player["Full"])} Rewards\n - {treasureString}'
+            groupString += f'{role} Friend {"Full"*(player["CP"]==dm["CP"])+"Partial"*(player["CP"]==dm["CP"])} Rewards\n - {treasureString}'
             
             # if the player was not present the whole game and it was a no rewards game
-            if role == "" and not player["Full"]:
+            if role == "" and not (player["CP"]==dm["CP"]):
                 # check if the reward has already been added to the reward dictionary
                 if treasureString not in allRewardStrings:
                     # if not, create the entry
@@ -307,6 +307,15 @@ class Log(commands.Cog):
         # the db entry of every character
         characterDBentries = playersCollection.find({"_id": {"$in": characterIDs}})
         
+        guildIDs = guilds.keys()
+        
+        
+        # the db entry of every character
+        guildDBentries = playersCollection.find({"Channel ID": {"$in": guildIDs}})
+        guildDBEntriesDic = {}
+        for g in guildDBentries:
+            guildDBEntriesDic[g["Name"]] = g
+        
         #print(characterDBentries)
         print(players)
         
@@ -320,7 +329,9 @@ class Log(commands.Cog):
             
 
             if role != "":
-                guildDouble = guilds[player["Guild"]]["Status"] == True and guilds[player["Guild"]]["Rewards"] == True
+                guildDouble = (guilds[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Status"] and 
+                                guilds[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Rewards"] and 
+                                guildDBEntriesDic[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Reputation"]>20)
                 
                 playerDouble = player["Double"]
                 
@@ -329,9 +340,14 @@ class Log(commands.Cog):
                 
                 treasureArray  = calculateTreasure(player["Level"], player["CP"] , tierNum, duration, (player in deathChars), num, guildDouble, playerDouble, dmDouble)
                 
-                # idea: track gained and removed consumables and do the final adjustment here
-                # doubly keep track of removal by shrinking the consumable list as well so things cannot be removed too many times
-                # use the same format here for magic items
+                if((guilds[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Status"] and 
+                        guilds[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Items"] and 
+                        guildDBEntriesDic[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Reputation"]>15+20*guildDouble)):
+                    if player["Double Items"][0] == "Invetory":
+                        player["Inventory"].append(player["Double Items"][1])
+                    else:
+                        player[player["Double Items"][0]]["Add"].append(player["Double Items"][1])
+                
                 
                 # create a list of all items the character has
                 consumableList = character["Consumables"].split(", ")
@@ -396,9 +412,6 @@ class Log(commands.Cog):
                 # if there were no rewards we only care about the time
                 pass
                 
-           
- 
-        
         dmRewardsList = []
         #DM REWARD MATH STARTS HERE
         if("Character ID" in dm):
@@ -426,7 +439,9 @@ class Log(commands.Cog):
                 dmRole = 'True'
                 dmTierNum = 4
                 
-            guildDouble = guilds[player["Guild"]]["Status"] == True and guilds[player["Guild"]]["Rewards"] == True
+            guildDouble = (guilds[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Status"] and 
+                            guilds[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Rewards"] and 
+                            guildDBEntriesDic[guildDBEntriesDic[player["Guild"]]["Channel ID"]]["Reputation"]>20)
                 
             playerDouble = player["Double"]
             
@@ -511,15 +526,17 @@ class Log(commands.Cog):
             # passed in parameter, check if there were guilds involved
             if guilds != list():
                 # for every guild in the game
-                for name, g in guilds.items():
+                for g in guildDBEntries:
+                    name = g["Name"]
                     # get the DB record of the guild
                     #filter player list by guild
                     print(players.values())
-                    gPlayers = [p for p in players.values() if p["Guild"]==name]
+                    gPlayers = [p for p in players.values() if "Guild" in p and p["Guild"] == name]
                     if(len(gPlayers)>0):
-                        gain = sparklesGained*len(gPlayers) + int(dm["Guild"]==name)
+                        reputationCost = (20*guilds[g["Channel ID"]]["Rewards"]+15*guilds[g["Channel ID"]]["Items"])*guilds[g["Channel ID"]]["Status"]
+                        gain = sparklesGained*len(gPlayers) + int(dm["Guild"] == name)
                         guildsData.append(UpdateOne({"Name": name},
-                                                   {"$inc": {"Games": 1, "Reputation": gain, "Total Reputation": gain}}))
+                                                   {"$inc": {"Games": 1, "Reputation": gain- reputationCost, "Total Reputation": gain}}))
                                                    
         try:
             end = sessionInfo["End"]
@@ -575,7 +592,7 @@ class Log(commands.Cog):
                 # do a bulk write for the guild data
                 guildsCollection.bulk_write(guildsData)
                 
-            #await  self.generateLog(ctx, num)
+            await  self.generateLog(ctx, num)
             
             #logData.delete_one({"Log ID": num})
             
@@ -587,16 +604,96 @@ class Log(commands.Cog):
         #    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
         else:
             print('Success')
-        pass
+            
+        guild = ctx.guild
+        # for each noodle roll cut-off check if the user would now qualify for the roll and if they do not have it and remove the old roll
+        if noodles >= 150:
+            if 'Immortal Noodle' not in dmRoleNames:
+                # get from the list of roles on the server the one with a given name
+                noodleRole = get(guild.roles, name = 'Immortal Noodle')
+                await dmChar[0].add_roles(noodleRole, reason=f"Hosted 150 sessions. This user has 150+ Noodles.")
+                if 'Ascended Noodle' in dmRoleNames:
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'Ascended Noodle'))
+                noodleString += "\n**Immortal Noodle** role received! :tada:"
+        elif noodles >= 100:
+            if 'Ascended Noodle' not in dmRoleNames:
+                noodleRole = get(guild.roles, name = 'Ascended Noodle')
+                await dmChar[0].add_roles(noodleRole, reason=f"Hosted 100 sessions. This user has 100+ Noodles.")
+                if 'True Noodle' in dmRoleNames:
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
+                noodleString += "\n**Ascended Noodle** role received! :tada:"
+
+        elif noodles >= 60:
+            if 'True Noodle' not in dmRoleNames:
+                noodleRole = get(guild.roles, name = 'True Noodle')
+                await dmChar[0].add_roles(noodleRole, reason=f"Hosted 60 sessions. This user has 60+ Noodles.")
+                if 'Elite Noodle' in dmRoleNames:
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
+                noodleString += "\n**True Noodle** role received! :tada:"
+        
+        elif noodles >= 30:
+            if 'Elite Noodle' not in dmRoleNames:
+                noodleRole = get(guild.roles, name = 'Elite Noodle')
+                await dmChar[0].add_roles(noodleRole, reason=f"Hosted 30 sessions. This user has 30+ Noodles.")
+                if 'Good Noodle' in dmRoleNames:
+                    await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
+                noodleString += "\n**Elite Noodle** role received! :tada:"
+
+        elif noodles >= 10:
+            if 'Good Noodle' not in dmRoleNames:
+                noodleRole = get(guild.roles, name = 'Good Noodle')
+                await dmChar[0].add_roles(noodleRole, reason=f"Hosted 10 sessions. This user has 10+ Noodles.")
+                noodleString += "\n**Good Noodle** role received! :tada:"
+      
+
     @session.command()
-    async def denyGuild(self, ctx, num, guild):
-        logData =db.logdata
+    async def denyGuild(self, ctx, num, *, guilds):
+        await self.guildPermmission(ctx, num, "Status", False, 0)
+    @session.command()
+    async def permitGuild(self, ctx, num, *, guilds):
+        await self.guildPermmission(ctx, num, "Status", True, 0)
+        
+    @session.command()
+    async def denyRewards(self, ctx, num, *, guilds):
+        await self.guildPermmission(ctx, num, "Rewards", False, 0)
+    @session.command()
+    async def permitRewards(self, ctx, num, *, guilds):
+        await self.guildPermmission(ctx, num, "Rewards", True, 3)
+        
+    @session.command()
+    async def denyItems(self, ctx, num, *, guilds):
+        await self.guildPermmission(ctx, num, "Items", False, 0)
+    @session.command()
+    async def permitItems(self, ctx, num, *, guilds):
+        await self.guildPermmission(ctx, num, "Items", True, 3)
+        
+    async def guildPermmission(self, ctx, num, target, goal, min_members):
+        logData = db.logdata
         sessionInfo = logData.find_one({"Log ID": num})
-        # make a guild selection system.
-        try:
-            db.logdata.update_one({"Log ID": num}, {"$set": {"Guilds."+guild+".Status": False}})
-        except Error as e:
-            print(e)
+        if( sessionInfo):
+            if( (ctx.author.id == sessionInfo["DM"]["ID"]) or "Mod Friend" in [r.name for r in ctx.author.roles]):
+
+            # if the game received rewards
+            if sessionInfo["Role"] != "": 
+                players = sessionInfo["Players"]
+                for guildChannel in ctx.message.channel_mentions:
+                    m = guildChannel.mention
+                    # filter player list by guild
+                    gPlayers = [p for p in players.values() if "Guild" in p and p["Guild"] == name]
+                    if(len(gPlayers)>min_members):
+                        if str(guildChannel.id) in sessionInfo["Guilds"]:
+                            try:
+                                db.logdata.update_one({"Log ID": num}, {"$set": {"Guilds."+str(guildChannel.id)+"."+target: goal}})
+                            except BulkWriteError as bwe:
+                                print(e)
+                        else:
+                            print("Guild not found in game. "+ str(guildChannel.id))
+            else:
+                ctx.channel.send("You do not have the permissions to perform this change to the session.")
+        else:
+            ctx.channel.send("The session could not be found, please double check your number or if the session has already been approved.")
+                        
+        
             
     @session.command()
     async def optout(self, ctx, num):
@@ -609,13 +706,18 @@ class Log(commands.Cog):
     async def opt(self, ctx, num, goal):
         logData =db.logdata
         sessionInfo = logData.find_one({"Log ID": num})
-        if (ctx.author.id = sessionInfo["DM"]["ID"] or "Mod Friend" in [r.name for r in ctx.author.roles] and sessionInfo("DDMRW"))
-            try:
-                db.logdata.update_one({"Log ID": num}, {"$set": {"DM.DM Double": goal}})
-            except Error as e:
-                print(e)
+        if( sessionInfo):
+            if (ctx.author.id == sessionInfo["DM"]["ID"] or "Mod Friend" in [r.name for r in ctx.author.roles] and sessionInfo("DDMRW")):
+            
+                try:
+                    db.logdata.update_one({"Log ID": num}, {"$set": {"DM.DM Double": goal}})
+                except BulkWriteError as bwe:
+                    print(e)
+            else:
+                ctx.channel.send("You were not the DM of that session or it was not DDMRW.")
         else:
-            ctx.channel.send("You were not the DM of that session or it was not DDMRW.")
+            ctx.channel.send("The session could not be found, please double check your number or if the session has already been approved.")
+            
     @session.command()
     async def log(self, ctx, num, *, editString=""):
         # The real Bot

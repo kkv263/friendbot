@@ -10,7 +10,7 @@ from math import floor
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
 from urllib.parse import urlparse 
-from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack, tier_reward_dictionary
+from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack, tier_reward_dictionary, cp_bound_array
 
 class Character(commands.Cog):
     def __init__ (self, bot):
@@ -219,7 +219,7 @@ class Character(commands.Cog):
             maxCP = 4
         else:
             maxCP = 10
-        charDict['CP'] = f"0/{maxCP}"
+        charDict['CP'] = 0
         
         
         # ███╗░░░███╗░█████╗░░██████╗░██╗░█████╗░  ██╗████████╗███████╗███╗░░░███╗  ░░░░██╗  ████████╗██████╗░
@@ -964,7 +964,7 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']} CP"
+        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']}/{cp_bound_array[tierNum][1]} CP"
         charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
@@ -1180,9 +1180,19 @@ class Character(commands.Cog):
 
         # Because we are respeccing we are also adding extra TP based on CP.
         # no needed to to bankTP2 now because limit is lvl 4 to respec
-        extraCp = float(charDict['CP'].split('/')[0])
+        extraCp = charDict['CP']
+        tierNum = 5
+        # calculate the tier of the rewards
+        if charLevel < 5:
+            tierNum = 1
+        elif charLevel < 11:
+            tierNum = 2
+        elif charLevel < 17:
+            tierNum = 3
+        elif charLevel < 20:
+            tierNum = 4
 
-        if extraCp > float(charDict['CP'].split('/')[1]):
+        if extraCp > cp_bound_array[tierNum][0]:
             msg += f":warning: {oldName} needs to level up before they can respec into a new character!"
 
         extraTP = extraCp / 2 
@@ -1777,7 +1787,7 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']} CP"
+        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']}/{cp_bound_array[tierNum][1]} CP"
         charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
@@ -2069,9 +2079,9 @@ class Character(commands.Cog):
                     surviveString = f"Congratulations! ***{charDict['Name']}*** has survived and has forfeited their rewards."
 
                     if tReaction.emoji == '3️⃣':
-                        cpSplit= charDict['CP'].split('/')
-                        leftCP = (float(deathDict['CP']) + float(cpSplit[0])) 
-                        totalCP = f'{leftCP}/{float(cpSplit[1])}'
+                        cpSplit= charDict['CP']
+                        leftCP = (float(deathDict['CP']) + cpSplit) 
+                        totalCP = leftCP
                         data['CP'] = totalCP
                         if f"T{tierNum} TP" in charDict:
                             data[f"T{tierNum} TP"] = charDict[f"T{tierNum} TP"] + float(deathDict[f"T{tierNum} TP"])
@@ -2506,12 +2516,15 @@ class Character(commands.Cog):
             elif charLevel < 17:
                 role = 3
                 charEmbed.colour = (roleColors['Elite Friend'])
-            elif charLevel < 21:
+            elif charLevel < 20:
                 role = 4
                 charEmbed.colour = (roleColors['True Friend'])
+            else:
+                role = 5
+                charEmbed.colour = (roleColors['Ascended Friend'])
 
-            cpSplit = charDict['CP'].split('/')
-            if charLevel < 20 and float(cpSplit[0]) >= float(cpSplit[1]):
+            cpSplit = charDict['CP']
+            if charLevel < 20 and cpSplit >= cp_bound_array[role][0]:
                 footer += f'\nYou need to level up! Use `{commandPrefix}levelup "character name"` before playing in another quest.'
 
 
@@ -2527,7 +2540,7 @@ class Character(commands.Cog):
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
             charEmbed.description = description
             charEmbed.clear_fields()    
-            charEmbed.title = f"{charDict['Name']} (Lv {charLevel}) - {charDict['CP']} CP"
+            charEmbed.title = f"{charDict['Name']} (Lv {charLevel}) - {charDict['CP']}/{cp_bound_array[role][1]} CP"
             tpString = ""
             for i in range (1,5):
                 if f"T{i} TP" in charDict:
@@ -2715,13 +2728,24 @@ class Character(commands.Cog):
             charDict = {}
             charName = infoRecords['Name']
             charClass = infoRecords['Class']
-            cpSplit= infoRecords['CP'].split('/')
+            cpSplit= infoRecords['CP']
             charLevel = infoRecords['Level']
             charStats = {'STR':infoRecords['STR'], 'DEX':infoRecords['DEX'], 'CON':infoRecords['CON'], 'INT':infoRecords['INT'], 'WIS':infoRecords['WIS'], 'CHA':infoRecords['CHA']}
             charHP = infoRecords['HP']
             charFeats = infoRecords['Feats']
             freeSpells = [0] * 9
-
+            
+            tierNum=5
+            # calculate the tier of the rewards
+            if charLevel < 5:
+                tierNum = 1
+            elif charLevel < 11:
+                tierNum = 2
+            elif charLevel < 17:
+                tierNum = 3
+            elif charLevel < 20:
+                tierNum = 4
+                
             if 'Free Spells' in infoRecords:
                 freeSpells = infoRecords['Free Spells']
 
@@ -2736,16 +2760,16 @@ class Character(commands.Cog):
                 return
                 
 
-            elif float(cpSplit[0]) < float(cpSplit[1]):
-                await channel.send(f'***{charName}*** is not ready to level up. They currently have **{cpSplit[0]}/{cpSplit[1]}** CP.')
+            elif cpSplit < cp_bound_array[tierNum][0]:
+                await channel.send(f'***{charName}*** is not ready to level up. They currently have **{cpSplit}/{cp_bound_array[tierNum][1]}** CP.')
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
             else:
                 cRecords, levelUpEmbed, levelUpEmbedmsg = await callAPI(ctx, levelUpEmbed, levelUpEmbedmsg,'classes')
                 classRecords = sorted(cRecords, key=lambda k: k['Name']) 
-                leftCP = float(cpSplit[0]) - float(cpSplit[1])
+                leftCP = cpSplit - cp_bound_array[tierNum][0]
                 newCharLevel = charLevel  + 1
-                totalCP = f'{leftCP}/{cpSplit[1]}'
+                totalCP = leftCP
                 subclasses = []
                 if '/' in charClass:
                     tempClassList = charClass.split(' / ')
@@ -2771,9 +2795,6 @@ class Character(commands.Cog):
                                 s["Spellcasting"] = True
 
                 subclasses = sorted(subclasses, key = lambda i: i['Level'], reverse=True)
-
-                if newCharLevel > 4:
-                    totalCP = f'{leftCP}/10.0'
 
                 def multiclassEmbedCheck(r, u):
                         sameMessage = False
@@ -3079,8 +3100,8 @@ class Character(commands.Cog):
                 infoRecords['CON'] = charStats['CON']
                 charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
                 data['HP'] = charHP
-
-                levelUpEmbed.title = f'{charName} has leveled up to {newCharLevel}!\nCurrent CP: {totalCP} CP'
+                tierNum += int(newCharLevel in [5, 11, 17, 20])
+                levelUpEmbed.title = f'{charName} has leveled up to {newCharLevel}!\nCurrent CP: {totalCP}/{cp_bound_array[tierNum][1]} CP'
                 levelUpEmbed.description = f"{infoRecords['Race']} {charClass}\n**STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}" + f"\n{charFeatsGainedStr}{maxStatStr}\n{specialStatStr}"
                 if charClassChoice != "":
                     levelUpEmbed.description += f"Multiclass into: **{charClassChoice}**"
