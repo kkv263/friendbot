@@ -16,6 +16,9 @@ from pymongo import UpdateOne
 
 from secret import *
 
+intents = discord.Intents.default()
+intents.members = True
+
 def timeConversion (time):
 		hours = time//3600
 		time = time - 3600*hours
@@ -46,11 +49,11 @@ async def traceBack (ctx,error,silent=False):
     # format_exception returns a list with line breaks embedded in the lines, so let's just stitch the elements together
     traceback_text = ''.join(lines)
 
-    xyffei = ctx.guild.get_member(220742049631174656)
+    dorfer = ctx.guild.get_member(203948352973438995)
 
     if not silent:
-        await xyffei.send(f"```{traceback_text}```\n")
-        await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(220742049631174656).mention} has been notified.")
+        await dorfer.send(f"```{traceback_text}```\n")
+        await ctx.channel.send(f"Uh oh, looks like this is some unknown error I have ran into. {ctx.guild.get_member(203948352973438995).mention} has been notified.")
     raise error
 
 
@@ -79,6 +82,7 @@ def calculateTreasure(level, charcp, tier, seconds, death=False, gameID="", guil
     gp= 0
     tp = {}
     charLevel = level
+    print(level)
     while(cp>0):
         
         print("CP",cp)
@@ -88,18 +92,17 @@ def calculateTreasure(level, charcp, tier, seconds, death=False, gameID="", guil
         # the level of the character
         
         levelCP = (((charLevel-5) * 10) + 16)
-        print("l   CP", levelCP)
         if charLevel < 5:
-            charLevel = 5
             levelCP = ((charLevel -1) * 4)
+            charLevel = 5
         elif charLevel < 11:
             charLevel = 11
         elif charLevel < 17:
             charLevel = 17
         elif charLevel < 20:
             charLevel = 20
-
-
+        print("level CP", levelCP)
+        
         if levelCP + leftCP + cp > cpThreshHoldArray[tier-1]:
             print("TH", cpThreshHoldArray[tier-1])
             consideredCP = cpThreshHoldArray[tier-1] - (levelCP + leftCP)
@@ -526,14 +529,16 @@ numberEmojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7�
 alphaEmojis = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬','🇭','🇮','🇯','🇰',
 '🇱','🇲','🇳','🇴','🇵','🇶','🇷','🇸','🇹','🇺','🇻','🇼','🇽','🇾','🇿']
 
-statuses = [f'D&D Friends | {commandPrefix}help', "We're all friends here!", f"See a bug? tell @Xyffei!", "Practicing social distancing!", "Wearing a mask!", "Being a good boio."]
+statuses = [f'D&D Friends | {commandPrefix}help', "We're all friends here!", f"See a bug? tell @MSchildorfer!", "Practicing social distancing!", "Wearing a mask!", "Being a good boio.", "Vibing"]
 discordClient = discord.Client()
-bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True)
+bot = commands.Bot(command_prefix=commandPrefix, case_insensitive=True, intents = intents)
 
 connection = MongoClient(mongoConnection, ssl=True) 
 db = connection.dnd
 
 settings = db.settings
+
+global settingsRecord
 settingsRecord = list(settings.find())[0]
 
 # API_URL = ('https://api.airtable.com/v0/appF4hiT6A0ISAhUu/'+ 'races')

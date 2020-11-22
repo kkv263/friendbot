@@ -3,6 +3,7 @@ import random
 import asyncio
 from discord.utils import get
 from discord.ext import commands
+from bfunc import settingsRecord
 
 def admin_or_owner():
     async def predicate(ctx):
@@ -14,12 +15,15 @@ def admin_or_owner():
 
 class Misc(commands.Cog):
     def __init__ (self, bot):
+    
+        self.tMessages = [776980963325771777, 776980983232331788]
+        self.system_dict = {776980963325771777: "", 776980983232331788: "F "}
         self.bot = bot
         self.current_message= None
         #0: No message search so far, 1: Message searched, but no new message made so far, 2: New message made
         self.past_message_check= 0
-        self.quest_board_channel_id = 382027190633627649 #382027190633627649 725577624180621313
-        self.category_channel_id = 382027737189056544 #382027737189056544  728456686024523810
+        self.quest_board_channel_id = 728476108940640297 #382027190633627649 728476108940640297
+        self.category_channel_id = 728456686024523810 #382027737189056544  728456686024523810
 
     @commands.cooldown(1, 60, type=commands.BucketType.member)
     @commands.command()
@@ -68,46 +72,33 @@ class Misc(commands.Cog):
     
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self,payload):
-        tMessage = 758144721423433728 #650482015342166036
+        #[758144721423433728, 776980983232331788] 
+        #[650482015342166036]
         guild = self.bot.get_guild(payload.guild_id)
 
-        if payload.message_id == tMessage:
+        if payload.message_id in self.tMessages:
             if payload.emoji.name == "1️⃣":
                 name = 'Tier 1' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Junior Friends', 'Journeyfriend', 'Elite Friend', 'True Friend', 'Ascended Friend']
             elif payload.emoji.name == "2️⃣":
                 name = 'Tier 2' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Journeyfriend', 'Elite Friend', 'True Friend', 'Ascended Friend']
             elif payload.emoji.name == "3️⃣":
                 name = 'Tier 3' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Elite Friend', 'True Friend', 'Ascended Friend']
             elif payload.emoji.name == "4️⃣":
                 name = 'Tier 4' 
-                role = get(guild.roles, name = name)
-                validRoles = ['True Friend', 'Ascended Friend']
             elif payload.emoji.name == "5️⃣" :
                 name = 'Tier 5' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Ascended Friend']
             elif payload.emoji.name == "0️⃣":
                 name = 'Tier 0' 
-                role = get(guild.roles, name = name)
-                validRoles = ['D&D Friend']
             else:
-                role = None
-
+                return
+            
+            name = self.system_dict[payload.message_id]+name     
+            role = get(guild.roles, name = name)
             if role is not None:
                 member = guild.get_member(payload.user_id)
                 if member is not None:
-                    roles = [r.name for r in member.roles]
-                    channel = guild.get_channel(payload.channel_id)
-                    if any(role in roles for role in validRoles):
-                        await member.remove_roles(role)
-                        successMsg = await member.send(f":tada: ***{member.display_name}***, I have removed the ***{name}*** from you! You will no longer be pinged for quests of this tier. React to the same emoji if you would like to be pinged for quests of this tier again!")
-
+                    await member.remove_roles(role)
+                    successMsg = await member.send(f":tada: ***{member.display_name}***, I have removed the ***{name}*** role from you! You will no longer be pinged for quests of this tier. React to the same emoji if you would like to be pinged for quests of this tier again!")
                 else:
                     print('member not found')
             else:
@@ -115,52 +106,33 @@ class Misc(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self,payload):
-        tMessage = 758144721423433728 #650482015342166036
         guild = self.bot.get_guild(payload.guild_id)
-        validRoles = []
-
-        if payload.message_id == tMessage:
+        if payload.message_id in self.tMessages:
             if payload.emoji.name == "1️⃣":
                 name = 'Tier 1' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Junior Friend', 'Journeyfriend', 'Elite Friend', 'True Friend', 'Ascended Friend']
             elif payload.emoji.name == "2️⃣":
                 name = 'Tier 2' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Journeyfriend', 'Elite Friend', 'True Friend', 'Ascended Friend']
             elif payload.emoji.name == "3️⃣":
                 name = 'Tier 3' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Elite Friend', 'True Friend', 'Ascended Friend']
             elif payload.emoji.name == "4️⃣":
                 name = 'Tier 4' 
-                role = get(guild.roles, name = name)
-                validRoles = ['True Friend', 'Ascended Friend']
             elif payload.emoji.name == "5️⃣" :
                 name = 'Tier 5' 
-                role = get(guild.roles, name = name)
-                validRoles = ['Ascended Friend']
             elif payload.emoji.name == "0️⃣":
                 name = 'Tier 0' 
-                role = get(guild.roles, name = name)
-                validRoles = ['D&D Friend']
             else:
-                role = None
+                return
+            
+            name = self.system_dict[payload.message_id]+name    
+            print(name)
+            role = get(guild.roles, name = name)    
 
             if role is not None:
                 member = guild.get_member(payload.user_id)
 
                 if member is not None:
-                    roles = [r.name for r in member.roles]
-                    channel = guild.get_channel(payload.channel_id)
-
-                    if any(role in roles for role in validRoles):    
-                        await member.add_roles(role)
-                        successMsg = await member.send(f":tada: ***{member.display_name}***, I have given you the ***{name}*** role! You will be pinged for quests of this tier. React to the same emoji if you would not like to be pinged for quests of this tier!")
-                    else:
-                        channel = guild.get_channel(payload.channel_id)
-                        errorMsg = await member.send(f"❗ ***{member.display_name}***, I can't give you the ***{name}*** because you don't have the required roles ({', '.join(validRoles)})!")
-                        originalMessage = await channel.fetch_message(tMessage)
+                    await member.add_roles(role)
+                    successMsg = await member.send(f":tada: ***{member.display_name}***, I have given you the ***{name}*** role! You will be pinged for quests of this tier. React to the same emoji if you would not like to be pinged for quests of this tier!")
 
                         
                 else:
@@ -175,9 +147,10 @@ class Misc(commands.Cog):
         #get all game channel ids
         game_channel_category =self.bot.get_channel(self.category_channel_id)
         game_channel_ids = set(map(lambda c: c.id, game_channel_category.text_channels))
-        build_message = "The current status of the game channels is:\n"
+        build_message = "**It is DDMRW** get out there and play some games!\n"*settingsRecord['ddmrw']+ "The current status of the game channels is:\n"
         #create a dictonary to store the room/user pairs
-        tierMap = {"Tier 0" : "T0", "Tier 1" : "T1", "Tier 2" : "T2", "Tier 3" : "T3", "Tier 4" : "T4"}
+        tierMap = {"Tier 0" : "T0", "Tier 1" : "T1", "Tier 2" : "T2", "Tier 3" : "T3", "Tier 4" : "T4", "Tier 5" : "T5"}
+        emoteMap = {"Roll20" : "<:adorabat:733763021008273588>", "Foundry" : ":dagger:"}
         channel_dm_dic = {}
         for c in game_channel_category.text_channels:
             channel_dm_dic[c.mention]= ["✅ "+c.mention+": Clear", set([])]
@@ -195,11 +168,12 @@ class Misc(commands.Cog):
                         username = elem.author.nick
                     channel_dm_dic[mention.mention][0] = "❌ "+mention.mention+": "+username
                     for tierMention in elem.role_mentions:
+                        name_split = tierMention.name.split(" ",1)
                         print(tierMention)
-                        if tierMention.name in tierMap:
-                            channel_dm_dic[mention.mention][1].add(tierMap[tierMention.name])
+                        print("Split",)
+                        if tierMention.name.split(" ",1)[1] in tierMap:
+                            channel_dm_dic[mention.mention][1].add(emoteMap[tierMention.name.split(" ",1)[0]]+" "+tierMap[tierMention.name.split(" ",1)[1]])
         #build the message using the pairs built above
-        print(channel.guild.me)
         for c in game_channel_category.text_channels:
             print(c, c.permissions_for(channel.guild.me).view_channel)
             if(c.permissions_for(channel.guild.me).view_channel):
@@ -213,7 +187,7 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
         tChannel = self.quest_board_channel_id
-        """ 
+
         #if in the correct channel and the message deleted was not the last QBAP
         if(payload.channel_id==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
             await self.find_message()
@@ -229,12 +203,11 @@ class Misc(commands.Cog):
                     await self.current_message.delete()
                 self.past_message_check = 2
                 self.current_message = await self.bot.get_channel(self.quest_board_channel_id).send(content=new_text)
-           """  
+
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
     
         tChannel = self.quest_board_channel_id
-        """
         if(int(payload.data["channel_id"])==tChannel and (not self.current_message or payload.message_id != self.current_message.id)):
             await self.find_message()
             new_text = await (self.generateMessageText)()
@@ -260,7 +233,7 @@ class Misc(commands.Cog):
                     else:
                         await self.current_message.delete()
                 self.current_message = await self.bot.get_channel(self.quest_board_channel_id).send(content=new_text)
-               """ 
+
     @commands.Cog.listener()
     async def on_message(self,msg):
         tChannel = self.quest_board_channel_id
@@ -273,7 +246,7 @@ class Misc(commands.Cog):
             await msg.add_reaction('❤️')
             await msg.channel.send("You're welcome friend!")
         elif msg.channel.id == tChannel and msg.author.id != self.bot.user.id:
-            """
+
             await self.find_message()
             server = msg.guild
             channel = msg.channel
@@ -294,8 +267,7 @@ class Misc(commands.Cog):
                     self.current_message = await msg.channel.send(content=new_text)
                     return
             return
-            """
-            
+
         
 def setup(bot):
     bot.add_cog(Misc(bot))

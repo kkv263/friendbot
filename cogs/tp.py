@@ -258,10 +258,10 @@ class Tp(commands.Cog):
                 #get the list of all items currently being worked towards
                 currentMagicItems = charRecords['Current Item'].split(', ')
 
-                tpBank = [0,0,0,0]
+                tpBank = [0,0,0,0,0]
                 tpBankString = ""
                 #grab the available TP of the character
-                for x in range(0,5):
+                for x in range(1,6):
                     if f'T{x} TP' in charRecords:
                       tpBank[x-1] = (float(charRecords[f'T{x} TP']))
                       tpBankString += f"{tpBank[x-1]} T{x} TP, " 
@@ -269,7 +269,7 @@ class Tp(commands.Cog):
                 haveTP = False
                 lowestTp = 0
                 #get the lowest tier available TP
-                for tp in range (int(tierNum) - 1, 4):
+                for tp in range (int(tierNum) - 1, 5):
                     if tpBank[tp] > 0:
                         haveTP = True
                         lowestTP = tp + 1 
@@ -468,7 +468,7 @@ class Tp(commands.Cog):
                                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": setData, "$unset": {f"T{tierNum} TP":1}})
                                 else:
                                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": setData})
-
+                                db.stats.update_one({"Life": 1}, {"$inc" : {"Magic Items."+mRecord['Name']: 1}})
                                 
                             except Exception as e:
                                 print ('MONGO ERROR: ' + str(e))

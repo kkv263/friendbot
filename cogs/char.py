@@ -10,7 +10,7 @@ from math import floor
 from datetime import datetime, timezone, timedelta 
 from discord.ext import commands
 from urllib.parse import urlparse 
-from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack, tier_reward_dictionary, cp_bound_array
+from bfunc import numberEmojis, alphaEmojis, commandPrefix, left,right,back, db, callAPI, checkForChar, timeConversion, traceBack, tier_reward_dictionary, cp_bound_array, calculateTreasure
 
 class Character(commands.Cog):
     def __init__ (self, bot):
@@ -77,7 +77,7 @@ class Character(commands.Cog):
             msg = f'The command is not working correctly. Please try again and make sure the format is correct.'
             ctx.command.reset_cooldown(ctx)
             await ctx.channel.send(msg)
-            await traceBack(ctx,error, True)
+            await traceBack(ctx,error, False)
         else:
             ctx.command.reset_cooldown(ctx)
             await traceBack(ctx,error)
@@ -962,9 +962,20 @@ class Character(commands.Cog):
 
             self.bot.get_command('create').reset_cooldown(ctx)
             return 
-
+        
+        charLevel = charDict['Level']
+        tierNum = 5
+        # calculate the tier of the rewards
+        if charLevel < 5:
+            tierNum = 1
+        elif charLevel < 11:
+            tierNum = 2
+        elif charLevel < 17:
+            tierNum = 3
+        elif charLevel < 20:
+            tierNum = 4
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']}/{cp_bound_array[tierNum][1]} CP"
+        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']}/{cp_bound_array[tierNum-1][1]} CP"
         charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
@@ -1077,7 +1088,7 @@ class Character(commands.Cog):
     #TODO: stats for respec
     @commands.cooldown(1, float('inf'), type=commands.BucketType.user)
     @commands.command(aliases=['rs'])
-    async def respec(self,ctx, name, newname, race, cclass, bg, sStr, sDex, sCon, sInt, sWis, sCha, mItems="", consumes=""):
+    async def respec(self,ctx, name, newname, race, cclass, bg, sStr, sDex, sCon, sInt, sWis, sCha):
         characterCog = self.bot.get_cog('Character')
         author = ctx.author
         guild = ctx.guild
@@ -1094,17 +1105,49 @@ class Character(commands.Cog):
             return
 
         # Reset  values here
-        charNoneKeyList = ['Magic Items', 'Consumables', 'Inventory', 'Current Item']
+        charNoneKeyList = ['Magic Items', 'Inventory', 'Current Item']
 
-        charRemoveKeyList = ['Image', 'Spellbook', 'T3 TP', 'T4 TP', 'Attuned', 'Spellbook', 'Guild', 'Guild Rank', 'Grouped']
+        charRemoveKeyList = ['Image', 'Respecc', 'T1 TP', 'T2 TP', 'T3 TP', 'T4 TP', 'Attuned', 'Spellbook', 'Guild', 'Guild Rank', 'Grouped']
 
+        m_save = charDict['Magic Items'].split(", ")
+        i_save = list(charDict['Inventory'].keys())
+        check_list = m_save+i_save
+        
+        searched_items = list(db.rit.find({"Name" : {"$in": check_list}}))
+        searched_items_names = []
+        
+        for element in searched_items:
+            if "Grouped" in element:
+                searched_items_names += element["Name"]
+            else:
+                searched_items_names.append(element["Name"])
+        
+        m_saved_list = []
+        for m_item in m_save:
+            if m_item in searched_items_names:
+                m_saved_list.append(m_item)
+                
+        i_saved_list = []
+        for i_item in i_save:
+            if i_item in searched_items_names:
+                i_saved_list.append([i_item, charDict["Inventory"][i_item]])
+        
         for c in charNoneKeyList:
             charDict[c] = "None"
 
         for c in charRemoveKeyList:
             if c in charDict:
                 del charDict[c]
-            
+        print("Check", check_list)
+        print("Search", searched_items_names)
+        
+        charDict["Magic Items"] = ", ".join(m_saved_list) + ("None" * (len(m_saved_list) == 0))
+        charDict["Inventory"] = {}
+        
+        for i_item in i_saved_list:
+            charDict["Inventory"][i_item[0]] = i_item[1]
+        
+        
         charID = charDict['_id']
         charDict['STR'] = int(sStr)
         charDict['DEX'] = int(sDex)
@@ -1118,21 +1161,19 @@ class Character(commands.Cog):
 
         lvl = charDict['Level']
         msg = ""
-        bankTP1 = 0
-        bankTP2 = 0
 
         if 'Death' in charDict.keys():
             await channel.send(content=f"You cannot respec a dead character. Use the following command to decide their fate:\n```yaml\n$death \"{charRecords['Name']}\"```")
             return
-
+        
         # level check
-        if lvl > 4:
+        if lvl > 4 and "Respecc" not in charDict:
             msg += "• Your character's level is way too high to respec.\n"
             await ctx.channel.send(msg)
             self.bot.get_command('respec').reset_cooldown(ctx) 
             return
             
-        # new name should be less then 50 chars
+        # new name should be less then 64 chars
         if len(newname) > 64:
             msg += ":warning: Your character's new name is too long! The limit is 64 characters.\n"
 
@@ -1143,7 +1184,7 @@ class Character(commands.Cog):
             return
         
         playersCollection = db.players
-        userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": newname, '$options': 'i' }}))
+        userRecords = list(playersCollection.find({"User ID": str(author.id), "Name": {"$regex": f"^{newname}$", '$options': 'i' }}))
 
         if userRecords != list() and newname != name:
             msg += f":warning: You already have a character by the name ***{newname}***. Please use a different name.\n"
@@ -1175,12 +1216,12 @@ class Character(commands.Cog):
         # Magic Item / TP
         # Check if magic items exist, and calculates the TP cost of each magic item.
 
-        magicItems = mItems.strip().split(',')
         allMagicItemsString = []
 
         # Because we are respeccing we are also adding extra TP based on CP.
         # no needed to to bankTP2 now because limit is lvl 4 to respec
         extraCp = charDict['CP']
+        charLevel = charDict['Level']
         tierNum = 5
         # calculate the tier of the rewards
         if charLevel < 5:
@@ -1192,243 +1233,17 @@ class Character(commands.Cog):
         elif charLevel < 20:
             tierNum = 4
 
-        if extraCp > cp_bound_array[tierNum][0]:
+        if extraCp > cp_bound_array[tierNum-1][0] and "Respecc" not in charDict:
             msg += f":warning: {oldName} needs to level up before they can respec into a new character!"
-
-        extraTP = extraCp / 2 
-
-        # If magic items parameter isn't blank, check each magic item to see if valid, and check for duplicates.
-        if magicItems != ['']:
-            for m in magicItems:
-                mRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'mit',m) 
-                if charEmbedmsg == "Fail":
-                    return
-
-                if mRecord in allMagicItemsString:
-                    msg += ':warning: You cannot spend TP on two of the same magic item!\n'
-                    break 
-                if not mRecord:
-                    msg += f":warning: **{m}** belongs to a tier which you do not have access to or it doesn't exist! Check to see if it's on the Magic Item Table, what tier it is, and your spelling.\n"
-                    break
-                else:
-                    allMagicItemsString.append(mRecord)
-
-            def calculateMagicItems(lvl):
-                bankTP1 = 0
-                bankTP2 = 0
-                highestTier = 0
-                magicItemsCurrent = []
-                magicItemsBought = []
-                
-
-                # Calculates T1/T2 TP that a character should have and their tie level to tier limit
-                if lvl > 1 and lvl < 6: 
-                    bankTP1 = (lvl-1) * 2 
-                    highestTier = 1
-                elif lvl > 5:
-                    bankTP1 = 8
-                    bankTP2 = (lvl-5) * 4
-                    highestTier = 2
-
-                bankTP1 += extraTP
-
-                magicItemsTier2 = []
-                isLeftoverT1 = False
-                isLeftoverT2 = False
-                buyT2 = False
-                buyT1 = False
-
-                for item in allMagicItemsString:
-                    #  See if player isn't going over tier 2 or tier 1
-                    if int(item['Tier']) > highestTier:
-                        return ":warning: One or more of these magic items cannot be acquired at Level " + str(lvl), 0, 0
-                        
-                    # Split T2 and T1 items.
-                    else:
-                        costTP = int(item['TP'])
-                        if int(item['Tier']) == 2:
-                            magicItemsTier2.append(item)
-                            continue
-
-                        # Go through T1 Items and spend TP. Puts incomplete magic items as current item.
-                        else:
-                            buyT1 = True
-                            bankTP1 = costTP - bankTP1
-                            if bankTP1 > 0:
-                              magicItemsCurrent.append(item)                       
-                              magicItemsCurrent.append(f'{costTP - bankTP1}/{costTP}')
-                              charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
-                              isLeftoverT1= False
-                            else:
-                              bankTP1 = abs(bankTP1)
-                              magicItemsBought.append(item)
-                              isLeftoverT1 = True
-
-
-                # Go through T2 items
-                for item in magicItemsTier2:
-
-                    # If there is an incomplete item from T1 TP, see if it can be completed with T2 TP
-                    if magicItemsCurrent:
-                        magicItemsCurrentItem = magicItemsCurrent[1].split('/')
-                        bankTP2 = int(magicItemsCurrentItem[1]) - int(magicItemsCurrentItem[0]) - bankTP2
-                        if bankTP2 > 0:
-                            buyT2 = True
-                            magicItemsCurrent[1] = f'{int(magicItemsCurrentItem[1]) - bankTP2}/{magicItemsCurrentItem[1]}'
-                            charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
-                            isLeftoverT2 = False
-                        else:
-                            bankTP2 = abs(bankTP2)
-                            magicItemsBought.append(magicItemsCurrent[0])
-                            magicItemsCurrent = []
-                            charDict['Current Item'] = ""
-                            isLeftoverT2 = True
-
-                    # Spend T2 TP with T2 items
-                    if bankTP2 > 0:
-                        costTP = int(item['TP'])
-                        bankTP2 = costTP - bankTP2
-                        if bankTP2 > 0:
-                          buyT2 = True
-                          magicItemsCurrent.append(item)                       
-                          magicItemsCurrent.append(f'{costTP - bankTP2}/{costTP}')
-                          charDict['Current Item'] = f'{magicItemsCurrent[0]["Name"]} ({magicItemsCurrent[1]})'
-                          isLeftoverT2 = False
-                        else:
-                          bankTP2 = abs(bankTP2)
-                          magicItemsBought.append(item)
-                          isLeftoverT2 = True
-
-                
-                if not isLeftoverT1 and buyT1:
-                    bankTP1 = 0
-
-                if not isLeftoverT2 and buyT2:
-                    bankTP2 = 0
-
-                return magicItemsBought, bankTP1, bankTP2
-
-
-            magicItemsBought, bankTP1, bankTP2 = calculateMagicItems(lvl)
-            if isinstance(magicItemsBought, str):
-                msg += magicItemsBought
-            elif magicItemsBought == list():
-                pass
-            else:
-                charDict['Magic Items'] = ', '.join([str(string['Name']) for string in magicItemsBought])
-
         
-        elif magicItems == ['']:
-            if lvl > 1 and lvl < 6: 
-                bankTP1 = (lvl-1) * 2 
-            elif lvl > 5:
-                bankTP1 = 8
-                bankTP2 = (lvl-5) * 4
-            bankTP1 += extraTP
-        # Level 1 cannot buy magic items because they have 0 TP to spend, unless they respecced with TP
-        elif lvl == 1 and magicItems != [''] and extraCP == 0:
-            msg += '• You cannot purchase magic items at Level 1 with 0 CP.\n'
-
-        # ██████╗░███████╗░██╗░░░░░░░██╗░█████╗░██████╗░██████╗░  ██╗████████╗███████╗███╗░░░███╗░██████╗
-        # ██╔══██╗██╔════╝░██║░░██╗░░██║██╔══██╗██╔══██╗██╔══██╗  ██║╚══██╔══╝██╔════╝████╗░████║██╔════╝
-        # ██████╔╝█████╗░░░╚██╗████╗██╔╝███████║██████╔╝██║░░██║  ██║░░░██║░░░█████╗░░██╔████╔██║╚█████╗░
-        # ██╔══██╗██╔══╝░░░░████╔═████║░██╔══██║██╔══██╗██║░░██║  ██║░░░██║░░░██╔══╝░░██║╚██╔╝██║░╚═══██╗
-        # ██║░░██║███████╗░░╚██╔╝░╚██╔╝░██║░░██║██║░░██║██████╔╝  ██║░░░██║░░░███████╗██║░╚═╝░██║██████╔╝
-        # ╚═╝░░╚═╝╚══════╝░░░╚═╝░░░╚═╝░░╚═╝░░╚═╝╚═╝░░╚═╝╚═════╝░  ╚═╝░░░╚═╝░░░╚══════╝╚═╝░░░░░╚═╝╚═════╝░
-        # Reward Items
-
-        rewardItems = consumes.strip().split(',')
-        allRewardItemsString = []
-        if rewardItems != [''] and ('Nitro Booster' not in roles and 'Bean Friend' not in roles):
-            msg += f"• Your role does not allow you to create a character with reward items. Please try again."
-        elif rewardItems != ['']:
-            for r in rewardItems:
-                if "spell scroll" in r.lower():
-                    if "spell scroll" == r.lower().strip():
-                        msg += f"""Please be more specific with the type of spell scroll which you're purchasing. You can format spell scrolls like "`Spell Scroll (spell name)`.\n"""
-                        break 
-                        
-                    spellItem = r.lower().replace("spell scroll", "").replace('(', '').replace(')', '')
-                    sRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'spells', spellItem) 
-
-                    if sRecord["Level"] > 3:
-                        msg += f"""The spell scroll {sRecord['Name']} cannot be a reward item because the level is too high.\n"""
-                        break
-
-                    elif sRecord["Level"] == 3:
-                        sTier = 2
-                    else:
-                        sTier = 1
-
-                    reRecord = {"Name": f"Spell Scroll ({sRecord['Name']})", "Consumable": True, "Magic Item": True, "Tier": sTier, "Minor/Major" : "Minor"}
-                else:
-                    reRecord, charEmbed, charEmbedmsg = await callAPI(ctx, charEmbed, charEmbedmsg, 'rit',r) 
-
-                if charEmbedmsg == "Fail":
-                    return
-                if not reRecord:
-                    msg += f' {r} doesn\'t exist! Check to see if it\'s on the Reward Item Table and check your spelling.\n'
-                    break
-
-            tier1CountMNC = 0
-            tier1Count = 0
-            tier2Count = 0
-            rewardConsumables = []
-            rewardMagics = []
-            tier1Rewards = []
-
-            if 'Nitro Booster' in roles:
-                tier1CountMNC += 1
-
-            if 'Bean Friend' in roles:
-                tier1CountMNC += 1
-
-            startt1MNC = tier1CountMNC
-            startt1 = tier1Count
-            startt2 = tier2Count
-
-            for item in allRewardItemsString:
-                if int(item['Tier']) > 2:
-                    msg += ":warning: One or more of these reward items cannot be acquired at Level " + str(lvl) + ".\n"
-                    break
-
-                if item['Minor/Major'] == 'Minor' and 'Consumable' not in item and tier1CountMNC > 0:
-                    tier1CountMNC -= 1
-                    rewardMagics.append(item)
-                elif int(item['Tier']) == 2: 
-                    tier2Count -= 1
-                    if 'Consumable' not in item:
-                      rewardMagics.append(item)
-                    else:
-                        rewardConsumables.append(item)
-                elif int(item['Tier']) == 1:
-                    tier1Rewards.append(item)
-            for item in tier1Rewards:
-                if tier1Count > 0 and tier2Count <= 0:
-                    tier1Count -= 1
-                else:
-                    tier2Count -= 1
-
-                if 'Consumable' not in item:
-                    rewardMagics.append(item)
-                else:
-                    rewardConsumables.append(item)
-
-
-            if tier1CountMNC < 0 or tier1Count < 0 or tier2Count < 0:
-                msg += f":warning: You do not have the right roles for these reward items. You can only choose **{startt1MNC}** Tier 1 (Non-Consumable) item(s), **{startt1}** Tier 1 (or lower) item(s), and **{startt2}** Tier 2 (or lower) item(s).\n"
-            else:
-                for r in rewardConsumables:
-                    if charDict['Consumables'] != "None":
-                        charDict['Consumables'] += ', ' + r['Name']
-                    else:
-                        charDict['Consumables'] = r['Name']
-                for r in rewardMagics:
-                    if charDict['Magic Items'] != "None":
-                        charDict['Magic Items'] += ', ' + r['Name']
-                    else:
-                        charDict['Magic Items'] = r['Name']
-
+        levelCP = (((charLevel-5) * 10) + 16)
+        if charLevel < 5:
+            levelCP = ((charLevel -1) * 4)
+            
+        cp_tp_gp_array = calculateTreasure(1, 0, 1, (levelCP+extraCp)*3600)
+        totalGP = cp_tp_gp_array[2]
+        bankTP = cp_tp_gp_array[1]
+        
 
         # ██████╗░░█████╗░░█████╗░███████╗░░░  ░█████╗░██╗░░░░░░█████╗░░██████╗░██████╗
         # ██╔══██╗██╔══██╗██╔══██╗██╔════╝░░░  ██╔══██╗██║░░░░░██╔══██╗██╔════╝██╔════╝
@@ -1660,12 +1475,6 @@ class Character(commands.Cog):
             msg += f':warning: **{bg}** isn\'t on the list or it is banned! Check #allowed-and-banned-content and check your spelling.\n'
         else:
             charDict['Background'] = bRecord['Name']
-            totalGP = 0
-            if lvl > 1 and lvl < 6: 
-                totalGP = (lvl-1) * tier_reward_dictionary[0][0]*4
-            if lvl > 5:
-                totalGP = (lvl-6) * tier_reward_dictionary[1][0]*10 + tier_reward_dictionary[0][0]*4*4
-            totalGP += extraCp * tier_reward_dictionary[0][0]
             charDict['GP'] = int(bRecord['GP']) + totalGP
 
         if not sStr.isdigit() or not sDex.isdigit() or not sCon.isdigit() or not sInt.isdigit() or not sWis.isdigit() or not sCha.isdigit():
@@ -1712,6 +1521,14 @@ class Character(commands.Cog):
                     featLevels.append(8)
                 if 'Rogue' in c['Class']['Name'] and int(c['Level']) > 9:
                     featLevels.append(10)
+                if int(c['Level']) > 11:
+                    featLevels.append(12)
+                if 'Fighter' in c['Class']['Name'] and int(c['Level']) > 13:
+                    featLevels.append(14)
+                if int(c['Level']) > 15:
+                    featLevels.append(16)
+                if int(c['Level']) > 18:
+                    featLevels.append(19)
 
             featsChosen, statsFeats, charEmbedmsg = await characterCog.chooseFeat(ctx, rRecord['Name'], charDict['Class'], cRecord, featLevels, charEmbed, charEmbedmsg, charDict, "")
 
@@ -1787,16 +1604,16 @@ class Character(commands.Cog):
             return 
 
         charEmbed.clear_fields()    
-        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']}/{cp_bound_array[tierNum][1]} CP"
+        charEmbed.title = f"{charDict['Name']} (Lv {charDict['Level']}): {charDict['CP']}/{cp_bound_array[tierNum-1][1]} CP"
         charEmbed.description = f"**Race**: {charDict['Race']}\n**Class**: {charDict['Class']}\n**Background**: {charDict['Background']}\n**Max HP**: {charDict['HP']}\n**gp**: {charDict['GP']} "
 
         charEmbed.add_field(name='Current TP Item', value=charDict['Current Item'], inline=True)
-        if  bankTP1 > 0:
-            charDict['T1 TP'] = bankTP1
-            charEmbed.add_field(name=':warning: Unused T1 TP', value=charDict['T1 TP'], inline=True)
-        if  bankTP2 > 0:
-            charDict['T2 TP'] = bankTP2
-            charEmbed.add_field(name=':warning: Unused T2 TP', value=charDict['T2 TP'], inline=True)
+        print(charDict)
+        
+        for key, amount in bankTP.items():
+            if  amount > 0:
+                charDict[key] = amount
+                charEmbed.add_field(name=f':warning: Unused {key}:', value=amount, inline=True)
         if charDict['Magic Items'] != 'None':
             charEmbed.add_field(name='Magic Items', value=charDict['Magic Items'], inline=False)
         if charDict['Consumables'] != 'None':
@@ -1823,13 +1640,13 @@ class Character(commands.Cog):
                 charDictInvString += f"• {k} x{v}\n"
             charEmbed.add_field(name='Starting Equipment', value=charDictInvString, inline=False)
             charEmbed.set_footer(text= charEmbed.Empty)
-
+        
         def charCreateCheck(r, u):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
             return sameMessage and ((str(r.emoji) == '✅') or (str(r.emoji) == '❌')) and u == author
-
+        print(charEmbed)
         if not charEmbedmsg:
             charEmbedmsg = await channel.send(embed=charEmbed, content="**Double-check** your character information.\nIf this is correct, please react with one of the following:\n✅ to finish creating your character.\n❌ to cancel. ")
         else:
@@ -1852,11 +1669,11 @@ class Character(commands.Cog):
                 self.bot.get_command('respec').reset_cooldown(ctx)
                 return
 
-        #TODO Stats for respec?
 
         try:
             # Extra to unset
-            charRemoveKeyList = {'Image':1, 'Spellbook':1, 'T3 TP':1, 'T4 TP':1, 'Attuned':1, 'Spellbook':1, 'Guild':1, 'Guild Rank':1, 'Grouped':1}
+            print(charDict)
+            charRemoveKeyList = {'Image':1, 'Spellbook':1, 'Attuned':1, 'Guild':1, 'Guild Rank':1, 'Grouped':1}
             playersCollection.update_one({'_id': charID}, {"$set": charDict, "$unset": charRemoveKeyList }, upsert=True)
         except Exception as e:
             print ('MONGO ERROR: ' + str(e))
@@ -1963,7 +1780,7 @@ class Character(commands.Cog):
             sameMessage = False
             if charEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and ((str(r.emoji) == '1️⃣') or (str(r.emoji) == '2️⃣') or (charDict['GP'] + deathDict['GP']  >= gpNeeded and str(r.emoji) == '3️⃣') or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((str(r.emoji) == '1️⃣') or (str(r.emoji) == '2️⃣') or (charDict['GP'] + deathDict["inc"]['GP']  >= gpNeeded and str(r.emoji) == '3️⃣') or (str(r.emoji) == '❌')) and u == author
 
         if charDict:
             if 'Death' not in charDict:
@@ -1971,7 +1788,7 @@ class Character(commands.Cog):
                 self.bot.get_command('death').reset_cooldown(ctx)
                 return
             
-            deathDict = eval(charDict['Death'])
+            deathDict = charDict['Death']
             charID = charDict['_id']
             charLevel = charDict['Level']
             if charLevel < 5:
@@ -1990,7 +1807,7 @@ class Character(commands.Cog):
             charEmbed.title = f"Character Death - {charDict['Name']}"
             charEmbed.set_footer(text= "React with ❌ to cancel.\nPlease react with a choice even if no reactions appear.")
 
-            if charDict['GP'] + deathDict['GP'] < gpNeeded:
+            if charDict['GP'] + deathDict["inc"]['GP'] < gpNeeded:
                 charEmbed.description = f"Please choose between these three options for {charDict['Name']}:\n\n1️⃣: Death - Retires your character.\n2️⃣: Survival - Forfeit rewards and survive.\n3️⃣: ~~Revival~~ - You currently have {charDict['GP'] + deathDict['GP']} gp but need {gpNeeded} gp to be revived."
             else:
                 charEmbed.description = f"Please choose between these three options for {charDict['Name']}:\n\n1️⃣: Death - Retires your character.\n2️⃣: Survival - Forfeit rewards and survive.\n3️⃣: Revival - Revives your character for {gpNeeded} gp."
@@ -2001,7 +1818,7 @@ class Character(commands.Cog):
 
             await charEmbedmsg.add_reaction('1️⃣')
             await charEmbedmsg.add_reaction('2️⃣')
-            if charDict['GP'] + deathDict['GP']  >= gpNeeded:
+            if charDict['GP'] + deathDict["inc"]['GP']  >= gpNeeded:
                 await charEmbedmsg.add_reaction('3️⃣')
             await charEmbedmsg.add_reaction('❌')
             try:
@@ -2048,15 +1865,8 @@ class Character(commands.Cog):
                                 deadCollection.insert_one(charDict)
                                 playersCollection.delete_one({'_id': charID})
                                 usersCollection = db.users
-                                usersRecord = list(usersCollection.find({"User ID": charDict['User ID']}))[0]
-
-                                if 'Games' not in usersRecord:
-                                    usersRecord['Games'] = 1
-                                else:
-                                    usersRecord['Games'] += 1
-
-                                usersCollection.update_one({'User ID': charDict['User ID']}, {"$set": {'Games': usersRecord['Games']}}, upsert=True)
                                 pass
+                                
                             except Exception as e:
                                 print ('MONGO ERROR: ' + str(e))
                                 charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try retiring your character again.")
@@ -2071,39 +1881,19 @@ class Character(commands.Cog):
                     
                 elif tReaction.emoji == '2️⃣' or tReaction.emoji == '3️⃣':
                     charEmbed.clear_fields()
-                    charDict['Death'] = ''
-                    data = {
-                        'Consumables': deathDict['Consumables'],
-                        'Games': charDict['Games'] + 1
-                    }
                     surviveString = f"Congratulations! ***{charDict['Name']}*** has survived and has forfeited their rewards."
-
+                    data ={}
                     if tReaction.emoji == '3️⃣':
-                        cpSplit= charDict['CP']
-                        leftCP = (float(deathDict['CP']) + cpSplit) 
-                        totalCP = leftCP
-                        data['CP'] = totalCP
-                        if f"T{tierNum} TP" in charDict:
-                            data[f"T{tierNum} TP"] = charDict[f"T{tierNum} TP"] + float(deathDict[f"T{tierNum} TP"])
-                        else:
-                            data[f"T{tierNum} TP"] = float(deathDict[f"T{tierNum} TP"])
-                        data['GP'] = charDict["GP"] + deathDict["GP"] - gpNeeded
-                        data['Magic Items'] = deathDict['Magic Items']
-
+                        for d in charDict["Death"].keys():
+                            data["$"+d] = charDict["Death"][d]
+                        data["$inc"]["GP"] -= gpNeeded
                         surviveString = f"Congratulations! ***{charDict['Name']}*** has been revived and has kept their rewards!"
-
+                    data["$unset"] = {"Death":1}
+                    
                     try:
                         playersCollection = db.players
-                        playersCollection.update_one({'_id': charID}, {"$set": data, "$unset": {"Death":1}})
-                        usersCollection = db.users
-                        usersRecord = list(usersCollection.find({"User ID": charDict['User ID']}))[0]
-
-                        if 'Games' not in usersRecord:
-                            usersRecord['Games'] = 1
-                        else:
-                            usersRecord['Games'] += 1
-
-                        usersCollection.update_one({'User ID': charDict['User ID']}, {"$set": {'Games': usersRecord['Games']}}, upsert=True)
+                        playersCollection.update_one({'_id': charID}, data)
+                        
                     except Exception as e:
                         print ('MONGO ERROR: ' + str(e))
                         charEmbedmsg = await channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the command again.")
@@ -2375,10 +2165,14 @@ class Character(commands.Cog):
             playersCollection = db.players
             charRecords = list(playersCollection.find({"User ID": str(author.id)}))
 
+            totalGamesPlayed = 0
+            pages = 1
+            pageStops = [0]
+            charString = ""
+            charDictTiers = [[],[],[],[]]
             if charRecords:
                 charRecords = sorted(charRecords, key=lambda k: k['Name']) 
 
-                charDictTiers = [[],[],[],[]]
 
                 for c in charRecords:
                     if c["Level"] < 5:
@@ -2391,14 +2185,7 @@ class Character(commands.Cog):
                         charDictTiers[3].append(c)
 
                 charEmbed.set_author(name=author, icon_url=author.avatar_url)
-                charEmbed.title = f"{author.display_name}"
-
-                totalGamesPlayed = 0
-                charString = ""
-                charString2 = ""
-
-                pages = 1
-                pageStops = [0]
+                charEmbed.title = f"{author.display_name}" 
 
                 for n in range(0,len(charDictTiers)):
                     charString += f"\n———**Tier {n+1} Characters:**———\n"
@@ -2413,72 +2200,73 @@ class Character(commands.Cog):
                         if len(charString) > (768 * pages):
                             pageStops.append(len(tempCharString))
                             pages += 1
-
-                pageStops.append(len(charString))
-
-                if 'Games' in userRecords:
-                    totalGamesPlayed += userRecords['Games']
-
-                if "Guilds" in userRecords:
-                    guildNoodles = "• "
-                    guildNoodles += "\n• ".join(userRecords["Guilds"])
-                    charEmbed.add_field(name="Guilds", value=f"""You have created **{len(userRecords["Guilds"])}** guilds:\n {guildNoodles}""")
-                guildNoodles = "\n".join(userRecords["Guilds"])
-
-                if "Campaigns" in userRecords:
-                    campaignString = ""
-                    for u, v in userRecords['Campaigns'].items():
-                        campaignString += f"• {u} : {v} Hour(s)\n"
-
-                    charEmbed.add_field(name='Campaigns', value=campaignString, inline=False)
+            else:
+                charString = "None"
                 
+            pageStops.append(len(charString))
 
-                if 'Noodles' in userRecords:
-                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}\n"
+            if 'Games' in userRecords:
+                totalGamesPlayed += userRecords['Games']
+
+            if "Guilds" in userRecords:
+                guildNoodles = "• "
+                guildNoodles += "\n• ".join(userRecords["Guilds"])
+                charEmbed.add_field(name="Guilds", value=f"""You have created **{len(userRecords["Guilds"])}** guilds:\n {guildNoodles}""")
+
+            if "Campaigns" in userRecords:
+                campaignString = ""
+                for u, v in userRecords['Campaigns'].items():
+                    campaignString += f"• {u} : {v} Hour(s)\n"
+
+                charEmbed.add_field(name='Campaigns', value=campaignString, inline=False)
+            
+
+            if 'Noodles' in userRecords:
+                charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: {userRecords['Noodles']}\n"
+            else:
+                charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: 0 (Try hosting sessions to receive Noodles!)\n"
+
+            charEmbed.description += f"Total Number of Characters: {len(charRecords)}\nTier 1: {len(charDictTiers[0])}\nTier 2: {len(charDictTiers[1])}\nTier 3: {len(charDictTiers[2])}\nTier 4: {len(charDictTiers[3])}"
+
+            userEmbedList = [charEmbed]
+            page = 0
+            userEmbedList[0].set_footer(text=f"Page {page+1} of {pages}")
+            if pages > 1:
+                for p in range(len(pageStops)-1):
+                    if p != 0:
+                        userEmbedList.append(discord.Embed())
+                    userEmbedList[p].add_field(name=f'Characters - p. {p+1}:', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
+
+            else:
+                charEmbed.add_field(name=f'Characters', value=charString, inline=False)
+
+            if not charEmbedmsg:
+                charEmbedmsg = await ctx.channel.send(embed=charEmbed)
+            else:
+                await charEmbedmsg.edit(embed=charEmbed)
+
+            while pages > 1:
+                await charEmbedmsg.add_reaction(left) 
+                await charEmbedmsg.add_reaction(right)
+                try:
+                    hReact, hUser = await self.bot.wait_for("reaction_add", check=userCheck, timeout=30.0)
+                except asyncio.TimeoutError:
+                    await charEmbedmsg.edit(content=f"Your user menu has timed out! I'll leave this page open for you. If you need to cycle through the menu again then use the same command!")
+                    await charEmbedmsg.clear_reactions()
+                    await charEmbedmsg.add_reaction('💤')
+                    return
                 else:
-                    charEmbed.description = f"Total One-shots Played: {totalGamesPlayed}\nNoodles: 0 (Try hosting sessions to receive Noodles!)\n"
-
-                charEmbed.description += f"Total Number of Characters: {len(charRecords)}\nTier 1: {len(charDictTiers[0])}\nTier 2: {len(charDictTiers[1])}\nTier 3: {len(charDictTiers[2])}\nTier 4: {len(charDictTiers[3])}"
-
-                userEmbedList = [charEmbed]
-                page = 0
-                userEmbedList[0].set_footer(text=f"Page {page+1} of {pages}")
-                if pages > 1:
-                    for p in range(len(pageStops)-1):
-                        if p != 0:
-                            userEmbedList.append(discord.Embed())
-                        userEmbedList[p].add_field(name=f'Characters - p. {p+1}:', value=charString[pageStops[p]:pageStops[p+1]], inline=False)
-
-                else:
-                    charEmbed.add_field(name=f'Characters', value=charString, inline=False)
-
-                if not charEmbedmsg:
-                    charEmbedmsg = await ctx.channel.send(embed=charEmbed)
-                else:
-                    await charEmbedmsg.edit(embed=charEmbed)
-
-                while pages > 1:
-                    await charEmbedmsg.add_reaction(left) 
-                    await charEmbedmsg.add_reaction(right)
-                    try:
-                        hReact, hUser = await self.bot.wait_for("reaction_add", check=userCheck, timeout=30.0)
-                    except asyncio.TimeoutError:
-                        await charEmbedmsg.edit(content=f"Your user menu has timed out! I'll leave this page open for you. If you need to cycle through the menu again then use the same command!")
-                        await charEmbedmsg.clear_reactions()
-                        await charEmbedmsg.add_reaction('💤')
-                        return
-                    else:
-                        if hReact.emoji == left:
-                            page -= 1
-                            if page < 0:
-                                page = len(userEmbedList) - 1
-                        if hReact.emoji == right:
-                            page += 1
-                            if page > len(userEmbedList) - 1:
-                                page = 0
-                        userEmbedList[page].set_footer(text=f"Page {page+1} of {pages}")
-                        await charEmbedmsg.edit(embed=userEmbedList[page]) 
-                        await charEmbedmsg.clear_reactions()
+                    if hReact.emoji == left:
+                        page -= 1
+                        if page < 0:
+                            page = len(userEmbedList) - 1
+                    if hReact.emoji == right:
+                        page += 1
+                        if page > len(userEmbedList) - 1:
+                            page = 0
+                    userEmbedList[page].set_footer(text=f"Page {page+1} of {pages}")
+                    await charEmbedmsg.edit(embed=userEmbedList[page]) 
+                    await charEmbedmsg.clear_reactions()
 
 
         else:
@@ -2524,7 +2312,7 @@ class Character(commands.Cog):
                 charEmbed.colour = (roleColors['Ascended Friend'])
 
             cpSplit = charDict['CP']
-            if charLevel < 20 and cpSplit >= cp_bound_array[role][0]:
+            if charLevel < 20 and cpSplit >= cp_bound_array[role-1][0]:
                 footer += f'\nYou need to level up! Use `{commandPrefix}levelup "character name"` before playing in another quest.'
 
 
@@ -2540,11 +2328,11 @@ class Character(commands.Cog):
             charEmbed.set_author(name=charDictAuthor, icon_url=charDictAuthor.avatar_url)
             charEmbed.description = description
             charEmbed.clear_fields()    
-            charEmbed.title = f"{charDict['Name']} (Lv {charLevel}) - {charDict['CP']}/{cp_bound_array[role][1]} CP"
+            charEmbed.title = f"{charDict['Name']} (Lv {charLevel}) - {charDict['CP']}/{cp_bound_array[role-1][1]} CP"
             tpString = ""
-            for i in range (1,5):
+            for i in range (1,6):
                 if f"T{i} TP" in charDict:
-                    tpString += f"**Tier {i} TP**: {charDict[f'T{i} TP']} " 
+                    tpString += f"**Tier {i} TP**: {charDict[f'T{i} TP']} \n" 
             charEmbed.add_field(name='TP', value=f"Current TP Item: **{charDict['Current Item']}**\n{tpString}", inline=True)
             if 'Guild' in charDict:
                 charEmbed.add_field(name='Guild', value=f"{charDict['Guild']}\nGuild Rank: {charDict['Guild Rank']}", inline=True)
@@ -2653,7 +2441,7 @@ class Character(commands.Cog):
 
             charDict['HP'] += totalHPAdd * charLevel
 
-            charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR**: {charDict['STR']} **DEX**: {charDict['DEX']} **CON**: {charDict['CON']} **INT**: {charDict['INT']} **WIS**: {charDict['WIS']} **CHA**: {charDict['CHA']}", inline=False)
+            charEmbed.add_field(name='Stats', value=f":heart: {charDict['HP']} Max HP\n**STR**: {charDict['STR']} \n**DEX**: {charDict['DEX']} \n**CON**: {charDict['CON']} \n**INT**: {charDict['INT']} \n**WIS**: {charDict['WIS']} \n**CHA**: {charDict['CHA']}", inline=False)
             if "Double Rewards Buff" in charDict:
                 drRemain = charDict['Double Rewards Buff'] + timedelta(days=3) - datetime.now()
                 if drRemain > timedelta(seconds=1):
@@ -2760,14 +2548,14 @@ class Character(commands.Cog):
                 return
                 
 
-            elif cpSplit < cp_bound_array[tierNum][0]:
+            elif cpSplit < cp_bound_array[tierNum-1][0]:
                 await channel.send(f'***{charName}*** is not ready to level up. They currently have **{cpSplit}/{cp_bound_array[tierNum][1]}** CP.')
                 self.bot.get_command('levelup').reset_cooldown(ctx)
                 return
             else:
                 cRecords, levelUpEmbed, levelUpEmbedmsg = await callAPI(ctx, levelUpEmbed, levelUpEmbedmsg,'classes')
                 classRecords = sorted(cRecords, key=lambda k: k['Name']) 
-                leftCP = cpSplit - cp_bound_array[tierNum][0]
+                leftCP = cpSplit - cp_bound_array[tierNum-1][0]
                 newCharLevel = charLevel  + 1
                 totalCP = leftCP
                 subclasses = []
@@ -2927,9 +2715,11 @@ class Character(commands.Cog):
                             lvlClass = charClassChoice
                             for c in classRecords:
                                 if c['Name'] in charClassChoice:
-                                    subclasses.append({'Name': charClassChoice, 'Subclass': '', 'Level': 1, 'Hit Die Max': c['Hit Die Max'], 'Hit Die Average': c['Hit Die Average']})
+                                    subclass_entry_add = {'Name': charClassChoice, 'Subclass': '', 'Level': 1, 'Hit Die Max': c['Hit Die Max'], 'Hit Die Average': c['Hit Die Average']}
                                     if "Spellcasting" in c:
-                                        subclasses["Spellcasting"] = True
+                                        subclass_entry_add["Spellcasting"] = True
+
+                                    subclasses.append(subclass_entry_add)
 
                             if "Wizard" in charClassChoice:
                                 freeSpells[0] += 6
@@ -3054,6 +2844,22 @@ class Character(commands.Cog):
                 statsCollection = db.stats
                 statsRecord  = statsCollection.find_one({'Life': 1})
                 
+                if charFeatsGained != "":
+                    feat_split = charFeatsGained.split(", ")
+                    for feat_key in feat_split:
+                        if not feat_key in statsRecord['Feats']:
+                            statsRecord['Feats'][feat_key] = 1
+                        else:
+                            statsRecord['Feats'][feat_key] += 1
+                
+                if charFeatsGained != "":
+                    feat_split = charFeatsGained.split(", ")
+                    for feat_key in feat_split:
+                        if not feat_key in statsRecord['Feats']:
+                            statsRecord['Feats'][feat_key] = 1
+                        else:
+                            statsRecord['Feats'][feat_key] += 1
+                            
                 subclassCheckClass['Name'] = subclassCheckClass['Name'].split(' (')[0]
                 if subclassCheckClass['Subclass'] != "" :
                     if subclassCheckClass['Subclass']  in statsRecord['Class'][subclassCheckClass['Name']]:
@@ -3101,7 +2907,7 @@ class Character(commands.Cog):
                 charHP = await characterCog.calcHP(ctx, subclasses, infoRecords, int(newCharLevel))
                 data['HP'] = charHP
                 tierNum += int(newCharLevel in [5, 11, 17, 20])
-                levelUpEmbed.title = f'{charName} has leveled up to {newCharLevel}!\nCurrent CP: {totalCP}/{cp_bound_array[tierNum][1]} CP'
+                levelUpEmbed.title = f'{charName} has leveled up to {newCharLevel}!\nCurrent CP: {totalCP}/{cp_bound_array[tierNum-1][1]} CP'
                 levelUpEmbed.description = f"{infoRecords['Race']} {charClass}\n**STR**: {charStats['STR']} **DEX**: {charStats['DEX']} **CON**: {charStats['CON']} **INT**: {charStats['INT']} **WIS**: {charStats['WIS']} **CHA**: {charStats['CHA']}" + f"\n{charFeatsGainedStr}{maxStatStr}\n{specialStatStr}"
                 if charClassChoice != "":
                     levelUpEmbed.description += f"Multiclass into: **{charClassChoice}**"
@@ -3151,43 +2957,31 @@ class Character(commands.Cog):
                 roleName = ""
                 if 'Journeyfriend' not in roles and 'Junior Friend' in roles and newCharLevel > 4:
                     roleName = 'Journeyfriend' 
-                    tierRoleStr = 'Tier 2'
                     roleRemoveStr = 'Junior Friend'
                     levelRole = get(guild.roles, name = roleName)
-                    tierRole = get(guild.roles, name = tierRoleStr)
                     roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 5!")
-                    await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 5!")
                     await author.remove_roles(roleRemove)
                 if 'Elite Friend' not in roles and 'Journeyfriend' in roles and newCharLevel > 10:
                     roleName = 'Elite Friend'
-                    tierRoleStr = 'Tier 3'
                     roleRemoveStr = 'Journeyfriend'
                     levelRole = get(guild.roles, name = roleName)
-                    tierRole = get(guild.roles, name = tierRoleStr)
                     roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 11!")
-                    await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 11!")
                     await author.remove_roles(roleRemove)
                 if 'True Friend' not in roles and 'Elite Friend' in roles and newCharLevel > 16:
                     roleName = 'True Friend'
-                    tierRoleStr = 'Tier 4'
                     roleRemoveStr = 'Elite Friend'
                     levelRole = get(guild.roles, name = roleName)
-                    tierRole = get(guild.roles, name = tierRoleStr)
                     roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 17!")
-                    await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 17!")
                     await author.remove_roles(roleRemove)
                 if 'Ascended Friend' not in roles and 'True Friend' in roles and newCharLevel > 19:
                     roleName = 'Ascended Friend'
-                    tierRoleStr = 'Tier 5'
                     roleRemoveStr = 'True Friend'
                     levelRole = get(guild.roles, name = roleName)
-                    tierRole = get(guild.roles, name = tierRoleStr)
                     roleRemove = get(guild.roles, name = roleRemoveStr)
                     await author.add_roles(levelRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 20!")
-                    await author.add_roles(tierRole, reason=f"***{author}***'s character ***{charName}*** is the first character who has reached level 20!")
                     await author.remove_roles(roleRemove)
                 levelUpEmbed.clear_fields()
                 await levelUpEmbedmsg.edit(content=f":arrow_up:   __**L E V E L   U P!**__\n\n:warning:   **Don't forget to spend your TP!** Use the following command to spend your TP:\n```yaml\n$tp buy \"{charName}\" \"magic item\"```", embed=levelUpEmbed)
@@ -3488,11 +3282,11 @@ class Character(commands.Cog):
             sameMessage = False
             if statsEmbedmsg.id == r.message.id:
                 sameMessage = True
-            return sameMessage and ((r.emoji in alphaEmojis[:4]) or (str(r.emoji) == '❌')) and u == author
+            return sameMessage and ((r.emoji in alphaEmojis[:7]) or (str(r.emoji) == '❌')) and u == author
 
-        statsEmbed.description = f"Please choose a category:\n{alphaEmojis[0]}: Monthly Stats\n{alphaEmojis[1]}: Lifetime Class Stats\n{alphaEmojis[2]}: Lifetime Race Stats\n{alphaEmojis[3]}: Lifetime Background Stats"
+        statsEmbed.description = f"Please choose a category:\n{alphaEmojis[0]}: Monthly Stats\n{alphaEmojis[1]}: Lifetime Main Stats\n{alphaEmojis[2]}: Lifetime Class Stats\n{alphaEmojis[3]}: Lifetime Race Stats\n{alphaEmojis[4]}: Lifetime Background Stats\n{alphaEmojis[5]}: Lifetime Feat Stats\n{alphaEmojis[6]}: Lifetime Magic Items Stats"
         statsEmbedmsg = await ctx.channel.send(embed=statsEmbed)
-        for num in range(0,4): await statsEmbedmsg.add_reaction(alphaEmojis[num])
+        for num in range(0,7): await statsEmbedmsg.add_reaction(alphaEmojis[num])
         try:
             tReaction, tUser = await self.bot.wait_for("reaction_add", check=statsEmbedCheck , timeout=60)
         except asyncio.TimeoutError:
@@ -3504,7 +3298,11 @@ class Character(commands.Cog):
             statsEmbed.description = ""
 
         # Lets the user choose a category to view stats
-        if tReaction.emoji == alphaEmojis[0]:
+        if tReaction.emoji == alphaEmojis[0] or tReaction.emoji == alphaEmojis[1]:
+            identity_strings = ["Monthly", "Month"]
+            if tReaction.emoji == alphaEmojis[1]:
+                identity_strings = ["Server", "Server"]
+                statRecords = statRecordsLife
             if statRecords is None:
                 statsEmbed.add_field(name="Monthly Quest Stats", value="There have been 0 games played this month. Check back later!", inline=False)
             else:
@@ -3516,42 +3314,54 @@ class Character(commands.Cog):
                     statsString += dmMember.mention + " - "
                     for i in range (1,5):
                         if f'T{i}' not in v:
-                            statsString += f"T{i}:0 | "
+                            statsString += f"T{i}: 0 | "
                         else:
-                            statsString += f"T{i}:{v[f'T{i}']} | " 
+                            statsString += f"T{i}: {v[f'T{i}']} | " 
                     totalGames = 0
                     for vk, vv in v.items():
                         totalGames += vv
                     
                     # Total Number of Games per DM
-                    statsString += f"Total:{totalGames}\n"
+                    statsString += f"Total: {totalGames}\n"
 
               
                 # Total number of Games for the month
                 superTotal += statRecords["Games"]
 
-                # Total number of guild quests
-                if 'GQ' in statRecords:
-                    guildsString += f'Guild quests out of total quests: {round((statRecords["GQ"] / superTotal),2) * 100}%\n'
-                    guildsString += f"Guild Quests: {statRecords['GQ']}\n"
-                else:
-                    guildsString += f"Guild Quests: 0\n"
 
-                # Total number of guild quests with a guild member who got rewards
-                if 'GQM' in statRecords:
-                    guildsString += f"Guild Quests with Members: {statRecords['GQM']}\n"
 
-                else:
-                    guildsString += f"Guild Quests with Members: 0\n"
-
+                gq_sum = 0
                 
                 # Games By Guild
-                if "Guild Games" in statRecords:
+                if "Guilds" in statRecords:
                     gPages = 1
                     gPageStops = [0]
                     guildGamesString = ""
-                    for gk, gv in statRecords["Guild Games"].items():
-                        guildGamesString += f"• {gk}: {gv}\n"
+                    guild_data_0s = ["GQ", "GQM", "GQNM", "GQDM", "DM Sparkles", "Player Sparkles", "Joins"]
+                    for gk, gv in statRecords["Guilds"].items():
+                        for data_key in guild_data_0s:
+                            if not data_key in gv:
+                                gv[data_key] = 0
+                        
+                        gq_sum += gv["GQ"]
+                        
+                        guildGamesString += f"• {gk}:\n"    
+                        guildGamesString += f"-  Quests: {gv['GQ']}\n"
+
+                        # Total number of guild quests with a guild member who got rewards
+                        guildGamesString += f"-  Quests with Active Players: {gv['GQM']}\n"
+
+                        # Total number of guild quests with no guild members who got rewards
+                        guildGamesString += f"-  Quests with no Active Members: {gv['GQNM']}\n"
+                        
+                        guildGamesString += f"-  Quests with no Active DM: {gv['GQDM']}\n"
+                        
+                        
+                        guildGamesString += f"-  :sparkles: gained by Players: {gv['DM Sparkles']}\n"
+                        guildGamesString += f"-  :sparkles: gained by DMs: {gv['Player Sparkles']}\n"
+                        
+                        guildGamesString += f"-  Guild Members Gained: {gv['Joins']}\n"
+
                         if len(guildGamesString) > (768 * gPages):
                             gPageStops.append(len(guildGamesString))
                             gPages += 1
@@ -3559,50 +3369,46 @@ class Character(commands.Cog):
 
                     if gPages > 1:
                         for p in range(len(gPageStops)-1):
-                            statsEmbed.add_field(name=f'Games by Guild - p. {p+1}', value=guildGamesString[gPageStops[p]:gPageStops[p+1]], inline=False)
+                            statsEmbed.add_field(name=f'Guilds - p. {p+1}', value=guildGamesString[gPageStops[p]:gPageStops[p+1]], inline=False)
                     else:
-                        statsEmbed.add_field(name='Games by Guild', value=guildGamesString, inline=False)
+                        statsEmbed.add_field(name='Guilds', value=guildGamesString, inline=False)
 
-
-                # Total number of guild quests with no guild members who got rewards
-                if 'GQNM' in statRecords:
-                    guildsString += f"Guild Quests with no Members: {statRecords['GQNM']}\n"
+                if "Life" in statRecords:
+                    monthStart = datetime.now().replace(day = 21).replace(month = 11).replace(year = 2020)
                 else:
-                    guildsString += f"Guild Quests with no Members: 0\n"
-                    
-
-                if guildsString:
-                    statsEmbed.add_field(name="Guild Games", value=guildsString, inline=False) 
-
+                    monthStart = datetime.now().replace(day = 1)
+                
                 # Stat for average player and average play time
                 if 'Players' in statRecords and 'Playtime' in statRecords:
-                    avgString += f"Average Number of Player per Game: {floor(sum(statRecords['Players']) / len(statRecords['Players']))}\n" 
-                    avgString += f"Average Game Time: {timeConversion(sum(statRecords['Playtime']) / len(statRecords['Playtime']))}\n"
+                    avgString += f"Average Number of Players per Game: {(int(statRecords['Players']  / superTotal *100) /100.0)}\n" 
+                    avgString += f"Average Game Time: {timeConversion(statRecords['Playtime'] / superTotal)}\n"
+                    avgString += f"Average Games Per Day: {(int(superTotal / (max((datetime.now()-monthStart).days, 1))*100) /100.0)}\n"
                     statsEmbed.add_field(name="Averages", value=avgString, inline=False) 
 
                 if statsString:
                     statsEmbed.add_field(name="DM Games", value=statsString, inline=False)
 
+                
                 # Number of games by total and by tier
-                statsTotalString += f"**Lifetime Games**: {statRecordsLife['Games']}\n\n"
-                statsTotalString += f"**Monthly Stats**\nTotal Games for the Month: {superTotal}\n"
-                for i in range (1,5):
+                statsTotalString += f"**{identity_strings[0]} Stats**\nTotal Games for the {identity_strings[1]}: {superTotal}\n" 
+                statsTotalString += f'Guild quests out of total quests: {round((gq_sum / superTotal),3) * 100}%\n'                   
+                for i in range (1,6):
                     if f'T{i}' not in statRecords:
-                        statsTotalString += f"Tier {i} Games for the Month: 0\n"
+                        statsTotalString += f"Tier {i} Games for the {identity_strings[1]}: 0\n"
                     else: 
-                        statsTotalString += f"Tier {i} Games for the Month: {statRecords[f'T{i}']}\n"
+                        statsTotalString += f"Tier {i} Games for the {identity_strings[1]}: {statRecords[f'T{i}']}\n"
 
 
                 if 'Players' in statRecords and 'Playtime' in statRecords:
-                    statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
-                    statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
+                    statsTotalString += f"Total Hours Played: {timeConversion(statRecords['Playtime'])}\n"
+                    statsTotalString += f"Total Number of Players: {statRecords['Players']}\n"
                 if 'Unique Players' in statRecords and 'Playtime' in statRecords:
                     statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
                 statsEmbed.description = statsTotalString
           
         # Below are lifetime stats which consists of character data
         # Lifetime Class Stats
-        if tReaction.emoji == alphaEmojis[1]: 
+        elif tReaction.emoji == alphaEmojis[2]: 
             cPages = 1
             cPageStops = [0]
             charString = ""
@@ -3611,7 +3417,7 @@ class Character(commands.Cog):
                 charString += f"{k}:{v['Count']}\n"
                 for vk, vv in collections.OrderedDict(sorted(v.items())).items():
                     if vk != 'Count':
-                        charString += f"• {vk}:{vv}\n"
+                        charString += f"• {vk}: {vv}\n"
                 charString += f"━━━━━\n"
                 if len(charString) > (768 * cPages):
                     cPageStops.append(len(charString))
@@ -3624,7 +3430,7 @@ class Character(commands.Cog):
                 statsEmbed.add_field(name="Character Class Stats (Lifetime)", value=charString, inline=False)  
 
         # Lifetime race stats
-        if tReaction.emoji == alphaEmojis[2]:
+        elif tReaction.emoji == alphaEmojis[3]:
             rPages = 1
             rPageStops = [0]
             raceString = ""
@@ -3644,14 +3450,14 @@ class Character(commands.Cog):
                 statsEmbed.add_field(name="Character Race Stats (Lifetime)", value=raceString, inline=True)  
 
         # Lifetime background Stats
-        if tReaction.emoji == alphaEmojis[3]:
+        elif tReaction.emoji == alphaEmojis[4]:
             bPages = 1
             bPageStops = [0]
             bgString = ""
             srBg = collections.OrderedDict(sorted(statRecordsLife['Background'].items()))
 
             for k, v in srBg.items():
-                bgString += f"{k}:{v}\n"
+                bgString += f"{k}: {v}\n"
                 if len(bgString) > (768 * bPages):
                     bPageStops.append(len(bgString))
                     bPages += 1
@@ -3663,21 +3469,46 @@ class Character(commands.Cog):
                     statsEmbed.add_field(name=f"Character Background Stats (Lifetime) p. {p+1}", value=bgString[bPageStops[p]:bPageStops[p+1]], inline=False)  
             else:
                 statsEmbed.add_field(name="Character Background Stats (Lifetime)", value=bgString, inline=False)  
+        # Lifetime background Stats
+        elif tReaction.emoji == alphaEmojis[5]:
+            bPages = 1
+            bPageStops = [0]
+            bgString = ""
+            srBg = collections.OrderedDict(sorted(statRecordsLife['Feats'].items()))
 
-        # if tReaction.emoji == alphaEmojis[1]:
-        #     statsTotalString += f"**Lifetime Stats**\nTotal Games for the Month: {superTotal}\n"
-        #     for i in range (1,5):
-        #         if f'T{i}' not in statRecords:
-        #             statsTotalString += f"Tier {i} Games for the Month: 0\n"
-        #         else: 
-        #             statsTotalString += f"Tier {i} Games for the Month: {statRecords[f'T{i}']}\n"
+            for k, v in srBg.items():
+                bgString += f"{k}: {v}\n"
+                if len(bgString) > (768 * bPages):
+                    bPageStops.append(len(bgString))
+                    bPages += 1
 
+            bPageStops.append(len(bgString))
 
-        #     if 'Players' in statRecords and 'Playtime' in statRecords:
-        #         statsTotalString += f"Total Hours Played: {timeConversion(sum(statRecords['Playtime']))}\n"
-        #         statsTotalString += f"Total Number of Players: {sum(statRecords['Players'])}\n"
-        #     if 'Unique Players' in statRecords and 'Playtime' in statRecords:
-        #         statsTotalString += f"Number of Unique Players: {len(statRecords['Unique Players'])}\n"
+            if bPages > 1:
+                for p in range(len(bPageStops)-1):
+                    statsEmbed.add_field(name=f"Character Feats Stats (Lifetime) p. {p+1}", value=bgString[bPageStops[p]:bPageStops[p+1]], inline=False)  
+            else:
+                statsEmbed.add_field(name="Character Feats Stats (Lifetime)", value=bgString, inline=False)  
+        # Lifetime background Stats
+        elif tReaction.emoji == alphaEmojis[6]:
+            bPages = 1
+            bPageStops = [0]
+            bgString = ""
+            srBg = collections.OrderedDict(sorted(statRecordsLife['Magic Items'].items()))
+
+            for k, v in srBg.items():
+                bgString += f"{k}: {v}\n"
+                if len(bgString) > (768 * bPages):
+                    bPageStops.append(len(bgString))
+                    bPages += 1
+
+            bPageStops.append(len(bgString))
+
+            if bPages > 1:
+                for p in range(len(bPageStops)-1):
+                    statsEmbed.add_field(name=f"Character Magic Items Stats (Lifetime) p. {p+1}", value=bgString[bPageStops[p]:bPageStops[p+1]], inline=False)  
+            else:
+                statsEmbed.add_field(name="Character Magic Items Stats (Lifetime)", value=bgString, inline=False)  
 
         await statsEmbedmsg.clear_reactions()
         await statsEmbedmsg.edit(embed=statsEmbed)
