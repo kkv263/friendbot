@@ -9,6 +9,19 @@ from bfunc import *
 
 cogs_dir = "cogs"
 
+# Files to check for server differences: logs, timer, misc
+
+# Things that can change
+# ~ Server roles.
+# ~ Quest Board.
+# ~ Session Logs.
+# ~ Campaign Board.
+# ~ Applications.
+# ~ Game Rooms (including timers).
+# ~ General Rooms (excluding timers).
+# ~ Suggestions.
+# ~ General Reports.
+# ~ Staff Reports.
 async def change_status():
       await bot.wait_until_ready()
       statusLoop = cycle(statuses)

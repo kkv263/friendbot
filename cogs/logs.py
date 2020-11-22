@@ -8,7 +8,7 @@ from bfunc import callAPI, db, traceBack, timeConversion, calculateTreasure, rol
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
-logChannel = 728456783466725427 # 728456783466725427 73707667723806312
+logChannel = 73707667723806312 # 728456783466725427 73707667723806312
 
 async def generateLog(self,  num : int, sessionInfo=None, guildDBEntriesDic=None, characterDBentries=None, userDBEntriesDic=None, ):
     logData =db.logdata
@@ -302,7 +302,7 @@ async def generateLog(self,  num : int, sessionInfo=None, guildDBEntriesDic=None
 class Log(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
-        self.logChannel = 728456783466725427 # 728456783466725427 73707667723806312
+        self.logChannel = 73707667723806312 # 728456783466725427 73707667723806312
     
     @commands.group()
     async def session(self, ctx):	
@@ -958,7 +958,7 @@ class Log(commands.Cog):
 
         # Logs channel 
         # channel = self.bot.get_channel(577227687962214406) 
-        channel = self.bot.get_channel(728456783466725427) # 728456783466725427 737076677238063125
+        channel = self.bot.get_channel(self.logChannel) # 728456783466725427 737076677238063125
 
 
         limit = 100
