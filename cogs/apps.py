@@ -97,18 +97,10 @@ class Apps(commands.Cog):
                     if appMember.mentioned_in(message):
                         playedGame = True
                         juniorRole = get(guild.roles, name = 'Junior Friend')
-                        t1Role = get(guild.roles, name = 'Tier 1')
-                        t0Role = get(guild.roles, name = 'Tier 0')
 
-                        await appMember.remove_roles(t0Role)
                         await appMember.add_roles(juniorRole, reason=f"Approved application - the user has played at least one quest. I have checked the last {limit} session logs.")
-                        await appMember.add_roles(t1Role, reason=f"Approved application - the user has played at least one quest. I have checked the last {limit} session logs.")
                         break
 
-                if not playedGame:
-                    newRole = get(guild.roles, name = 'Tier 0')
-                    await appMember.add_roles(t0Role, reason=f"Approved application - the user has not played at least one quest. I have checked the last {limit} session logs.")
-                
                 newRole = get(guild.roles, name = 'D&D Friend')
                 await appMember.add_roles(newRole, reason=f"Approved application - the user has been given the base role.")
 

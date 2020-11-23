@@ -3,6 +3,7 @@ import asyncio
 from discord.utils import get        
 from discord.ext import commands
 from bfunc import  numberEmojis, numberEmojisMobile, commandPrefix, checkForChar, checkForGuild, noodleRoleArray, db, traceBack, alphaEmojis
+from datetime import datetime, timezone,timedelta
 
 class Guild(commands.Cog):
     def __init__ (self, bot):
@@ -143,8 +144,8 @@ class Guild(commands.Cog):
 
                     # Look through Noodles and filter used noodles for base rep.
                     for n in userRecords["Guilds"]:
-                        if n in noodleRep:
-                            noodleRep.remove(n)
+                        if n.split(": ", 1)[1] in noodleRep:
+                            noodleRep.remove(n.split(": ", 1)[1])
 
                     if noodleRep == list():
                         await channel.send(f"You can't create any more guilds because you have already used all of your Noodle roles to create guilds! Gain a new Noodle role if you want to create another guild!")
@@ -255,7 +256,63 @@ class Guild(commands.Cog):
 
             playersCollection = db.players
             guildMembers = list(playersCollection.find({"Guild": guildRecords['Name']}))
+            
+            currentDate = datetime.now().strftime("%b-%y")
+            guild_stats = db.stats.find_one({"Date": currentDate, "Guild."+guildRecords['Name'] : {"$exists" : True}})
+            guild_life_stats = db.stats.find_one({"Life": 1})
+            
+            guild_stats_string = ""
+            gv = {}
+            if not guild_stats:
+                guild_data_0s = ["GQ", "GQM", "GQNM", "GQDM", "DM Sparkles", "Player Sparkles", "Joins"]
+                for data_key in guild_data_0s:
+                    gv[data_key] = 0
+            else:
+                gv = guild_stats["Guilds"][guildRecords['Name']]
+             
+            guild_stats_string += f"  Quests: {gv['GQ']}\n"
 
+            # Total number of guild quests with a guild member who got rewards
+            guild_stats_string += f"  Guild Quests with Active Players: {gv['GQM']}\n"
+
+            # Total number of guild quests with no guild members who got rewards
+            guild_stats_string += f"  Guild Quests with no Active Members: {gv['GQNM']}\n"
+            
+            guild_stats_string += f"   Quests with no Active DM: {gv['GQDM']}\n"
+            
+            
+            guild_stats_string += f"  :sparkles: gained by Players: {gv['DM Sparkles']}\n"
+            guild_stats_string += f"  :sparkles: gained by DMs: {gv['Player Sparkles']}\n"
+            
+            guild_stats_string += f"  Guild Members Gained: {gv['Joins']}\n"
+            
+            
+            guild_life_stats_string = ""
+            gv = {}
+            if (not "Guilds" in guild_life_stats) or (not guildRecords["Name"] in guild_life_stats["Guilds"]):
+                guild_data_0s = ["GQ", "GQM", "GQNM", "GQDM", "DM Sparkles", "Player Sparkles", "Joins"]
+                for data_key in guild_data_0s:
+                    gv[data_key] = 0
+            else:
+                gv = guild_life_stats["Guilds"][guildRecords['Name']]
+             
+            guild_life_stats_string += f"  Quests: {gv['GQ']}\n"
+
+            # Total number of guild quests with a guild member who got rewards
+            guild_life_stats_string += f"  Guild Quests with Active Players: {gv['GQM']}\n"
+
+            # Total number of guild quests with no guild members who got rewards
+            guild_life_stats_string += f"  Guild Quests with no Active Members: {gv['GQNM']}\n"
+            
+            guild_life_stats_string += f"   Quests with no Active DM: {gv['GQDM']}\n"
+            
+            
+            guild_life_stats_string += f"  :sparkles: gained by Players: {gv['DM Sparkles']}\n"
+            guild_life_stats_string += f"  :sparkles: gained by DMs: {gv['Player Sparkles']}\n"
+            
+            guild_life_stats_string += f"  Guild Members Gained: {gv['Joins']}\n"
+            
+            
             if guildMembers != list():
                 guildMemberStr = ""
                 for g in guildMembers:
@@ -268,7 +325,9 @@ class Guild(commands.Cog):
                 guildEmbed.add_field(name="Funds", value=f"{guildRecords['Funds']} gp / 6000 gp.\n**{6000 - guildRecords['Funds']} gp** required to open the guild!", inline=False)
             else:
                 guildEmbed.add_field(name="Reputation", value=f"Total Reputation: {guildRecords['Total Reputation']} :sparkles:\nBank: {guildRecords['Reputation']} :sparkles:", inline=False)
-
+            guildEmbed.add_field(name="Monthly Stats", value=guild_stats_string, inline=False)
+            guildEmbed.add_field(name="Lifetime Stats", value=guild_life_stats_string, inline=False)
+            
 
             await channel.send(embed=guildEmbed)
 
@@ -342,7 +401,7 @@ class Guild(commands.Cog):
                 oldFundGP = guildRecords['Funds']
                 guildRecords['Funds'] += float(gpFund) 
 
-                if  (guildRecords['Funds'] + gpNeeded >= 6000)  and (oldFundGP < 6000):
+                if  (guildRecords['Funds'] >= 6000)  and (oldFundGP < 6000):
                     refundGP = gpFund - (6000 - oldFundGP)
 
                 newGP = (charRecords['GP'] - float(gpFund)) + refundGP
@@ -485,6 +544,12 @@ class Guild(commands.Cog):
                 await author.add_roles(guild.get_role(int(guildRecords['Role ID'])), reason=f"Joined guild {guildName}")
 
                 try:
+                    dateyear = datetime.fromtimestamp(start).strftime("%b-%y")
+                    # update all the other data entries
+                    # update the DB stats
+                    statsCollection.update_one({'Date': dateyear}, {"$inc": {"Joins": 1}}, upsert=True)
+                    statsCollection.update_one({'Life': 1}, {"$inc": {"Joins": 1}}, upsert=True)
+            
                     playersCollection = db.players
                     playersCollection.update_one({'_id': charRecords['_id']}, {"$set": {'Guild': guildRecords['Name'], 'GP':newGP, 'Guild Rank': 1}})
                 except Exception as e:

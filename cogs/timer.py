@@ -12,8 +12,9 @@ from itertools import product
 from discord.utils import get        
 from datetime import datetime, timezone,timedelta
 from discord.ext import commands
-from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray, noodleRoleArray, checkForChar, tier_reward_dictionary
+from bfunc import numberEmojis, calculateTreasure, timeConversion, gameCategory, commandPrefix, roleArray, timezoneVar, currentTimers, db, callAPI, traceBack, settingsRecord, alphaEmojis, questBuffsDict, questBuffsArray, noodleRoleArray, checkForChar, tier_reward_dictionary, cp_bound_array
 from pymongo import UpdateOne
+from cogs.logs import generateLog
 from pymongo.errors import BulkWriteError
 
 
@@ -81,7 +82,7 @@ class Timer(commands.Cog):
             sameMessage = False
             if  prepEmbedMsg.id == r.message.id:
                 sameMessage = True
-            return (r.emoji in numberEmojis[:5] or str(r.emoji) == '❌') and u == author and sameMessage
+            return (r.emoji in numberEmojis[:6] or str(r.emoji) == '❌') and u == author and sameMessage
         #simplifying access to various variables
         channel = ctx.channel
         author = ctx.author
@@ -91,11 +92,11 @@ class Timer(commands.Cog):
         userName = author.name
         guild = ctx.guild
         #information on how to use the command, set up here for ease of reading and repeatability
-        prepFormat =  f'Please follow this format:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, @player3..." "quest name"(*)```***** - The quest name is optional.'
+        prepFormat =  f'Please follow this format:\n```yaml\n{commandPrefix}timer prep "@player1, @player2, @player3..." "quest name"```*****'
         #check if the current channel is a campaign channel
         isCampaign = str(channel.category.id) == settingsRecord['Campaign Category ID']
         #prevent the command if not in a proper channel (game/campaign)
-        if str(channel.category.id) != settingsRecord['Game Category ID'] and str(channel.category.id) != settingsRecord['Campaign Category ID']:
+        if str(channel.category.id) != settingsRecord['Game Category ID']:
             #exception to the check above in case it is a testing channel
             if str(channel.id) in settingsRecord['Test Channel IDs'] or channel.id in [728456736956088420, 757685149461774477, 757685177907413092]:
                 pass
@@ -106,7 +107,7 @@ class Timer(commands.Cog):
                 self.timer.get_command('prep').reset_cooldown(ctx)
                 return
         #check if the userList was given in the proper way or if the norewards option was taken, this avoids issues with the game name when multiple players sign up
-        if '"' not in ctx.message.content and userList != "norewards":
+        if '"' not in ctx.message.content:
             #this informs the user of the correct format
             await channel.send(f"Make sure you put quotes **`\"`** around your list of players and retry the command!\n\n{prepFormat}")
             #permit the use of the command again
@@ -141,7 +142,7 @@ class Timer(commands.Cog):
             return
 
         # set up the user communication for tier selection, this is done even if norewards is selected
-        prepEmbed.add_field(name=f"React with [1-4] for the tier of your quest: **{game}**.\n", value=f"{numberEmojis[0]} New / Junior Friend (Level 1-4)\n{numberEmojis[1]} Journeyfriend (Level 5-10)\n{numberEmojis[2]} Elite Friend (Level 11-16)\n{numberEmojis[3]} True Friend (Level 17-20)", inline=False)
+        prepEmbed.add_field(name=f"React with [1-5] for the tier of your quest: **{game}**.\n", value=f"{numberEmojis[0]} New / Junior Friend (Level 1-4)\n{numberEmojis[1]} Journeyfriend (Level 5-10)\n{numberEmojis[2]} Elite Friend (Level 11-16)\n{numberEmojis[3]} True Friend (Level 17-20)\n{numberEmojis[4]} Ascended Friend (Level 20+)\n", inline=False)
         # the discord name is used for listing the owner of the timer
         prepEmbed.set_author(name=userName, icon_url=author.avatar_url)
         prepEmbed.set_footer(text= "React with ❌ to cancel.")
@@ -154,7 +155,7 @@ class Timer(commands.Cog):
                 #create the message to begin talking to the user
                 prepEmbedMsg = await channel.send(embed=prepEmbed)
                 # the emojis for the user to react with
-                for num in range(0,4): await prepEmbedMsg.add_reaction(numberEmojis[num])
+                for num in range(0,5): await prepEmbedMsg.add_reaction(numberEmojis[num])
                 await prepEmbedMsg.add_reaction('❌')
                 # get the user who reacted and what they reacted with, this has already been limited to the proper emoji's and proper user
                 tReaction, tUser = await self.bot.wait_for("reaction_add", check=startEmbedcheck, timeout=60)
@@ -232,19 +233,21 @@ class Timer(commands.Cog):
         # currently this starts with a dummy initial entry for the DM to enable later users of these entries in the code
         # this entry will be overwritten if the DM signs up with a game
         # the DM entry will always be the front entry, this property is maintained by the code
-        signedPlayers = [[author,"No Rewards",['None'],"None"]]
-        
-        # signedPlayers = [[author,"No Rewards",['None'],"None"], 
-                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "0/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "9/10", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"], 
-                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": "1/--", "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350"]]
+        signedPlayers = [[author,"No Rewards",['None'],"None", 
+                            {"Consumables": {"Add": [], "Remove": []}, 
+                             "Inventory": {"Add": [], "Remove": []},
+                             "Magic Items": []}]]
+        print(signedPlayers)
+        # signedPlayers +=[[self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 1", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": 0, "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350", {"Consumables": {"Add": [], "Remove": []},"Inventory": {"Add": [], "Remove": []},"Magic Items": []}], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 2", "Level": 19, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": 9, "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350",  {"Consumables": {"Add": [], "Remove": []},"Inventory": {"Add": [], "Remove": []},"Magic Items": []}], 
+                            # [self.bot.user,{"User ID": "203948352973438995", "Name": "MinVOrc 3", "Level": 20, "HP": 11, "Class": "Monk", " Background": "Waterdhavian Noble", "STR": 17, "DEX": 15, "CON": 16, "INT": 8, "WIS": 8, "CHA": 8, "CP": 1, "Current Item": "Dorfer Greataxe (3.0/6.0)", "GP": 0, "Magic Items": "None", "Consumables": "None", "Feats": "None", "Games":0, "Race": "Minotaur"},['None'],"5ecc5237f67beaca7943d350",  {"Consumables": {"Add": [], "Remove": []},"Inventory": {"Add": [], "Remove": []},"Magic Items": []}]]
 
         #set up a variable for the current state of the timer
         timerStarted = False
         
         # create a list of all possible commands that could be used during the signup phase
         timerAlias = ["timer", "t"]
-        timerCommands = ['signup', 'cancel', 'guild', 'start', 'add', 'remove', 'spend']
+        timerCommands = ['signup', 'cancel', 'guild', 'start', 'add', 'remove']
       
         timerCombined = []
         # pair up each command group alias with a command and store it in the list
@@ -274,6 +277,7 @@ class Timer(commands.Cog):
                 # if the message author is the one who started the timer, call signup with the special DM moniker
                 # the character is extracted from the message in the signup command 
                 # special behavior:
+                playerChar = None
                 if msg.author in playerRoster and msg.author == author:
                     playerChar = await ctx.invoke(self.timer.get_command('signup'), char=msg, author=msg.author, role='DM') 
                 # allow for people in the roster to sign up with their characters
@@ -375,7 +379,7 @@ class Timer(commands.Cog):
             #the command that starts the timer, it does so by allowing the code to move past the loop
             elif (msg.content == f"{commandPrefix}timer start" or msg.content == f"{commandPrefix}t start"):
                 if await self.permissionCheck(msg, author):
-                    if len(signedPlayers) == 1:
+                    if len(signedPlayers) == 0:
                         await channel.send(f'There are no players signed up! Players, use the following command to sign up to the quest with your character before the DM starts the timer:\n```yaml\n{commandPrefix}timer signup```') 
                     else:
                         timerStarted = True
@@ -393,7 +397,7 @@ class Timer(commands.Cog):
                     guildsListStr = ""
                     # guildCategoryID = 678381362398625802
                     # guild category channel for DnDFriends
-                    guildCategoryID = 452704598440804375
+                    guildCategoryID = 734586911901089832 #452704598440804375
 
                     if (len(msg.channel_mentions) > 3):
                         await channel.send(f"The number of guilds exceeds three. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, #guild3```") 
@@ -409,104 +413,14 @@ class Timer(commands.Cog):
                                 await channel.send(f"***{g}*** is not a guild channel. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, #guild3```") 
                                 guildsList = []
                                 break
-                            guildRecords = guildsCollection.find_one({"Channel ID": str(g.id) })
-                            if guildRecords:
-                                # guildsListStr += f"{g.mention}\n" 
-                                guildRecordsList.append(guildRecords)
                                 
                         if not invalidChannel:
                             prepEmbed.description = f"Guilds: {', '.join([g.mention for g in guildsList])}\n**Signup**: {commandPrefix}timer signup \"character name\" \"consumables\"\n**Add to roster**: {commandPrefix}timer add @player\n**Remove from roster**: {commandPrefix}timer remove @player\n**Set guild**: {commandPrefix}timer guild #guild1, #guild2, [...]"
                     else:
                         await channel.send(f"I couldn't find any mention of a guild. Please follow this format and try again:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, [...]```") 
 
-            #TODO: Gonna be an issue if two quests are spending at the same time
-            elif (msg.content.startswith(f'{commandPrefix}timer spend') or msg.content.startswith(f'{commandPrefix}t spend')):
-                if await self.permissionCheck(msg, author):
-                    def timerSpendCheck(r, u):
-                        sameMessage = False
-                        if timerSpendEmbedmsg.id == r.message.id:
-                            sameMessage = True
-                        return sameMessage and ((r.emoji in validBuffs) or (str(r.emoji) == '❌')) and u == author
-
-
-                    if guildRecordsList == list():
-                        await channel.send(f"There are no guilds currently registered to the current quest. Please use the following command first:\n```yaml\n{commandPrefix}timer guild #guild1 #guild2, [...]```") 
-                    elif (len(msg.channel_mentions) > 1):
-                        await channel.send(f"The number of guilds exceeds one. You may only spend reputation from one guild at a time. Please follow this format and try again:\n```yaml\n{commandPrefix}timer spend #guild```") 
-                    elif msg.channel_mentions != list():
-                        guildSpendStr = ""
-                        for g in guildRecordsList:
-                            if g['Channel ID'] == str(msg.channel_mentions[0].id):
-                                guildSpendStr += f" For ***{g['Name']}*** (Current: {g['Reputation']}:sparkles:), Please choose an option below:\n\n"
-                                if g['Reputation'] < 4:
-                                    await channel.send(f"***{g['Name']}*** does not have enough reputation to spend. Please try again.```") 
-                                    break
-                                else:
-                                    timerSpendEmbed = discord.Embed()
-                                    guildSpendLength = 0
-                                    validBuffs = []
-                                    for buff in questBuffsArray:
-                                        if guildSpendLength == 0:
-                                            guildSpendStr += f"**2x Rewards**\n"
-                                        if guildSpendLength == 1:
-                                            guildSpendStr += f"**2x Items**\n"
-                                        if guildSpendLength == 4:
-                                            guildSpendStr += f"**Recruitment Drive**\n"
-
-                                        if g['Reputation'] > questBuffsDict[buff][0] - 1:
-                                            guildSpendStr += f"{alphaEmojis[guildSpendLength]}: {questBuffsDict[buff][0]} :sparkles: {questBuffsDict[buff][1]}\n"
-                                            validBuffs.append(alphaEmojis[guildSpendLength])
-                                        else:
-                                            guildSpendStr += f"~~{alphaEmojis[guildSpendLength]}: {questBuffsDict[buff][0]} :sparkles: {questBuffsDict[buff][1]}~~\n"
-                                        guildSpendLength += 1
-                                    
-
-                                    timerSpendEmbed.title = "Guild Buffs"
-                                    timerSpendEmbed.description = guildSpendStr
-                                    timerSpendEmbedmsg = await channel.send(embed=timerSpendEmbed)
-                                    await timerSpendEmbedmsg.add_reaction('❌')
-                                    try:
-                                        tReaction, tUser = await self.bot.wait_for("reaction_add", check=timerSpendCheck, timeout=60)
-                                    except asyncio.TimeoutError:
-                                        await timerSpendEmbedmsg.delete()
-                                        await channel.send('Timed out! Try using the command again.')
-                                        break
-                                    else:
-                                        if tReaction.emoji == '❌':
-                                            await timerSpendEmbedmsg.edit(embed=None, content=f"Command cancelled. Try using the command again.")
-                                            await timerSpendEmbedmsg.clear_reactions()
-                                            break
-                                    await timerSpendEmbedmsg.delete()
-                                    print(alphaEmojis.index(tReaction.emoji))
-
-                                    if g['Name'] not in guildBuffs:
-                                        guildBuffs[g['Name']] = [questBuffsArray[alphaEmojis.index(tReaction.emoji)]]
-                                    else:
-                                        guildBuffs[g['Name']].append(questBuffsArray[alphaEmojis.index(tReaction.emoji)])
-
-                                    guildBuffsStr = ""
-
-                                    for gk, gv in guildBuffs.items():
-                                        guildBuffsStr += f"**{gk}**: {', '.join(gv)}\n"
-
-
-                                    g['Reputation'] -= questBuffsDict[questBuffsArray[alphaEmojis.index(tReaction.emoji)]][0]
-                                    print(g['Reputation'])
-                                    print(prepEmbed.fields)
-
-                                    if prepEmbed.fields[0].name != "**Guild Buffs**":
-                                        prepEmbed.insert_field_at(0, name="**Guild Buffs**", value = guildBuffsStr, inline=False)
-                                    else:
-                                        prepEmbed.set_field_at(0, name="**Guild Buffs**", value = guildBuffsStr, inline=False)
-                                    break
-
-                    else:
-                        await channel.send(f"I couldn't find any mention of a guild. Please follow this format and try again:\n```yaml\n{commandPrefix}timer spend #guild```") 
-
-
             await prepEmbedMsg.delete()
             prepEmbedMsg = await channel.send(embed=prepEmbed)
-        #until here the code should work
         await ctx.invoke(self.timer.get_command('start'), userList = signedPlayers, game=game, role=role, guildsList = guildsList)
 
 
@@ -624,13 +538,16 @@ class Timer(commands.Cog):
                     await channel.send(content=f'You cannot sign up with ***{cRecord["Name"]}*** because they have not received their rewards from their last quest. Please wait until the session log has been approved.')
                 return False    
             # get how much CP the character has and how much they need
-            cpSplit = cRecord['CP'].split('/')
+            cpSplit = cRecord['CP']
             validLevelStart = 1
             validLevelEnd = 1
             charLevel = cRecord['Level']
+            
             # set up the bounds of which level the character is allowed to be
-
-            if role == "True":
+            if role == "Ascended":
+                validLevelStart = 20
+                validLevelEnd = 20
+            elif role == "True":
                 validLevelStart = 17
                 validLevelEnd = 20
             elif role == "Elite":
@@ -643,7 +560,18 @@ class Timer(commands.Cog):
                 validLevelEnd = 4
             elif role == "DM":
                 validLevelEnd = 20
-
+            
+            tierNum=5
+            # calculate the tier of the rewards
+            if charLevel < 5:
+                tierNum = 1
+            elif charLevel < 11:
+                tierNum = 2
+            elif charLevel < 17:
+                tierNum = 3
+            elif charLevel < 20:
+                tierNum = 4
+            
             # block a character with an invalid level for the tier and inform the user
             if charLevel < validLevelStart or charLevel > validLevelEnd:
                 if not resume:
@@ -651,7 +579,7 @@ class Timer(commands.Cog):
                 return False 
 
             # if the character has more cp than needed for a level up, they need to perform that level up first so we block the command
-            if charLevel <20 and float(cpSplit[0]) >= float(cpSplit[1]):
+            if charLevel <20 and cpSplit >= cp_bound_array[tierNum-1][0]:
                 if not resume:
                     await channel.send(content=f'You need to level up your character ***{cRecord["Name"]}*** before you can join the quest! Use the following command to level up:\n```yaml\n`{commandPrefix}levelup```')
                 return False 
@@ -698,7 +626,7 @@ class Timer(commands.Cog):
                     for jk, jv in charConsumables.items():
                         if i.strip() != "" and i.lower().replace(" ", "").strip() in jk.lower().replace(" ", ""):
                             if jv > 0 :
-                                gameConsumables.append(jk)
+                                gameConsumables.append(jk.strip())
                                 charConsumables[jk] -= 1
                                 itemFound = True
                                 break
@@ -717,9 +645,16 @@ class Timer(commands.Cog):
                 if not gameConsumables:
                     gameConsumables = ['None']
                 # this sets up the player list of the game, it stores who it is, all the consumables and which character they are using and their stuff
-                return [author,cRecord,gameConsumables, cRecord['_id']]
+                return [author,cRecord,gameConsumables, cRecord['_id'],
+                            {"Consumables": {"Add": [], "Remove": []}, 
+                             "Inventory": {"Add": [], "Remove": []},
+                             "Magic Items": []}]
+
             # since no consumables were listed we can default to the special None option
-            return [author,cRecord,['None'],cRecord['_id']]
+            return [author,cRecord,['None'],cRecord['_id'], 
+                            {"Consumables": {"Add": [], "Remove": []}, 
+                             "Inventory": {"Add": [], "Remove": []},
+                             "Magic Items": []}]
 
 
 
@@ -749,23 +684,41 @@ class Timer(commands.Cog):
                         foundItem = None
                         # search through the users list of brough consumables 
                         # could have used normal for loop, we do not use the index
+                        item_type = None
                         for j in currentItem[2]:
                             # if found than we can mark it as such
                             if searchItem == j.lower().replace(" ", ""):
                                 foundItem = j
+                                item_type = "Consumables"
                                 break
+                         
                         # inform the user if we couldnt find the item
+                        if not foundItem:
+                            for key, inv in currentItem[1]["Inventory"].items():
+                                # if found than we can mark it as such
+                                if searchItem == key.lower().replace(' ', '') and inv > 0:
+                                    foundItem = key
+                                    item_type = "Inventory"
+                                    break  
+                                    
                         if not foundItem:
                             if not resume:
                                 await channel.send(f"I could not find the item **{searchQuery}** in your inventory in order to remove it.")
-                        elif foundItem:
-                            # remove the entry from the list of consumables of the character
-                            charConsumableList = currentItem[1]['Consumables'].split(', ')
-                            charConsumableList.remove(foundItem)
-                            # remove the item from the brought consumables
-                            currentItem[2].remove(foundItem) 
-                            # update the characters consumables to reflect the item removal
-                            currentItem[1]['Consumables'] = ', '.join(charConsumableList).strip()
+                                return start                      
+                        else:
+                            if item_type == "Consumables":
+                                # remove the entry from the list of consumables of the character
+                                charConsumableList = currentItem[1]['Consumables'].split(', ')
+                                print("F11111111111", foundItem, currentItem[2])
+                                charConsumableList.remove(foundItem)
+                                # remove the item from the brought consumables
+                                print("F222222222", foundItem, currentItem[2])
+                                currentItem[2].remove(foundItem) 
+                                # update the characters consumables to reflect the item removal
+                                currentItem[1]['Consumables'] = ', '.join(charConsumableList).strip()
+                            elif item_type == "Inventory":
+                                currentItem[1][item_type][foundItem] -= 1
+                            currentItem[4][item_type]["Remove"].append(foundItem)
                             if not resume:
                                 await channel.send(f"The item **{foundItem}** has been removed from your inventory.")
 
@@ -799,9 +752,10 @@ class Timer(commands.Cog):
                                             "DM" : {"Major":[], "Minor": []}}])
 
             # find the name of which noodle role the DM has
+            print("ARG", dmChar)
             for r in dmChar[0].roles:
                 if 'Noodle' in r.name:
-                    dmChar[4][0] = r.name
+                    dmChar[5][0] = r.name
                     break
             #this check could also be done during prep, the current version allows for a channel to be prepped while another timer is running IF the current timer was created through resuming
             # that seems inintentional
@@ -888,7 +842,7 @@ class Timer(commands.Cog):
     """
     start -> a dictionary of strings and player list pairs, the strings are made out of the kind of reward and the duration and the value is a list of players entries (format can be found as the return value in signup)
     resume -> if this is during the resume process
-    dmChar -> the player entry (format [member object, char DB entry, brought consumables, char id]) of the DM with an added entry [4] as [Noodle Role Name, majors  = 0, minors = 0, dmMajors = 0,dmMinors = 0]
+    dmChar -> the player entry (format [member object, char DB entry, brought consumables, char id, item changes]) of the DM with an added entry [5] as [Noodle Role Name, majors  = 0, minors = 0, dmMajors = 0,dmMinors = 0]
     """    
 
     async def reward(self,ctx,msg, start="",resume=False, dmChar="", ):
@@ -965,10 +919,10 @@ class Timer(commands.Cog):
                         return start, dmChar
                         
                     # the current counts of items rewarded
-                    major = len(dmChar[4][1]["Players"]["Major"])
-                    minor = len(dmChar[4][1]["Players"]["Minor"])
-                    dmMajor = len(dmChar[4][1]["DM"]["Major"])
-                    dmMinor = len(dmChar[4][1]["DM"]["Minor"])
+                    major = len(dmChar[5][1]["Players"]["Major"])
+                    minor = len(dmChar[5][1]["Players"]["Minor"])
+                    dmMajor = len(dmChar[5][1]["DM"]["Major"])
+                    dmMinor = len(dmChar[5][1]["DM"]["Minor"])
                     
                     # if the DM has to pick a non-consumable
                     dmMnc = False
@@ -987,29 +941,29 @@ class Timer(commands.Cog):
                     dmMajorLimit = 0
                     dmMinorLimit = 1
                     
-                    if dmChar[4][0] == 'Immortal Noodle':
+                    if dmChar[5][0] == 'Immortal Noodle':
                         rewardMajorLimit = 3
                         rewardMinorLimit = 7
                         dmMajorLimit = 1
                         dmMinorLimit = 3
-                    elif dmChar[4][0] == 'Ascended Noodle':
+                    elif dmChar[5][0] == 'Ascended Noodle':
                         rewardMajorLimit = 3
                         rewardMinorLimit =  6
                         dmMajorLimit = 1
                         dmMinorLimit = 2
-                    elif dmChar[4][0] == 'True Noodle':
+                    elif dmChar[5][0] == 'True Noodle':
                         rewardMajorLimit = 2
                         rewardMinorLimit = 5
                         dmMajorLimit = 1
                         dmMinorLimit = 1
-                    elif dmChar[4][0] == 'Elite Noodle':
+                    elif dmChar[5][0] == 'Elite Noodle':
                         rewardMajorLimit = 2
                         rewardMinorLimit = 4
                         dmMajorLimit = 1
                         dmMinorLimit = 1
                         lowerTier = True
                         chooseOr = True
-                    elif dmChar [4][0] == 'Good Noodle':
+                    elif dmChar [5][0] == 'Good Noodle':
                         rewardMajorLimit = 1
                         rewardMinorLimit = 3
                         dmMajorLimit = 0
@@ -1056,7 +1010,9 @@ class Timer(commands.Cog):
                     
                     awarded_majors = []
                     awarded_minors = []
-                    awarded_minor_items = []
+                    
+                    character_add = {"Inventory": [], "Consumables": [], "Magic Items": []}
+                    
                     blocking_list_additions = {"Major": [], "Minor" : []}
                     print("Before:", dmChar)
                     for query in consumablesList:
@@ -1104,8 +1060,8 @@ class Timer(commands.Cog):
                                rewardConsumable_group_type = "Grouped"
                             
                             # check if the item has already been rewarded to the player
-                            if (rewardConsumable[rewardConsumable_group_type] in dmChar[4][1][player_type]["Major"] or
-                                rewardConsumable[rewardConsumable_group_type] in dmChar[4][1][player_type]["Minor"] or
+                            if (rewardConsumable[rewardConsumable_group_type] in dmChar[5][1][player_type]["Major"] or
+                                rewardConsumable[rewardConsumable_group_type] in dmChar[5][1][player_type]["Minor"] or
                                 rewardConsumable[rewardConsumable_group_type] in blocking_list_additions["Major"] or
                                 rewardConsumable[rewardConsumable_group_type] in blocking_list_additions["Minor"]):
                                 # inform the user of the issue
@@ -1124,7 +1080,7 @@ class Timer(commands.Cog):
                                 return start, dmChar 
                             # if the item is rewarded to the DM and they are not allowed to pick a consumable
                             # and the item is neither minor nor consumable
-                            if dmMnc and rewardUser == dmChar[0] and (rewardConsumable['Minor/Major'] != 'Minor' or "Consumable" in rewardConsumable):
+                            if dmMnc and rewardUser == dmChar[0] and (rewardConsumable['Minor/Major'] != 'Minor' or  rewardConsumable["Type"] == "Consumable"):
                                 if not resume:
                                     await ctx.channel.send(f"You cannot award yourself this reward item because your reward item has to be a Minor Non-Consumable.")
                                 # return unchanged parameters
@@ -1180,41 +1136,36 @@ class Timer(commands.Cog):
                             
                             # the only reward items that are non-consumable are minors
                             # non-consumables don't have the Consumable property
-                            if not ("Consumable" in rewardConsumable):
-                                awarded_minor_items.append(rewardConsumable['Name'])
-                            elif rewardConsumable['Minor/Major'] == 'Major':
+                            if rewardConsumable['Minor/Major'] == 'Major':
                                 awarded_majors.append(rewardConsumable['Name'])
                             else:
                                 awarded_minors.append(rewardConsumable['Name'])
                             blocking_list_additions[rewardConsumable['Minor/Major']].append(rewardConsumable[rewardConsumable_group_type])
+                            character_add[rewardConsumable["Type"]].append(rewardConsumable["Name"])
                     
-
                     # update the players consumable/item list with the rewarded consumable/item respectively
-                    if 'Consumable' in rewardConsumable:
-                        if currentItem[1]['Consumables'] == "None":
-                            charConsumableList = awarded_majors+awarded_minors
-                        else:
-                            charConsumableList+= awarded_majors+awarded_minors
-                        currentItem[1]['Consumables'] = ', '.join(charConsumableList).strip() # replace with a grouping function in the future
-                    else:
-                        if currentItem[1]['Magic Items'] == "None":
-                            charMagicList = awarded_minor_items
-                        else:
-                            charMagicList += (awarded_minor_items)
-                        currentItem[1]['Magic Items'] = ', '.join(charMagicList).strip()
-                    item_list = awarded_majors+awarded_minors+awarded_minor_items
+                    
+                        
+                    item_list = awarded_majors+awarded_minors
                     item_list_with_pluses = list(map(lambda s: "+"+s, item_list))
                     item_list_string = ", ".join(item_list)
-                    
+                    print("DDDDDDDDDDDDDDDDDDDD", currentItem)
                     if currentItem[2] == ["None"]:
                         currentItem[2] = item_list_with_pluses
                     else:
                         currentItem[2] += item_list_with_pluses
-
-                    # update dmChar to track the rewarded item counts properly
                     
-                    dmChar[4][1][player_type]["Major"] += blocking_list_additions["Major"]
-                    dmChar[4][1][player_type]["Minor"] += blocking_list_additions["Minor"]
+                    # add all awarded items to the players reward tracker
+                    for key, items in character_add.items():
+                    
+                        if(key == "Magic Items"):
+                            currentItem[4][key] += items
+                        else:
+                            currentItem[4][key]["Add"] += items
+                    
+                    # update dmChar to track the rewarded item counts properly
+                    dmChar[5][1][player_type]["Major"] += blocking_list_additions["Major"]
+                    dmChar[5][1][player_type]["Minor"] += blocking_list_additions["Minor"]
                     # on completion inform the users that of the success and of the current standings with rewards
                     if not resume:
                         await ctx.channel.send(content=f"You have awarded ***{rewardUser.display_name}*** the following reward items: **{item_list_string}**.\n```Total rewarded so far:\n({major}/{rewardMajorLimit}) Major Reward Items\n({minor}/{rewardMinorLimit-rewardMajorLimit}) Minor Reward Items\n({dmMajor}/{dmMajorLimit}) DM Major Reward Items\n({dmMinor}/{dmMinorLimit-dmMajorLimit}) DM Minor Reward Items```")
@@ -1336,9 +1287,9 @@ class Timer(commands.Cog):
                             await addEmbedmsg.edit(embed=None, content=f"I've added ***{addUser.display_name}*** to the timer.")
                     
                     if dmChar[0] is addUser:
-                        dmChar[4][1]["DM"]["Major"].clear()
-                        dmChar[4][1]["DM"]["Minor"].clear()
-                        userInfo.append(dmChar[4])
+                        dmChar[5][1]["DM"]["Major"].clear()
+                        dmChar[5][1]["DM"]["Minor"].clear()
+                        userInfo.append(dmChar[5])
                         dmChar.clear()
                         dmChar.extend(userInfo)
                     else:
@@ -1570,7 +1521,7 @@ class Timer(commands.Cog):
     author -> the Member object of the DM of the game
     """
     @timer.command()
-    async def stamp(self,ctx, stamp=0, role="", game="", author="", start="", embed="", embedMsg=""):
+    async def stamp(self,ctx, stamp=0, role="", game="", author="", start="", dmChar=[], embed="", embedMsg=""):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             # copy the duration trackers from the game
             startcopy = start.copy()
@@ -1638,6 +1589,11 @@ class Timer(commands.Cog):
                         else:
                             # if it is a no rewards game then there is no character to list
                             embed.add_field(name= f"**{v[0].display_name}** - {timeConversion(durationEach)} (Latecomer)\n", value=v[0].mention, inline=False)
+            
+            if(dmChar[1] != "No Rewards"):
+                item_rewards = dmChar[4]["Inventory"]["Add"]+dmChar[4]["Consumables"]["Add"]+dmChar[4]["Magic Items"]
+                dm_text =dmChar[1]["Name"]+ ("\nRewards:\n+"+"\n+".join(item_rewards))*(item_rewards != list())
+                embed.add_field(name= f"**DM: {dmChar[0].display_name}**", value=dm_text, inline=False)
             # update the title of the embed message with the current time
             embed.title = f'**{game}**: {durationString}'
             msgAfter = False
@@ -1666,8 +1622,6 @@ class Timer(commands.Cog):
     async def stop(self,ctx,*,start="", role="", game="", datestart="", dmChar="", guildsList=""):
         if ctx.invoked_with == 'prep' or ctx.invoked_with == 'resume':
             end = time.time() + 3600 * 3
-            # get a formatted string of the endtime
-            dateend=(datetime.now(pytz.timezone(timezoneVar))).strftime("%I:%M %p")
             allRewardStrings = {}
             treasureString = "No Rewards"
             tierNum = 0
@@ -1676,6 +1630,8 @@ class Timer(commands.Cog):
             stopEmbed = discord.Embed()
             
             # turn Tier string into tier number
+            if role == "Ascended":
+                tierNum = 5
             if role == "True":
                 tierNum = 4
             elif role == "Elite":
@@ -1687,11 +1643,9 @@ class Timer(commands.Cog):
                 stopEmbed.colour = discord.Colour(0xffffff)
             else:
                 tierNum = 1
-
-
         
             deathChars = []
-            data = {"records":[]}
+            
             # Session Log Channel
             logChannel = self.bot.get_channel(737076677238063125)  # 728456783466725427 737076677238063125
             # logChannel = self.bot.get_channel(577227687962214406)
@@ -1700,8 +1654,25 @@ class Timer(commands.Cog):
             if role != "":
                 # post a session log entry in the log channel
                 await ctx.channel.send("The timer has been stopped! Your session log has been posted in the #session-logs channel.")
+                
                 sessionMessage = await logChannel.send(embed=stopEmbed)
                 stopEmbed.set_footer(text=f"Game ID: {sessionMessage.id}")
+            dbEntry = {}
+            dbEntry["Log ID"] = sessionMessage.id
+            dbEntry["Role"] = role
+            dbEntry["Tier"] = tierNum
+            dbEntry["Channel"] = ctx.channel.name
+            dbEntry["End"] = end
+            dbEntry["Game"] = game
+            dbEntry["Status"] = "Processing"
+            dbEntry["Players"] = {}
+            
+            global settingsRecord
+            
+            dbEntry["DDMRW"] = settingsRecord["ddmrw"]
+            
+            rewardsCollection = db.rit
+            rewardList = list(rewardsCollection.find({"Tier": tierNum}))
             
             # go through the dictionary of times and calculate the rewards of every player
             for startItemKey, startItemValue in start.items():
@@ -1709,16 +1680,17 @@ class Timer(commands.Cog):
                 duration = 0
                 # list of players in this entry
                 playerList = []
-                
                 # Attach the end time to the key temporarily for the calculations
                 # This doubles up on the end time for people who were last removed from the timer, but since that calculation takes specifically the 1st and 2nd value, this 3rd element will not affect the calculations
                 startItemsList = (startItemKey+ f'?{end}').split(':')
                 
                 # get the total duration
                 if "Full Rewards" in startItemKey or  "No Rewards" in startItemKey:
+                
+                    starting_time = float(startItemsList[1].split('?')[0])
                     # since there is only one set of start and end times we know that startItemsList only has 2 elements
                     # first element is the reward type and the second contains the start and end time separated by ?
-                    totalDurationTime = end - float(startItemsList[1].split('?')[0])
+                    totalDurationTime = end - starting_time
                     # get the string to represent the duration in hours and minutes
                     totalDuration = timeConversion(totalDurationTime)
 
@@ -1742,139 +1714,47 @@ class Timer(commands.Cog):
 
 
                 for value in startItemValue:
-                    if role != "":
-                        # if the user is under the effect of a guild double items buff
-                        if 'Double Items Buff' in value[1]: 
-                            # if the end of the buff is within the next 3 days
-                            if value[1]['Double Items Buff'] < (datetime.now() + timedelta(days=3)):
-                                # access the reward items table
-                                rewardsCollection = db.rit
-                                # get the entries of the game tier
-                                rewardList = list(rewardsCollection.find({"Tier": str(tierNum)}))
-                                # select a random item
-                                randomItem = random.choice(rewardList)
-
-                                charConsumableList = value[1]['Consumables'].split(', ')
-                                charMagicList = value[1]['Magic Items'].split(', ')
-
-                                # add the reward item to the characters inventory
-                                if 'Consumables' in randomItem:
-                                    if value[1]['Consumables'] == "None":
-                                        charConsumableList = [randomItem['Name']]
-                                    else:
-                                        charConsumableList.append(randomItem['Name'])
-                                        charConsumableList.sort()
-                                    value[1]['Consumables'] = ', '.join(charConsumableList).strip()
-                                else:
-                                    if value[1]['Magic Items'] == "None":
-                                        charMagicList = [randomItem['Name']]
-                                    else:
-                                        charMagicList.append(randomItem['Name'])
-                                        charMagicList.sort()
-                                    value[1]['Magic Items'] = ', '.join(charMagicList).strip()
-
-                                # add the item with a special marker to the brough consumable list
-                                if value[2] != ["None"]:
-                                    value[2].append('(DI)+'+ randomItem['Name'])
-                                else:
-                                    value[2] = ['(DI)+'+ randomItem['Name']]
-                        # create an updated database entry with the records of the game
-                        treasureArray, charRewards = calculateTreasure(value, tierNum, duration, (value in deathChars), dmChar, sessionMessage.id)
-                        # insert the rewards into a string
-                        treasureString = f"{treasureArray[0]} CP, {treasureArray[1]} TP, and {treasureArray[2]} GP"
-                        # add the records to the list of items to update
-                        data["records"].append(charRewards)
-                        
-                    else:
-                        # if there were no rewards we only care about the time
-                        treasureString = timeConversion(duration) 
-                    # if the player was not present the whole game and it was a no rewards game
-                    if role == "" and "Partial Rewards" in startItemKey:
-                        # check if the reward has already been added to the reward dictionary
-                        if treasureString not in allRewardStrings:
-                            # if not, create the entry
-                            allRewardStrings[treasureString] = playerList
-                        else:
-                            # otherwise add the new players
-                            allRewardStrings[treasureString] += playerList 
-                    else:
-                        # check if the full rewards have already been added, if yes create it and add the players
-                        if f'{role} Friend Full Rewards - {treasureString}' in allRewardStrings:
-                            allRewardStrings[f'{role} Friend Full Rewards - {treasureString}'] += [value]
-                        # check if there exists an entry with the same amount of rewards, if no, create it, otherwise add the players
-                        elif f"{startItemsList[0].replace('+', '').replace('-', '').replace('%', '')} - {treasureString}" not in allRewardStrings:
-                            allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '').replace('%', '')} - {treasureString}"] = [value]
-                        else:
-                            allRewardStrings[f"{startItemsList[0].replace('+', '').replace('-', '').replace('%', '')} - {treasureString}"] += [value]
-
-                        # add the player to the list of completed entries
-                        playerList.append(value)
+                    playerDBEntry={}
+                    randomItem = random.choice(rewardList)
+                    if("Grouped" in randomItem):
+                        randomItem["Name"] = random.choice(randomItem["Name"])
+                    playerDBEntry.update(value[4])
+                    playerDBEntry["Status"] = "Alive"* (not (value in deathChars)) + "Dead"* (value in deathChars)
+                    playerDBEntry["Character ID"] = value[1]["_id"]
+                    playerDBEntry["Character Name"] = value[1]["Name"]
+                    playerDBEntry["Level"] = value[1]["Level"]
+                    if "Guild" in value[1]:
+                        playerDBEntry["Guild"] = value[1]["Guild"]
+                    playerDBEntry["Character CP"] = value[1]["CP"]
+                    playerDBEntry["Mention"] = value[0].mention
+                    playerDBEntry["Double Items"] = [randomItem["Type"], randomItem["Name"]]
+                    
+                    playerDBEntry["CP"] = (duration// 1800) / 2
+                    # add the player to the list of completed entries
+                    dbEntry["Players"][f"{value[0].id}"] = playerDBEntry
+                    playerList.append(value)
 
                 print('playerList')
                 print(playerList)
                 
                 
-
+            
+            dbEntry["Start"] = starting_time
+            
             stopEmbed.title = f"Timer: {game} [END] - {totalDuration}"
-            stopEmbed.description = f"{datestart} to {dateend} CDT" 
-            #DM REWARD MATH STARTS HERE
-            if(dmChar[1]!="No Rewards"):
-                charLevel = int(dmChar[1]['Level'])
-                # calculate the tier of the DM character
-                if charLevel < 5:
-                    dmRole = 'Junior'
-                elif charLevel < 11:
-                    dmRole = 'Journey'
-                elif charLevel < 17:
-                    dmRole = 'Elite'
-                elif charLevel < 21:
-                    dmRole = 'True'
-                
-                if role != "":
-                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, dmChar, sessionMessage.id )
-                else:
-                    dmtreasureArray, dmRewardEntry = calculateTreasure(dmChar, roleArray.index(dmRole) + 1,totalDurationTime , False, dmChar, None )
-                # perform the same calculations as for normal players, but with the DM character's tier  
-                # DM update
-                if 'Double Items Buff' in dmChar[1]: 
-                    if dmChar[1]['Double Items Buff'] < (datetime.now() + timedelta(days=3)):
-                        rewardsCollection = db.rit
-                        rewardList = list(rewardsCollection.find({"Tier": str(tierNum)}))
-                        randomItem = random.choice(rewardList)
+            stopEmbed.description = """Summary: [Replace this text with an optional flavor description of the quest!]
 
-                        charConsumableList = dmChar[1]['Consumables'].split(', ')
-                        charMagicList = dmChar[1]['Magic Items'].split(', ')
-
-                        if 'Consumable' in randomItem:
-                            if dmChar[1]['Consumables'] == "None":
-                                charConsumableList = [randomItem['Name']]
-                            else:
-                                charConsumableList.append(randomItem['Name'])
-                                charConsumableList.sort()
-                            dmChar[1]['Consumables'] = ', '.join(charConsumableList).strip()
-                        else:
-                            if dmChar[1]['Magic Items'] == "None":
-                                charMagicList = [randomItem['Name']]
-                            else:
-                                charMagicList.append(randomItem['Name'])
-                                charMagicList.sort()
-                            dmChar[1]['Magic Items'] = ', '.join(charMagicList).strip()
-
-
-                        if dmChar[2] == ["None"]:
-                            dmChar[2] = ["(DI)+" + randomItem['Name']]
-                        else:
-                            dmChar[2].append("(DI)+" + randomItem['Name'])
-
-                dmRewardsList = []
-                # add the items that the DM awarded themselves to the items list
-                for d in dmChar[2]:
-                    if '+' in d:
-                        dmRewardsList.append(d)
-                data["records"].append(dmRewardEntry)
+**Combat**: explain how your quest fulfilled the combat pillar.
+**Exploration**: explain how your quest fulfilled the exploration pillar.
+**Social**: explain how your quest fulfilled the social pillar.
+**HSG**: the party saved Hobbits who were going to be sacrificed.
+**FoF**: the Fellowship was hired to help save the Hobbits.""" 
+            
+            hoursPlayed = (totalDurationTime // 1800) / 2
             
             # get the collections of characters
             playersCollection = db.players
+            logCollection = db.logdata
             # and players
             usersCollection = db.users
 
@@ -1883,115 +1763,53 @@ class Timer(commands.Cog):
             uRecord  = usersCollection.find_one({"User ID": str(dmChar[0].id)})
             noodles = 0
             # get the total amount of minutes played
-            minutesPlayed = totalDurationTime // 60
-            minutesRounded = minutesPlayed % 30
-            # round down to 30 or 60 minutes
-            minutesPlayed -= minutesRounded
             print("DM:", uRecord)
             
-            # calculate the hour duration and calculate how many 3h segements were played
-            hoursPlayed = (minutesPlayed / 60)
-            # that is the base line of sparkles and noodles gained
-            noodlesGained = sparklesGained = int(hoursPlayed) // 3
-            
-            # add the noodles to the record or start a record if needed
-            if uRecord:
-                if 'Noodles' not in uRecord:
-                    noodles = noodlesGained
+            #DM REWARD MATH STARTS HERE
+            dmDBEntry = {}
+            if(dmChar[1]!="No Rewards"):
+                dm_char_level = dmChar[1]["Level"]
+                if dm_char_level < 5:
+                    dm_tier_num = 1
+                elif dm_char_level < 11:
+                    dm_tier_num = 2
+                elif dm_char_level < 17:
+                    dm_tier_num = 3
+                elif dm_char_level < 20:
+                    dm_tier_num = 4
                 else:
-                    noodles += uRecord['Noodles'] + noodlesGained
-            print("uRecord", uRecord)
-            #update noodle role if dm
-            noodleString = "Current Noodles: " + str(noodles)
-            dmRoleNames = [r.name for r in dmChar[0].roles]
-            # for each noodle roll cut-off check if the user would now qualify for the roll and if they do not have it and remove the old roll
-            if noodles >= 150:
-                if 'Immortal Noodle' not in dmRoleNames:
-                    # get from the list of roles on the server the one with a given name
-                    noodleRole = get(guild.roles, name = 'Immortal Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 150 sessions. This user has 150+ Noodles.")
-                    if 'Ascended Noodle' in dmRoleNames:
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'Ascended Noodle'))
-                    noodleString += "\n**Immortal Noodle** role received! :tada:"
-            elif noodles >= 100:
-                if 'Ascended Noodle' not in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'Ascended Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 100 sessions. This user has 100+ Noodles.")
-                    if 'True Noodle' in dmRoleNames:
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'True Noodle'))
-                    noodleString += "\n**Ascended Noodle** role received! :tada:"
-
-            elif noodles >= 60:
-                if 'True Noodle' not in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'True Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 60 sessions. This user has 60+ Noodles.")
-                    if 'Elite Noodle' in dmRoleNames:
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'Elite Noodle'))
-                    noodleString += "\n**True Noodle** role received! :tada:"
+                    dm_tier_num = 5
+                    
+                value = dmChar
+                rewardList = list(rewardsCollection.find({"Tier": dm_tier_num}))
+                randomItem = random.choice(rewardList)
+                if("Grouped" in randomItem):
+                    randomItem["Name"] = random.choice(randomItem["Name"])
+                dmDBEntry.update(value[4])
+                dmDBEntry["Character ID"] = value[1]["_id"]
+                dmDBEntry["Character Name"] = value[1]["Name"]
+                dmDBEntry["Level"] = value[1]["Level"]
+                if "Guild" in value[1]:
+                    dmDBEntry["Guild"] = value[1]["Guild"]
+                dmDBEntry["Character CP"] = value[1]["CP"]
+                dmDBEntry["DM Double"] = settingsRecord["ddmrw"]
+                dmDBEntry["Double Items"] = [randomItem["Type"], randomItem["Name"]]
+                playerList.append(value)
+                    
+            dmDBEntry["ID"] = str(dmChar[0].id)
+            dmDBEntry["Mention"] = dmChar[0].mention
+            n=0
+            if "Noodles" in uRecord:
+                n = uRecord["Noodles"]
+            dmDBEntry["Noodles"] = n
+            dmDBEntry["CP"] = hoursPlayed
             
-            elif noodles >= 30:
-                if 'Elite Noodle' not in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'Elite Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 30 sessions. This user has 30+ Noodles.")
-                    if 'Good Noodle' in dmRoleNames:
-                        await dmChar[0].remove_roles(get(guild.roles, name = 'Good Noodle'))
-                    noodleString += "\n**Elite Noodle** role received! :tada:"
-
-            elif noodles >= 10:
-                if 'Good Noodle' not in dmRoleNames:
-                    noodleRole = get(guild.roles, name = 'Good Noodle')
-                    await dmChar[0].add_roles(noodleRole, reason=f"Hosted 10 sessions. This user has 10+ Noodles.")
-                    noodleString += "\n**Good Noodle** role received! :tada:"
+            dbEntry["DM"] = dmDBEntry
+            
+            dbEntry["Guilds"] = {}
             
             # if the game received rewards
             if role != "": 
-                # clear the embed message to repopulate it
-                stopEmbed.clear_fields() 
-                allRewardsTotalString = ""
-                # for every unique set of TP rewards
-                for key, value in allRewardStrings.items():
-                    temp = ""
-                    # for every player of this reward
-                    for v in value:
-                        vRewardList = []
-                        # for every brough consumable for the character
-                        for r in v[2]:
-                            # add the awarded items to the list of rewards
-                            if '+' in r:
-                                vRewardList.append(r)
-                        # if the character was not dead at the end of the game
-                        if v not in deathChars:
-                            # if they had the double rewards buff, include a special mention to that
-                            if 'Double Rewards Buff'  in v[1]:
-                                temp += f"{v[0].mention} | {v[1]['Name']} **DOUBLE REWARDS!** {', '.join(vRewardList).strip()}\n"
-                            else:
-                                # otherwise just show the rewarded items
-                                temp += f"{v[0].mention} | {v[1]['Name']} {', '.join(vRewardList).strip()}\n"
-                        else:
-                            # if they were dead, include that death
-                            temp += f"~~{v[0].mention} | {v[1]['Name']}~~ **DEATH** {', '.join(vRewardList).strip()}\n"
-                    
-                    # since if there is a player for this reward, temp will have text since every case above results in changes to temp
-                    # this informs us that there were no players
-                    if temp == "":
-                        temp = 'None'
-                    # add the information about the reward to the embed object
-                    stopEmbed.add_field(name=f"**{key}**\n", value=temp, inline=False)
-                    # add temp to the total output string
-                    allRewardsTotalString += temp + "\n"
-
-                # special section for the DM
-                # set up the information about the DM character rewards
-                doubleRewardsString = ""
-                doubleItemsString = ""        
-                if(dmChar[1]!="No Rewards"):
-                    # did the DM character have double rewards
-                    if 'Double Rewards Buff' in dmChar[1]:
-                        doubleRewardsString = ' **(DOUBLE REWARDS)**:'
-                    # did the DM character receive reward items
-                    if 'Double Items Buff' in dmChar[1] and dmChar[2] != ['None']:
-                        doubleItemsString += '- ' + ', '.join(dmChar[2])
-
                 # get the db collection of guilds and set up variables to track relevant information
                 guildsCollection = db.guilds
                 # if a member of the guild was in the game
@@ -2008,200 +1826,37 @@ class Timer(commands.Cog):
                     for g in guildsList:
                         # get the DB record of the guild
                         gRecord  = guildsCollection.find_one({"Channel ID": str(g.id)})
+                        
+                        guildDBEntry = {}
+                        guildDBEntry["Status"] = True
+                        guildDBEntry["Rewards"] = False
+                        guildDBEntry["Items"] = False
+                        guildDBEntry["Mention"] = g.mention
+                        guildDBEntry["Name"] = gRecord["Name"]
+                        
+                        dbEntry["Guilds"][gRecord["Name"]] = guildDBEntry
+                        
                         # if the guild exists in the DB
-                        if gRecord:
-                            # store the current Sparkle count
-                            gRecord['Old Reputation'] = gRecord['Reputation']
-                            # if the game went long enough to receive sparkles update the Sparkle entry
-                            if hoursPlayed >= 3:
-                                # for every player in the game check if they are in the guild and update the entry
-                                for p in playerList:
-                                    if 'Guild' in p[1]:
-                                        if gRecord['Name'] in p[1]['Guild']:
-                                            guildMember = True
-                                            gRecord['Reputation'] += sparklesGained
-                                # if the DM signed up with a character and it is in the guild update the sparkles accordingly
-                                if(dmChar[1] != "No Rewards"):
-                                    if 'Guild' in dmChar[1]:
-                                        if gRecord['Name'] in dmChar[1]['Guild']:
-                                            guildMember = True
-                                            # DMs get an extra sparkle
-                                            gRecord['Reputation'] += sparklesGained + 1
-                                # record how many games have been played with the guild
-                                if 'Games' not in gRecord:
-                                    gRecord['Games'] = 1
-                                else:
-                                    gRecord['Games'] += 1
-                                    # every x0th game the players in the guild
-                                    if gRecord['Games'] % 10 == 0:
-                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Guild Rank": {'$gt':1}}))
-                                        if guildBuffList:
-                                            for d in data['records']:
-                                                if d['_id'] in [gb['_id'] for gb in guildBuffList]:
-                                                    d['fields']['$set']['Double Rewards Buff'] = datetime.now()
-                                                    if '$unset' in d['fields']:
-                                                        if 'Double Rewards Buff' in d['fields']['$unset']:
-                                                            del d['fields']['$unset']['Double Rewards Buff']
-                                                            if  d['fields']['$unset'] == dict():
-                                                                del d['fields']['$unset']
-                                    # every x5 game the players will receive the double items buff
-                                    elif gRecord['Games'] % 5 == 0:
-                                        guildBuffList = list(playersCollection.find({"Guild": gRecord['Name'], "Guild Rank": {'$gt':1}}))
-                                        if guildBuffList:
-                                            for d in data['records']:
-                                                if d['_id'] in [gb['_id'] for gb in guildBuffList]:
-                                                    d['fields']['$set']['Double Items Buff'] = datetime.now()
-                                                    if '$unset' in d['fields']:
-                                                        if 'Double Items Buff' in d['fields']['$unset']:
-                                                            del d['fields']['$unset']['Double Items Buff']
-                                                            if  d['fields']['$unset'] == dict():
-                                                                del d['fields']['$unset']
-                            # add the update DB record to the list to update it in the DB
-                            guildsRecordsList.append(gRecord)
                 # create a list of of UpdateOne objects from the data entries for the bulk_write
-                timerData = list(map(lambda item: UpdateOne({'_id': item['_id']}, item['fields']), data['records']))
-
-                guildRewardsStr = ""
-                
-                # create a string that shows how my sparkles were gained for each of the guilds
-                for g in guildsRecordsList:
-                    guildRewardsStr += f"{g['Name']}: +{g['Reputation'] - gRecord['Old Reputation']} :sparkles:"
-
-                stopEmbed.title = f"\n**{game}**\n*Tier {tierNum} Quest* \n#{ctx.channel}"
-                stopEmbed.description = f"{guildsListStr}{', '.join([g.mention for g in guildsList])}\n{datestart} to {dateend} CDT ({totalDuration})"
-                
-                # add the field for the DM's player rewards
-                dm_text = "**No Character**"
-                dm_name_text = "**No Rewards**"
-                # if no character signed up then the character parts are excluded
-                if(dmChar[1] != "No Rewards"):
-                    dm_text = f"{dmChar[1]['Name']} {', '.join(dmRewardsList)}{doubleItemsString}"
-                    dm_name_text = f"DM Rewards{doubleRewardsString}: (Tier {roleArray.index(dmRole) + 1}) - **{dmtreasureArray[0]} CP, {dmtreasureArray[1]} TP, and {dmtreasureArray[2]} GP**\n"
-                stopEmbed.add_field(value=f"**DM:** {dmChar[0].mention} | {dm_text}\n{':star:' * noodlesGained} {noodleString}", name=dm_name_text)
-                
-                # if there are guild rewards then add a field with relevant information
-                if guildRewardsStr != "":
-                    stopEmbed.add_field(value=guildRewardsStr, name=f"Guild Rewards", inline=False)
-                sessionLogString = f"\n**{game}**\n*Tier {tierNum} Quest*\n#{ctx.channel}\n\n**Runtime**: {datestart} to {dateend} CDT ({totalDuration})\n\n{allRewardsTotalString}\nGame ID:"
-
-                # Grab stats
-                # this section is used to track states for the month
-                dateyear = datestart.split('-')
-                # this chains together the month and the year, techically runs into issues in 2120
-                dateyear = dateyear[0] + '-' + dateyear[2][:2]
-                statsCollection = db.stats
-
-                statsRecord  = statsCollection.find_one({'Date': dateyear})
-                statsRecordLife  = statsCollection.find_one({'Life': 1})
-                # get the stats for the month and create an entry if it doesnt exist yet
-                if not statsRecord:
-                    statsRecord = {'Date': dateyear, 'DM': {}}
-
-                # Total Number of Games for the Month / Life
-                if "Games" in statsRecord:
-                    statsRecord["Games"] += 1
-                else:
-                    statsRecord["Games"] = 1
-
-                if "Games" in statsRecordLife:
-                    statsRecordLife["Games"] += 1
-                else:
-                    statsRecordLife["Games"] = 1
-
-                # List of Guilds followed by the number of game for that guild this month
-                if "Guild Games" not in statsRecord:
-                    statsRecord["Guild Games"] = {}
-                    
-                for g in guildsRecordsList:
-                    if g["Name"] not in statsRecord["Guild Games"].keys():
-                        statsRecord["Guild Games"][g["Name"]] = 1
-                    else:
-                        statsRecord["Guild Games"][g["Name"]] += 1
-                
-                
-                # If at least the minimum rewards are given out
-                if float(totalDurationTime//3600) >= .5:
-                    # increment or create the stat entry for the DM of the game
-                    if str(dmChar[0].id) in statsRecord['DM']:
-                        if f'T{tierNum}' in statsRecord['DM'][str(dmChar[0].id)]:
-                            statsRecord['DM'][str(dmChar[0].id)][f'T{tierNum}'] += 1
-                        else:
-                            statsRecord['DM'][str(dmChar[0].id)][f'T{tierNum}'] = 1
-                    else:
-                        statsRecord['DM'][str(dmChar[0].id)] = {f'T{tierNum}':1}
-                    
-                    # update the tier tracker
-                    if f'T{tierNum}' in statsRecord:
-                        statsRecord[f'T{tierNum}'] += 1
-                    else:
-                        statsRecord[f'T{tierNum}'] = 1
-                    
-                    # Track how many guild quests there were
-                    if guildsRecordsList != list():
-                        if 'GQ' in statsRecord:
-                            statsRecord['GQ'] += 1
-                        else:
-                            statsRecord['GQ'] = 1
-                        # track how many games had a guild memeber with rewards and how many have not
-                        if guildMember: 
-                            if 'GQM' in statsRecord:
-                                statsRecord['GQM'] += 1
-                            else:
-                                statsRecord['GQM'] = 1
-                        elif not guildMember:
-                            if 'GQNM' in statsRecord:
-                                statsRecord['GQNM'] += 1
-                            else:
-                                statsRecord['GQNM'] = 1
-                    # track a list of unique players
-                    if 'Unique Players' not in statsRecord:
-                        statsRecord['Unique Players'] = set()
-                    # mongo does not track sets, therefore we need to convert from a list before adding the players
-                    statsRecord['Unique Players'] = set(statsRecord['Unique Players'])
-                    # add all players in the game, set conversion will ignore duplicates
-                    statsRecord['Unique Players'].update([p[0].id for p in playerList])
-                    # add the dm
-                    statsRecord['Unique Players'].add(dmChar[0].id)
-                    # convert back to a list for Mongo
-                    statsRecord['Unique Players'] = list(statsRecord['Unique Players'])
-                    
-                    # track playtime
-                    if 'Playtime' in statsRecord:
-                        statsRecord['Playtime'].append(totalDurationTime)
-                    else:
-                        statsRecord['Playtime'] = [totalDurationTime]
-                    
-                    # track the amount of total players in the month, counting duplicates
-                    if 'Players' in statsRecord:
-                        statsRecord['Players'].append(len(playerList) + 1)
-                    else:
-                        statsRecord['Players'] = [len(playerList) + 1] 
+                timerData = list(map(lambda item: UpdateOne({'_id': item[3]}, {"$set": {"GID": dbEntry["Log ID"]}}), playerList))
 
                 # try to update all the player entries
                 try:
                     playersCollection.bulk_write(timerData)
+                    
+                    print(dbEntry)
+                    
+                    logCollection.insert_one(dbEntry)
                 except BulkWriteError as bwe:
                     print(bwe.details)
                     # if it fails, we need to cancel and use the error details
                     return
-
                 await sessionMessage.edit(embed=stopEmbed)
 
                 try:
-                    # update all the other data entries
-                    # update the DB stats
-                    statsCollection.update_one({'Date':dateyear}, {"$set": statsRecord}, upsert=True)
-                    statsCollection.update_one({'Life':1}, {"$set": statsRecordLife}, upsert=True)
-                    # update the DM' stats
-                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'P-Noodles': noodles}}, upsert=True)
                     # create a bulk write entry for the players
                     usersData = list(map(lambda item: UpdateOne({'_id': item[3]}, {'$set': {'User ID':str(item[0].id) }}, upsert=True), playerList))
                     usersCollection.bulk_write(usersData)
-                    #TODO: why is it giving one rep?
-                    if guildsRecordsList != list():
-                        # do a bulk write for the guild data
-                        guildsData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': {'P-Games':item['Games'], 'P-Reputation': item['Reputation']}}, upsert=True), guildsRecordsList))
-                        guildsCollection.bulk_write(guildsData)
                 except BulkWriteError as bwe:
                     print(bwe.details)
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
@@ -2210,51 +1865,10 @@ class Timer(commands.Cog):
                     charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
                 else:
                     print('Success')
+                print(dbEntry)
+                await generateLog(self, dbEntry["Log ID"], sessionInfo = dbEntry)
             
-            # if there were no rewards we need to do a different type of tracking
-            else:
-                stopEmbed.clear_fields()
-                stopEmbed.set_footer(text=stopEmbed.Empty)
-
-                playerData = []
-                campaignCollection = db.campaigns
-                # get the record of the campaign for the current channel
-                campaignRecord = list(campaignCollection.find({"Channel ID": str(ctx.channel.id)}))[0]
-                
-                #since time is tracked specifically for campaigns we extract the duration by getting the 
-                for key, value in allRewardStrings.items():
-                    temp = ""
-                    # extract the times from the treasure string of campaigns, this string is already split into hours and minutes
-                    numbers = [int(word) for word in key.split() if word.isdigit()]
-                    tempTime = (numbers[0] * 3600) + (numbers[1] * 60) 
-                    # for every player update their campaign entry with the addition time
-                    for v in value:
-                        temp += f"{v[0].mention}\n"
-                        v[1]['Campaigns'][campaignRecord['Name']] += tempTime
-                        playerData.append(v[1])
-                        stopEmbed.add_field(name=key, value=temp, inline=False)
-
-                try:   
-                    # update the DM's entry
-                    usersCollection.update_one({'User ID': str(dmChar[0].id)}, {"$set": {'User ID':str(dmChar[0].id), 'Noodles': noodles}}, upsert=True)
-                    # update the player entries in bulk
-                    usersData = list(map(lambda item: UpdateOne({'_id': item['_id']}, {'$set': item}, upsert=True), playerData))
-                    usersCollection.bulk_write(usersData)
-                    # don't update the DM's character if they did not sign up with one
-                    if(dmchar[1]!= "No Rewards"):
-                        dmRecords = data['records'][0]
-                        playersCollection.update_one({'_id': dmRecords['_id']},  dmRecords['fields'] , upsert=True)
-                except BulkWriteError as bwe:
-                    print(bwe.details)
-                    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
-                except Exception as e:
-                    print ('MONGO ERROR: ' + str(e))
-                    charEmbedmsg = await ctx.channel.send(embed=None, content="Uh oh, looks like something went wrong. Please try the timer again.")
-                else:
-                    print('Success')  
-
-                await ctx.channel.send(embed=stopEmbed)
-
+            
             # enable the starting timer commands
             self.timer.get_command('prep').reset_cooldown(ctx)
             self.timer.get_command('resume').reset_cooldown(ctx)
@@ -2394,7 +2008,7 @@ class Timer(commands.Cog):
                                 # find the name of which noodle role the DM has
                                 for r in dmChar[0].roles:
                                     if 'Noodle' in r.name:
-                                        dmChar[4][0] = r.name
+                                        dmChar[5][0] = r.name
                                         break
 
                         print(start)
@@ -2537,38 +2151,38 @@ class Timer(commands.Cog):
                 # the character is extracted from the message in the signup command 
                 # special behavior:
                     startTimes = await ctx.invoke(self.timer.get_command('addme'), start=startTimes, role=role, msg=msg, user=msg.author, dmChar=dmChar)
-                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
+                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, dmChar=dmChar, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 # this invokes the add command, since we do not pass prep = True through, the special addme command will be invoked by add
                 # @player is a protection from people copying the command
                 elif (msg.content.startswith(f"{commandPrefix}timer add ") or msg.content.startswith(f"{commandPrefix}t add ")) and '@player' not in msg.content:
                     # check if the author of the message has the right permissions for this command
                     if await self.permissionCheck(msg, author):
                         # update the startTimes with the new added player
-                        startTimes = await self.addDuringTimer(ctx, start=startTimes, role=role, msg=msg, dmChar = dmChar)
+                        await self.addDuringTimer(ctx, start=startTimes, role=role, msg=msg, dmChar = dmChar)
                         # update the msg with the new stamp
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, dmChar=dmChar, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 # this invokes the remove command, since we do not pass prep = True through, the special removeme command will be invoked by remove
                 elif msg.content == f"{commandPrefix}timer removeme" or msg.content == f"{commandPrefix}t removeme":
                     startTimes = await ctx.invoke(self.timer.get_command('removeme'), start=startTimes, role=role, user=msg.author)
-                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
+                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, dmChar=dmChar, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif (msg.content.startswith(f"{commandPrefix}timer remove ") or msg.content.startswith(f"{commandPrefix}t remove ")): 
                     if await self.permissionCheck(msg, author): 
                         startTimes = await ctx.invoke(self.timer.get_command('remove'), msg=msg, start=startTimes, role=role)
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, dmChar=dmChar, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif (msg.content.startswith(f"{commandPrefix}timer reward") or msg.content.startswith(f"{commandPrefix}t reward")):
                     if await self.permissionCheck(msg, author):
                         startTimes,dmChar = await self.reward(ctx, msg=msg, start=startTimes,dmChar=dmChar)
                 elif (msg.content.startswith(f"{commandPrefix}timer death") or msg.content.startswith(f"{commandPrefix}t death")):
                     if await self.permissionCheck(msg, author):
                         startTimes = await ctx.invoke(self.timer.get_command('death'), msg=msg, start=startTimes, role=role)
-                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
+                        stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, dmChar=dmChar, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 elif msg.content.startswith('-') and msg.author != dmChar[0]:
-                    startTimes = await ctx.invoke(self.timer.get_command('deductConsumables'), msg=msg, start=startTimes)
-                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
+                    await ctx.invoke(self.timer.get_command('deductConsumables'), msg=msg, start=startTimes)
+                    stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, dmChar=dmChar, embed=stampEmbed, embedMsg=stampEmbedmsg)
                 
 
             except asyncio.TimeoutError:
-                stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, embed=stampEmbed, embedMsg=stampEmbedmsg)
+                stampEmbedmsg = await ctx.invoke(self.timer.get_command('stamp'), stamp=startTime, role=role, game=game, author=author, start=startTimes, dmChar=dmChar, embed=stampEmbed, embedMsg=stampEmbedmsg)
             else:
                 pass
             print("On Cooldown After Command:", self.timer.get_command(ctx.invoked_with).is_on_cooldown(ctx))

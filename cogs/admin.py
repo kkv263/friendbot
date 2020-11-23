@@ -8,7 +8,7 @@ import sys
 import traceback
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
-from bfunc import db, callAPI, traceBack
+from bfunc import db, callAPI, traceBack, settingsRecord
 
 
 def admin_or_owner():
@@ -64,7 +64,21 @@ class Admin(commands.Cog, name="Admin"):
         await message.remove_reaction(emote, self.bot.user)
         await ctx.message.delete()
 
+    settingsRecord["ddmrw"]
+        
+    @commands.command()
+    async def startDDMRW(self, ctx):
+        global settingsRecord
+        settingsRecord["ddmrw"] = True
+        await ctx.channel.send("Let the games begin!")
 
+    @commands.command()
+    async def endDDMRW(self, ctx):
+        global settingsRecord
+        settingsRecord["ddmrw"] = False        
+        await ctx.channel.send("Until next month!")
+    
+    
     @commands.command()
     @admin_or_owner()
     async def goldUpdate(self, ctx, tier: int, tp: int, gp: int):
@@ -74,6 +88,66 @@ class Admin(commands.Cog, name="Admin"):
                {"$set" : {"GP" : gp}},
             )
             await ctx.channel.send(content=f"Successfully updated the GP cost of all T{tier} items costing {tp} TP to {gp} GP.")
+    
+        except Exception as e:
+            traceback.print_exc()
+            
+    @commands.command()
+    @admin_or_owner()
+    async def tpUpdate(self, ctx, tier: int, tp: int, tp2: int):
+        try:
+            db.mit.update_many(
+               {"Tier": tier, "TP": tp},
+               {"$set" : {"TP" : tp2}},
+            )
+            await ctx.channel.send(content=f"Successfully updated the TP cost of all T{tier} items costing {tp} TP to {tp2} TP.")
+    
+        except Exception as e:
+            traceback.print_exc()
+            
+    @commands.command()
+    @admin_or_owner()
+    async def printTierItems(self, ctx, tier: int, tp: int):
+        try:
+            items = list(db.mit.find(
+               {"Tier": tier, "TP": tp},
+            ))
+            
+            out = f"Items in Tier {tier} costing TP {tp}:\n"
+            def alphaSort(item):
+                if "Grouped" in item:
+                    return item["Grouped"]
+                else:
+                    return item["Name"]
+            
+            items.sort(key = alphaSort)
+            for i in items:
+                if "Grouped" in i:
+                    out += i["Grouped"]
+                else:
+                    out += i["Name"]
+                out += f" GP {i['GP']}\n"
+            length = len(out)
+            while(length>2000):
+                x = out[:2000]
+                x = x.rsplit("\n", 1)[0]
+                await ctx.channel.send(content=x)
+                out = out[len(x):]
+                length -= len(x)
+            await ctx.channel.send(content=out)
+    
+        except Exception as e:
+            traceback.print_exc()        
+    
+    @commands.command()
+    @admin_or_owner()
+    async def ritRework(self, ctx):
+        try:
+            db.rit.update_many(
+               {"Type": {"$exists" : False}},
+                {"$set" : {"Type": "Magic Items"}}
+            )
+            await ctx.channel.send(content=f"Successfully updated the rit.")
     
         except Exception as e:
             traceback.print_exc()
@@ -108,24 +182,25 @@ class Admin(commands.Cog, name="Admin"):
             count = db.players.delete_many(
                {}
             )
-            await msg.edit(content=f"Successfully deleted {count} characters.")
+            await msg.edit(content=f"Successfully deleted {count.deletedCount} characters.")
     
         except Exception as e:
             traceback.print_exc()
-            
+      
+    @commands.command()      
     @admin_or_owner()
     async def removeUserCharacters(self, ctx, userID):
-        msg = ctx.channel.send("Are you sure you want to remove every character in the database?\n No: ❌\n Yes: ✅")
+        msg = await ctx.channel.send("Are you sure you want to remove every character in the database?\n No: ❌\n Yes: ✅")
         author = ctx.author
         
-        if(not self.doubleVerify(ctx, msg)):
+        if(not await self.doubleVerify(ctx, msg)):
             return
         
         try:
             count = db.players.delete_many(
                {"User ID": userID}
             )
-            await msg.edit(content=f"Successfully deleted {count} characters.")
+            await msg.edit(content=f"Successfully deleted {count.deletedCount} characters.")
     
         except Exception as e:
             traceback.print_exc()        
@@ -144,7 +219,7 @@ class Admin(commands.Cog, name="Admin"):
         else:
             moveEmbedmsg = await  ctx.channel.send(content=f"Are you sure you want to move and refund {rRecord['Name']}?\n No: ❌\n Yes: ✅")
         author = ctx.author
-        refundTier = f'TP {rRecord["Tier"]}'
+        refundTier = f'T{rRecord["Tier"]} TP'
         
         if(not await self.doubleVerify(ctx, moveEmbedmsg)):
             return
@@ -156,7 +231,7 @@ class Admin(commands.Cog, name="Admin"):
             if(targetTierInfoItem):
                 updatedGP = targetTierInfoItem["GP"]
                 
-            returnData = self.characterEntryItemRemovalUpdate(ctx, rRecord, "Magic Items")
+            returnData = self.characterEntryItemRemovalUpdate(ctx, rRecord, "Current Item", refundTier, tp)
                                                         
             db.mit.update_one( {"_id": rRecord["_id"]},
                                 {"$set" : {"Tier" : tier, "TP" : tp, "GP": updatedGP}})
@@ -179,7 +254,7 @@ class Admin(commands.Cog, name="Admin"):
             return
         await moveEmbedmsg.edit(content="Completed")
     
-    def characterEntryItemRemovalUpdate(self, ctx, rRecord, category):
+    def characterEntryItemRemovalUpdate(self, ctx, rRecord, category, refundTier, tp):
         characters = list( db.players.find({"Current Item": {"$regex": f".*?{rRecord['Name']}"}}))
         returnData = []
         print(rRecord)
@@ -220,6 +295,7 @@ class Admin(commands.Cog, name="Admin"):
             
             returnData.append(entry)
         return returnData
+        
     async def doubleVerify(self, ctx, embedMsg):
         def apiEmbedCheck(r, u):
             sameMessage = False
@@ -269,7 +345,7 @@ class Admin(commands.Cog, name="Admin"):
     
     @commands.command()
     @admin_or_owner()
-    async def removeItem(self, ctx, item, tier: int, tp: int):
+    async def removeItem(self, ctx, item):
         
         removeEmbed = discord.Embed()
         removeEmbedmsg = None
@@ -320,10 +396,12 @@ class Admin(commands.Cog, name="Admin"):
         try:
             self.bot.reload_extension('cogs.'+cog)
             print(f"{cog} has been reloaded.")
+            await ctx.channel.send(cog+" has been reloaded")
         except commands.ExtensionNotLoaded as e:
             try:
                 self.bot.load_extension("cogs." + cog)
                 print(f"{cog} has been added.")
+                await ctx.channel.send(cog+" has been reloaded")
             except (discord.ClientException, ModuleNotFoundError):
                 print(f'Failed to load extension {cog}.')
                 traceback.print_exc()
